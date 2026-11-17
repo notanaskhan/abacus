@@ -41,11 +41,27 @@ WRITES: Final[tuple[dict[str, object], ...]] = (
     },
     {
         "adapter_key": "quickbooks_online_poster",
-        "decision": "P-16",
+        "attest_clients": "refused",
+        "decision": "ADR-344",
         "enabled": False,
         "key": "ledger_post_journal_entries",
+        "kill_switch": "write.ledger.post_journal_entries",
+        "operations": (
+            "create_journal_entry",
+            "set_closing_date",
+        ),
         "owner_epic": "C-02",
+        "policy_principal": "never",
+        "preflight": (
+            "balanced",
+            "open_period",
+            "mapped_accounts",
+            "active_accounts",
+            "closing_date_unlocked",
+        ),
+        "reversal": "new_write",
         "shape": "W1",
+        "verify_after": "read_back",
     },
     {
         "adapter_key": "cch_file_bridge",

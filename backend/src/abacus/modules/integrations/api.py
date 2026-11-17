@@ -216,3 +216,6 @@ from abacus.modules.integrations.dependents import (  # noqa: E402
 from abacus.modules.integrations.firm_health import register as _register_firm_health  # noqa: E402
 
 _register_firm_health()
+
+# C-02-T02 (DEC-5501): the posting, W1 and delivery error codes, declared before their services.
+from abacus.modules.integrations import write_errors as write_errors  # noqa: E402

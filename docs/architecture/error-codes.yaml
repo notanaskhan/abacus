@@ -262,6 +262,12 @@ codes:
     raised_by:
     - abacus.modules.agents.commands.AnswerInvalid
     - abacus.modules.requests.portal_questionnaires.AnswerInvalid
+  approval_grant_mismatch:
+    status: 409
+    raised_by:
+    - abacus.modules.adjustments.posting_errors.ApprovalGrantMismatch
+    summary: 'The batch''s approval grant does not cover this payload: the entries, lines, dates or closing
+      date changed after the grant was issued.'
   approval_kind_not_registered:
     status: 409
     raised_by:
@@ -515,6 +521,11 @@ codes:
     - abacus.modules.assurance.ebp_provisions.CitationUnverified
     - abacus.modules.sampling.populations.CitationUnverified
     summary: A comparison cites something not verified and live on the engagement (INV-2).
+  client_approval_required:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.delivery_errors.ClientApprovalRequired
+    summary: The close locks only after the client approves its package.
   client_contact:
     status: 409
     raised_by:
@@ -526,11 +537,22 @@ codes:
     - abacus.modules.organisations.service.ClientRecordInvalid
     summary: A value the client record's constraints refuse (an office or partner of another firm, a
       malformed fiscal year end).
+  close_not_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.delivery_errors.CloseNotLocked
+    summary: The action needs the close Locked (the information-return batch, the hand-off).
   close_requests_not_published:
     status: 409
     raised_by:
     - abacus.modules.closes.issues.NoCloseRequests
     summary: 'The close''s requests are not published yet: a question has no binder to sit on.'
+  closing_date_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.adjustments.posting_errors.ClosingDateLocked
+    summary: 'The entry is dated on or before the client''s closing date: ask the client to lift the
+      date, or re-date the entry (`facts.closing_date`).'
   column_map_invalid:
     status: 422
     raised_by:
@@ -1112,6 +1134,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.drafts.EntityOutsideClient
     summary: The client entity is not one of the draft's client's entities.
+  entry_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.adjustments.posting_errors.EntryLocked
+    summary: An approved entry's lines or date cannot change until its approval is withdrawn.
   entry_not_sendable:
     status: 422
     raised_by:
@@ -1525,6 +1552,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.ledger.mapping.AlreadyPublished
+  handoff_not_available:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.delivery_errors.HandoffNotAvailable
+    summary: The tax hand-off opens only from a locked December close.
   has_flags:
     status: 409
     raised_by:
@@ -1656,6 +1688,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.briefing.dispatch.BuildInProgress
+  inactive_account:
+    status: 409
+    raised_by:
+    - abacus.modules.adjustments.posting_errors.InactiveAccount
+    summary: An entry line names an account the client's ledger shows inactive (`facts.account_ref`).
   inbox_file_gone:
     status: 409
     raised_by:
@@ -2624,6 +2661,12 @@ codes:
     raised_by:
     - abacus.modules.assurance.materiality.OutsidePolicy
     summary: A rate, PM or CT outside the firm's K-02 policy (AC3.3); `facts.field` names which.
+  over_approval_limit:
+    status: 409
+    raised_by:
+    - abacus.modules.adjustments.posting_errors.OverApprovalLimit
+    summary: 'The entry is over the approver''s class limit under the firm''s threshold policy: "over
+      your limit · Review required" (`facts.limit_class`, `facts.policy_version`).'
   override_not_acknowledged:
     status: 409
     raised_by:
@@ -2862,6 +2905,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.service.PossibleDuplicate
     summary: 'A client with this name (normalised) already exists: pick it, or confirm a new one.'
+  posting_not_enabled:
+    status: 409
+    raised_by:
+    - abacus.modules.adjustments.posting_errors.PostingNotEnabled
+    summary: 'Posting is off for this engagement (`posting_enabled`): export the approved entries.'
   predecessor_file_mismatch:
     status: 422
     raised_by:
@@ -3096,6 +3144,12 @@ codes:
     - abacus.modules.assurance.release.ReleaseModeInApp
     summary: 'The firm releases reports in Accrued (`assurance_release_mode = in_app`): record mode is
       closed for release and archive.'
+  release_preconditions_unmet:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.delivery_errors.ReleasePreconditionsUnmet
+    summary: 'Release is blocked: accounts unreconciled, issues open or entries neither posted nor recorded
+      (`facts.unreconciled`, `facts.open_issues`, `facts.entries_unposted`).'
   release_refused:
     status: 409
     raised_by:
@@ -4133,6 +4187,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.evidence.unlock.UnlockFailed
+  unmapped_account:
+    status: 409
+    raised_by:
+    - abacus.modules.adjustments.posting_errors.UnmappedAccount
+    summary: An entry line names an account with no ledger mapping (`facts.account_ref`).
   unmapped_accounts:
     status: 409
     raised_by:
@@ -4295,11 +4354,26 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.workpapers.NothingToReview
     summary: No ready version, or it's already reviewed.
+  write_capability_disabled:
+    status: 409
+    raised_by:
+    - abacus.modules.integrations.write_errors.WriteCapabilityDisabled
+    summary: The firm's switch or its kill switch for this capability is off.
+  write_capability_not_released:
+    status: 409
+    raised_by:
+    - abacus.modules.integrations.write_errors.WriteCapabilityNotReleased
+    summary: 'The registry entry is `enabled: false`: the firm switch is shown but cannot turn on.'
   write_capability_refused:
     status: 409
     raised_by:
     - abacus.modules.integrations.writes.WriteCapabilityRefused
     summary: 'A write to a client''s system was refused: the registry enables none (ADR-150).'
+  write_grant_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.integrations.write_errors.WriteGrantMissing
+    summary: The client owner has not granted, or has revoked, the posting scope in the portal.
   wrong_password:
     status: 422
     raised_by:

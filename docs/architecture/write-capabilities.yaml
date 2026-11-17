@@ -45,10 +45,22 @@ read_connectors:
 writes:
   - key: ledger_post_journal_entries
     # A-02-T26 (DEC-709): its own adapter key; the QuickBooks Online read connector never writes.
+    # C-02-T02 (ADR-344, P-16; DEC-5501): the plan's `ledger.post_journal_entries`. Human-approved
+    # batches only, never for an attest client (I-POLICY-NOT-ATTEST), never the policy principal;
+    # read back after every write, corrected by a reversing write. Stays `enabled: false` until the
+    # post-pen-test protected PR (C-02-T50; pen tests deferred, DEC-1389). Only
+    # adjustments/posting.py may call execute_write with it (POST-001).
     adapter_key: quickbooks_online_poster
     shape: W1
     owner_epic: C-02
-    decision: P-16
+    decision: ADR-344
+    operations: [create_journal_entry, set_closing_date]
+    attest_clients: refused
+    policy_principal: never
+    preflight: [balanced, open_period, mapped_accounts, active_accounts, closing_date_unlocked]
+    verify_after: read_back
+    reversal: new_write
+    kill_switch: write.ledger.post_journal_entries
     enabled: false
   # T-01-T07 (DEC-1158): the plan's W2 `cch_axcess_tax.export_file`. File mode: the firm carries
   # the workbook to the engine, so the entry names no egress host; per-firm enablement is

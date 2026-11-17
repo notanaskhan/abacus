@@ -81,3 +81,6 @@ __all__ = [
 
 # R-02-T11 (C18, DEC-3009): POR-08 e's `proposed_entry` kind, decided through the portal.
 register_client_approval_kind("proposed_entry", ProposedEntryApprovals())
+
+# C-02-T02 (DEC-5501): the posting, W1 and delivery error codes, declared before their services.
+from abacus.modules.adjustments import posting_errors as posting_errors  # noqa: E402

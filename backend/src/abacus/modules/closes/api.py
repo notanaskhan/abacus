@@ -131,3 +131,6 @@ __all__ = [
     "start_close",
     "status_guard",
 ]
+
+# C-02-T02 (DEC-5501): the posting, W1 and delivery error codes, declared before their services.
+from abacus.modules.closes import delivery_errors as delivery_errors  # noqa: E402

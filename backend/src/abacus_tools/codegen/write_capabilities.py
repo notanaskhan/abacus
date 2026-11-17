@@ -130,7 +130,11 @@ def render(registry: WriteCapabilityRegistry) -> str:
         r.model_dump(mode="json")
         for r in sorted(registry.read_connectors, key=lambda r: r.adapter_key)
     ]
-    writes = [w.model_dump(mode="json") for w in sorted(registry.writes, key=lambda w: w.key)]
+    # Only W1 carries the posting policy (ADR-344); the other entries' unset fields stay out.
+    writes = [
+        w.model_dump(mode="json", exclude_none=True)
+        for w in sorted(registry.writes, key=lambda w: w.key)
+    ]
     hosts = sorted(registry.egress_hosts())
     egress = (
         "frozenset(\n    {" + "".join(f"\n        {json.dumps(h)}," for h in hosts) + "\n    }\n)"

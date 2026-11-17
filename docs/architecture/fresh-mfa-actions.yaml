@@ -156,3 +156,21 @@ actions:
   # A-07-T49 (DEC-3411): G9, attached with A-07-T37's live lock handler.
   - action: archive.lock
     group: release
+  # C-02-T02 (ADR-344, SPEC-700, SPEC-701; DEC-5501): W1 posting, its switches, the client's write
+  # grant, the partner's release, the client's package decision and the close lock.
+  - action: posting_batch.post
+    group: posting
+  - action: write_capability.enable
+    group: posting
+  - action: gl_posting_settings.update
+    group: posting
+  - action: connection.grant_write
+    group: consent
+  - action: connection.revoke_write
+    group: consent
+  - action: close_package.release
+    group: release
+  - action: close_package.client_decide
+    group: release
+  - action: close.lock
+    group: release
