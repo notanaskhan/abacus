@@ -355,7 +355,9 @@ from abacus.modules.evidence.service import (
 )
 from abacus.modules.evidence.signed_copies import (
     SIGNED_AUTHORIZATIONS,
+    ComponentUpload,
     ScreenedFile,
+    component_upload_of,
     file_component_upload,
     file_engine_copy,
     file_handoff_copy,
@@ -598,6 +600,7 @@ __all__ = [
     "CitationVerdict",
     "ClassifiedIntake",
     "CloseWorkpaperSheet",
+    "ComponentUpload",  # S48 rest: POR-23 links a drop to its deliverable
     "ContentTooLarge",
     "DocumentDownload",  # G-02-T20: the WISP pack's documents",
     "EffectivePolicy",
@@ -708,6 +711,7 @@ __all__ = [
     "client_pre_checks",
     "column_families",
     "column_letters",
+    "component_upload_of",
     "configure_storage",
     "daily_page_cap",
     "decide",

@@ -272,6 +272,35 @@ async def component_room_drop(
     return await _upload(ctx, room_id, None, request, filename)
 
 
+class RoomDropLinkIn(BaseModel):
+    """The picker's answer: the deliverable this drop is for."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    deliverable_id: Annotated[UUID, classified("internal")]
+
+
+@router.post(
+    "/{room_id}/drops/{evidence_version_id}/deliverable",
+    action="component_deliverable.upload",
+    response_model=RoomUploadOut,
+    errors=(409, 501),
+)
+async def component_room_link_drop(
+    room_id: UUID,
+    evidence_version_id: UUID,
+    body: RoomDropLinkIn,
+    ctx: Member,
+    _key: IdempotencyKey,
+) -> RoomUploadOut:
+    """S48 rest: link the person's own drop to one of this room's deliverables."""
+    await _gate(ctx)
+    from abacus.modules.assurance.api import component_room as svc
+
+    linked = await svc.link_drop(ctx, room_id, evidence_version_id, body.deliverable_id)
+    return RoomUploadOut(deliverable_id=linked, evidence_version_id=evidence_version_id)
+
+
 @router.get(
     "/{room_id}/questions",
     action="component_room.read",

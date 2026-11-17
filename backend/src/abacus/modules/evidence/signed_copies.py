@@ -15,11 +15,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.clock import system_now
-from abacus.kernel.db import TenantContext
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import service_line_of
 from abacus.modules.evidence import storage
@@ -432,3 +432,35 @@ async def file_component_upload(
             after=Ref(evidence_item_id=item_id, fingerprint=screened.stored.fingerprint),
         )
     return item_id, version_id
+
+
+@dataclass(frozen=True)
+class ComponentUpload:
+    """S48 rest (A-09-T33): who filed a component auditor's upload, on which engagement."""
+
+    evidence_item_id: UUID
+    engagement_id: UUID
+    uploaded_by: UUID
+
+
+async def component_upload_of(tenant: TenantContext, version_id: UUID) -> ComponentUpload | None:
+    """A `component_auditor_upload` version's item, engagement and portal person (RLS-scoped);
+    None for any other version, so a firm document can never be linked from the room."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT v.evidence_item_id, v.engagement_id, i.created_by_id "
+                    "FROM evidence_versions v JOIN evidence_items i ON i.id = v.evidence_item_id "
+                    "WHERE v.id = :v AND v.source = 'component_auditor_upload'"
+                ),
+                {"v": version_id},
+            )
+        ).first()
+    if row is None or not str(row.created_by_id).startswith("component_auditor:"):
+        return None
+    return ComponentUpload(
+        row.evidence_item_id,
+        row.engagement_id,
+        UUID(str(row.created_by_id).removeprefix("component_auditor:")),
+    )
