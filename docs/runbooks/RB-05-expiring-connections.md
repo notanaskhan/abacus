@@ -55,6 +55,15 @@ The affected connections read **Connected**; `needs_attention` with reauth reaso
 ## 8. Review
 Typical actions: earlier `reauth_due` notices for the provider's token lifetime, a per-entity cooldown across feeds (DEC-611's follow-up), a template check before the wave (the firm's POR-20 shows the key unpublished).
 
+## Reauth wave for Connect integrations (W-01-T21)
+- **Firm installs** (Felix's role): WB-11 c shows "Token expired at … · n runs failed · n agents
+  paused" and **Reconnect…** (fresh MFA within 15 minutes); dependent runs are refused at admission
+  with `integration_reauth_required` until it is reconnected.
+- **Personal installs** (each person's own): the person reconnects from WB-10; nobody else can.
+- **Client-authorised apps** (QuickBooks Online, the ERPs): each client re-authorises its own
+  company through the portal (POR-16); the firm sends the reconnect request, never a credential.
+- File-bridge installs (CCH Axcess Tax) never expire: nothing to reconnect.
+
 ## Rehearsal log
 | Date | Kind (drill, staging walk-through, tabletop) | Result | Changes made |
 |---|---|---|---|
