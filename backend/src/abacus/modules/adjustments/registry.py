@@ -164,3 +164,92 @@ UPDATE_COLUMNS["proposed_entry_lines"] = UPDATE_COLUMNS.get(
         "fs_line_key",
     }
 )
+
+# C-02-T04 (0950, DEC-5503): posting batches, insert-only posting results and closing-date
+# events, closing-date conflicts; the posting columns on proposed entries.
+C02T04_TABLES: frozenset[str] = frozenset(
+    {"posting_batches", "posting_results", "closing_date_events", "closing_date_conflicts"}
+)
+TABLES = TABLES | C02T04_TABLES
+INSERT_ONLY = INSERT_ONLY | frozenset({"posting_results", "closing_date_events"})
+INSERT_COLUMNS["posting_batches"] = frozenset(
+    {
+        "tenant_id",
+        "engagement_id",
+        "work_item_id",
+        "client_entity_id",
+        "connection_id",
+        "batch_code",
+        "period",
+        "entry_count",
+        "total_amount",
+        "closing_date_target",
+        "approval_grant_id",
+        "posted_by_user_id",
+        "idempotency_key",
+    }
+)
+INSERT_COLUMNS["posting_results"] = frozenset(
+    {
+        "tenant_id",
+        "posting_batch_id",
+        "proposed_entry_id",
+        "attempt_no",
+        "outcome",
+        "external_txn_id",
+        "external_doc_number",
+        "provider_code",
+        "provider_message_redacted",
+        "write_operation_id",
+        "verified_at",
+    }
+)
+INSERT_COLUMNS["closing_date_events"] = frozenset(
+    {
+        "tenant_id",
+        "client_entity_id",
+        "connection_id",
+        "period",
+        "closing_date",
+        "source",
+        "set_by_user_id",
+        "posting_batch_id",
+        "write_operation_id",
+    }
+)
+INSERT_COLUMNS["closing_date_conflicts"] = frozenset(
+    {"tenant_id", "posting_batch_id", "proposed_entry_id", "ledger_closing_date", "entry_date"}
+)
+INSERT_COLUMNS["proposed_entries"] = INSERT_COLUMNS["proposed_entries"] | frozenset(
+    {"posting_batch_id", "txn_date", "reverses_on", "reversal_of_id"}
+)
+INSERT_COLUMNS["approval_batches"] = INSERT_COLUMNS["approval_batches"] | frozenset(
+    {"approver_role", "class_limits_snapshot"}
+)
+UPDATE_COLUMNS["posting_batches"] = frozenset(
+    {
+        "status",
+        "closing_date_set_at",
+        "posted_at",
+        "first_external_ref",
+        "last_external_ref",
+        "failure_count",
+        "resolved_failure_count",
+        "version",
+    }
+)
+UPDATE_COLUMNS["closing_date_conflicts"] = frozenset(
+    {"status", "resolved_by", "resolved_at", "communication_ref"}
+)
+UPDATE_COLUMNS["proposed_entries"] = UPDATE_COLUMNS["proposed_entries"] | frozenset(
+    {
+        "posting_batch_id",
+        "external_txn_ref",
+        "txn_date",
+        "reverses_on",
+        "reversal_of_id",
+        "recorded_externally_at",
+        "recorded_externally_evidence_id",
+        "recorded_externally_match_ref",
+    }
+)
