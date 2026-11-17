@@ -23,9 +23,11 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel._flags import AUDITS_ANALYTICS, AUDITS_SSARS_WORKSPACE
 from abacus.kernel._statuses import AnalyticsLineStatus, AnalyticsSetStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, NotImplementedYet
+from abacus.kernel.errors import DomainInvalid, NotFound
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.assurance import analytics as svc
+from abacus.modules.assurance import ssars
+from abacus.modules.assurance.ssars import NoReportForPreparation as NoReportForPreparation
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
 
@@ -49,12 +51,6 @@ class ExplanationUncited(DomainInvalid):
     """An explanation without a verified citation cannot be saved as Explained (AC-5.3)."""
 
     code = "explanation_uncited"
-
-
-class NoReportForPreparation(DomainConflict):
-    """AR-C 70: no report for a preparation work item (AC-8.6)."""
-
-    code = "no_report_for_preparation"
 
 
 # --- analytics -----------------------------------------------------------------------------------
@@ -500,7 +496,20 @@ async def put_expectation(
     analytics_set_id: UUID, position: int, body: ExpectationIn, ctx: Ctx
 ) -> AnalyticsLineOut:
     await _gate_record(ctx)
-    raise NotImplementedYet("A-08-T22")
+    return line_out(
+        cast(
+            svc.LineView,
+            await ssars.put_expectation(
+                ctx,
+                analytics_set_id,
+                position,
+                low_pct=body.low_pct,
+                high_pct=body.high_pct,
+                basis=body.basis,
+                citation_ids=body.citation_ids,
+            ),
+        )
+    )
 
 
 @router.post(
@@ -578,7 +587,25 @@ async def put_prior_year_figures(
 @router.get(f"{_WI}/ssars", action="ssars.read", response_model=SsarsWorkspaceOut, errors=(501,))
 async def ssars_workspace(work_item_id: UUID, ctx: Ctx) -> SsarsWorkspaceOut:
     await _gate(ctx, work_item_id, "ssars.read", AUDITS_SSARS_WORKSPACE)
-    raise NotImplementedYet("A-08-T22")
+    w = await ssars.workspace(ctx, work_item_id)
+    return SsarsWorkspaceOut(
+        mode=w.mode,
+        standard=w.standard,
+        rail=[RailRowOut(key=r.key, label=r.label, state=r.state) for r in w.rail],
+        analytics_set_id=w.analytics_set_id,
+        inquiries=(
+            InquirySummaryOut(
+                answered=w.inquiries.answered,
+                open=w.inquiries.open,
+                questionnaire_id=w.inquiries.questionnaire_id,
+            )
+            if w.inquiries
+            else None
+        ),
+        legend=w.legend,
+        report_available=w.report_available,
+        approval_label=w.approval_label,
+    )
 
 
 @router.post(
@@ -593,7 +620,15 @@ async def build_inquiries(
 ) -> InquiryProgramOut:
     """The inquiry program from methodology content to a questionnaire."""
     await _gate(ctx, work_item_id, "ssars.inquiry_manage", AUDITS_SSARS_WORKSPACE)
-    raise NotImplementedYet("A-08-T22")
+    p = await ssars.build_inquiries(
+        ctx,
+        work_item_id,
+        methodology_program_id=body.methodology_program_id,
+        recipient_contact_ids=body.recipient_contact_ids,
+    )
+    return InquiryProgramOut(
+        questionnaire_id=p.questionnaire_id, questions=p.questions, published=p.published
+    )
 
 
 @router.post(
@@ -606,7 +641,10 @@ async def publish_inquiries(
     work_item_id: UUID, ctx: Ctx, _key: IdempotencyKey
 ) -> InquiryProgramOut:
     await _gate(ctx, work_item_id, "ssars.inquiry_manage", AUDITS_SSARS_WORKSPACE)
-    raise NotImplementedYet("A-08-T22")
+    p = await ssars.publish_inquiries(ctx, work_item_id)
+    return InquiryProgramOut(
+        questionnaire_id=p.questionnaire_id, questions=p.questions, published=p.published
+    )
 
 
 @router.post(
@@ -620,4 +658,26 @@ async def remind(
 ) -> ClientQuestionsOut:
     """A templated reminder a person edits and sends (DV-4)."""
     await _gate(ctx, work_item_id, "client_question.send", AUDITS_SSARS_WORKSPACE)
-    raise NotImplementedYet("A-08-T22")
+    questionnaire_id, sent_at = await ssars.remind(
+        ctx, work_item_id, template_key=body.template_key, text_=body.text
+    )
+    return ClientQuestionsOut(questionnaire_id=questionnaire_id, sent_at=sent_at)
+
+
+class ReadFsOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    workpaper_id: Annotated[UUID, classified("internal")]
+
+
+@router.post(
+    f"{_WI}/ssars/read-fs",
+    action="workpaper.edit",
+    response_model=ReadFsOut,
+    status_code=201,
+    errors=(409,),
+)
+async def open_read_fs(work_item_id: UUID, ctx: Ctx, _key: IdempotencyKey) -> ReadFsOut:
+    """A-08-T22 (AUD-26c): compilation's "Read the FS" procedure as its working paper (L1)."""
+    await _gate(ctx, work_item_id, "workpaper.edit", AUDITS_SSARS_WORKSPACE)
+    return ReadFsOut(workpaper_id=await ssars.open_read_fs(ctx, work_item_id))

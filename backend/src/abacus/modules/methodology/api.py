@@ -92,6 +92,7 @@ from abacus.modules.methodology.programs import (
     CitedStep,
     VersionStep,
     VersionSteps,
+    program_steps,
     step_at,
     version_steps,
 )
@@ -386,6 +387,7 @@ __all__ = [
     "parse_workbook",
     "pii_hold",
     "policy_payload",
+    "program_steps",  # A-08-T22: an SSARS inquiry program reads its steps
     "publish_assurance_checklist",
     "publish_checklist",
     "publish_drafted_version",

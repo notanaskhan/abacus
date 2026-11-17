@@ -329,6 +329,10 @@ async def set_choice(
 ) -> ReportState:
     """A validated choice is a new version (insert-only); the paragraphs follow it."""
     engagement_id = await _person(ctx, work_item_id, "report.draft")
+    # A-08-T22 (AC-8.6, DEC-5401): AR-C 70 has no report.
+    from abacus.modules.assurance.ssars import require_report_allowed
+
+    await require_report_allowed(ctx.tenant, engagement_id)
     current = await state(ctx.tenant, work_item_id)
     if current.report_id is not None and current.row_version != seen_version:
         raise StaleReport(facts={"version": current.row_version})
