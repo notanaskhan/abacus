@@ -62,6 +62,7 @@ from abacus.modules.integrations.connect_errors import (
     StaleVersion,
 )
 from abacus.modules.integrations.connect_ports import port_for
+from abacus.modules.integrations.kill_switch import ensure_not_paused
 from abacus.modules.integrations.models import (
     FirmIntegration,
     IntegrationEvent,
@@ -191,6 +192,7 @@ async def start_firm(ctx: AuthContext, key: str) -> Started:
     row = await published_row(ctx, key)
     if row.ownership_mode == "personal":
         raise NotFound("integration")
+    await ensure_not_paused(ctx.tenant_id, key)  # W-01-T07 rest (DEC-5433)
     async with tenant_session(ctx.tenant) as session:
         firm = await firm_installs(session)
     install = firm.get(key)
@@ -259,6 +261,7 @@ async def start_personal(ctx: AuthContext, key: str) -> Started:
     row = await published_row(ctx, key)
     if row.ownership_mode != "personal":
         raise NotFound("integration")
+    await ensure_not_paused(ctx.tenant_id, key)  # W-01-T07 rest (DEC-5433)
     port = await _port(ctx, row, "personal")
     async with uow(ctx.tenant) as tx:
         found = (
@@ -355,6 +358,8 @@ async def complete(ctx: AuthContext, state: str, code: str) -> str:
         # Security review (S46): the person must still hold the firm action, with fresh MFA, when
         # the provider calls back; a state minted before their role or session changed is spent.
         await authorise(ctx, "integration.connect_firm", Resource.firm(ctx.tenant_id))
+    # W-01-T07 rest (DEC-5433): a pause set after the start stops the code exchange too.
+    await ensure_not_paused(ctx.tenant_id, spent.key)
     row = await published_row(ctx, spent.key)
     mode: ConnectMode = "personal" if spent.scope == "user" else "token"
     port = await _port(ctx, row, mode)

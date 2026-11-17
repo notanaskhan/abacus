@@ -75,6 +75,7 @@ from abacus.modules.integrations.contract import (
     SyncTrigger,
     Tone,
 )
+from abacus.modules.integrations.kill_switch import ensure_not_paused
 from abacus.modules.organisations.api import entity_display_name
 
 REAUTH = frozenset({"token_expired", "invalid_grant", "firm_app_disabled"})  # 0902: AC-25
@@ -267,6 +268,7 @@ async def start_card(
         raise ConsentVersionStale(catalog_key)
     if await firm_app_off(ctx, row):
         raise FirmAppDisabled(facts={"catalog_key": catalog_key})
+    await ensure_not_paused(ctx.tenant_id, catalog_key)  # W-01-T07 rest (DEC-5433)
     started = await start_entity(
         ctx,
         entity_id,

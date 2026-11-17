@@ -59,7 +59,12 @@ async def probe_tenant(tenant_id: UUID) -> int:
     async with tenant_session(tenant) as session:
         installs = (await session.execute(_LIVE)).all()
     probed = 0
+    from abacus.modules.integrations.kill_switch import paused_keys
+
+    paused = await paused_keys(tenant_id, {str(k) for _, k, _ in installs})
     for install_id, key, mode in installs:
+        if str(key) in paused:  # W-01-T07 rest (DEC-5433): no adapter call while paused
+            continue
         port = port_for(str(key), cast("object", mode), synthetic=synthetic)  # type: ignore[arg-type] -- the stored mode code
         if port is None:
             continue

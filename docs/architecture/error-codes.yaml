@@ -1745,6 +1745,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.run_start.IntegrationNotConnected
+  integration_paused:
+    status: 409
+    raised_by:
+    - abacus.modules.integrations.kill_switch.IntegrationPaused
+    summary: An operator paused this integration (for the firm or the platform).
   integration_reauth_required:
     status: 409
     raised_by:

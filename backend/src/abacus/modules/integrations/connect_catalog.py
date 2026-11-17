@@ -53,6 +53,7 @@ from abacus.modules.identity.api import (
     security_admins,
 )
 from abacus.modules.integrations.adapters import adapter_for
+from abacus.modules.integrations.kill_switch import paused_keys
 from abacus.modules.integrations.models import (
     FirmIntegration,
     IntegrationInterest,
@@ -88,6 +89,7 @@ CATEGORIES: Final[tuple[tuple[str, str, str], ...]] = (
 LIVE: Final = frozenset({"connecting", "connected", "needs_attention", "needs_reauth", "paused"})
 FIRM_ACTIONS: Final = ("integration.connect_firm", "integration.disconnect_firm")
 PERSONAL_ACTIONS: Final = ("integration.connect_personal", "integration.disconnect_personal")
+_CONNECTS: Final = frozenset({"integration.connect_firm", "integration.connect_personal"})
 _ROWS = text("SELECT * FROM integration_catalog_workbench()")
 
 
@@ -239,17 +241,22 @@ def tile_of(
     mine: dict[str, Install],
     names: dict[UUID, str],
     manager: str | None,
+    paused: bool = False,
 ) -> Tile:
     personal = row.ownership_mode == "personal"
     install = (mine if personal else firm).get(row.key)
     kind = kind_of(row, install)
     status = cast(Status, install.status) if install else honest_listing(row, synthetic=synthetic)
+    if paused:  # W-01-T07 rest (DEC-5433; OQ-9, AC-4): the kill switch for this integration
+        status = "paused" if install else "coming_soon"
     label = None
     if install is not None and not personal and install.connected_by is not None:
         label = names.get(install.connected_by)
     actions = PERSONAL_ACTIONS if personal else FIRM_ACTIONS
     allows = own_role_allows if personal else firm_role_allows
     allowed = tuple(a for a in actions if allows(ctx, a))
+    if paused:  # no Enable or Reconnect until the switch clears; Disconnect stays
+        allowed = tuple(a for a in allowed if a not in _CONNECTS)
     blocked = None
     if not personal and not allowed and manager is not None:
         blocked = f"{manager} manages firm connections."
@@ -308,9 +315,17 @@ async def catalogue(
     people = sorted({i.connected_by for i in firm.values() if i.connected_by}, key=str)
     names = await names_of(people) if people else {}
     manager = await _manager(ctx.tenant_id)
+    paused = await paused_keys(ctx.tenant_id, [r.key for r in rows])
     tiles = [
         tile_of(
-            r, ctx=ctx, synthetic=synthetic, firm=firm, mine=mine, names=names, manager=manager
+            r,
+            ctx=ctx,
+            synthetic=synthetic,
+            firm=firm,
+            mine=mine,
+            names=names,
+            manager=manager,
+            paused=r.key in paused,
         )
         for r in rows
     ]

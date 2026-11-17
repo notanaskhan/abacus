@@ -10,7 +10,9 @@ last known value for at most 60 seconds after it was read and then counts as act
 pause must not lapse, P-08-T21 security review); the others keep their last known value, or
 count as inactive when there is none. Each such decision is logged by control name only.
 
-Readers today: P-08-T21's portal sign-in pause (`portal_sign_in`, per firm); Q-01-T36's AI pause
+Readers today: W-01-T07's integration pause (`integration_pause`, keyed by catalogue key;
+`integrations.kill_switch`); P-08-T21's portal sign-in pause (`portal_sign_in`, per firm);
+Q-01-T36's AI pause
 (`ai_gateway.boundary.enforce_boundary`), route block (`ai_gateway._admitted` and `embed`) and
 email pause (`communications.deliveries.deliver`); Q-01-T37's read-only mode
 (`identity.routing`: the platform half in `AbacusRoute`, the firm half in `firm_writable`).
@@ -36,7 +38,12 @@ ControlName = Literal[
     # A-08-T03 (0887; ADR-152 amendment): pauses the public `/v1/confirm/*` family and link
     # issuance, per firm or for everyone; read by the link authenticator (A-08-T15).
     "confirmation_links",
+    # W-01-T07 rest (0948; DEC-5433): pauses one integration (keyed by its catalogue key, in the
+    # `route` column), per firm or for everyone: Paused on WB-10 and WB-11, adapter calls refused.
+    "integration_pause",
 ]
+# The controls a row names with a key (`route`): a model route, or an integration's catalogue key.
+_KEYED: Final = frozenset({"model_route_block", "integration_pause"})
 CACHE_SECONDS: Final = 10.0
 _FAIL_CLOSED: Final = frozenset({"ai_pause", "read_only"})
 # P-08-T21 (security review): these trust a last-known value only this long after it was read,
@@ -100,7 +107,7 @@ async def control_state(
         _log.warning("platform_control.unknown", control=control)
         return "unknown"
     for name, scope, tenant, keyed in rows:
-        if name != control or (control == "model_route_block" and keyed != route):
+        if name != control or (control in _KEYED and keyed != route):
             continue
         if scope == "platform" or (tenant_id is not None and tenant == tenant_id):
             return "on"
@@ -110,9 +117,10 @@ async def control_state(
 async def control_active(
     control: ControlName, tenant_id: UUID | None = None, *, route: str | None = None
 ) -> bool:
-    """Whether `control` is on for everyone, or for the firm `tenant_id`; `model_route_block`
-    also needs the matching `route`. Unknown counts as on for `ai_pause`, `read_only` and (after
-    its stale limit) `portal_sign_in`, as off for the others."""
+    """Whether `control` is on for everyone, or for the firm `tenant_id`; a keyed control
+    (`model_route_block`, `integration_pause`) also needs the matching `route`. Unknown counts as
+    on for `ai_pause`, `read_only` and (after its stale limit) `portal_sign_in`, as off for the
+    others."""
     state = await control_state(control, tenant_id, route=route)
     if state == "unknown":
         return control in _FAIL_CLOSED or control in _FAIL_CLOSED_AFTER_STALE
