@@ -447,6 +447,8 @@ class ComponentInstructionsOut(BaseModel):
     provenance: Annotated[str, classified("confidential")]  # "Drafted by Omar Haddad via Agent"
     send_blocked_reason: Annotated[str | None, Internal]
     content_hash: Annotated[str, Internal]
+    # A-09-T27 (DEC-5405): the pending send a 10-second Undo names (on the send's answer only).
+    send_id: Annotated[UUID | None, Internal] = None
 
 
 class ComponentInstructionsEditIn(BaseModel):
@@ -1204,7 +1206,11 @@ async def group_raise_group_materiality(
 )
 async def group_list_component_auditors(work_item_id: UUID, ctx: Ctx) -> ComponentAuditorsOut:
     await _gate(ctx, work_item_id, "component_auditor.read")
-    raise _todo("A-09-T27")
+    from abacus.modules.assurance import component_auditors as ca
+
+    return ComponentAuditorsOut(
+        items=[_auditor_out(a) for a in await ca.auditors(ctx, work_item_id)]
+    )
 
 
 @router.post(
@@ -1218,7 +1224,18 @@ async def group_add_component_auditor(
     work_item_id: UUID, body: ComponentAuditorIn, ctx: Ctx, _key: IdempotencyKey
 ) -> ComponentAuditorOut:
     await _gate(ctx, work_item_id, "component_auditor.manage")
-    raise _todo("A-09-T27")
+    from abacus.modules.assurance import component_auditors as ca
+
+    return _auditor_out(
+        await ca.add_auditor(
+            ctx,
+            work_item_id,
+            organisation_name=body.organisation_name,
+            city=body.city,
+            component_id=body.component_id,
+            ep_contact_id=body.ep_contact_id,
+        )
+    )
 
 
 @router.post(
@@ -1233,7 +1250,9 @@ async def group_draft_instructions(
 ) -> ComponentInstructionsOut:
     """The deterministic template merge on the person's behalf (DV-6)."""
     await _gate_record(ctx)
-    raise _todo("A-09-T27")
+    from abacus.modules.assurance import component_auditors as ca
+
+    return _instructions_out(await ca.draft_instructions(ctx, auditor_id))
 
 
 @router.patch(
@@ -1246,7 +1265,18 @@ async def group_edit_instructions(
     instructions_id: UUID, body: ComponentInstructionsEditIn, ctx: Ctx, _if: IfMatch
 ) -> ComponentInstructionsOut:
     await _gate_record(ctx)
-    raise _todo("A-09-T27")
+    from abacus.modules.assurance import component_auditors as ca
+    from abacus.modules.assurance.group_consolidation import seen_version
+
+    return _instructions_out(
+        await ca.edit_section(
+            ctx,
+            instructions_id,
+            number=body.number,
+            body=body.body,
+            seen_version=seen_version(_if),
+        )
+    )
 
 
 @router.post(
@@ -1260,7 +1290,15 @@ async def group_send_instructions(
 ) -> ComponentInstructionsOut:
     """A person's send with a 10-second Undo; issues the `component_auditor` grant."""
     await _gate_record(ctx)
-    raise _todo("A-09-T27")
+    from abacus.modules.assurance import component_auditors as ca
+
+    view, _send = await ca.send_instructions(
+        ctx,
+        instructions_id,
+        recipient_contact_id=body.recipient_contact_id,
+        version_id=body.version_id,
+    )
+    return _instructions_out(view, send_id=_send)
 
 
 @router.post(
@@ -1274,7 +1312,11 @@ async def group_raise_make_reference(
     auditor_id: UUID, ctx: Ctx, _key: IdempotencyKey
 ) -> GroupDecisionCardOut:
     await _gate_record(ctx)
-    raise _todo("A-09-T27")
+    from abacus.modules.assurance import component_auditors as ca
+
+    return GroupDecisionCardOut(
+        decision_card_id=await ca.raise_make_reference(ctx, auditor_id), kind="make_reference"
+    )
 
 
 @router.get(
@@ -1285,7 +1327,11 @@ async def group_raise_make_reference(
 )
 async def group_list_deliverables(auditor_id: UUID, ctx: Ctx) -> ComponentDeliverablesOut:
     await _gate_record(ctx)
-    raise _todo("A-09-T28")
+    from abacus.modules.assurance import component_auditors as ca
+
+    return ComponentDeliverablesOut(
+        items=[_deliverable_out(d) for d in await ca.deliverables(ctx, auditor_id)]
+    )
 
 
 @router.post(
@@ -1299,7 +1345,11 @@ async def group_add_deliverable(
     auditor_id: UUID, body: ComponentDeliverableIn, ctx: Ctx, _key: IdempotencyKey
 ) -> ComponentDeliverableOut:
     await _gate_record(ctx)
-    raise _todo("A-09-T28")
+    from abacus.modules.assurance import component_auditors as ca
+
+    return _deliverable_out(
+        await ca.request_deliverable(ctx, auditor_id, title=body.title, due_on=body.due_on)
+    )
 
 
 @router.post(
@@ -1312,7 +1362,9 @@ async def group_review_deliverable(
     deliverable_id: UUID, ctx: Ctx, _key: IdempotencyKey
 ) -> ComponentDeliverableOut:
     await _gate_record(ctx)
-    raise _todo("A-09-T28")
+    from abacus.modules.assurance import component_auditors as ca
+
+    return _deliverable_out(await ca.review_deliverable(ctx, deliverable_id))
 
 
 @router.post(
@@ -1325,4 +1377,126 @@ async def group_return_deliverable(
     deliverable_id: UUID, body: DeliverableReturnIn, ctx: Ctx, _key: IdempotencyKey
 ) -> ComponentDeliverableOut:
     await _gate_record(ctx)
-    raise _todo("A-09-T28")
+    from abacus.modules.assurance import component_auditors as ca
+
+    return _deliverable_out(await ca.return_deliverable(ctx, deliverable_id, reason=body.reason))
+
+
+class ComponentEvaluationIn(BaseModel):
+    """A-09-T27 (DEC-5405): the evaluation facts a person records on AUD-35."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    questionnaire_received_on: Annotated[date | None, classified("internal")] = None
+    competence_evaluated: Annotated[bool, classified("internal")] = False
+    independence_confirmed: Annotated[bool, classified("internal")] = False
+    peer_review_obtained_on: Annotated[date | None, classified("internal")] = None
+
+
+@router.patch(
+    "/component-auditors/{auditor_id}/evaluation",
+    action="component_auditor.manage",
+    response_model=ComponentAuditorOut,
+    errors=(409,),
+)
+async def group_evaluate_component_auditor(
+    auditor_id: UUID, body: ComponentEvaluationIn, ctx: Ctx
+) -> ComponentAuditorOut:
+    await _gate_record(ctx)
+    from abacus.modules.assurance import component_auditors as ca
+
+    return _auditor_out(
+        await ca.evaluate(
+            ctx,
+            auditor_id,
+            questionnaire_received_on=body.questionnaire_received_on,
+            competence_evaluated=body.competence_evaluated,
+            independence_confirmed=body.independence_confirmed,
+            peer_review_obtained_on=body.peer_review_obtained_on,
+        )
+    )
+
+
+class SendUndoneOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    send_id: Annotated[UUID, Internal]
+    undone: Annotated[bool, Internal]
+
+
+@router.post(
+    "/component-instruction-sends/{send_id}/undo",
+    action="component_instructions.send",
+    response_model=SendUndoneOut,
+    errors=(409,),
+)
+async def group_undo_instructions_send(send_id: UUID, ctx: Ctx) -> SendUndoneOut:
+    """The sender's Undo inside 10 seconds: nothing is sent (409 `undo_window_closed` after)."""
+    await _gate_record(ctx)
+    from abacus.modules.assurance import component_auditors as ca
+
+    await ca.undo_send(ctx, send_id)
+    return SendUndoneOut(send_id=send_id, undone=True)
+
+
+def _auditor_out(a: object) -> ComponentAuditorOut:
+    from abacus.modules.assurance.component_auditors import AuditorView
+
+    v = cast(AuditorView, a)
+    return ComponentAuditorOut(
+        id=v.id,
+        organisation_name=v.organisation_name,
+        city=v.city,
+        component_id=v.component_id,
+        contact_name=v.contact_name,
+        questionnaire_received_on=v.questionnaire_received_on,
+        competence_evaluated_at=v.competence_evaluated_at,
+        independence_confirmed_at=v.independence_confirmed_at,
+        peer_review_obtained_on=v.peer_review_obtained_on,
+        make_reference=v.make_reference,
+        instructions_status=(
+            None
+            if v.instructions_status is None
+            else ComponentInstructionsStatus(v.instructions_status)
+        ),
+    )
+
+
+def _instructions_out(i: object, send_id: UUID | None = None) -> ComponentInstructionsOut:
+    from abacus.modules.assurance.component_auditors import InstructionsView
+
+    v = cast(InstructionsView, i)
+    return ComponentInstructionsOut(
+        id=v.id,
+        status=ComponentInstructionsStatus(v.status),
+        version_id=v.version_id,
+        sections=[
+            ComponentInstructionSectionOut(
+                number=s.number, title=s.title, body=s.body, needs_input=s.needs_input
+            )
+            for s in v.sections
+        ],
+        provenance=v.provenance,
+        send_blocked_reason=v.send_blocked_reason,
+        content_hash=v.content_hash,
+        send_id=send_id,
+    )
+
+
+def _deliverable_out(d: object) -> ComponentDeliverableOut:
+    from abacus.modules.assurance.component_auditors import DeliverableView
+
+    v = cast(DeliverableView, d)
+    return ComponentDeliverableOut(
+        id=v.id,
+        title=v.title,
+        due_on=v.due_on,
+        # Late and Returned are derived: the stored word, with days_late / return_reason beside.
+        status=ComponentDeliverableStatus(
+            v.status if v.status in ("expected", "received", "reviewed") else "expected"
+        ),
+        days_late=v.days_late,
+        received_at=v.received_at,
+        reviewed_by_name=v.reviewed_by_name,
+        return_reason=v.return_reason,
+    )

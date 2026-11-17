@@ -101,6 +101,11 @@ from abacus.modules.assurance.completion_targets import AUDIT_KINDS as COMPLETIO
 from abacus.modules.assurance.completion_targets import (
     audit_owners as completion_target_owners,
 )
+from abacus.modules.assurance.component_auditors import ACTIVITIES as COMPONENT_ACTIVITIES
+from abacus.modules.assurance.component_auditors import THREAD_ANCHORS as COMPONENT_THREAD_ANCHORS
+from abacus.modules.assurance.component_auditors import THREAD_KIND as COMPONENT_THREAD_KIND
+from abacus.modules.assurance.component_auditors import WORKFLOWS as COMPONENT_WORKFLOWS
+from abacus.modules.assurance.component_auditors import register as component_auditors_register
 
 # A-04-T08/T09: the pure materiality engine, for the recommender's evaluation (BOUND-001).
 from abacus.modules.assurance.compute import materiality as materiality_engine
@@ -268,6 +273,7 @@ from abacus.modules.assurance.trail_owners import audit_owners as trail_owners
 from abacus.modules.assurance.trial_balance import adopt as adopt_trial_balance
 from abacus.modules.assurance.trial_balance import tb_facts, tb_reviewables
 from abacus.modules.assurance.uncorrected_ack import register as register_uncorrected_ack
+from abacus.modules.collaboration.api import register_anchor
 from abacus.modules.engagements.api import work_item_engagement
 from abacus.modules.evidence.api import engagement_of_version
 from abacus.modules.identity.api import (
@@ -320,6 +326,9 @@ register_gates()  # A-04-T43, A-07-T15: G4 to G9 from assurance/gates.py
 register_acceptance_gate()
 # A-08-T22 (DEC-5401): the firm's SSARS variance policy (both legs).
 ssars_register()
+# A-09-T27 (DEC-5405): the instructions letter's C11 kind and the make-reference card.
+component_auditors_register()
+register_anchor(COMPONENT_THREAD_KIND, COMPONENT_THREAD_ANCHORS)  # type: ignore[arg-type] -- an AnchorProvider
 # A-08-T24 (DEC-5403): AUD-12's Begin fans out through assurance's runner.
 fieldwork_runs_register()
 # A-06-T10 (DEC-2062): a client's decision on an entry moves its misstatement.
@@ -420,6 +429,7 @@ WORKFLOWS: dict[type, str] = (
     | dict(FOLLOW_UP_WORKFLOWS)  # A-08-T18 (DEC-5324): the daily confirmation follow-up
     | dict(PULL_ALL_WORKFLOWS)  # A-09-T18 (DEC-5329): ConsolidationPullAll
     | dict(ANALYTICS_WORKFLOWS)  # A-08-T21 (DEC-5400): FluxAnalyticsWorkflow, interactive
+    | dict(COMPONENT_WORKFLOWS)  # A-09-T27 (DEC-5405): the instructions send after its Undo
 )
 ACTIVITIES: tuple[object, ...] = (
     *FORM5500_ACTIVITIES,
@@ -432,6 +442,7 @@ ACTIVITIES: tuple[object, ...] = (
     *FOLLOW_UP_ACTIVITIES,  # A-08-T18
     *PULL_ALL_ACTIVITIES,  # A-09-T18
     *ANALYTICS_ACTIVITIES,  # A-08-T21
+    *COMPONENT_ACTIVITIES,  # A-09-T27
 )
 # A-07-T42: the monthly seal verification sweep (a mismatch raises RB-29).
 # A-08-T18 (DEC-5324): the daily confirmation follow-up prompts.

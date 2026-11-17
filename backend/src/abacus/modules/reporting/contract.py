@@ -51,6 +51,7 @@ GeneratedDocumentKind = Literal[
     "run_trace_export",
     "ebp_supplemental_schedule",  # A-05-T58 remainder (0745): composed by code, like fs_package
     "client_entries_journal",  # R-02-T14 remainder (0763): a C18 item's lines, composed by code
+    "component_instructions",  # A-09-T27 (0944): the group's letter to a component auditor
 ]
 LayoutKey = Literal["letter", "consent_7216", "report", "notice_response", "package", "run_export"]
 RenderMode = Literal["draft", "final", "sample"]

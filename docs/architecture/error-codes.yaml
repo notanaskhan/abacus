@@ -546,6 +546,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.completion.CompletionInvalid
     - abacus.modules.fieldwork.completion.CompletionInvalid
+  component_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.component_auditors.ComponentNotAudited
+    summary: The component is not this work item's, or a component auditor already covers it.
   component_pm_invalid:
     status: 422
     raised_by:
@@ -838,6 +843,10 @@ codes:
     raised_by:
     - abacus.modules.reporting.deliverables.DeliverableInvalid
     summary: A publish missing what C10 needs (a title, pages, an audience, the actor's person).
+  deliverable_not_open:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.component_auditors.DeliverableClosed
   deliverable_version_ended:
     status: 409
     raised_by:
@@ -1687,6 +1696,24 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.ssars.NoInquiryProgram
+  instructions_already_sent:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.component_auditors.AlreadySent
+  instructions_needs_input:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.component_auditors.InstructionsIncomplete
+    summary: 'A section still Needs input: Send instructions is disabled with this reason.'
+  instructions_template_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.component_auditors.TemplateMissing
+    summary: The firm has no published `component_instructions` letter template (DB content).
+  instructions_version_stale:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.component_auditors.InstructionsStale
   intake_not_allowed:
     status: 409
     raised_by:
@@ -2948,6 +2975,11 @@ codes:
     - abacus.modules.tax.k1_treatments.ReasonRequired
     - abacus.modules.workpapers.core.ReasonRequired
     summary: Unpublishing a binder needs a reason.
+  recipient_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.component_auditors.RecipientInvalid
+    summary: The recipient must be the component auditor's engagement-partner contact.
   recipient_not_contact:
     status: 422
     raised_by:
@@ -3969,6 +4001,7 @@ codes:
     - abacus.modules.adjustments.decisions.UndoWindowClosed
     - abacus.modules.agents.follow_up_drafts.FollowUpUndoClosed
     - abacus.modules.agents.proposal_undo.UndoWindowClosed
+    - abacus.modules.assurance.component_auditors.UndoWindowClosed
     - abacus.modules.evidence.exports.ExportUndoClosed
     - abacus.modules.evidence.service.UndoWindowClosed
     - abacus.modules.requests.binders.UndoWindowClosed
