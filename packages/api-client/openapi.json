@@ -126843,6 +126843,1677 @@
         "title": "TaxConfirmationOut",
         "type": "object"
       },
+      "TaxDepthAaaOut": {
+        "additionalProperties": false,
+        "description": "TXP-13 a: AAA 1,488,200; allocation 70/30 per share per day; read-only once Accepted.",
+        "properties": {
+          "aaa": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Aaa",
+            "type": "string",
+            "x-tri": true
+          },
+          "e_and_p": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "E And P",
+            "type": "string",
+            "x-tri": true
+          },
+          "locked": {
+            "cls": "internal",
+            "title": "Locked",
+            "type": "boolean"
+          },
+          "oaa": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Oaa",
+            "type": "string",
+            "x-tri": true
+          },
+          "pti": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Pti",
+            "type": "string",
+            "x-tri": true
+          },
+          "shareholder_pcts": {
+            "cls": "internal",
+            "items": {
+              "cls": "restricted",
+              "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,8}0*$)\\d{0,3}\\.\\d{0,4}0*$)",
+              "type": "string",
+              "x-tri": true
+            },
+            "title": "Shareholder Pcts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "aaa",
+          "pti",
+          "e_and_p",
+          "oaa",
+          "shareholder_pcts",
+          "locked"
+        ],
+        "title": "TaxDepthAaaOut",
+        "type": "object"
+      },
+      "TaxDepthAssetChangeIn": {
+        "additionalProperties": false,
+        "description": "A C3 proposal (ghost value); applied only on a reviewer's approval.",
+        "properties": {
+          "acquired_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Acquired On",
+            "x-tri": true
+          },
+          "binding_contract_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Binding Contract On",
+            "x-tri": true
+          },
+          "bonus_pct": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Bonus Pct",
+            "x-tri": true
+          },
+          "citation_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "convention": {
+            "anyOf": [
+              {
+                "enum": [
+                  "MM",
+                  "HY",
+                  "MQ"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Convention"
+          },
+          "expected_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "recovery_class": {
+            "anyOf": [
+              {
+                "enum": [
+                  "3",
+                  "5",
+                  "7",
+                  "10",
+                  "15",
+                  "20",
+                  "27.5",
+                  "39"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Recovery Class"
+          },
+          "sec179": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Sec179",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "TaxDepthAssetChangeIn",
+        "type": "object"
+      },
+      "TaxDepthAssetIn": {
+        "additionalProperties": false,
+        "properties": {
+          "cost": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Cost",
+            "x-tri": true
+          },
+          "description": {
+            "cls": "restricted",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string",
+            "x-tri": true
+          },
+          "placed_in_service": {
+            "cls": "restricted",
+            "format": "date",
+            "title": "Placed In Service",
+            "type": "string",
+            "x-tri": true
+          },
+          "property_key": {
+            "cls": "internal",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Property Key",
+            "type": "string"
+          },
+          "recovery_class": {
+            "cls": "internal",
+            "enum": [
+              "3",
+              "5",
+              "7",
+              "10",
+              "15",
+              "20",
+              "27.5",
+              "39"
+            ],
+            "title": "Recovery Class",
+            "type": "string"
+          }
+        },
+        "required": [
+          "description",
+          "property_key",
+          "placed_in_service",
+          "cost",
+          "recovery_class"
+        ],
+        "title": "TaxDepthAssetIn",
+        "type": "object"
+      },
+      "TaxDepthAssetRowOut": {
+        "additionalProperties": false,
+        "properties": {
+          "accumulated": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Accumulated",
+            "type": "string",
+            "x-tri": true
+          },
+          "asset_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Asset Id",
+            "type": "string"
+          },
+          "bonus_check": {
+            "cls": "internal",
+            "enum": [
+              "tie",
+              "check",
+              "not_eligible"
+            ],
+            "title": "Bonus Check",
+            "type": "string"
+          },
+          "bonus_pct": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,8}0*$)\\d{0,3}\\.\\d{0,4}0*$)",
+            "title": "Bonus Pct",
+            "type": "string",
+            "x-tri": true
+          },
+          "cell_ref": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Cell Ref"
+          },
+          "convention": {
+            "cls": "internal",
+            "enum": [
+              "MM",
+              "HY",
+              "MQ"
+            ],
+            "title": "Convention",
+            "type": "string"
+          },
+          "cost": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Cost",
+            "type": "string",
+            "x-tri": true
+          },
+          "current": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Current",
+            "type": "string",
+            "x-tri": true
+          },
+          "description": {
+            "cls": "restricted",
+            "maxLength": 200,
+            "title": "Description",
+            "type": "string",
+            "x-tri": true
+          },
+          "flags": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Flags",
+            "type": "integer"
+          },
+          "method": {
+            "cls": "internal",
+            "enum": [
+              "SL",
+              "200DB",
+              "150DB"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "placed_in_service": {
+            "cls": "restricted",
+            "format": "date",
+            "title": "Placed In Service",
+            "type": "string",
+            "x-tri": true
+          },
+          "prior": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Prior",
+            "type": "string",
+            "x-tri": true
+          },
+          "property_key": {
+            "cls": "internal",
+            "maxLength": 60,
+            "title": "Property Key",
+            "type": "string"
+          },
+          "recovery_class": {
+            "cls": "internal",
+            "enum": [
+              "3",
+              "5",
+              "7",
+              "10",
+              "15",
+              "20",
+              "27.5",
+              "39"
+            ],
+            "title": "Recovery Class",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset_id",
+          "description",
+          "property_key",
+          "placed_in_service",
+          "cost",
+          "recovery_class",
+          "method",
+          "convention",
+          "bonus_pct",
+          "prior",
+          "current",
+          "accumulated",
+          "bonus_check"
+        ],
+        "title": "TaxDepthAssetRowOut",
+        "type": "object"
+      },
+      "TaxDepthBasisOut": {
+        "additionalProperties": false,
+        "description": "TXP-08 a: 4 of 5 reconcile; inside 17,914,500 vs outside 17,943,095.",
+        "properties": {
+          "inside_total": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Inside Total",
+            "type": "string",
+            "x-tri": true
+          },
+          "outside_total": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Outside Total",
+            "type": "string",
+            "x-tri": true
+          },
+          "partners": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TaxDepthPartnerBasisOut"
+            },
+            "title": "Partners",
+            "type": "array"
+          },
+          "reconciled": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Reconciled",
+            "type": "integer"
+          },
+          "section_754": {
+            "cls": "internal",
+            "enum": [
+              "open",
+              "sent_to_client",
+              "decided"
+            ],
+            "title": "Section 754",
+            "type": "string"
+          },
+          "view": {
+            "cls": "internal",
+            "enum": [
+              "basis",
+              "s752"
+            ],
+            "title": "View",
+            "type": "string"
+          }
+        },
+        "required": [
+          "view",
+          "partners",
+          "reconciled",
+          "inside_total",
+          "outside_total",
+          "section_754"
+        ],
+        "title": "TaxDepthBasisOut",
+        "type": "object"
+      },
+      "TaxDepthDecisionCardIn": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "const": "section_754",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subject_partner_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Subject Partner Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "subject_partner_id"
+        ],
+        "title": "TaxDepthDecisionCardIn",
+        "type": "object"
+      },
+      "TaxDepthDecisionOut": {
+        "additionalProperties": false,
+        "properties": {
+          "card_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Card Id",
+            "type": "string"
+          },
+          "deadline": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Deadline"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "open",
+              "sent_to_client",
+              "decided"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "card_id",
+          "status"
+        ],
+        "title": "TaxDepthDecisionOut",
+        "type": "object"
+      },
+      "TaxDepthDiagnosticOut": {
+        "additionalProperties": false,
+        "properties": {
+          "issue_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Issue Id"
+          },
+          "rule_key": {
+            "cls": "internal",
+            "maxLength": 80,
+            "title": "Rule Key",
+            "type": "string"
+          },
+          "severity": {
+            "cls": "internal",
+            "enum": [
+              "blocking",
+              "warning",
+              "clear"
+            ],
+            "title": "Severity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rule_key",
+          "severity"
+        ],
+        "title": "TaxDepthDiagnosticOut",
+        "type": "object"
+      },
+      "TaxDepthDiagnosticsOut": {
+        "additionalProperties": false,
+        "properties": {
+          "blocking": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Blocking",
+            "type": "integer"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TaxDepthDiagnosticOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "blocking"
+        ],
+        "title": "TaxDepthDiagnosticsOut",
+        "type": "object"
+      },
+      "TaxDepthFieldOut": {
+        "additionalProperties": false,
+        "properties": {
+          "field_key": {
+            "cls": "internal",
+            "maxLength": 80,
+            "title": "Field Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "maxLength": 120,
+            "title": "Label",
+            "type": "string"
+          },
+          "rect": {
+            "cls": "internal",
+            "items": {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "title": "Rect",
+            "type": "array"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Value",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "field_key",
+          "label",
+          "rect"
+        ],
+        "title": "TaxDepthFieldOut",
+        "type": "object"
+      },
+      "TaxDepthFieldsOut": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TaxDepthFieldOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "TaxDepthFieldsOut",
+        "type": "object"
+      },
+      "TaxDepthFixedAssetsOut": {
+        "additionalProperties": false,
+        "description": "TXP-03 a: cost 15,752,000; accumulated 1,891,667 + 733,500 = 2,625,167.",
+        "properties": {
+          "accumulated": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Accumulated",
+            "type": "string",
+            "x-tri": true
+          },
+          "bonus_eligibility": {
+            "cls": "internal",
+            "enum": [
+              "tie",
+              "off",
+              "check"
+            ],
+            "title": "Bonus Eligibility",
+            "type": "string"
+          },
+          "book_equals_tax": {
+            "cls": "internal",
+            "enum": [
+              "tie",
+              "off",
+              "check"
+            ],
+            "title": "Book Equals Tax",
+            "type": "string"
+          },
+          "by_property": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TaxDepthPropertyOut"
+            },
+            "title": "By Property",
+            "type": "array"
+          },
+          "current": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Current",
+            "type": "string",
+            "x-tri": true
+          },
+          "depreciable_cost": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Depreciable Cost",
+            "type": "string",
+            "x-tri": true
+          },
+          "dispositions": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Dispositions",
+            "type": "integer"
+          },
+          "engine_version": {
+            "cls": "internal",
+            "maxLength": 20,
+            "title": "Engine Version",
+            "type": "string"
+          },
+          "inputs_hash": {
+            "cls": "internal",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Inputs Hash",
+            "type": "string"
+          },
+          "land": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Land",
+            "type": "string",
+            "x-tri": true
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TaxDepthAssetRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "ties_to_tb": {
+            "cls": "internal",
+            "enum": [
+              "tie",
+              "off",
+              "check"
+            ],
+            "title": "Ties To Tb",
+            "type": "string"
+          },
+          "view": {
+            "cls": "internal",
+            "enum": [
+              "register",
+              "by_property",
+              "dispositions"
+            ],
+            "title": "View",
+            "type": "string"
+          }
+        },
+        "required": [
+          "view",
+          "rows",
+          "depreciable_cost",
+          "land",
+          "current",
+          "accumulated",
+          "ties_to_tb",
+          "book_equals_tax",
+          "bonus_eligibility",
+          "dispositions",
+          "engine_version",
+          "inputs_hash"
+        ],
+        "title": "TaxDepthFixedAssetsOut",
+        "type": "object"
+      },
+      "TaxDepthFormPageOut": {
+        "additionalProperties": false,
+        "properties": {
+          "blocking": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Blocking",
+            "type": "integer"
+          },
+          "caption": {
+            "cls": "internal",
+            "maxLength": 120,
+            "title": "Caption",
+            "type": "string"
+          },
+          "page_key": {
+            "cls": "internal",
+            "pattern": "^[a-z0-9_]{2,40}$",
+            "title": "Page Key",
+            "type": "string"
+          },
+          "rendered": {
+            "cls": "internal",
+            "title": "Rendered",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "page_key",
+          "caption",
+          "blocking",
+          "rendered"
+        ],
+        "title": "TaxDepthFormPageOut",
+        "type": "object"
+      },
+      "TaxDepthFormPagesOut": {
+        "additionalProperties": false,
+        "description": "Watermarked \"Draft \u2014 not for filing\" from an approved checkpoint (DEC-78).",
+        "properties": {
+          "checkpoint_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Checkpoint Id",
+            "type": "string"
+          },
+          "pages": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TaxDepthFormPageOut"
+            },
+            "title": "Pages",
+            "type": "array"
+          },
+          "watermark": {
+            "cls": "internal",
+            "const": "Draft \u2014 not for filing",
+            "title": "Watermark",
+            "type": "string"
+          }
+        },
+        "required": [
+          "checkpoint_id",
+          "pages",
+          "watermark"
+        ],
+        "title": "TaxDepthFormPagesOut",
+        "type": "object"
+      },
+      "TaxDepthFunctionalExpensesOut": {
+        "additionalProperties": false,
+        "description": "TXP-13 c: Part IX 3,210,000 + 486,000 + 318,000 = 4,014,000; program 80.0%; public\nsupport 87.4%.",
+        "properties": {
+          "fundraising": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Fundraising",
+            "type": "string",
+            "x-tri": true
+          },
+          "management": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Management",
+            "type": "string",
+            "x-tri": true
+          },
+          "program": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Program",
+            "type": "string",
+            "x-tri": true
+          },
+          "program_ratio": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,8}0*$)\\d{0,3}\\.\\d{0,4}0*$)",
+            "title": "Program Ratio",
+            "type": "string",
+            "x-tri": true
+          },
+          "public_support": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,8}0*$)\\d{0,3}\\.\\d{0,4}0*$)",
+            "title": "Public Support",
+            "type": "string",
+            "x-tri": true
+          },
+          "total": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Total",
+            "type": "string",
+            "x-tri": true
+          },
+          "view": {
+            "cls": "internal",
+            "enum": [
+              "part_ix",
+              "allocation_basis"
+            ],
+            "title": "View",
+            "type": "string"
+          }
+        },
+        "required": [
+          "view",
+          "program",
+          "management",
+          "fundraising",
+          "total",
+          "program_ratio",
+          "public_support"
+        ],
+        "title": "TaxDepthFunctionalExpensesOut",
+        "type": "object"
+      },
+      "TaxDepthK1PreviewOut": {
+        "additionalProperties": false,
+        "properties": {
+          "box_2": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Box 2",
+            "type": "string",
+            "x-tri": true
+          },
+          "name": {
+            "cls": "restricted",
+            "maxLength": 200,
+            "title": "Name",
+            "type": "string",
+            "x-tri": true
+          },
+          "partner_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Partner Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "partner_id",
+          "name",
+          "box_2"
+        ],
+        "title": "TaxDepthK1PreviewOut",
+        "type": "object"
+      },
+      "TaxDepthK1PreviewsOut": {
+        "additionalProperties": false,
+        "description": "\u03a3 box 2 = 1,231,600 = Schedule K line 2 (TAX-11 c).",
+        "properties": {
+          "box_2_total": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Box 2 Total",
+            "type": "string",
+            "x-tri": true
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TaxDepthK1PreviewOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "schedule_k_line_2": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Schedule K Line 2",
+            "type": "string",
+            "x-tri": true
+          },
+          "tally": {
+            "cls": "internal",
+            "enum": [
+              "tie",
+              "off",
+              "check"
+            ],
+            "title": "Tally",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "box_2_total",
+          "schedule_k_line_2",
+          "tally"
+        ],
+        "title": "TaxDepthK1PreviewsOut",
+        "type": "object"
+      },
+      "TaxDepthM3RowOut": {
+        "additionalProperties": false,
+        "description": "(a) + (b) + (c) = (d) on every row.",
+        "properties": {
+          "income_per_books": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Income Per Books",
+            "type": "string",
+            "x-tri": true
+          },
+          "label": {
+            "cls": "internal",
+            "maxLength": 200,
+            "title": "Label",
+            "type": "string"
+          },
+          "line": {
+            "cls": "internal",
+            "maxLength": 20,
+            "title": "Line",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Note",
+            "x-tri": true
+          },
+          "per_return": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Per Return",
+            "type": "string",
+            "x-tri": true
+          },
+          "permanent": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Permanent",
+            "type": "string",
+            "x-tri": true
+          },
+          "temporary": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Temporary",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "line",
+          "label",
+          "income_per_books",
+          "temporary",
+          "permanent",
+          "per_return"
+        ],
+        "title": "TaxDepthM3RowOut",
+        "type": "object"
+      },
+      "TaxDepthPartnerBasisOut": {
+        "additionalProperties": false,
+        "properties": {
+          "inside": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Inside",
+            "type": "string",
+            "x-tri": true
+          },
+          "name": {
+            "cls": "restricted",
+            "maxLength": 200,
+            "title": "Name",
+            "type": "string",
+            "x-tri": true
+          },
+          "other_nonrecourse": {
+            "anyOf": [
+              {
+                "cls": "restricted",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string",
+                "x-tri": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Other Nonrecourse"
+          },
+          "outside": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Outside",
+            "type": "string",
+            "x-tri": true
+          },
+          "partner_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Partner Id",
+            "type": "string"
+          },
+          "qualified_nonrecourse": {
+            "anyOf": [
+              {
+                "cls": "restricted",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string",
+                "x-tri": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualified Nonrecourse"
+          },
+          "tally": {
+            "cls": "internal",
+            "enum": [
+              "tie",
+              "off",
+              "check"
+            ],
+            "title": "Tally",
+            "type": "string"
+          }
+        },
+        "required": [
+          "partner_id",
+          "name",
+          "inside",
+          "outside",
+          "tally"
+        ],
+        "title": "TaxDepthPartnerBasisOut",
+        "type": "object"
+      },
+      "TaxDepthPropertyOut": {
+        "additionalProperties": false,
+        "description": "By property (TXP-03 b; Form 8825): Elm Street 169,500 \u00b7 Larimer 360,000 \u00b7 Bergen 204,000.",
+        "properties": {
+          "depreciation": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Depreciation",
+            "type": "string",
+            "x-tri": true
+          },
+          "land": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Land",
+            "type": "string",
+            "x-tri": true
+          },
+          "name": {
+            "cls": "restricted",
+            "maxLength": 200,
+            "title": "Name",
+            "type": "string",
+            "x-tri": true
+          },
+          "property_key": {
+            "cls": "internal",
+            "maxLength": 60,
+            "title": "Property Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "property_key",
+          "name",
+          "land",
+          "depreciation"
+        ],
+        "title": "TaxDepthPropertyOut",
+        "type": "object"
+      },
+      "TaxDepthProposalOut": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "fixed_asset_change",
+              "sourcing_position"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "proposal_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Proposal Id",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "proposal_id",
+          "kind",
+          "version"
+        ],
+        "title": "TaxDepthProposalOut",
+        "type": "object"
+      },
+      "TaxDepthProvisionOut": {
+        "additionalProperties": false,
+        "description": "TXP-13 b: current 2,134,650 + deferred 122,550 = 2,257,200 at an ETR of 28.9%.",
+        "properties": {
+          "current": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Current",
+            "type": "string",
+            "x-tri": true
+          },
+          "deferred": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Deferred",
+            "type": "string",
+            "x-tri": true
+          },
+          "effective_rate": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,8}0*$)\\d{0,3}\\.\\d{0,4}0*$)",
+            "title": "Effective Rate",
+            "type": "string",
+            "x-tri": true
+          },
+          "rate_reconciliation_tally": {
+            "cls": "internal",
+            "enum": [
+              "tie",
+              "off",
+              "check"
+            ],
+            "title": "Rate Reconciliation Tally",
+            "type": "string"
+          },
+          "total": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Total",
+            "type": "string",
+            "x-tri": true
+          },
+          "unclassified": {
+            "anyOf": [
+              {
+                "cls": "restricted",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string",
+                "x-tri": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unclassified"
+          },
+          "view": {
+            "cls": "internal",
+            "enum": [
+              "provision",
+              "rate_reconciliation",
+              "deferred"
+            ],
+            "title": "View",
+            "type": "string"
+          }
+        },
+        "required": [
+          "view",
+          "current",
+          "deferred",
+          "total",
+          "effective_rate",
+          "rate_reconciliation_tally"
+        ],
+        "title": "TaxDepthProvisionOut",
+        "type": "object"
+      },
+      "TaxDepthPtetIn": {
+        "additionalProperties": false,
+        "properties": {
+          "election": {
+            "cls": "internal",
+            "enum": [
+              "elected",
+              "recommend",
+              "not_elected"
+            ],
+            "title": "Election",
+            "type": "string"
+          },
+          "expected_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "payment_amount": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                    "type": "string"
+                  }
+                ],
+                "cls": "restricted",
+                "x-tri": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Amount"
+          },
+          "payment_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Payment On",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "election",
+          "expected_version"
+        ],
+        "title": "TaxDepthPtetIn",
+        "type": "object"
+      },
+      "TaxDepthRunOut": {
+        "additionalProperties": false,
+        "properties": {
+          "run_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "TaxDepthRunOut",
+        "type": "object"
+      },
+      "TaxDepthScheduleOut": {
+        "additionalProperties": false,
+        "properties": {
+          "book_income": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Book Income",
+            "type": "string",
+            "x-tri": true
+          },
+          "filed": {
+            "cls": "internal",
+            "title": "Filed",
+            "type": "boolean"
+          },
+          "required": {
+            "cls": "internal",
+            "title": "Required",
+            "type": "boolean"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TaxDepthM3RowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "schedule": {
+            "cls": "internal",
+            "enum": [
+              "m3",
+              "m1"
+            ],
+            "title": "Schedule",
+            "type": "string"
+          },
+          "total_assets": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Total Assets",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "schedule",
+          "required",
+          "total_assets",
+          "book_income",
+          "rows",
+          "filed"
+        ],
+        "title": "TaxDepthScheduleOut",
+        "type": "object"
+      },
+      "TaxDepthSendToClientIn": {
+        "additionalProperties": false,
+        "properties": {
+          "contact_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Contact Id",
+            "type": "string"
+          },
+          "template_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Template Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "contact_id",
+          "template_version_id"
+        ],
+        "title": "TaxDepthSendToClientIn",
+        "type": "object"
+      },
+      "TaxDepthStateOut": {
+        "additionalProperties": false,
+        "properties": {
+          "apportionment_pct": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,8}0*$)\\d{0,3}\\.\\d{0,4}0*$)",
+            "title": "Apportionment Pct",
+            "type": "string",
+            "x-tri": true
+          },
+          "mapped": {
+            "cls": "internal",
+            "title": "Mapped",
+            "type": "boolean"
+          },
+          "nexus_conclusion": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Nexus Conclusion",
+            "x-tri": true
+          },
+          "ptet": {
+            "cls": "internal",
+            "enum": [
+              "elected",
+              "recommend",
+              "not_elected"
+            ],
+            "title": "Ptet",
+            "type": "string"
+          },
+          "ptet_paid": {
+            "anyOf": [
+              {
+                "cls": "restricted",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string",
+                "x-tri": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ptet Paid"
+          },
+          "ptet_paid_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Ptet Paid On",
+            "x-tri": true
+          },
+          "state": {
+            "cls": "internal",
+            "pattern": "^[A-Z]{2}$",
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "apportionment_pct",
+          "ptet",
+          "mapped"
+        ],
+        "title": "TaxDepthStateOut",
+        "type": "object"
+      },
+      "TaxDepthStatesOut": {
+        "additionalProperties": false,
+        "description": "TXP-09 a: IL 46.0 + CO 31.5 + NY 22.5 = 100.0; PTET 64,096 paid Mar 12, 2026.",
+        "properties": {
+          "apportionment_tally": {
+            "cls": "internal",
+            "enum": [
+              "tie",
+              "off",
+              "check"
+            ],
+            "title": "Apportionment Tally",
+            "type": "string"
+          },
+          "paid_count": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Paid Count",
+            "type": "integer"
+          },
+          "payable_count": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Payable Count",
+            "type": "integer"
+          },
+          "sourcing": {
+            "anyOf": [
+              {
+                "enum": [
+                  "proposed",
+                  "approved",
+                  "rejected",
+                  "undone"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Sourcing"
+          },
+          "states": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TaxDepthStateOut"
+            },
+            "title": "States",
+            "type": "array"
+          },
+          "view": {
+            "cls": "internal",
+            "enum": [
+              "apportionment",
+              "credits",
+              "nexus"
+            ],
+            "title": "View",
+            "type": "string"
+          }
+        },
+        "required": [
+          "view",
+          "states",
+          "apportionment_tally",
+          "sourcing",
+          "paid_count",
+          "payable_count"
+        ],
+        "title": "TaxDepthStatesOut",
+        "type": "object"
+      },
+      "TaxDepthTraceOut": {
+        "additionalProperties": false,
+        "description": "Form field \u2192 workbook cell \u2192 TB line (SHL-09).",
+        "properties": {
+          "cell_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Cell Ref"
+          },
+          "field_key": {
+            "cls": "internal",
+            "title": "Field Key",
+            "type": "string"
+          },
+          "tb_lines": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Tb Lines",
+            "type": "array"
+          }
+        },
+        "required": [
+          "field_key"
+        ],
+        "title": "TaxDepthTraceOut",
+        "type": "object"
+      },
+      "TaxDepthUndoIn": {
+        "additionalProperties": false,
+        "properties": {
+          "decision_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Decision Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision_id"
+        ],
+        "title": "TaxDepthUndoIn",
+        "type": "object"
+      },
       "TaxElectionIn": {
         "additionalProperties": false,
         "properties": {
@@ -199973,6 +201644,154 @@
           "review"
         ],
         "x-abacus-action": "decision.reassess"
+      }
+    },
+    "/v1/decision-cards/{card_id}/send-to-client": {
+      "post": {
+        "description": "One POR-04 request from the firm's template; 409 `decision_already_sent`.",
+        "operationId": "send_decision",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "card_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Card Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaxDepthSendToClientIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthDecisionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Send Decision Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "decision.send_to_client"
       }
     },
     "/v1/delivery-packets/{packet_id}": {
@@ -327488,6 +329307,153 @@
         "x-abacus-action": "tax_return.assign"
       }
     },
+    "/v1/tax-returns/{return_id}/basis": {
+      "get": {
+        "operationId": "basis",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "default": "basis",
+              "enum": [
+                "basis",
+                "s752"
+              ],
+              "title": "View",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "partner",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Partner"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthBasisOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Basis Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "basis.read"
+      }
+    },
     "/v1/tax-returns/{return_id}/capital-accounts": {
       "get": {
         "description": "T-05-T34: 05's partner rows (tax basis), server totals and the Item L facts.",
@@ -327624,6 +329590,143 @@
           "tax workbook"
         ],
         "x-abacus-action": "workbook.read"
+      }
+    },
+    "/v1/tax-returns/{return_id}/decision-cards": {
+      "post": {
+        "description": "The \u00a7754 card with options computed by code.",
+        "operationId": "raise_decision",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaxDepthDecisionCardIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthDecisionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Raise Decision Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "decision.raise"
       }
     },
     "/v1/tax-returns/{return_id}/deliverables:publish": {
@@ -327987,6 +330090,122 @@
           "tax-engine"
         ],
         "x-abacus-action": "delivery_packet.prepare"
+      }
+    },
+    "/v1/tax-returns/{return_id}/diagnostics": {
+      "get": {
+        "operationId": "diagnostics",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthDiagnosticsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Diagnostics Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "form_preview.read"
       }
     },
     "/v1/tax-returns/{return_id}/efile-envelope": {
@@ -328642,6 +330861,131 @@
         "x-abacus-action": "delivery_packet.prepare"
       }
     },
+    "/v1/tax-returns/{return_id}/fields/{field_key}/trace": {
+      "get": {
+        "operationId": "field_trace",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "field_key",
+            "required": true,
+            "schema": {
+              "title": "Field Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthTraceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Field Trace Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "form_preview.read"
+      }
+    },
     "/v1/tax-returns/{return_id}/final-approval": {
       "get": {
         "description": "Eligibility facts and blockers (T-01-T18; TAX-02, TAX-09 a/a2).",
@@ -328883,6 +331227,1200 @@
           "tax-engine"
         ],
         "x-abacus-action": "tax_return.approve"
+      }
+    },
+    "/v1/tax-returns/{return_id}/fixed-assets": {
+      "get": {
+        "operationId": "fixed_assets",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "default": "register",
+              "enum": [
+                "register",
+                "by_property",
+                "dispositions"
+              ],
+              "title": "View",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthFixedAssetsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Fixed Assets Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "fixed_asset.read"
+      },
+      "post": {
+        "description": "409 `return_locked` once Accepted.",
+        "operationId": "fixed_asset_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaxDepthAssetIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthAssetRowOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Fixed Asset Create Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "fixed_asset.create"
+      }
+    },
+    "/v1/tax-returns/{return_id}/fixed-assets/{asset_id}": {
+      "get": {
+        "operationId": "fixed_asset",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Asset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthAssetRowOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Fixed Asset Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "fixed_asset.read"
+      }
+    },
+    "/v1/tax-returns/{return_id}/fixed-assets/{asset_id}/changes": {
+      "post": {
+        "description": "A ghost value; nothing changes until a reviewer approves (C3).",
+        "operationId": "fixed_asset_change",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Asset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaxDepthAssetChangeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthProposalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Fixed Asset Change Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "fixed_asset.propose_change"
+      }
+    },
+    "/v1/tax-returns/{return_id}/form-pages": {
+      "get": {
+        "description": "409 `form_template_missing` for forms without a face template (DV-9).",
+        "operationId": "form_pages",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "checkpoint",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Checkpoint"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthFormPagesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Form Pages Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "form_preview.read"
+      }
+    },
+    "/v1/tax-returns/{return_id}/form-pages/{page_key}/fields": {
+      "get": {
+        "operationId": "form_fields",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "page_key",
+            "required": true,
+            "schema": {
+              "title": "Page Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthFieldsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Form Fields Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "form_preview.read"
+      }
+    },
+    "/v1/tax-returns/{return_id}/form-pages:download-draft": {
+      "post": {
+        "description": "Watermarked PDF; fresh MFA; one `form_preview.downloaded` audit event (DEC-60).",
+        "operationId": "download_draft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Download Draft",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Download Draft Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "form_preview.download_draft"
+      }
+    },
+    "/v1/tax-returns/{return_id}/functional-expenses": {
+      "get": {
+        "operationId": "functional_expenses",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "default": "part_ix",
+              "enum": [
+                "part_ix",
+                "allocation_basis"
+              ],
+              "title": "View",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthFunctionalExpensesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Functional Expenses Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "other_workpapers.read"
+      }
+    },
+    "/v1/tax-returns/{return_id}/functional-expenses/allocation-runs": {
+      "post": {
+        "operationId": "allocation_run",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthRunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Allocation Run Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "allocation_run.start"
       }
     },
     "/v1/tax-returns/{return_id}/general-information": {
@@ -330556,6 +334094,122 @@
         "x-abacus-action": "k1_package.share_internal"
       }
     },
+    "/v1/tax-returns/{return_id}/k1-previews": {
+      "get": {
+        "operationId": "k1_previews",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthK1PreviewsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "K1 Previews Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "k1_package.read"
+      }
+    },
     "/v1/tax-returns/{return_id}/mappings": {
       "post": {
         "description": "TXP-02's line picker (O1). A-03's `account_mapping.edit` requires independence and is an\naudit verb, so the pick is authorised as `workbook.edit` on the return (a person's verb).\n\nDEC-4629: proposals are the agent's (ADR-161), so a person's pick is not one. The tax\nreviewer's pick maps the account (human only, audited); anyone else's raises a review note\nproposing the line to the reviewer and maps nothing.",
@@ -331870,6 +335524,274 @@
         "x-abacus-action": "tax_return.read"
       }
     },
+    "/v1/tax-returns/{return_id}/provision": {
+      "get": {
+        "operationId": "provision",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "default": "provision",
+              "enum": [
+                "provision",
+                "rate_reconciliation",
+                "deferred"
+              ],
+              "title": "View",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthProvisionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Provision Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "other_workpapers.read"
+      }
+    },
+    "/v1/tax-returns/{return_id}/provision/items/{item_id}/explain": {
+      "post": {
+        "description": "An SHL-15 issue; the classification arrives as a proposal (zero gateway calls without\nconsent).",
+        "operationId": "provision_explain",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthRunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Provision Explain Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "issue.create"
+      }
+    },
     "/v1/tax-returns/{return_id}/reconciliation": {
       "get": {
         "description": "T-05-T61 (DEC-4934): the engine's approved figures beside the workbook's, by code.",
@@ -331992,6 +335914,122 @@
           "tax workbook"
         ],
         "x-abacus-action": "tax_reconciliation.read"
+      }
+    },
+    "/v1/tax-returns/{return_id}/schedules/aaa": {
+      "get": {
+        "operationId": "aaa",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthAaaOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Aaa Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "other_workpapers.read"
       }
     },
     "/v1/tax-returns/{return_id}/schedules/k": {
@@ -332248,6 +336286,123 @@
         "x-abacus-action": "workbook.read"
       }
     },
+    "/v1/tax-returns/{return_id}/schedules/m1": {
+      "get": {
+        "description": "The M-1 reference: never filed beside an M-3.",
+        "operationId": "m1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthScheduleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "M1 Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "book_tax.read"
+      }
+    },
     "/v1/tax-returns/{return_id}/schedules/m2": {
       "get": {
         "description": "T-05-T34: 07 as drafted, or rebuilt from 05's partner totals (what the fix writes).",
@@ -332367,6 +336522,122 @@
           "tax workbook"
         ],
         "x-abacus-action": "workbook.read"
+      }
+    },
+    "/v1/tax-returns/{return_id}/schedules/m3": {
+      "get": {
+        "operationId": "m3",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthScheduleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "M3 Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "book_tax.read"
       }
     },
     "/v1/tax-returns/{return_id}/sections": {
@@ -332621,6 +336892,545 @@
           "tax workbook"
         ],
         "x-abacus-action": "sign_off.create"
+      }
+    },
+    "/v1/tax-returns/{return_id}/states": {
+      "get": {
+        "operationId": "states",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "default": "apportionment",
+              "enum": [
+                "apportionment",
+                "credits",
+                "nexus"
+              ],
+              "title": "View",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthStatesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "States Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "states.read"
+      }
+    },
+    "/v1/tax-returns/{return_id}/states/sourcing/undo": {
+      "post": {
+        "description": "`sourcing.undone` inside the 10-second window (DEC-24).",
+        "operationId": "sourcing_undo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaxDepthUndoIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthProposalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Sourcing Undo Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "sourcing.approve"
+      }
+    },
+    "/v1/tax-returns/{return_id}/states/sourcing:propose": {
+      "post": {
+        "operationId": "sourcing_propose",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthProposalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Sourcing Propose Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "sourcing.propose"
+      }
+    },
+    "/v1/tax-returns/{return_id}/states/{state}/ptet": {
+      "patch": {
+        "operationId": "ptet",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "state",
+            "required": true,
+            "schema": {
+              "title": "State",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaxDepthPtetIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthStateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Ptet Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "ptet.update"
       }
     },
     "/v1/tax-returns/{return_id}/transitions": {

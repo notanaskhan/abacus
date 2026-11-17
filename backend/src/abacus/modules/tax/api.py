@@ -62,6 +62,7 @@ from abacus.modules.tax.due_dates import (
 from abacus.modules.tax.engine_contract import engine_router, portal_filing_router
 from abacus.modules.tax.engine_import import import_file as import_engine_file
 from abacus.modules.tax.engine_sync import register as register_engine_sync
+from abacus.modules.tax.entity_depth_contract import entity_depth_router
 from abacus.modules.tax.estate_contract import estate_router
 from abacus.modules.tax.estimates import (
     create_estimate_schedule,
@@ -159,6 +160,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     workbook_router,  # tax workbook v1, entity returns (T-05-T06 stub; dark)
     fiduciary_router,  # FW-1 fiduciary workpapers, TXT-01 to TXT-03 (T-07-T05 stub; dark)
     estate_router,  # EW-1 estate workpapers, TXT-04 (T-07-T05 stub; dark)
+    entity_depth_router,  # T-06-T07: entity depth, other workpapers, form pages (stubs; dark)
 )
 
 
