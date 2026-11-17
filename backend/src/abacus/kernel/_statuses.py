@@ -385,6 +385,37 @@ class ProposedEntryStatus(StrEnum):
     RECORDED_EXTERNALLY = "recorded_externally"
 
 
+class TbHandoffStatus(StrEnum):
+    HANDED_OFF = "handed_off"
+    SUPERSEDED = "superseded"
+    # derived, never stored: not_available, needs_review, ready
+
+
+class SourcingPositionStatus(StrEnum):
+    PROPOSED = "proposed"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    UNDONE = "undone"
+
+
+class PtetElectionStatus(StrEnum):
+    ELECTED = "elected"
+    RECOMMEND = "recommend"
+    NOT_ELECTED = "not_elected"
+
+
+class Section754DecisionStatus(StrEnum):
+    OPEN = "open"
+    SENT_TO_CLIENT = "sent_to_client"
+    DECIDED = "decided"
+
+
+class FormDiagnosticStatus(StrEnum):
+    BLOCKING = "blocking"
+    WARNING = "warning"
+    CLEAR = "clear"
+
+
 class PostingBatchStatus(StrEnum):
     PROPOSED = "proposed"
     POSTING = "posting"
@@ -1934,6 +1965,31 @@ STORED: dict[str, tuple[str, ...]] = {
         "failed_post",
         "reversed",
         "recorded_externally",
+    ),
+    "tb_handoff": (
+        "handed_off",
+        "superseded",
+    ),
+    "sourcing_position": (
+        "proposed",
+        "approved",
+        "rejected",
+        "undone",
+    ),
+    "ptet_election": (
+        "elected",
+        "recommend",
+        "not_elected",
+    ),
+    "section_754_decision": (
+        "open",
+        "sent_to_client",
+        "decided",
+    ),
+    "form_diagnostic": (
+        "blocking",
+        "warning",
+        "clear",
     ),
     "posting_batch": (
         "proposed",

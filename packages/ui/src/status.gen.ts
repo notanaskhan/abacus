@@ -1680,6 +1680,131 @@ export const STATUS_REGISTRY = {
       }
     }
   },
+  "tb_handoff": {
+    "not_available": {
+      "label": "Not available",
+      "variant": "muted",
+      "terminal": false,
+      "derived": true
+    },
+    "needs_review": {
+      "label": "Needs review",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "ready": {
+      "label": "Ready",
+      "variant": "state",
+      "terminal": false,
+      "derived": true
+    },
+    "handed_off": {
+      "label": "Handed off",
+      "variant": "green",
+      "terminal": false,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "sourcing_position": {
+    "proposed": {
+      "label": "Proposed",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "in_review": "Sourcing · In review"
+      }
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "by": "Approved · {initials} · {date}"
+      }
+    },
+    "rejected": {
+      "label": "Rejected",
+      "variant": "soon",
+      "terminal": true,
+      "derived": false
+    },
+    "undone": {
+      "label": "Undone",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "ptet_election": {
+    "elected": {
+      "label": "Elected",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "recommend": {
+      "label": "Recommend",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "not_elected": {
+      "label": "Not elected",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "section_754_decision": {
+    "open": {
+      "label": "Open",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "sent_to_client": {
+      "label": "Sent to client",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "decided": {
+      "label": "Decided",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "form_diagnostic": {
+    "blocking": {
+      "label": "Blocking",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "warning": {
+      "label": "Warning",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "clear": {
+      "label": "Clear",
+      "variant": null,
+      "terminal": true,
+      "derived": false,
+      "disc": "check_olive"
+    }
+  },
   "posting_batch": {
     "proposed": {
       "label": "Proposed",

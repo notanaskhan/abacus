@@ -732,6 +732,20 @@ C-02-T03 (DF-19, DF-23, DF-31; SPEC-700, SPEC-701; DEC-5502). "Posting batch" is
 | Information return | A 1099-NEC or 1099-MISC line prepared from vendor payments; exported as an IRIS file a person uploads, never transmitted. | `information_returns`, `information_return_batches` | — |
 | W-9 request | A portal request to the client for a vendor's signed Form W-9, sent by a person. | `w9_requests` | — |
 
+## New terms: entity return depth and relationships (T-06-T04)
+
+T-06-T04 (SPEC-702; DEC-5512). UI words in brackets where they differ.
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| TB hand-off ("Hand-off to tax") | An immutable version of a released or locked source's TB published to a tax return as its starting TB (C12). | `tb_handoffs` | "Export for Tax" |
+| External party | A person or organisation in a client's relationships who is not a client of the firm ("Not a Brightwater Hale client"). | `external_parties` | — |
+| Sourcing position | The firm's approved position on where a partnership's income is sourced across states. | `sourcing_positions` | — |
+| PTET election | A pass-through entity's election to pay state tax at the entity level, with its payments and partner credits. | `ptet_elections`, `ptet_payments` | — |
+| §754 decision | The client owner's decision whether the partnership elects §754, sent by the firm and decided by the client. | `section_754_decision` | — |
+| Form preview ("Form preview") | A watermarked draft render of a return's forms from an approved checkpoint; never a filed form. | `form_preview` | "filed form", "final return" |
+| Relationship graph layout | One user's saved node positions on a client's relationships map; never audited. | `relationship_graph_layouts` | — |
+
 ## New terms: platform console, plan & usage, support (G-04-T02)
 
 | Term | Meaning | Code name | Don't use |
