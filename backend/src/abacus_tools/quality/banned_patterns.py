@@ -2462,6 +2462,22 @@ def _check_iris_never_transmit(src: SourceFile) -> Iterator[Finding]:
             yield Finding(getattr(node, "lineno", 0), f"{name}: a TCC identifier (IRIS-001)")
 
 
+# T-06-T03 (SPEC-702 F6; DEC-5511): HANDOFF-001, only ledger/tb_handoff.py writes a TB hand-off.
+_HANDOFF_WRITE = re.compile(
+    r"\b(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+tb_handoff", re.IGNORECASE
+)
+
+
+def _check_handoff_writer(src: SourceFile) -> Iterator[Finding]:
+    for node in ast.walk(src.tree):
+        if (
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and _HANDOFF_WRITE.search(node.value)
+        ):
+            yield Finding(node.lineno, "a TB hand-off write outside ledger/tb_handoff.py")
+
+
 # T-01-T07 (T-01 §4.9): only tax/approval.py records a tax return's `final_approval` sign-off.
 def _check_tax_final_approval(src: SourceFile) -> Iterator[Finding]:
     for call in _calls(src.tree):
@@ -3377,6 +3393,14 @@ RULES: list[Rule | TreeRule] = [
         adr="R-04, ADR-344",
         check=_check_iris_never_transmit,
         include=("src/abacus/*",),
+    ),
+    Rule(
+        id="HANDOFF-001",
+        description="Only ledger/tb_handoff.py writes a TB hand-off (C12)",
+        adr="DEC-66, ADR-158",
+        check=_check_handoff_writer,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/modules/ledger/tb_handoff.py",),
     ),
     Rule(
         id="TAXAPPROVE-001",

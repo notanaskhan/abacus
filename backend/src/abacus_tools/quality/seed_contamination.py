@@ -53,7 +53,7 @@ def _rule(kind: str, pattern: str, use: str) -> Rule:
 
 RULES: Final[tuple[Rule, ...]] = (
     # Kit sample data (F-04.13). Each is a figure or name the kits invented for their specimens.
-    # C-02-T09 (DEC-5508): "Elena Ruiz Design" is a CLS-13 vendor (the screen spec's data is final),
+    # C-02-T09 (DEC-5508): "Elena Ruiz Design" is a CLS-13 vendor (the screen spec is final),
     # allowed by exact string; the kit person "Elena Ruiz" stays banned.
     _rule("kit sample data", r"\bElena Ruiz\b(?! Design\b)", "a seed person (blueprint §9.2)"),
     _rule("kit sample data", r"\bRidgeview Partners\b", "Ridgeline Property Partners, LP"),

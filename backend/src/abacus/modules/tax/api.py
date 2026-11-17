@@ -616,6 +616,8 @@ _register_hooks(
 
 # T-05-T45 (DEC-4711): the allocation service and the run plan's shape for the synthetic scenario
 # loader (tooling reaches tax only through this file).
+# T-06-T03 (DEC-5511): error codes declared before their services.
+from abacus.modules.tax import entity_depth_errors as entity_depth_errors  # noqa: E402
 from abacus.modules.tax.allocation_structure import TARGET as ALLOCATION_TARGET  # noqa: E402
 from abacus.modules.tax.allocation_structure import Draft as AllocationDraft  # noqa: E402
 from abacus.modules.tax.allocation_structure import DraftRung as AllocationDraftRung  # noqa: E402

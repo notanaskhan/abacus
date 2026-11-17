@@ -499,6 +499,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
         "tax_handoff_superseded", _listed, "tax_handoff", "tax_handoff_id"
     ),
     "w9.uploaded": Kind("vendor_form_uploaded", _listed, "client_entity", "client_entity_id"),
+    # T-06-T03 (T-06 §4.7, DEC-5511): the client answered a decision; a TB handed off or replaced.
+    "tax_decision.answered": Kind("decision_answered", _listed, "tax_return", "tax_return_id"),
+    "tb_handoff.received": Kind("tb_handoff_received", _listed, "tax_return", "tax_return_id"),
+    "tb_handoff.superseded": Kind("tb_handoff_superseded", _listed, "tax_return", "tax_return_id"),
     # G-04-T08 (AC-37, DEC-5420): scheduled agents paused at the plan limit, once a month.
     "usage.scheduled_paused": Kind("usage_scheduled_paused", _admins, "firm", None, None),
     # C-01-T17: an entity's scheduled ledger sync paused (needs reauth, monthly call budget).
@@ -823,6 +827,10 @@ TEMPLATES: Final[dict[str, str]] = {
     "plan_request.decided": "Your plan request was decided.",
     "plan_request.applied": "Your firm's plan change was applied.",
     "support.replied": "Accrued Support replied",
+    # T-06-T03 (DEC-5511).
+    "tax_decision.answered": "The client answered a decision on {subject}.",
+    "tb_handoff.received": "A trial balance was handed off to {subject}.",
+    "tb_handoff.superseded": "The trial balance handed off to {subject} was replaced.",
     # C-02-T02 (DEC-5501): posting, delivery and hand-off. Values stay out (DEC-60).
     "proposed_entry.approval_requested": "An adjusting entry on {subject} needs your approval.",
     "posting_batch.failed": "An entry in a posting batch for {subject} failed to post.",
@@ -1021,6 +1029,10 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("plan_request_decided", "system", "Gauge", email_default=True),
     NotificationKind("plan_request_applied", "system", "Gauge", email_default=True),
     NotificationKind("support_replied", "system", "MessageSquareText", email_default=True),
+    # T-06-T03 (DEC-5511): decision answered, TB hand-off received and superseded.
+    NotificationKind("decision_answered", "approval", "CircleCheck"),
+    NotificationKind("tb_handoff_received", "approval", "Inbox"),
+    NotificationKind("tb_handoff_superseded", "other", "TriangleAlert"),
     # C-02-T02 (DEC-5501): posting, delivery and hand-off; the approval request is actionable.
     NotificationKind("entry_approval_requested", "approval", "ListChecks"),
     NotificationKind("posting_failed", "run", "TriangleAlert", email_default=True),

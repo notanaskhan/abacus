@@ -128,3 +128,12 @@ flags:
     kind: variant
     values: ['off', consolidation.elimination_proposer@v1]
     default: 'off'
+  # --- T-06-T03 (SPEC-702; DEC-5511)
+  - name: agents.tax_entity_modes
+    description: 'T-06 agent modes: four tax.return_analyst modes, ledger.tb_mapper tax_lines and the section_754 recommender kind; synthetic and consented firms only; the kill switch. Off: the modes refuse and steps wait on inputs. T-06-T03, DEC-5511.'
+    owner: notanaskhan
+    created: 2026-11-17
+    expires: 2027-05-16
+    override: DEC-137
+    kind: boolean
+    default: false

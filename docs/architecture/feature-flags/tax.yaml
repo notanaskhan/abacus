@@ -21,48 +21,48 @@ flags:
   - name: tax.review_workspace
     description: 'T-04 RW-1 return review workspace (SPEC-649; TAX-04 to TAX-08): /v1/tax/returns/{id}/workspace, review-tree, document approvals, final-approval requests, K-1 activities and treatments, residency. Off: 404 and the return keeps its T-01/T-02 frame. Per firm, default off. T-04-T09, DEC-3111.'
     owner: ayushkbhatia
-    created: 2026-11-09
-    expires: 2027-05-07
+    created: 2026-11-17
+    expires: 2027-05-16
     override: DEC-137
     kind: boolean
     default: false
   - name: tax.individual_workpapers
     description: 'T-04 WS-1 individual worksheets (TXI-01 to TXI-03): leadsheets, the Sch E K-1 matrix, field links and worksheets. Off: 404 and the worksheet tabs are absent. Per firm, default off. T-04-T09, DEC-3111.'
     owner: ayushkbhatia
-    created: 2026-11-09
-    expires: 2027-05-07
+    created: 2026-11-17
+    expires: 2027-05-16
     override: DEC-137
     kind: boolean
     default: false
   - name: tax_agents.enabled
     description: 'T-04 agent runs on a return (draft runs, K-1 treatment runs, residency proposals). Off: 404 and TAX-08 shows its designed agents-off state (DF-04). Per firm, default off. T-04-T09, DEC-3111.'
     owner: ayushkbhatia
-    created: 2026-11-09
-    expires: 2027-05-07
+    created: 2026-11-17
+    expires: 2027-05-16
     override: DEC-137
     kind: boolean
     default: false
   - name: tax.entity_workspace
     description: 'T-05 entity returns workspace (SPEC-651; TXP-00, 01, 02, 05, 06, 07, 10, 11): routes, tabs and the form-family dispatch. Off: the 1065 opens TAX-02''s coordination view and no entity route answers (404). Per firm, default off. T-05-T04.'
     owner: ayushkbhatia
-    created: 2026-11-10
-    expires: 2027-05-07
+    created: 2026-11-17
+    expires: 2027-05-16
     override: DEC-137
     kind: boolean
     default: false
   - name: tax.workbook_run
     description: 'T-05 workbook runs: ▶ Run, re-runs, imports and the deterministic engines. Off: 404 and the run controls read their reason. Per firm, default off. T-05-T04.'
     owner: ayushkbhatia
-    created: 2026-11-10
-    expires: 2027-05-07
+    created: 2026-11-17
+    expires: 2027-05-16
     override: DEC-137
     kind: boolean
     default: false
   - name: tax.entity_agents
     description: 'T-05 model-backed steps (mapper suggestions, agreement reader, memo drafting, recommender modes); synthetic-only until T-05-T64''s clearance. Off: every model-backed control is disabled with its reason (F13). Per firm, default off. T-05-T04.'
     owner: ayushkbhatia
-    created: 2026-11-10
-    expires: 2027-05-07
+    created: 2026-11-17
+    expires: 2027-05-16
     override: DEC-137
     kind: boolean
     default: false
@@ -126,3 +126,38 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  # --- T-06-T03 (SPEC-702; DEC-5511): T-06 rollout flags. The six T-04/T-05 flags above are renewed
+  # registry-only to 2027-05-16 so none expires before these (no behaviour change).
+  - name: tax.entity_depth
+    description: 'T-06 entity depth (TXP-03, TXP-04, TXP-08, TXP-09): fixed assets, book-tax, basis and the §754 card, states and PTET. Off: the tabs are hidden and the routes 404; on: 501 until each build task. T-06-T03, DEC-5511.'
+    owner: ayushkbhatia
+    created: 2026-11-17
+    expires: 2027-05-16
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: tax.other_entity_workpapers
+    description: 'T-06 other entity workpapers (TXP-13 a-c3, per-form tabs): AAA, ASC 740 provision, 990 Part IX and allocation. Off: 404. T-06-T03, DEC-5511.'
+    owner: ayushkbhatia
+    created: 2026-11-17
+    expires: 2027-05-16
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: tax.form_preview
+    description: 'T-06 form preview with K-1s (TAX-11) and the activation of its final-approval blocker (blocking_diagnostics). Off: 404 and no blocker. T-06-T03, DEC-5511.'
+    owner: ayushkbhatia
+    created: 2026-11-17
+    expires: 2027-05-16
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: tax.tb_handoff
+    description: 'T-06 TB hand-off into tax (C12 routes, AUD-38, TXP-13 d, the TXP-02 banner). Off: 404 and the AUD-06 menu item is absent. T-06-T03, DEC-5511.'
+    owner: ayushkbhatia
+    created: 2026-11-17
+    expires: 2027-05-16
+    override: DEC-137
+    kind: boolean
+    default: false
+

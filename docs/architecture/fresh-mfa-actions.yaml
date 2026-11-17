@@ -174,3 +174,6 @@ actions:
     group: release
   - action: close.lock
     group: release
+  # T-06-T03 (SPEC-702; DEC-5511): the watermarked draft form download (DEC-60).
+  - action: form_preview.download_draft
+    group: export

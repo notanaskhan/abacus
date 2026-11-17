@@ -26,6 +26,11 @@ AGENTS_CLIENT_DATA_OPTIN = Flag(
     kind="boolean",
     default="false",
 )
+AGENTS_TAX_ENTITY_MODES = Flag(
+    name="agents.tax_entity_modes",
+    kind="boolean",
+    default="false",
+)
 AI_POLICY_V1 = Flag(
     name="ai_policy.v1",
     kind="boolean",
@@ -133,6 +138,11 @@ AUDITS_SSARS_WORKSPACE = Flag(
 )
 BINDERS_ENGINE = Flag(
     name="binders.engine",
+    kind="boolean",
+    default="false",
+)
+CLIENTS_RELATIONSHIP_MAP = Flag(
+    name="clients.relationship_map",
     kind="boolean",
     default="false",
 )
@@ -635,6 +645,11 @@ TAX_ENTITY_AGENTS = Flag(
     kind="boolean",
     default="false",
 )
+TAX_ENTITY_DEPTH = Flag(
+    name="tax.entity_depth",
+    kind="boolean",
+    default="false",
+)
 TAX_ENTITY_WORKSPACE = Flag(
     name="tax.entity_workspace",
     kind="boolean",
@@ -655,13 +670,28 @@ TAX_FIDUCIARY_WORKPAPERS = Flag(
     kind="boolean",
     default="false",
 )
+TAX_FORM_PREVIEW = Flag(
+    name="tax.form_preview",
+    kind="boolean",
+    default="false",
+)
 TAX_INDIVIDUAL_WORKPAPERS = Flag(
     name="tax.individual_workpapers",
     kind="boolean",
     default="false",
 )
+TAX_OTHER_ENTITY_WORKPAPERS = Flag(
+    name="tax.other_entity_workpapers",
+    kind="boolean",
+    default="false",
+)
 TAX_REVIEW_WORKSPACE = Flag(
     name="tax.review_workspace",
+    kind="boolean",
+    default="false",
+)
+TAX_TB_HANDOFF = Flag(
+    name="tax.tb_handoff",
     kind="boolean",
     default="false",
 )
@@ -716,6 +746,7 @@ FLAGS: dict[str, Flag] = {
     "agent_dock.enabled": AGENT_DOCK_ENABLED,
     "agent_runtime.v2": AGENT_RUNTIME_V2,
     "agents.client_data_optin": AGENTS_CLIENT_DATA_OPTIN,
+    "agents.tax_entity_modes": AGENTS_TAX_ENTITY_MODES,
     "ai_policy.v1": AI_POLICY_V1,
     "assurance.estimates_rp": ASSURANCE_ESTIMATES_RP,
     "assurance.group_audit": ASSURANCE_GROUP_AUDIT,
@@ -738,6 +769,7 @@ FLAGS: dict[str, Flag] = {
     "audits.report_release": AUDITS_REPORT_RELEASE,
     "audits.ssars_workspace": AUDITS_SSARS_WORKSPACE,
     "binders.engine": BINDERS_ENGINE,
+    "clients.relationship_map": CLIENTS_RELATIONSHIP_MAP,
     "clients.tax_profile": CLIENTS_TAX_PROFILE,
     "closes.agent": CLOSES_AGENT,
     "closes.delivery": CLOSES_DELIVERY,
@@ -832,12 +864,16 @@ FLAGS: dict[str, Flag] = {
     "tax.delivery_efile": TAX_DELIVERY_EFILE,
     "tax.engine_bridge": TAX_ENGINE_BRIDGE,
     "tax.entity_agents": TAX_ENTITY_AGENTS,
+    "tax.entity_depth": TAX_ENTITY_DEPTH,
     "tax.entity_workspace": TAX_ENTITY_WORKSPACE,
     "tax.estate_workpapers": TAX_ESTATE_WORKPAPERS,
     "tax.fiduciary_k1_release": TAX_FIDUCIARY_K1_RELEASE,
     "tax.fiduciary_workpapers": TAX_FIDUCIARY_WORKPAPERS,
+    "tax.form_preview": TAX_FORM_PREVIEW,
     "tax.individual_workpapers": TAX_INDIVIDUAL_WORKPAPERS,
+    "tax.other_entity_workpapers": TAX_OTHER_ENTITY_WORKPAPERS,
     "tax.review_workspace": TAX_REVIEW_WORKSPACE,
+    "tax.tb_handoff": TAX_TB_HANDOFF,
     "tax.workbook_run": TAX_WORKBOOK_RUN,
     "tax_agents.enabled": TAX_AGENTS_ENABLED,
     "today_brief.enabled": TODAY_BRIEF_ENABLED,

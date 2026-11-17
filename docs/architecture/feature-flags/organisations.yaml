@@ -26,3 +26,12 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  # --- T-06-T03 (SPEC-702; DEC-5511)
+  - name: clients.relationship_map
+    description: 'T-06 relationships map (CLI-03 graph, relationship writes, per-user layouts). Off: P-07 list. T-06-T03, DEC-5511.'
+    owner: ayushkbhatia
+    created: 2026-11-17
+    expires: 2027-05-16
+    override: DEC-137
+    kind: boolean
+    default: false

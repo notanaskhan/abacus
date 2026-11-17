@@ -462,6 +462,8 @@ __all__ = [
 
 # A-09-T19 rest (DEC-5328): lock and reopen a finalized consolidation.
 # A-09-T19 (DEC-5311, DEC-5328): the consolidation engine and its workbook, for assurance's AUD-33.
+# T-06-T03 (DEC-5511): error codes declared before their services.
+from abacus.modules.ledger import handoff_errors as handoff_errors  # noqa: E402
 from abacus.modules.ledger.compute.consolidation import (  # noqa: E402
     CONSOLIDATED as CONSOLIDATED_COLUMN,
 )

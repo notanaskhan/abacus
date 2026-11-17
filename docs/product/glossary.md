@@ -722,7 +722,7 @@ C-02-T03 (DF-19, DF-23, DF-31; SPEC-700, SPEC-701; DEC-5502). "Posting batch" is
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
 | Posting result | One insert-only attempt to write one approved entry to the client's ledger, with the provider's id once read back. | `posting_results` | — |
-| Write operation | One W1 call to a client's system (create a journal entry, set the closing date), idempotent on its key. | `write_operations`, `write_evidence` | — |
+| Write operation | One W1 call to a client's system (create a journal entry, set the closing date), idempotent on its key. | `ledger_write_operations`, `ledger_write_evidence` | — |
 | Write grant | The client owner's consent, given in the portal, for the firm to post approved entries to their ledger; revocable. | `connection_write_grants` | — |
 | Firm write capability | The firm's own switch for a declared write (security admin, fresh MFA); history is insert-only. | `firm_write_capabilities` | — |
 | Closing date | The date in the client's ledger before which no transaction can be added; set once, after a batch's last entry posts. | `closing_date_events`, `closing_date_conflicts` | — |
