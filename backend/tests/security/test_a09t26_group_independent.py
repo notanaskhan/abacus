@@ -29,6 +29,9 @@ from collections.abc import Awaitable, Callable
 import asyncpg
 import pytest
 
+from abacus.kernel.uow import UnitOfWork
+from abacus.modules.ledger.consolidation import ConsolidationFacts, StructureEntity
+
 from .support import Migrated, Seeder
 
 pytestmark = pytest.mark.asyncio
@@ -198,3 +201,253 @@ async def test_no_write_tool_reaches_consolidation_posting_or_coverage() -> None
         and any(k in t.name for k in ("consolidation", "elimination", "coverage", "posting"))
     ]
     assert writes == []
+
+
+# --- S48 rest: the service-level rules the suite names, restated independently (TASK-8440) ---
+
+
+async def _ids(seed: Seeder, consolidation: uuid.UUID) -> tuple[uuid.UUID, uuid.UUID]:
+    engagement = await seed.value(
+        "SELECT engagement_id FROM consolidations WHERE id = $1", consolidation
+    )
+    work_item = await seed.value(
+        "SELECT work_item_id FROM consolidations WHERE id = $1", consolidation
+    )
+    return uuid.UUID(str(engagement)), uuid.UUID(str(work_item))
+
+
+async def _as_person(
+    tenant: uuid.UUID, user: uuid.UUID, act: Callable[[UnitOfWork], Awaitable[object]]
+) -> object:
+    from abacus.kernel.db import TenantContext
+    from abacus.kernel.uow import uow
+
+    async with uow(TenantContext(tenant, "human", str(user))) as tx:
+        return await act(tx)
+
+
+async def _facts(tenant: uuid.UUID, consolidation: uuid.UUID) -> ConsolidationFacts:
+    from abacus.kernel.db import TenantContext
+    from abacus.modules.ledger.api import consolidation_facts
+
+    return await consolidation_facts(TenantContext(tenant, "human", "probe"), consolidation)
+
+
+async def _finalized(
+    seed: Seeder, consolidation: uuid.UUID, user: uuid.UUID, *, locked: bool
+) -> None:
+    await seed.run(
+        "UPDATE consolidations SET status = 'finalized', finalized_by = $2, "
+        "finalized_at = now(), finalized_actor_kind = 'human' WHERE id = $1",
+        consolidation,
+        user,
+    )
+    if locked:
+        await seed.run(
+            "UPDATE consolidations SET lock_state = 'locked', locked_by = $2, locked_at = now(), "
+            "locked_actor_kind = 'human' WHERE id = $1",
+            consolidation,
+            user,
+        )
+
+
+def _one_entity(entity: uuid.UUID) -> list[StructureEntity]:
+    return [StructureEntity(entity, None, 1, None, None)]
+
+
+@pytest.mark.parametrize("locked", [False, True])
+async def test_a_finalized_or_locked_structure_refuses_edits(seed: Seeder, locked: bool) -> None:
+    """Structure freeze and lock blocks edits: once finalized (and while locked) a structure save
+    and a details edit are refused before anything changes."""
+    from abacus.modules.ledger.consolidation import save_structure
+
+    tenant, consolidation, user, entity = await _consolidation(seed)
+    await _finalized(seed, consolidation, user, locked=locked)
+    seen = int(
+        str(
+            await seed.value("SELECT row_version FROM consolidations WHERE id = $1", consolidation)
+        )
+    )
+    assert await _refused(
+        lambda: _as_person(
+            tenant,
+            user,
+            lambda tx: save_structure(
+                tx,
+                tenant_id=tenant,
+                consolidation_id=consolidation,
+                seen=seen,
+                entities=_one_entity(entity),
+            ),
+        )
+    )
+    after = await seed.value("SELECT row_version FROM consolidations WHERE id = $1", consolidation)
+    assert int(str(after)) == seen
+
+
+@pytest.mark.parametrize("reason", ["", "   "])
+async def test_a_reopen_needs_a_reason(seed: Seeder, reason: str) -> None:
+    from abacus.modules.ledger.api import reopen_consolidation
+
+    tenant, consolidation, user, _ = await _consolidation(seed)
+    await _finalized(seed, consolidation, user, locked=True)
+    facts = await _facts(tenant, consolidation)
+    assert await _refused(
+        lambda: _as_person(
+            tenant,
+            user,
+            lambda tx: reopen_consolidation(
+                tx,
+                facts,
+                tenant_id=tenant,
+                user_id=user,
+                reason=reason,
+            ),
+        )
+    )
+    state = await seed.value("SELECT lock_state FROM consolidations WHERE id = $1", consolidation)
+    assert state == "locked"
+
+
+async def test_finalize_refuses_a_missing_trial_balance(seed: Seeder) -> None:
+    """A structure whose required TB slot is empty cannot be finalized; it stays a draft."""
+    from abacus.modules.ledger.api import finalize_consolidation
+    from abacus.modules.ledger.consolidation import save_structure
+
+    tenant, consolidation, user, entity = await _consolidation(seed)
+    await _as_person(
+        tenant,
+        user,
+        lambda tx: save_structure(
+            tx,
+            tenant_id=tenant,
+            consolidation_id=consolidation,
+            seen=1,
+            entities=_one_entity(entity),
+        ),
+    )
+    facts = await _facts(tenant, consolidation)
+    assert await _refused(
+        lambda: _as_person(
+            tenant,
+            user,
+            lambda tx: finalize_consolidation(
+                tx,
+                facts,
+                tenant_id=tenant,
+                seen=facts.row_version,
+                user_id=user,
+            ),
+        )
+    )
+    assert (
+        await seed.value("SELECT status FROM consolidations WHERE id = $1", consolidation)
+        == "draft"
+    )
+
+
+async def test_a_pull_whose_token_was_refused_leaves_the_slot_needs_reauth(seed: Seeder) -> None:
+    """The pull-all reauth path: a refused token writes a Needs reauth slot (never a TB), and the
+    consolidation still cannot be finalized."""
+    from abacus.modules.ledger.api import finalize_consolidation
+    from abacus.modules.ledger.consolidation import mark_slot_needs_reauth, save_structure
+
+    tenant, consolidation, user, entity = await _consolidation(seed)
+    await _as_person(
+        tenant,
+        user,
+        lambda tx: save_structure(
+            tx,
+            tenant_id=tenant,
+            consolidation_id=consolidation,
+            seen=1,
+            entities=_one_entity(entity),
+        ),
+    )
+    facts = await _facts(tenant, consolidation)
+    key = facts.required[0]
+    await _as_person(
+        tenant,
+        user,
+        lambda tx: mark_slot_needs_reauth(tx, tenant_id=tenant, key=key, user_id=user),
+    )
+    states = await seed.value(
+        "SELECT string_agg(state, ',') FROM consolidation_trial_balances "
+        "WHERE consolidation_id = $1 AND superseded_by IS NULL",
+        consolidation,
+    )
+    assert states == "needs_reauth"
+    facts = await _facts(tenant, consolidation)
+    assert await _refused(
+        lambda: _as_person(
+            tenant,
+            user,
+            lambda tx: finalize_consolidation(
+                tx,
+                facts,
+                tenant_id=tenant,
+                seen=facts.row_version,
+                user_id=user,
+            ),
+        )
+    )
+
+
+async def _entry(
+    seed: Seeder,
+    tenant: uuid.UUID,
+    consolidation: uuid.UUID,
+    user: uuid.UUID,
+    *,
+    kind: str,
+    status: str,
+    target: str | None,
+) -> object:
+    engagement, work_item = await _ids(seed, consolidation)
+    return await seed.value(
+        "INSERT INTO proposed_entries (tenant_id, engagement_id, work_item_id, kind, number, ref, "
+        "threshold_result, is_attest_client, status, created_by_kind, created_by_id, "
+        "consolidation_id, posting_target) VALUES ($1, $2, $3, $4, 1, 'X-1', 'review_required', "
+        "false, $5, 'human', $6, $7, $8) RETURNING id",
+        tenant,
+        engagement,
+        work_item,
+        kind,
+        status,
+        str(user),
+        consolidation if kind == "elimination" else None,
+        target,
+    )
+
+
+@pytest.mark.parametrize(
+    ("kind", "status", "target"),
+    [
+        ("aje", "posted", None),  # an AJE never posts anywhere
+        ("aje", "proposed", "consolidation_layer"),  # only an elimination has a posting target
+        ("elimination", "posted", None),  # an elimination posts only to the consolidation layer
+        ("elimination", "proposed", "client_ledger"),  # and to no other target
+    ],
+)
+async def test_the_posting_check_and_target(
+    seed: Seeder, kind: str, status: str, target: str | None
+) -> None:
+    tenant, consolidation, user, _ = await _consolidation(seed)
+    assert await _refused(
+        lambda: _entry(seed, tenant, consolidation, user, kind=kind, status=status, target=target)
+    )
+
+
+async def test_an_elimination_may_post_to_the_consolidation_layer(seed: Seeder) -> None:
+    """The one allowed posting (the control for the four refusals above)."""
+    tenant, consolidation, user, _ = await _consolidation(seed)
+    made = await _entry(
+        seed,
+        tenant,
+        consolidation,
+        user,
+        kind="elimination",
+        status="posted",
+        target="consolidation_layer",
+    )
+    assert made is not None
