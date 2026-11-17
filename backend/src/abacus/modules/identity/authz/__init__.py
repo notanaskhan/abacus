@@ -64,7 +64,7 @@ from collections.abc import Awaitable, Callable, Generator, Iterable
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Literal
 from uuid import UUID
 
@@ -1390,6 +1390,28 @@ async def authorise_own(ctx: Actor, action: str) -> None:
     _log.info("authz.allowed", action=action, tenant_id=ctx.tenant_id, **_who(ctx))
 
 
+def authorise_staff(
+    action: str, *, roles: frozenset[str], mfa_at: datetime | None, staff_id: UUID
+) -> str:
+    """G-04-T09 (SPEC-680 §4.4; DEC-5416): an Accrued console action for a staff member on the
+    staff issuer. The roles come from the staff token's claims (`platform_admin`,
+    `platform_support_desk`), never a firm membership; a staff action allows no other principal.
+    The matrix's `mfa_recent` asks for staff MFA within 15 minutes. Returns the role that allowed
+    it (the platform audit names it); records the check like `authorise`."""
+    rule = _rule(action)
+    allowed = sorted(r for r in roles if rule.decisions.get(r) == "allow")
+    if not allowed:
+        _log.info("authz.denied", action=action, layer="role", staff_id=staff_id)
+        raise Forbidden(action, "role")
+    if rule.mfa_recent and (mfa_at is None or system_now() - mfa_at > MFA_RECENT):
+        _log.info("authz.denied", action=action, layer="attribute", staff_id=staff_id)
+        raise Forbidden(action, "attribute")
+    _record(action)
+    _log.info("authz.allowed", action=action, staff_id=staff_id)
+    # platform_admin first when both: the stronger role is the one the audit names.
+    return "platform_admin" if "platform_admin" in allowed else allowed[0]
+
+
 async def authorise_items(ctx: Actor, action: str, resource: Resource) -> None:
     """For a list of an engagement's request items (a read): allowed outright, or by a client
     condition, in which case `visible_items` then filters the rows (SPEC-020; TASK-035 D2)."""
@@ -1473,6 +1495,7 @@ __all__ = [
     "authorise_items",
     "authorise_on_condition",
     "authorise_own",
+    "authorise_staff",
     "holds_engagement_role",
     "own_role_allows",
     "policy_agent_may_hold",
