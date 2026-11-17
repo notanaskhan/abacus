@@ -104,7 +104,7 @@ async def _seed_set(
     engagement: uuid.UUID,
     work_item: uuid.UUID,
     monkeypatch: pytest.MonkeyPatch,
-    stage: str = "preliminary",
+    stage: svc.Stage = "preliminary",
 ) -> uuid.UUID:
     """A provisional set (preliminary unless named) at PM 116,250 computed over `_source()`."""
 
@@ -244,7 +244,7 @@ async def test_an_accepted_entry_puts_the_final_set_out_of_date(
         await seed.value(
             "SELECT count(*) FROM audit_events WHERE action = 'analytics.went_out_of_date' "
             "AND target_id = $1",
-            final,
+            str(final),
         )
         == 1
     )

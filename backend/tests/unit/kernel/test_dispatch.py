@@ -186,6 +186,7 @@ def test_ac2_screening_is_time_sensitive_as_its_spec_says() -> None:
         "batch",  # SPEC-035 (TASK-073): the guidance drafter
         "batch",  # SPEC-037 Q4 (TASK-085): the entry assessor
         "background",  # A-04-T11: the section drafter
+        "background",  # A-08-T24 rest: its fan-out, on the drafter's own class
         "background",  # P-10-T14 (TASK-6106): the agent-run backfill
         "interactive",  # P-10-T29: a v2 agent run, which a person started (ADR-071)
         "interactive",  # P-10-T38 (S36): an approved write, after the person's decision

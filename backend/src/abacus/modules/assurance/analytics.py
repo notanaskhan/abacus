@@ -34,6 +34,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping, Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -50,7 +51,7 @@ with workflow.unsafe.imports_passed_through():
     from abacus.kernel.db import TenantContext, tenant_session
     from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
     from abacus.kernel.safe_xlsx import Cell, Sheet, workbook
-    from abacus.kernel.uow import DomainEvent, Ref, Target, UnitOfWork, uow
+    from abacus.kernel.uow import DomainEvent, MissingAuditEvent, Ref, Target, UnitOfWork, uow
     from abacus.kernel.uow.relay import OutboxEvent
     from abacus.modules.identity.api import (
         AuthContext,
@@ -1385,14 +1386,12 @@ async def on_entry_client_decided(event: OutboxEvent) -> None:
         return
     work_item_id = UUID(str(work_item))
     tenant = TenantContext(event.tenant_id, "system", f"{SYSTEM_ACTOR}:adjustment")
-    async with uow(tenant) as tx:
-        stale = [r.id for r in await tx.session.execute(_STALE_FINAL, {"w": work_item_id})]
-        for set_id in stale:
-            tx.record(
-                "analytics.went_out_of_date",
-                target=Target(TARGET, cast(UUID, set_id)),
-                after=Ref(reason="adjustment_recorded"),
-            )
+    # No Current final set (none yet, or a replay): nothing changed, so nothing is recorded.
+    with suppress(MissingAuditEvent):
+        async with uow(tenant) as tx:
+            stale = [r.id for r in await tx.session.execute(_STALE_FINAL, {"w": work_item_id})]
+            for set_id in stale:
+                tx.record("analytics.went_out_of_date", target=Target(TARGET, cast(UUID, set_id)))
 
 
 # --- prior-year figures and export ---------------------------------------------------------------

@@ -8,7 +8,9 @@ runs activities):
 - `component-instructions-send-v1-completed.json`: an A-09-T27 send that waited out its 10-second
   Undo window, then completed once;
 - `component-late-sweep-v1-swept.json`: one A-09-T28 hourly sweep that marked two deliverables
-  late.
+  late;
+- `section-draft-fan-out-v1-two.json`: an A-08-T24 fan-out that started two recorded runs and
+  waited one tick for them to end (DEC-5425).
 A history already on disk is never overwritten: only the missing ones are recorded.
 """
 
@@ -22,6 +24,13 @@ from temporalio.client import Client, WorkflowHistory
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
+from abacus.modules.agents.api import (
+    SectionDraftChild,
+    SectionDraftFanOutInput,
+    SectionDraftFanOutWorkflow,
+    SectionDraftInput,
+    SectionDraftOpenIn,
+)
 from abacus.modules.assurance.api import (
     ComponentLateSweep,
     FluxAnalyticsWorkflow,
@@ -39,7 +48,9 @@ SEND_ID = "00000000-0000-4000-8000-000000004927"
 FLUX = "flux-analytics-v1-computed.json"
 SEND = "component-instructions-send-v1-completed.json"
 LATE = "component-late-sweep-v1-swept.json"
-_FILES = (FLUX, SEND, LATE)
+FAN = "section-draft-fan-out-v1-two.json"
+_FILES = (FLUX, SEND, LATE, FAN)
+RUNS = ("00000000-0000-4000-8000-000000004361", "00000000-0000-4000-8000-000000004362")
 
 
 @activity.defn(name="assurance.analytics.compute")
@@ -55,6 +66,16 @@ async def _complete(given: InstructionsSendInput) -> str:
 @activity.defn(name="assurance.component_late.sweep")
 async def _sweep() -> int:
     return 2
+
+
+@activity.defn(name="section_draft.start_child")
+async def _start_child(child: SectionDraftChild) -> None:
+    return None
+
+
+@activity.defn(name="section_draft.open_runs")
+async def _open_runs(given: SectionDraftOpenIn) -> list[str]:
+    return []  # both ended by the first tick
 
 
 async def _flux(client: Client) -> WorkflowHistory:
@@ -87,15 +108,39 @@ async def _late(client: Client) -> WorkflowHistory:
     return await handle.fetch_history()
 
 
+async def _fan(client: Client) -> WorkflowHistory:
+    children = [
+        SectionDraftChild(
+            SectionDraftInput(TENANT, run, "00000000-0000-4000-8000-000000004360", "flux_explain",
+                              f"line:{n}"),
+            f"section_draft:{TENANT}:{run}",
+        )
+        for n, run in enumerate(RUNS, start=1)
+    ]  # fmt: skip
+    handle = await client.start_workflow(
+        SectionDraftFanOutWorkflow.run,
+        SectionDraftFanOutInput(TENANT, children, 8),
+        id=f"section_draft_fan_out:{TENANT}:recorder",
+        task_queue=_TASK_QUEUE,
+    )
+    await handle.result()
+    return await handle.fetch_history()
+
+
 async def _record(out: Path, stack: Stack) -> None:
     client = await connect(stack)
     async with Worker(
         client,
         task_queue=_TASK_QUEUE,
-        workflows=[FluxAnalyticsWorkflow, InstructionsSendWorkflow, ComponentLateSweep],
-        activities=[_compute, _complete, _sweep],
+        workflows=[
+            FluxAnalyticsWorkflow,
+            InstructionsSendWorkflow,
+            ComponentLateSweep,
+            SectionDraftFanOutWorkflow,
+        ],
+        activities=[_compute, _complete, _sweep, _start_child, _open_runs],
     ):
-        for name, run in ((FLUX, _flux), (SEND, _send), (LATE, _late)):
+        for name, run in ((FLUX, _flux), (SEND, _send), (LATE, _late), (FAN, _fan)):
             if (out / name).exists():
                 continue
             scrubbed = await decoded_and_scrubbed(await run(client), payload_codec())
