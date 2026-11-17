@@ -13,12 +13,12 @@ from decimal import Decimal
 from typing import Final
 
 from abacus.modules.ledger.tb_handoff_contract import (
-    AccountCountsOut,
-    BookIncomeOut,
-    LandingOut,
-    PreviewOut,
-    ReviewAccountOut,
-    TaxItemOut,
+    TbHandoffBookIncomeOut,
+    TbHandoffCountsOut,
+    TbHandoffLandingOut,
+    TbHandoffPreviewOut,
+    TbHandoffReviewAccountOut,
+    TbHandoffTaxItemOut,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import CT
 
@@ -48,10 +48,10 @@ ACCRUED_LIABILITIES: Final = D("1630000.00")
 PASSED_AJE_3: Final = D("68400.00")
 
 
-def granite_peak_preview(*, chosen: bool) -> PreviewOut:
+def granite_peak_preview(*, chosen: bool) -> TbHandoffPreviewOut:
     """AUD-38 b (`chosen=False`, 10:12 AM) or a (`chosen=True`, both Send blank, 10:29 AM)."""
     reviews = [
-        ReviewAccountOut(
+        TbHandoffReviewAccountOut(
             account_ref=ref,
             account_name=name,
             balance=balance,
@@ -60,22 +60,22 @@ def granite_peak_preview(*, chosen: bool) -> PreviewOut:
         )
         for ref, name, balance in REVIEW_ACCOUNTS
     ]
-    return PreviewOut(
+    return TbHandoffPreviewOut(
         source_kind="audit_release",
         source_snapshot_id=_id("granite-peak-final-tb-fy2026"),
         gate="released",
         status="ready" if chosen else "needs_review",
-        counts=AccountCountsOut(mapped=121, suggested=5, review=2, total=128),
+        counts=TbHandoffCountsOut(mapped=121, suggested=5, review=2, total=128),
         review_accounts=reviews,
-        book_income=BookIncomeOut(
+        book_income=TbHandoffBookIncomeOut(
             pretax=D("3100000.00"), income_tax_expense=D("750000.00"), net_income=D("2350000.00")
         ),
         schedules=["fixed_assets", "accrued_liabilities", "passed_adjustments"],
         tax_items=[
-            TaxItemOut(
+            TbHandoffTaxItemOut(
                 key="passed_aje_3", label="Passed AJE-3", amount=PASSED_AJE_3, included=True
             ),
-            TaxItemOut(
+            TbHandoffTaxItemOut(
                 key="income_tax_expense",
                 label="Income tax expense",
                 amount=D("750000.00"),
@@ -86,19 +86,20 @@ def granite_peak_preview(*, chosen: bool) -> PreviewOut:
     )
 
 
-def granite_peak_not_available() -> PreviewOut:
+def granite_peak_not_available() -> TbHandoffPreviewOut:
     """AUD-38 d (Wed Oct 21, 2026): before G8 the gate reads not released."""
     return granite_peak_preview(chosen=False).model_copy(
         update={"gate": "not_released", "status": "not_available"}
     )
 
 
-def copperleaf_close_lock_landing() -> LandingOut:
+def copperleaf_close_lock_landing() -> TbHandoffLandingOut:
     """TXP-02's banner on Copperleaf's 2026 Form 1120-S (CLS-12 c2): the same C12 landing, source
     `close_lock` (C-02)."""
-    return LandingOut(
+    return TbHandoffLandingOut(
         handoff_id=_id("copperleaf-dec-2026-tb-v1"),
         source_kind="close_lock",
+        locked_close_id=_id("copperleaf-close-2026-12"),
         source_label="TB from the December 2026 close, locked Jan 11, 2027",
         handed_off_at=datetime(2027, 1, 12, 14, 15, tzinfo=CT),
         handed_off_by="Priya Raman",
