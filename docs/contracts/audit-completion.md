@@ -180,3 +180,16 @@ after the M16 flip. This is the same path A-06 took (RB-66, migration 0713):
 3. The flags are deleted on the Tue Apr 25, 2028 train, before they expire.
 
 Until then each flag is renewed per `docs/runbooks/RB-26-flag-expiry-wave.md`.
+
+## Post-issuance (Q-05 skeleton; SPEC-711 AC-15 to AC-18; DEC-5608)
+
+Owner `assurance` (`assurance/post_issuance.py`, a red path beside `release.py`), behind `audit.post_issuance`. Cases on an archived audit (AU-C 560 subsequently discovered facts, AU-C 585 omitted procedures, reissuance requests); writes to the locked work item only under A-07's `post_issuance` exception kind. Stub Q-05-T03; v1 S54.
+
+| Method and path | Action | Notes |
+|---|---|---|
+| `GET /v1/audits/{work_item_id}/post-issuance/cases` · `GET …/cases/{id}` | `post_issuance.read` | comparison, evaluation, analysis, card, timeline |
+| `POST /v1/audits/{work_item_id}/post-issuance/cases` | `post_issuance.create` | type, source, description |
+| `POST …/cases/{id}/analysis` | `post_issuance.analyse` | the analysis run; 409 `comparison_unavailable` |
+| `POST …/cases/{id}/reopen-for-reissue` | `post_issuance.reissue` | EP, fresh MFA; opens AUD-23 g through A-07's release path |
+
+The EP decides on a P-04 decision card (No action · Reissue · Notify users); No action adds an EP-approved archive addition with its own hash. **Example:** PI-01 (12,250) below clearly trivial 12,610; 12,250 ÷ 252,200 = 4.9%.
