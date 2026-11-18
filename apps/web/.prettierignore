@@ -13,3 +13,6 @@ src/fixtures/seed/e*.*.json
 src/fixtures/seed/2026-*.*.json
 # Written by the `firm_inbox` slice's --export (N-01-T11); its web test reads it as written
 src/fixtures/seed/inbox-e0.json
+# Written by `make fixtures` from the scenario's own data, no database (N-02-T36, C-02-T17,
+# G-04-T18): `scenario_files()` output, held as written
+src/fixtures/seed/scenario.*.json
