@@ -29,6 +29,7 @@ from abacus.modules.practice.due_dates_routes import router as due_dates_router
 from abacus.modules.practice.filing_deadlines_contract import filing_deadlines_router
 from abacus.modules.practice.home_contract import router as home_router
 from abacus.modules.practice.jobs import ACTIVITIES, SCHEDULES, SUBSCRIPTIONS, WORKFLOWS
+from abacus.modules.practice.quality_contract import quality_router
 from abacus.modules.practice.today.assembly import QuestionContext, question_context  # I-02-T14
 from abacus.modules.practice.today.routes import today_router
 from abacus.modules.practice.workflows import HOME_ACTIVITY_PRUNE_ID, HomeActivityPruneWorkflow
@@ -45,6 +46,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     due_dates_router,  # C21 part A (K-02-T07)
     today_router,  # I-02-T03: the Today brief (stubs behind today_brief.enabled)
     filing_deadlines_router,  # T-08-T04: FD-1 filing deadlines (stubs; dark)
+    quality_router,  # Q-05-T05: quality management v1 (stubs; dark)
 )
 
 __all__ = [
