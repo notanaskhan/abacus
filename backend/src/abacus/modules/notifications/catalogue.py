@@ -503,6 +503,32 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "tax_decision.answered": Kind("decision_answered", _listed, "tax_return", "tax_return_id"),
     "tb_handoff.received": Kind("tb_handoff_received", _listed, "tax_return", "tax_return_id"),
     "tb_handoff.superseded": Kind("tb_handoff_superseded", _listed, "tax_return", "tax_return_id"),
+    # T-08-T03 (T-08 §4.8, DEC-5602): season, deadlines, standards, two-year and amendments. The
+    # services that emit them land with T-08-T09 onward; each names its recipients in the payload.
+    "season_cohort.ready_for_approval": Kind(
+        "season_cohort_ready_for_approval", _listed, "season_cohort", "season_cohort_id", None
+    ),
+    "season_cohort.executed": Kind(
+        "season_cohort_executed", _listed, "season_cohort", "season_cohort_id", None
+    ),
+    "season_row.failed": Kind(
+        "season_row_failed", _listed, "season_cohort", "season_cohort_id", None
+    ),
+    "filing_deadline.approaching": Kind(
+        "filing_deadline_approaching", _listed, "filing_deadline", "filing_deadline_id", None
+    ),
+    "standards_run.completed": Kind(
+        "standards_run_completed", _listed, "standards_run", "standards_run_id", None
+    ),
+    "variance_explanations.ready": Kind(
+        "variance_explanations_ready", _listed, "tax_return", "tax_return_id"
+    ),
+    "amendment.approval_requested": Kind(
+        "amendment_approval_requested", _listed, "tax_return", "tax_return_id"
+    ),
+    "aar.decision_requested": Kind(
+        "aar_decision_requested", _listed, "tax_return", "tax_return_id"
+    ),
     # G-04-T08 (AC-37, DEC-5420): scheduled agents paused at the plan limit, once a month.
     "usage.scheduled_paused": Kind("usage_scheduled_paused", _admins, "firm", None, None),
     # C-01-T17: an entity's scheduled ledger sync paused (needs reauth, monthly call budget).
@@ -831,6 +857,15 @@ TEMPLATES: Final[dict[str, str]] = {
     "tax_decision.answered": "The client answered a decision on {subject}.",
     "tb_handoff.received": "A trial balance was handed off to {subject}.",
     "tb_handoff.superseded": "The trial balance handed off to {subject} was replaced.",
+    # T-08-T03 (DEC-5602). Values stay out (DEC-60).
+    "season_cohort.ready_for_approval": "A season cohort is ready for your approval: {subject}.",
+    "season_cohort.executed": "Season setup finished for {subject}.",
+    "season_row.failed": "A season setup step failed in {subject}.",
+    "filing_deadline.approaching": "A filing deadline is approaching: {subject}.",
+    "standards_run.completed": "Firm standards run complete: {subject}.",
+    "variance_explanations.ready": "Two-year explanations are ready for review on {subject}.",
+    "amendment.approval_requested": "An amendment of {subject} needs your approval.",
+    "aar.decision_requested": "A BBA election on {subject} needs your decision.",
     # C-02-T02 (DEC-5501): posting, delivery and hand-off. Values stay out (DEC-60).
     "proposed_entry.approval_requested": "An adjusting entry on {subject} needs your approval.",
     "posting_batch.failed": "An entry in a posting batch for {subject} failed to post.",
@@ -1033,6 +1068,17 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("decision_answered", "approval", "CircleCheck"),
     NotificationKind("tb_handoff_received", "approval", "Inbox"),
     NotificationKind("tb_handoff_superseded", "other", "TriangleAlert"),
+    # T-08-T03 (DEC-5602): the approvals and the decision are actionable; the rest inform.
+    NotificationKind(
+        "season_cohort_ready_for_approval", "approval", "ListChecks", email_default=True
+    ),
+    NotificationKind("season_cohort_executed", "system", "CircleCheck"),
+    NotificationKind("season_row_failed", "run", "TriangleAlert"),
+    NotificationKind("filing_deadline_approaching", "deadline", "CalendarClock"),
+    NotificationKind("standards_run_completed", "run", "ListChecks"),
+    NotificationKind("variance_explanations_ready", "approval", "FileText"),
+    NotificationKind("amendment_approval_requested", "approval", "Gavel", email_default=True),
+    NotificationKind("aar_decision_requested", "approval", "Gavel"),
     # C-02-T02 (DEC-5501): posting, delivery and hand-off; the approval request is actionable.
     NotificationKind("entry_approval_requested", "approval", "ListChecks"),
     NotificationKind("posting_failed", "run", "TriangleAlert", email_default=True),

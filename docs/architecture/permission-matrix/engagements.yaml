@@ -79,3 +79,9 @@ actions:
   team.approve:             {engagement_partner: allow, mfa_recent: required, agent: deny, system: deny}   # human-only; fresh MFA (P-07-T30 security review)
   eqr.assign:               {engagement_partner: allow, manager: allow, agent: deny, system: deny}
   eqr.approve_eligibility:  {quality_partner: allow, agent: deny, system: deny}   # human-only; never the EP (409 eqr_approver_is_ep)
+  # --- T-08-T03 season setup (SPEC-710; DEC-5602; T-08 §4.4). The manifest is a firm admin's or a
+  # manager's to prepare; only a manager or a partner approves a cohort (OQ-13), never a firm admin, and
+  # the agent prepares nothing (it phrases asks as suggestions only). Behind engagements.season_setup.
+  season.read:                      {firm_admin: allow, practice_leader: allow, client_service: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, link_principal: deny, agent: task_scope, system: deny}   # ENG-07 manifest, cohorts, rows; walls on rows and counts
+  season_setup.prepare:             {firm_admin: allow, client_service: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, link_principal: deny, agent: deny, system: deny}   # build, reassign, exclude, answer asks
+  season_setup.approve_cohort:      {firm_partner: allow, firm_manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, link_principal: deny, agent: deny, system: deny}   # human-only; single-use grant (ADR-161); 409 cohort_approved / execution_started

@@ -764,3 +764,24 @@ T-06-T04 (SPEC-702; DEC-5512). UI words in brackets where they differ.
 | Training sandbox | A synthetic copy-tenant of a firm for training; seats not counted. | `firms.sandbox_of_firm_id`, `synthetic` | `demo firm` |
 
 Banned in UI copy (SPEC-680 AC-31): "credits", "tokens", "subscription price"; agent-minutes never read as hours or billable time.
+
+## New terms: tax season and practice tools (T-08-T03)
+
+T-08-T03 (DEC-14, DF-31; SPEC-710; DEC-5602). Code says `filing_deadline` or `due_date`, never a bare `deadline`; I-01's placeholder kind `deadline_approaching` is `filing_deadline.approaching`.
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Season | One tax year's roll-forward of continuing tax clients. | `seasons` | — |
+| Season manifest | The code-built list of every engagement, return and binder the season will create, in cohorts. | `season_manifests`, `season_manifest_rows` | roll-forward list |
+| Cohort | A manifest slice by office and segment that one manager or partner approves before anything is created. | `season_cohorts`, `season_cohort_approvals` | batch |
+| Manifest row | One client's line in a cohort: forms, carried assignments, binder source, letter and consents. | `season_manifest_rows` | — |
+| Standards run | One firm checklist version applied across many returns by code checks. | `standards_runs`, `standards_run_items` | — |
+| Check result | One code check's outcome on one return in a standards run. | `standards_check_results` | — |
+| Explanation | A cited reason for a two-year line that moved past the threshold, accepted by a reviewer. | `variance_explanation_versions`, `variance_explanation_acceptances` | variance note |
+| Opportunity | A screened planning item for a client, raised by a partner. | `planning_opportunities` | lead |
+| Amendment | A new linked return amending an accepted one; the original is never changed. | `amendments` | — |
+| Administrative adjustment request (AAR) | A BBA partnership's only route to correct a filed 1065. | `aar_adjustments`, `aar_elections` (code `aar`) | amended 1065 |
+| Superseded | The original return once its amendment's acceptance is imported. | `return_supersessions` | replaced |
+| Postponement application | A person's application of a relief notice to one client's due dates. | `postponement_applications` | — |
+| Deadline | A due date on the calendar, computed from the rules. | `filing_deadlines` | milestone (as a synonym) |
+

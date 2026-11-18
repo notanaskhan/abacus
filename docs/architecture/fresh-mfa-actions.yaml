@@ -177,3 +177,6 @@ actions:
   # T-06-T03 (SPEC-702; DEC-5511): the watermarked draft form download (DEC-60).
   - action: form_preview.download_draft
     group: export
+  # T-08-T03 (SPEC-710; DEC-5602): a relief notice applied to a client (OQ-17).
+  - action: filing_deadline.apply_postponement
+    group: standards

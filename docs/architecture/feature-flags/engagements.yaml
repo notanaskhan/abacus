@@ -18,3 +18,12 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  # --- T-08-T03 (SPEC-710; DEC-5602): T-08 rollout flags, default off.
+  - name: engagements.season_setup
+    description: 'T-08 season setup (ENG-07, /v1/seasons*, the ENG-01 "Season setup…" item). Off: the C-20 not-turned-on state and 404; on: 501 until each build task. T-08-T03, DEC-5602.'
+    owner: ayushkbhatia
+    created: 2026-11-18
+    expires: 2027-05-17
+    override: DEC-137
+    kind: boolean
+    default: false

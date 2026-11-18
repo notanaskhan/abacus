@@ -624,6 +624,9 @@ _register_hooks(
 # T-06-T05/T07 (DEC-5514, DEC-5516): the C12 and entity-depth models, for seed and consumers.
 from abacus.modules.tax import entity_depth_contract as entity_depth_contract  # noqa: E402
 from abacus.modules.tax import entity_depth_errors as entity_depth_errors  # noqa: E402
+
+# T-08-T03 (DEC-5602): tax practice tools error codes declared before their services.
+from abacus.modules.tax import practice_tools_errors as practice_tools_errors  # noqa: E402
 from abacus.modules.tax import tb_handoff_contract as tb_handoff_contract  # noqa: E402
 from abacus.modules.tax.allocation_structure import TARGET as ALLOCATION_TARGET  # noqa: E402
 from abacus.modules.tax.allocation_structure import Draft as AllocationDraft  # noqa: E402

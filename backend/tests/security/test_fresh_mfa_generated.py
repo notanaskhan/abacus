@@ -87,6 +87,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("close_package.client_decide", "release", "client_admin"),
     ("close.lock", "release", "engagement_partner"),
     ("form_preview.download_draft", "export", "engagement_partner"),
+    ("filing_deadline.apply_postponement", "standards", "firm_admin"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
     (

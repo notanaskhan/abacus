@@ -160,4 +160,36 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
-
+  # --- T-08-T03 (SPEC-710; DEC-5602): T-08 rollout flags, default off.
+  - name: tax.two_year
+    description: 'T-08 two-year comparison (TAX-10, /v1/tax-returns/{id}/two-year*). Off: the SheetTab is hidden and the routes 404. T-08-T03, DEC-5602.'
+    owner: ayushkbhatia
+    created: 2026-11-18
+    expires: 2027-05-17
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: tax.standards_runs
+    description: 'T-08 firm standards runs (TAX-14, the TAX-01 bulk action, KNW-04 "Apply to returns…"). Off: 404 and the entries are absent. T-08-T03, DEC-5602.'
+    owner: ayushkbhatia
+    created: 2026-11-18
+    expires: 2027-05-17
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: tax.planning
+    description: 'T-08 planning opportunities (TAX-15, the screening workflow). Off: 404 and no screening runs. T-08-T03, DEC-5602.'
+    owner: ayushkbhatia
+    created: 2026-11-18
+    expires: 2027-05-17
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: tax.amendments
+    description: 'T-08 amendments and AARs (TAX-16, the TAX-07 "Amend…" entry). Off: 404 and no entry. T-08-T03, DEC-5602.'
+    owner: ayushkbhatia
+    created: 2026-11-18
+    expires: 2027-05-17
+    override: DEC-137
+    kind: boolean
+    default: false
