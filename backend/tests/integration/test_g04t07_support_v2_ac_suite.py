@@ -421,6 +421,49 @@ async def test_alert_events_are_once_per_threshold_per_usage_month(seed: Seeder)
         await seed.run(insert, firm, rule)
 
 
+async def test_g04t18_alerts_sent_lists_the_months_firm_alerts_lowest_first(seed: Seeder) -> None:
+    """ADM-14 b reads the month's firm alerts through GET /v1/firm/usage: lowest threshold first,
+    recipients by name in the order recorded; another month's and engagement rows stay out."""
+    from abacus.modules.platform.usage_alerts import alerts_sent
+
+    firm = await seed.firm()
+    grace, felix = await seed.person(firm), await seed.person(firm)
+    await seed.run("UPDATE users SET display_name = 'Grace' WHERE id = $1", grace.user_id)
+    await seed.run("UPDATE users SET display_name = 'Felix' WHERE id = $1", felix.user_id)
+    insert = (
+        "INSERT INTO usage_alert_events (tenant_id, scope, rule_id, engagement_id, usage_month, "
+        "threshold_pct, crossed_at, minutes_at_crossing, sent_to) "
+        "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
+    )
+    at = datetime(2026, 10, 9, 18, 47, tzinfo=UTC)
+    for pct, month, when, to in (
+        (90, "2026-09", at, [grace.user_id, felix.user_id]),
+        (75, "2026-09", at - timedelta(days=8), [grace.user_id]),
+        (75, "2026-08", at - timedelta(days=40), [grace.user_id]),
+    ):
+        rule = await seed.value(
+            "INSERT INTO usage_alert_rules (tenant_id, threshold_pct) VALUES ($1, $2) "
+            "ON CONFLICT DO NOTHING RETURNING id",
+            firm,
+            pct,
+        ) or await seed.value(
+            "SELECT id FROM usage_alert_rules WHERE tenant_id = $1 AND threshold_pct = $2",
+            firm,
+            pct,
+        )
+        await seed.run(insert, firm, "firm", rule, None, month, pct, when, 15000, to)
+    engagement = await seed.engagement(firm, await seed.entity(firm), grace.user_id)
+    await seed.run(insert, firm, "engagement", None, engagement, "2026-09", 80, at, 1240, [])
+
+    sent = await alerts_sent(TenantContext(firm, "system", "usage_alerts"), "2026-09")
+
+    assert [(a.threshold_pct, a.recipients) for a in sent] == [
+        (75, ("Grace",)),
+        (90, ("Grace", "Felix")),
+    ]
+    assert sent[1].crossed_at == at
+
+
 async def test_a_plan_request_is_never_decided_by_its_requester(seed: Seeder) -> None:
     firm = await seed.firm()
     grace = uuid.uuid4()

@@ -8,7 +8,7 @@ each engagement's budget. A threshold crossed for the first time writes one
 replayed event and the nightly reconcile write nothing more) and emits its C16 event naming the
 recipients: the rule's people and groups (partners, firm admins) for the firm; the engagement's
 managers (else its leads) for an engagement budget. Minutes and thresholds are code's integers.
-ADM-14's banner reads `banner_facts`.
+ADM-14's banner and helper read `alerts_sent` through `GET /v1/firm/usage` (G-04-T18).
 """
 
 from __future__ import annotations
@@ -223,6 +223,39 @@ async def banner_facts(tenant: TenantContext) -> Banner | None:
     )
 
 
+@dataclass(frozen=True)
+class SentAlert:
+    """One firm alert sent this usage month (ADM-14 b and c): the threshold, when it was crossed
+    and who it went to, by name."""
+
+    threshold_pct: int
+    crossed_at: datetime
+    recipients: tuple[str, ...]
+
+
+_SENT: Final = text(
+    "SELECT threshold_pct, crossed_at, sent_to FROM usage_alert_events "
+    "WHERE scope = 'firm' AND usage_month = :m ORDER BY threshold_pct, crossed_at"
+)
+
+
+async def alerts_sent(tenant: TenantContext, usage_month: str) -> list[SentAlert]:
+    """The usage month's firm alerts, lowest threshold first; the caller has authorised
+    `usage.read`. Recipients are named in the order the evaluator recorded them."""
+    async with tenant_session(tenant) as session:
+        rows = (await session.execute(_SENT, {"m": usage_month})).all()
+    ids = {u for row in rows for u in cast("list[UUID]", list(row.sent_to or []))}
+    people = await names_of(sorted(ids, key=str)) if ids else {}
+    return [
+        SentAlert(
+            int(row.threshold_pct),
+            row.crossed_at,
+            tuple(people[u] for u in cast("list[UUID]", list(row.sent_to or [])) if u in people),
+        )
+        for row in rows
+    ]
+
+
 async def evaluate_all() -> int:
     """The nightly reconcile: every firm, each in its own context; a failure is logged and the
     next firm runs."""
@@ -240,7 +273,9 @@ async def evaluate_all() -> int:
 __all__ = [
     "Banner",
     "EngagementBudgetCrossed",
+    "SentAlert",
     "UsageThresholdCrossed",
+    "alerts_sent",
     "banner_facts",
     "crossed",
     "engagement_crossed",

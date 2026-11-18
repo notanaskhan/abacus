@@ -203,6 +203,7 @@ MODELS: dict[str, tuple[str, ...]] = {
         "StreamTopicsIn",
         "StreamTopicsOut",
         "UsageLineOut",
+        "AlertSentOut",
         "FirmUsageOut",
         "EngagementEffortOut",
     ),

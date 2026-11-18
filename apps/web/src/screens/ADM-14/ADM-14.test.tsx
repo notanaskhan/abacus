@@ -57,16 +57,39 @@ describe("ADM-14 Plan & usage", () => {
     expect(screen.getAllByText("Tax").length).toBeGreaterThan(0);
   });
 
-  it("b: 18,240 at 91.2%; c: 20,860 over by 860 with no amount", async () => {
+  function banner(): string {
+    return document.querySelector("[data-adm14='banner']")?.textContent ?? "";
+  }
+
+  it("a: no banner before the first alert", async () => {
+    show("a");
+    await meter();
+    expect(document.querySelector("[data-adm14='banner']")).toBeNull();
+  });
+
+  it("b: 18,240 at 91.2%, the 90% alert's banner names when and to whom, the helper the 75% one", async () => {
     show("b");
-    expect((await meter()).textContent).toContain("91.2%");
-    cleanup();
-    restore?.();
+    const m = await meter();
+    expect(m.textContent).toContain("91.2%");
+    expect(banner()).toBe(
+      "90% of included agent-minutes used · alert sent Oct 9, 1:47 PM to Grace Holloway, Margaret Okonkwo and Felix Andersen",
+    );
+    expect(m.querySelector("[data-adm14='helper']")?.textContent).toBe(
+      "1,760 left until Oct 15 · 75% alert sent Oct 1, 11:06 AM",
+    );
+  });
+
+  it("c: 20,860 at 104.3%, the red banner 860 over with no amount, reset tomorrow", async () => {
     show("c");
     const c = await meter();
     expect(c.textContent).toContain("104.3%");
-    expect(c.textContent).toContain("860 agent-minutes over included");
-    expect(c.textContent).not.toMatch(/\$/);
+    expect(banner()).toBe(
+      "860 agent-minutes over included · agents keep running (setting: Keep agents running) · overage is billed on the next invoice at the order-form rate",
+    );
+    expect(banner()).not.toMatch(/\$/);
+    expect(c.querySelector("[data-adm14='helper']")?.textContent).toBe(
+      "Included minutes reset tomorrow, Oct 15",
+    );
   });
 
   it("Save stays disabled until an alert setting changes (a, then d dirty)", async () => {

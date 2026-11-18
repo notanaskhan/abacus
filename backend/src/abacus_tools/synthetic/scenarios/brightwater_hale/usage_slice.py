@@ -144,6 +144,13 @@ ADM14_ALERTS: Final = (  # (pct, recipients by name, recipient groups)
     (90, ("Grace Holloway", "Margaret Okonkwo", "Felix Andersen"), ()),
     (100, (), ("partners", "firm_admins")),
 )
+# Firm alerts sent this usage month at b and c (ADM-14 b: "alert sent Oct 9, 1:47 PM to Grace
+# Holloway, Margaret Okonkwo and Felix Andersen" and "75% alert sent Oct 1, 11:06 AM"). The
+# handoff gives no send time for c's 100% alert, so c carries the two it names and no third.
+ADM14_SENT: Final = (  # (pct, sent at CT)
+    (75, "2026-10-01T11:06:00-05:00"),
+    (90, "2026-10-09T13:47:00-05:00"),
+)
 ADM14_RATES: Final = (  # (band, people, hourly rate or None for non-chargeable)
     ("Partner", 7, "450.00"),
     ("Manager & reviewer", 7, "300.00"),
@@ -163,6 +170,10 @@ ADM14_GRANITE: Final = (
 ADM14_MODULES: Final = (
     "tax_services", "audit_assurance", "client_accounting", "advisory", "attest", "internal_audit",
 )  # fmt: skip
+
+
+def _recipients(pct: int) -> tuple[str, ...]:
+    return next(names for p, names, _groups in ADM14_ALERTS if p == pct)
 
 
 def adm14_rows() -> dict[str, object]:
@@ -185,6 +196,13 @@ def adm14_rows() -> dict[str, object]:
             else [],
             "by_capability": [],
             "by_engagement": [],
+            "alerts_sent": [
+                {"threshold_pct": pct, "sent_at": at, "recipients": list(_recipients(pct))}
+                for pct, at in ADM14_SENT
+            ]
+            if state != "a"
+            else [],
+            "over_included": max(used - INCLUDED_MINUTES, 0),
         }
         for state, used in ADM14_USED.items()
     }

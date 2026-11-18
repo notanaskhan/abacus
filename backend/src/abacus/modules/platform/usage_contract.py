@@ -8,7 +8,7 @@ code; never USD (DEC-51). ADM-14 and ENG-06 read these. Implemented by P-10-T42
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -22,6 +22,7 @@ from abacus.modules.platform.metering import (
     engagement_effort,
     firm_usage,
 )
+from abacus.modules.platform.usage_alerts import alerts_sent
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 Internal = classified("internal")
@@ -34,6 +35,16 @@ class UsageLineOut(BaseModel):
     key: Annotated[str, Internal]
     label: Annotated[str, Confidential]
     minutes: Annotated[int, Internal]
+
+
+class AlertSentOut(BaseModel):
+    """A firm alert sent this usage month (ADM-14 b: "alert sent Oct 9, 1:47 PM to …")."""
+
+    model_config = ConfigDict(frozen=True)
+
+    threshold_pct: Annotated[int, Internal]
+    sent_at: Annotated[datetime, Internal]
+    recipients: Annotated[list[str], Confidential]
 
 
 class FirmUsageOut(BaseModel):
@@ -49,6 +60,10 @@ class FirmUsageOut(BaseModel):
     by_service_line: Annotated[list[UsageLineOut], Confidential]
     by_engagement: Annotated[list[UsageLineOut], Confidential]
     by_capability: Annotated[list[UsageLineOut], Confidential]
+    # G-04-T18 (plan-usage contract §2, P-10 additive): the month's firm alerts, lowest first, and
+    # the minutes over included (ADM-14 b, c). Integers from code; never an amount (P-27).
+    alerts_sent: Annotated[list[AlertSentOut], Confidential] = []
+    over_included: Annotated[int, Internal] = 0
 
 
 class EngagementEffortOut(BaseModel):
@@ -76,6 +91,7 @@ async def firm_usage_route(
     ctx: Ctx, month: Annotated[str | None, Query(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")] = None
 ) -> FirmUsageOut:
     usage = await firm_usage(ctx, month)
+    sent = await alerts_sent(ctx.tenant, usage.usage_month)
     return FirmUsageOut(
         usage_month=usage.usage_month,
         used_minutes=usage.used_minutes,
@@ -85,6 +101,13 @@ async def firm_usage_route(
         by_service_line=_lines(usage.by_service_line),
         by_engagement=_lines(usage.by_engagement),
         by_capability=_lines(usage.by_capability),
+        alerts_sent=[
+            AlertSentOut(
+                threshold_pct=a.threshold_pct, sent_at=a.crossed_at, recipients=list(a.recipients)
+            )
+            for a in sent
+        ],
+        over_included=max(usage.used_minutes - usage.included_minutes, 0),
     )
 
 

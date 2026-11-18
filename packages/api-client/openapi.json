@@ -4666,6 +4666,37 @@
         "title": "AlertRuleOut",
         "type": "object"
       },
+      "AlertSentOut": {
+        "description": "A firm alert sent this usage month (ADM-14 b: \"alert sent Oct 9, 1:47 PM to \u2026\").",
+        "properties": {
+          "recipients": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Recipients",
+            "type": "array"
+          },
+          "sent_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Sent At",
+            "type": "string"
+          },
+          "threshold_pct": {
+            "cls": "internal",
+            "title": "Threshold Pct",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "threshold_pct",
+          "sent_at",
+          "recipients"
+        ],
+        "title": "AlertSentOut",
+        "type": "object"
+      },
       "AllocationRowOut": {
         "properties": {
           "credits": {
@@ -55858,6 +55889,15 @@
       "FirmUsageOut": {
         "description": "ADM-14: 14,920 of 20,000 = 8,640 + 4,610 + 1,420 + 120 + 130.",
         "properties": {
+          "alerts_sent": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/AlertSentOut"
+            },
+            "title": "Alerts Sent",
+            "type": "array"
+          },
           "by_capability": {
             "cls": "confidential",
             "items": {
@@ -55898,6 +55938,12 @@
           "included_minutes": {
             "cls": "internal",
             "title": "Included Minutes",
+            "type": "integer"
+          },
+          "over_included": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Over Included",
             "type": "integer"
           },
           "starts_on": {

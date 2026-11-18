@@ -50,7 +50,9 @@
         }
       ],
       "by_capability": [],
-      "by_engagement": []
+      "by_engagement": [],
+      "alerts_sent": [],
+      "over_included": 0
     },
     "b": {
       "usage_month": "2026-09",
@@ -60,7 +62,27 @@
       "used_minutes": 18240,
       "by_service_line": [],
       "by_capability": [],
-      "by_engagement": []
+      "by_engagement": [],
+      "alerts_sent": [
+        {
+          "threshold_pct": 75,
+          "sent_at": "2026-10-01T11:06:00-05:00",
+          "recipients": [
+            "Grace Holloway",
+            "Margaret Okonkwo"
+          ]
+        },
+        {
+          "threshold_pct": 90,
+          "sent_at": "2026-10-09T13:47:00-05:00",
+          "recipients": [
+            "Grace Holloway",
+            "Margaret Okonkwo",
+            "Felix Andersen"
+          ]
+        }
+      ],
+      "over_included": 0
     },
     "c": {
       "usage_month": "2026-09",
@@ -70,7 +92,27 @@
       "used_minutes": 20860,
       "by_service_line": [],
       "by_capability": [],
-      "by_engagement": []
+      "by_engagement": [],
+      "alerts_sent": [
+        {
+          "threshold_pct": 75,
+          "sent_at": "2026-10-01T11:06:00-05:00",
+          "recipients": [
+            "Grace Holloway",
+            "Margaret Okonkwo"
+          ]
+        },
+        {
+          "threshold_pct": 90,
+          "sent_at": "2026-10-09T13:47:00-05:00",
+          "recipients": [
+            "Grace Holloway",
+            "Margaret Okonkwo",
+            "Felix Andersen"
+          ]
+        }
+      ],
+      "over_included": 860
     }
   },
   "alerts": [
