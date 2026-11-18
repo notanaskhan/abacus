@@ -89,6 +89,7 @@ from abacus.modules.tax.k1_release_workflow import (
 )
 from abacus.modules.tax.kind import TaxReturnKind
 from abacus.modules.tax.overview import on_binder_published, on_sign_off_recorded
+from abacus.modules.tax.practice_tools_contract import practice_tools_router
 from abacus.modules.tax.returns_routes import returns_router
 from abacus.modules.tax.schedules_contract import schedules_router
 from abacus.modules.tax.status import TRANSITIONS, StaleReturn, TransitionRefused, next_status
@@ -163,6 +164,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     estate_router,  # EW-1 estate workpapers, TXT-04 (T-07-T05 stub; dark)
     entity_depth_router,  # T-06-T07: entity depth, other workpapers, form pages (stubs; dark)
     tb_handoff_router,  # T-06-T05: C12 v1, the TB hand-off (stub; dark); ledger owns the tables
+    practice_tools_router,  # T-08-T04: TP-1 two-year, standards runs, planning, amendments (stubs; dark)
 )
 
 
