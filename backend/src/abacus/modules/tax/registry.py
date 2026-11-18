@@ -1668,3 +1668,251 @@ UPDATE_COLUMNS["planning_opportunities"] = UPDATE_COLUMNS["planning_opportunitie
         "talking_points_suggestion_id",
     }
 )
+
+# T-06-T14 (0966, DEC-5625).
+T06T14_TABLES: frozenset[str] = frozenset(
+    {
+        "aaa_lines",
+        "allocation_runs",
+        "deferred_tax_items",
+        "form_diagnostics",
+        "form_page_renders",
+        "functional_expense_lines",
+        "public_support_tests",
+        "rate_recon_items",
+        "shareholder_allocations",
+        "tax_provisions",
+    }
+)
+TABLES = TABLES | T06T14_TABLES
+INSERT_COLUMNS["aaa_lines"] = frozenset(
+    {
+        "col_aaa",
+        "col_e_and_p",
+        "col_oaa",
+        "col_pti",
+        "engagement_id",
+        "line_no",
+        "source_ref",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["aaa_lines"] = frozenset(
+    {
+        "col_aaa",
+        "col_e_and_p",
+        "col_oaa",
+        "col_pti",
+        "source_ref",
+    }
+)
+INSERT_COLUMNS["shareholder_allocations"] = frozenset(
+    {
+        "days",
+        "distributions",
+        "engagement_id",
+        "interest",
+        "nondeductible",
+        "ordinary_income",
+        "partner_id",
+        "pct",
+        "shares",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["shareholder_allocations"] = frozenset(
+    {
+        "days",
+        "distributions",
+        "interest",
+        "nondeductible",
+        "ordinary_income",
+        "pct",
+        "shares",
+    }
+)
+INSERT_COLUMNS["tax_provisions"] = frozenset(
+    {
+        "blended_rate",
+        "current_tax",
+        "deferred_tax",
+        "engagement_id",
+        "etr",
+        "off_amount",
+        "permanent_total",
+        "pretax_book_income",
+        "recon_status",
+        "taxable_income",
+        "temporary_total",
+        "tenant_id",
+        "total_provision",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["tax_provisions"] = frozenset(
+    {
+        "blended_rate",
+        "current_tax",
+        "deferred_tax",
+        "etr",
+        "off_amount",
+        "permanent_total",
+        "pretax_book_income",
+        "recon_status",
+        "taxable_income",
+        "temporary_total",
+        "total_provision",
+    }
+)
+INSERT_COLUMNS["rate_recon_items"] = frozenset(
+    {
+        "amount",
+        "classification",
+        "description",
+        "engagement_id",
+        "item_key",
+        "proposal_id",
+        "provision_id",
+        "rate_effect",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["rate_recon_items"] = frozenset(
+    {
+        "amount",
+        "classification",
+        "description",
+        "proposal_id",
+        "rate_effect",
+    }
+)
+INSERT_COLUMNS["deferred_tax_items"] = frozenset(
+    {
+        "amount",
+        "engagement_id",
+        "kind",
+        "label",
+        "provision_id",
+        "rate",
+        "temporary_difference",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["deferred_tax_items"] = frozenset(
+    {
+        "amount",
+        "rate",
+        "temporary_difference",
+    }
+)
+INSERT_COLUMNS["functional_expense_lines"] = frozenset(
+    {
+        "allocation_basis",
+        "engagement_id",
+        "fundraising",
+        "label",
+        "management_general",
+        "part_ix_line",
+        "program",
+        "source_memo_evidence_version_id",
+        "tenant_id",
+        "time_study",
+        "total",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["functional_expense_lines"] = frozenset(
+    {
+        "allocation_basis",
+        "fundraising",
+        "label",
+        "management_general",
+        "program",
+        "source_memo_evidence_version_id",
+        "time_study",
+        "total",
+    }
+)
+INSERT_COLUMNS["public_support_tests"] = frozenset(
+    {
+        "engagement_id",
+        "pct",
+        "public_support",
+        "tenant_id",
+        "threshold_met",
+        "total_support",
+        "work_item_id",
+        "years",
+    }
+)
+UPDATE_COLUMNS["public_support_tests"] = frozenset(
+    {
+        "pct",
+        "public_support",
+        "threshold_met",
+        "total_support",
+    }
+)
+INSERT_COLUMNS["allocation_runs"] = frozenset(
+    {
+        "engagement_id",
+        "proposal_id",
+        "run_id",
+        "status",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["allocation_runs"] = frozenset(
+    {
+        "proposal_id",
+        "status",
+    }
+)
+INSERT_COLUMNS["form_page_renders"] = frozenset(
+    {
+        "checkpoint_id",
+        "engagement_id",
+        "generated_document_version_id",
+        "page_key",
+        "render_hash",
+        "status",
+        "template_version_id",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["form_page_renders"] = frozenset(
+    {
+        "generated_document_version_id",
+        "render_hash",
+        "status",
+    }
+)
+INSERT_COLUMNS["form_diagnostics"] = frozenset(
+    {
+        "checkpoint_id",
+        "engagement_id",
+        "engine_import_id",
+        "facts",
+        "issue_id",
+        "rule_key",
+        "severity",
+        "source",
+        "status",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["form_diagnostics"] = frozenset(
+    {
+        "facts",
+        "issue_id",
+        "severity",
+        "status",
+    }
+)

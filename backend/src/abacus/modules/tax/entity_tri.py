@@ -47,6 +47,15 @@ TRI_RECORDS: Final[tuple[tuple[str, str, str], ...]] = (
     ("aar_elections", "imputed_underpayment", "always"),
     ("planning_opportunities", "est_savings", "always"),
     ("standards_check_results", "difference", "always"),
+    # T-06-T14 (0966, DEC-5625): other entity workpapers and form diagnostics.
+    ("aaa_lines", "col_aaa", "always"),
+    ("shareholder_allocations", "ordinary_income", "always"),
+    ("tax_provisions", "total_provision", "always"),
+    ("rate_recon_items", "amount", "always"),
+    ("deferred_tax_items", "amount", "always"),
+    ("functional_expense_lines", "total", "always"),
+    ("public_support_tests", "public_support", "always"),
+    ("form_diagnostics", "facts", "always"),
 )
 
 
