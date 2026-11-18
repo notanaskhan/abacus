@@ -488,6 +488,7 @@ OWNER_ONLY_FUNCTIONS = frozenset(
     | {"active_tenant_ids", "standards_sets_apply"}
     | {"archived_guard"}  # 0686: fires as a trigger; nobody calls it
     | {"connection_state_firm_note"}  # 0790 (A-02-T33): fires as a trigger; nobody calls it
+    | {"connection_write_grants_not_attest"}  # 0951 (C-02-T05): fires as a trigger only
     # 0920 (G-04-T04): PlatformOpsWorkflow and the operator CLI only.
     | {"platform_directory_upsert", "help_article_draft", "help_article_publish"}
     | {"help_article_withdraw", "status_incident_post", "status_incident_update"}

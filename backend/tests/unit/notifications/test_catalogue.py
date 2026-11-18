@@ -49,6 +49,17 @@ def test_the_realtime_invalidations_subscribe_apart_from_the_catalogue() -> None
 
 def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
     assert set(CATALOGUE) == {
+        # S49: C-02 posting, delivery and the 1099 tracker; T-06 hand-offs and decisions.
+        "close_deliverable.client_approved",
+        "posting_batch.failed",
+        "posting_batch.posted",
+        "proposed_entry.approval_requested",
+        "tax_decision.answered",
+        "tax_handoff.published",
+        "tax_handoff.superseded",
+        "tb_handoff.received",
+        "tb_handoff.superseded",
+        "w9.uploaded",
         # S48: A-08-T21 an explanation to review; C-01-T26 the close kinds (DEC-5412); G-04-T12
         # the usage thresholds (DEC-5419); G-04-T08 scheduled runs paused at 100% (DEC-5420).
         "analytics.explanation_recorded",

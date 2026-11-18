@@ -86,7 +86,7 @@ class ConversationOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     id: Annotated[UUID | None, Internal]  # None until the first message
-    availability: AvailabilityOut
+    availability: Annotated[AvailabilityOut, Internal]
     messages: Annotated[list[SupportMessageOut], Internal]
     session_cards: Annotated[list[SessionCardOut], Internal]
     suggestions: Annotated[list[str], Internal]  # the empty thread's two cards (SHL-05 f)

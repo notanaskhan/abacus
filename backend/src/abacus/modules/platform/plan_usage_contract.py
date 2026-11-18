@@ -104,10 +104,10 @@ class FirmPlanOut(BaseModel):
     term_end: Annotated[date, Internal]
     renewal_on: Annotated[date, Internal]
     renewal_in_days: Minutes
-    seats: SeatsOut
+    seats: Annotated[SeatsOut, Internal]
     modules: Annotated[list[ModuleKey], Internal]
     library_channel: Annotated[Literal["stable", "early_access"], Internal]
-    billing_contact: PersonRef | None
+    billing_contact: Annotated[PersonRef | None, Internal]
     workbench_active_30d: Minutes
     included_agent_minutes: Minutes
     usage_month_anchor_day: Annotated[int, Field(ge=1, le=28), Internal]
@@ -149,9 +149,9 @@ class BudgetAlertsOut(BaseModel):
     at_100_behaviour: Annotated[At100, Internal]
     engagement_default_minutes: Minutes
     engagement_alert_pct: Annotated[int, Field(ge=1, le=100), Internal]
-    partner_approver: PersonRef | None
+    partner_approver: Annotated[PersonRef | None, Internal]
     version: Annotated[int, Field(ge=1), Internal]
-    updated_by: PersonRef | None
+    updated_by: Annotated[PersonRef | None, Internal]
     updated_at: Annotated[datetime | None, Internal]
 
 
@@ -237,9 +237,9 @@ class PlanRequestOut(BaseModel):
     effective_from: Annotated[date | None, Internal]
     reason: Annotated[str, Confidential]
     status: Annotated[PlanRequestStatus, Internal]
-    requested_by: PersonRef
-    approver: PersonRef | None
-    decided_by: PersonRef | None
+    requested_by: Annotated[PersonRef, Internal]
+    approver: Annotated[PersonRef | None, Internal]
+    decided_by: Annotated[PersonRef | None, Internal]
     decided_at: Annotated[datetime | None, Internal]
     applied_at: Annotated[datetime | None, Internal]
     version: Annotated[int, Field(ge=1), Internal]

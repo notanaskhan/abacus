@@ -24,6 +24,7 @@ GROUPS = frozenset(
     | {"release"}  # A-01-T23 (DEC-83): record-mode release and archive
     | {"standards"}  # K-02-T01 (DEC-1150): a firm standard's create and publish
     | {"consent"}  # T-01-T01 (DEC-1155): §7216 consent records and templates
+    | {"posting"}  # C-02-T02 (DEC-5501): W1 posting, its undo and the write capability
 )
 
 

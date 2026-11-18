@@ -449,7 +449,7 @@ async def package_xlsx_route(close_id: UUID, ctx: Ctx) -> bytes:
     status_code=202,
     errors=(409, 501),
 )
-async def release_route(
+async def close_package_release_route(
     close_id: UUID, body: DeliveryReleaseIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> DeliveryPackageOut:
     """Partner only, live, fresh MFA; 409 `release_preconditions_unmet` (C-02-T23)."""

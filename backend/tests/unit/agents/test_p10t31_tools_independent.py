@@ -162,6 +162,9 @@ def _call(agent: AgentContext, name: str, arguments: dict[str, object]) -> ToolC
 # context: `binders.read` is BND-01's index for a season; `workpapers.read_section` resolves its
 # paper's engagement and refuses one outside the run's engagement (404) before reading content.
 INDIRECT: dict[str, str] = {
+    # A-09-T34 (DEC-5522): the consolidation is checked against the run's engagement first; the
+    # refusal outside it is test_a09t37_component_agent_independent's.
+    "assurance.propose_eliminations": "the consolidation on the run's engagement, else 404",
     "binders.read": "the season's binders through BND-01's visible() index",
     "workpapers.read_section": "the paper's own engagement, refused outside the run's (404)",
     # W-02-T19 (DEC-4930): firm structure, no client data; `org_structure.list` gates it.

@@ -1267,6 +1267,7 @@ UPDATE_COLUMNS["component_deliverables"] = frozenset(
         "reviewed_by",
         "row_version",
         "status",
+        "went_late_at",  # 0945 (A-09-T27): stamped once by the late sweep
     }
 )
 INSERT_COLUMNS["component_instruction_versions"] = frozenset(

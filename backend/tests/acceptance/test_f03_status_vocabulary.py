@@ -498,6 +498,7 @@ CAPITALISED_BY_SOURCE = {
     "QuickBooks",
     "Notices",  # N-04's upload slot names the area: "Routed to Notices" (T-03-T01; verbatim)
     "Interim",  # AUD-06 g spells the chip "TB: Interim · 8/31/2026" (A-02-T02; verbatim, DEC-15)
+    "In",  # TXP-09 a spells the sourcing pill "Sourcing · In review" (T-06-T04; verbatim)
     # The product's name for its one agent: AUD-08 and TPL-20 cells "Suggested by Accrued Agent"
     # (A-04-T01; verbatim, DEC-15).
     "Accrued",
@@ -604,6 +605,8 @@ HOME_OBJECTS = {
 # ---------------------------------------------------------------------------------------------
 # Fields named `state` or `status` that are not an object status.
 NOT_A_STATUS = {
+    # T-06-T07 (S49): TXP-09's per-state row is keyed by the two-letter US state code.
+    "TaxDepthStateOut.state": "a two-letter US state code (TXP-09), not a status",
     # W-01-T03 (S45, DEC-5046): the OAuth `state` round-trip of a personal connect, never a
     # status; and a capability's grant on WB-11's "may do" card (allowed, off for this firm,
     # never).

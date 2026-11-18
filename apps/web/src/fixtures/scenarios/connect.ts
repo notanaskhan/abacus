@@ -9,7 +9,15 @@ import {
   json,
 } from "../../app-core/fixture-mode";
 import { seedScenario } from "../scenario";
-import { AUG17, type ConnectView, E0, E2, cchDetail, connectCatalog } from "../seed/connect";
+import {
+  AUG17,
+  type ConnectView,
+  E0,
+  E2,
+  cchDetail,
+  connectCatalog,
+  ledgerAppDetail,
+} from "../seed/connect";
 
 const BASE = seedScenario();
 
@@ -66,7 +74,12 @@ function wb11(
   clock: string,
   detail: ReturnType<typeof cchDetail>,
 ): Scenario {
+  // The drawer opens over Connect: the catalogue behind it is the viewer's WB-10 a (without it
+  // `/v1/integrations/catalog` would match `{key}` and answer the detail; W-01-T19 end pass).
+  const viewer: ConnectView =
+    persona === "hannah-leclerc" ? { viewer: "hannah-leclerc", at: clock } : { at: clock };
   return scenario(state, persona, clock, {
+    "GET /v1/integrations/catalog": () => json(connectCatalog(viewer)),
     "GET /v1/integrations/{key}": () => json(detail),
     "POST /v1/integrations/{key}/disconnect": () => json({ detail: "not_implemented" }, 501),
   });
@@ -76,7 +89,7 @@ export const wb11Scenarios = defineScenarios({
   a: wb11("a", "felix-andersen", E0, cchDetail("a")),
   b: wb11("b", "hannah-leclerc", E0, cchDetail("f")),
   c: wb11("c", "felix-andersen", AUG17, cchDetail("c")),
-  d: wb11("d", "felix-andersen", E0, cchDetail("a")),
+  d: wb11("d", "felix-andersen", E0, ledgerAppDetail()),
   e: wb11("e", "felix-andersen", E0, cchDetail("a")),
   f: wb11("f", "hannah-leclerc", E0, cchDetail("f")),
 });

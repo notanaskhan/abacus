@@ -170,6 +170,38 @@ const AGENTS = [
 ];
 
 /** WB-11 a (token mode, staging), c (needs reauth), f (non-admin), file bridge (real firms, AC-23). */
+/** WB-11 d: QuickBooks Online, a client-ledger firm app (W-01-T19 end pass). Only what the
+ * artboard and the catalogue row give: the auth line (WB-11 d verbatim) and the row's description;
+ * no firm-side connect, no connection facts of the firm's own (each client authorizes its company). */
+export function ledgerAppDetail(): ConnectIntegrationDetailOut {
+  const row = catalog.items.find((r) => r.key === "qbo");
+  return {
+    key: "qbo",
+    name: row?.name ?? "QuickBooks Online",
+    status: "connected",
+    status_line: null,
+    connection: {
+      mode: "firm_app",
+      auth_mode_label: "Firm app · each client authorizes its own company",
+      connected_by: null,
+      connected_at: null,
+      token_renews_at: null,
+      last_sync_at: null,
+      linked_count: null,
+      linked_label_code: null,
+      mapping_ref: null,
+    },
+    may_do: { read: [], write: [], never: [] },
+    health: { summary: "", events: [] },
+    dependents: { count: 0, paused: false, items: [] },
+    who_can_use: row?.description ?? "",
+    managed_by: null,
+    consent: null,
+    allowed_actions: [],
+    version: 1,
+  };
+}
+
 export function cchDetail(state: "a" | "c" | "f" | "file_bridge"): ConnectIntegrationDetailOut {
   const reauth = state === "c";
   const bridge = state === "file_bridge";

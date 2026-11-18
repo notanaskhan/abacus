@@ -383,7 +383,7 @@ async def approve_entry_route(
     response_model=PostingDecisionOut,
     errors=(409, 501),
 )
-async def request_approval_route(
+async def posting_request_approval_route(
     entry_id: UUID, body: PostingRequestApprovalIn, ctx: Ctx
 ) -> PostingDecisionOut:
     """HOME-02 gate `proposed_entry_approval` and the bell `entry_approval_requested`."""

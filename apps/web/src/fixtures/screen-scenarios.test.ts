@@ -36,6 +36,8 @@ describe("screen scenarios on the firm entry", () => {
       "AUD-08", // A-04-T34
       "SHL-13", // P-09-T19: the dock on AUD-02's run artboards
       "WB-09", // P-09-T19: the run trace drawer
+      "WB-10", // W-01-T19: Connect's catalogue states (j01 4, j14 3)
+      "WB-11", // W-01-T19: the integration drawer over Connect (j14 3 to 3d)
       "EBP-01", // A-05-T50
       "EBP-03",
       "EBP-04",
