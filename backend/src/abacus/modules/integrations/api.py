@@ -132,6 +132,7 @@ __all__ = [
     "ImportPlan",
     "IntegrationAdapter",
     "IntegrationCategory",
+    "IntegrationHealthWorkflow",  # imported below, for the S45-S48 replay recorder
     "LoadPlan",
     "ReadConnectorEntry",
     "SyntheticInstallRefused",
@@ -203,6 +204,9 @@ from abacus.modules.integrations.health_workflow import (  # noqa: E402
 )
 from abacus.modules.integrations.health_workflow import (  # noqa: E402
     WORKFLOWS as _HEALTH_WORKFLOWS,
+)
+from abacus.modules.integrations.health_workflow import (  # noqa: E402
+    IntegrationHealthWorkflow,  # the S45-S48 replay recorder
 )
 
 WORKFLOWS: dict[type, WorkClass] = dict(_HEALTH_WORKFLOWS)  # type: ignore[arg-type] -- the work class literal

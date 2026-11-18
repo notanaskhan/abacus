@@ -102,17 +102,20 @@ from abacus.kernel.errors import DomainConflict
 from abacus.kernel.temporal import temporal_client
 from abacus.kernel.uow import Target, uow
 from abacus.modules.adjustments.api import (
+    EliminationLine,
     NewEntry,
     NewLine,
+    eliminations,
     propose_entry,
     record_entry_decision,
     send_entries,
 )
-from abacus.modules.assurance.api import (  # A-07-T41: the archive slice
+from abacus.modules.assurance.api import (  # A-07-T41 archive, A-09-T39 Harlow & Pike slices
     EQR_REVIEW_TARGET,
     PHASE_GATES,
     RELEASE_MODE_SETTING,
     AdditionReason,
+    ConsolidationIn,
     EbpImportTies,
     EbpResultIn,
     EbpTestIn,
@@ -124,6 +127,9 @@ from abacus.modules.assurance.api import (  # A-07-T41: the archive slice
     NewRisk,
     ReleaseRequest,
     RiskEdit,
+    StructureEntityIn,
+    StructureIn,
+    TbAttachIn,
     acknowledge_letter,
     adopt_trial_balance,
     archive_state,
@@ -147,6 +153,8 @@ from abacus.modules.assurance.api import (  # A-07-T41: the archive slice
     governance_create,
     governance_letter,
     governance_request_approval,
+    group_consolidation,
+    group_figures,
     import_ebp_source,
     import_grouping_csv,
     mapping_live,
@@ -418,6 +426,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale import (  # noqa: F401  #
 from abacus_tools.synthetic.scenarios.brightwater_hale import ebp_eligibility as _eligibility
 from abacus_tools.synthetic.scenarios.brightwater_hale import entity_slice as _ent
 from abacus_tools.synthetic.scenarios.brightwater_hale import governance_room_slice as _room
+from abacus_tools.synthetic.scenarios.brightwater_hale import harlow_pike_slice as _hp
 from abacus_tools.synthetic.scenarios.brightwater_hale import pbc_screening as _pbc_screening
 from abacus_tools.synthetic.scenarios.brightwater_hale import plan_usage_slice as _plan_usage
 from abacus_tools.synthetic.scenarios.brightwater_hale import sampling_content
@@ -2130,6 +2139,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     REVIEW_SLICE: REVIEW_NEEDS,  # P-04-T36: the review grammar's objects on registered owners
     PLANNING_SLICE: PLANNING_NEEDS,  # A-04-T28: Northwind's planning day; G4 met at 4:40 PM
     _pbc_screening.SLICE: _pbc_screening.NEEDS,  # TASK-7816: Granite's screened PBC upload
+    _hp.SLICE: _hp.NEEDS,  # A-09-T39: Harlow & Pike's group audit (stage 1)
 }
 
 
@@ -7956,7 +7966,304 @@ async def _workbench_session_recorded(conn: asyncpg.Connection, _: Scenario, eve
     )
 
 
+# --- A-09-T39 stage 1 (`--slice harlow_pike`; DEC-5529): Harlow & Pike's FY2026 group audit ------
+
+
+def _hp_id(label: str) -> UUID:
+    return UUID(stable_id(f"group:harlow-pike:{label}"))
+
+
+async def _hp_entities(conn: asyncpg.Connection) -> dict[str, UUID]:
+    client = await _client_id(conn, _hp.CLIENT)
+    return {k: await _entity_id(conn, client, _hp.ENTITY_NAMES[k]) for k in _hp.ENTITY_KEYS}
+
+
+async def _hp_engagement(conn: asyncpg.Connection) -> tuple[UUID, UUID]:
+    """The group audit's engagement and its assurance work item."""
+    engagement = _hp_id("engagement")
+    item = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM work_items WHERE tenant_id = $1 AND engagement_id = $2 "
+        "AND kind = 'assurance'",
+        TENANT,
+        engagement,
+    )
+    if item is None:
+        raise LookupError("no assurance work item on Harlow & Pike's group audit")
+    return engagement, cast(UUID, item)
+
+
+async def _hp_consolidation(conn: asyncpg.Connection) -> UUID:
+    found = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM consolidations WHERE tenant_id = $1 AND engagement_id = $2",
+        TENANT,
+        _hp_id("engagement"),
+    )
+    if found is None:
+        raise LookupError("no consolidation on Harlow & Pike's group audit")
+    return cast(UUID, found)
+
+
+async def _hp_connection(conn: asyncpg.Connection, entity: UUID) -> UUID:
+    found = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM connections WHERE tenant_id = $1 AND client_entity_id = $2 "
+        "AND display_label = $3",
+        TENANT,
+        entity,
+        _hp.CONNECTION_LABEL,
+    )
+    if found is None:
+        raise LookupError("no OneWorld connection on Harlow & Pike Holdings")
+    return cast(UUID, found)
+
+
+async def _harlow_client_created(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
+    """The client and its five entities through `organisations.api`, as Margaret."""
+    first, *rest = _hp.ENTITY_KEYS
+    kind, actor = _actor(event)
+    ids = NewClient(_hp_id("client"), _hp_id(f"client-entity:{first}"))
+    async with uow(TenantContext(TENANT, kind, actor)) as tx:  # type: ignore[arg-type]  # "human" or "system"
+        await create_client(tx, TENANT, _hp.CLIENT, _hp.ENTITY_NAMES[first], ids=ids)
+        for key in rest:
+            await client_with_entity(
+                tx,
+                TENANT,
+                ids.client_id,
+                None,
+                _hp.ENTITY_NAMES[key],
+                new_entity_id=_hp_id(f"client-entity:{key}"),
+            )
+
+
+async def _harlow_engagement_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """The FY2026 group audit on Holdings (AUD-01 g), the other four entities its components."""
+    engagement = _hp_id("engagement")
+    office = office_id_of("Chicago")
+    entities = await _hp_entities(conn)
+
+    async def write() -> tuple[str, str, str]:
+        client = await _client_id(conn, _hp.CLIENT)
+        await conn.execute(
+            "INSERT INTO engagements (id, tenant_id, client_id, client_entity_id, name, type, "
+            "fiscal_period_start, fiscal_period_end, status, created_by, created_at, office_id) "
+            "VALUES ($1, $2, $3, $4, $5, 'fs_audit', $6, $7, 'active', $8, $9, $10) "
+            "ON CONFLICT DO NOTHING",
+            engagement,
+            TENANT,
+            client,
+            entities["holdings"],
+            _hp.ENGAGEMENT,
+            _hp.YEAR[0],
+            _hp.YEAR[1],
+            user_id_of(_SEATS["MO"]),
+            event.at,
+            office,
+        )
+        await conn.execute(
+            "UPDATE work_items SET due_on = $3, office_id = $4, created_at = $5 "
+            "WHERE tenant_id = $1 AND engagement_id = $2 AND kind = 'assurance'",
+            TENANT,
+            engagement,
+            _hp.DUE_ON,
+            office,
+            event.at,
+        )
+        for key in _hp.ENTITY_KEYS[1:]:
+            await conn.execute(
+                "INSERT INTO engagement_entities (tenant_id, engagement_id, client_entity_id, "
+                "role) VALUES ($1, $2, $3, 'component') ON CONFLICT DO NOTHING",
+                TENANT,
+                engagement,
+                entities[key],
+            )
+        for initials, role in _hp.TEAM:
+            await conn.execute(
+                "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+                "VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+                TENANT,
+                engagement,
+                user_id_of(_SEATS[initials]),
+                role,
+            )
+        return "engagement.created", "engagement", str(engagement)
+
+    await _bootstrap(conn, event, write)
+
+
+async def _harlow_independence_confirmed(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """G2: a team member confirms their own independence on the group audit."""
+    await answer_independence(
+        await _staff_context(conn, event), _hp_id("engagement"), confirm=True, note=None
+    )
+
+
+async def _harlow_connection_added(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """The NetSuite OneWorld connection on Holdings (fake provider; AUD-31 "pulled 10:38 AM")."""
+    await seed_synthetic_connection(
+        TENANT,
+        client_entity_id=(await _hp_entities(conn))["holdings"],
+        provider="fake_netsuite_oneworld",
+        category="ledger",
+        display_label=_hp.CONNECTION_LABEL,
+        status="active",
+        reason=None,
+        connected_by_user_id=user_id_of(_SEATS[event.actor]),
+        connected_at=event.at,
+        last_sync_at=event.at,
+    )
+
+
+async def _harlow_consolidation_created(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """AUD-32 a: the consolidation on the OneWorld source, as Omar."""
+    engagement, item = await _hp_engagement(conn)
+    holdings = (await _hp_entities(conn))["holdings"]
+    await group_consolidation.create(
+        await _staff_context(conn, event),
+        item,
+        engagement,
+        ConsolidationIn(
+            name=_hp.CONSOLIDATION,
+            year_end=_hp.YEAR[1],
+            reporting_currency="USD",
+            interim_period_end=_hp.INTERIM_END,
+            prior_period_end=_hp.PRIOR_END,
+            source_connection_id=await _hp_connection(conn, holdings),
+        ),
+        event.id,
+    )
+
+
+async def _harlow_structure_saved(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-32 c: three tiers at 100%, saved by Omar (the connection then covers the five)."""
+    _engagement, item = await _hp_engagement(conn)
+    consolidation = await _hp_consolidation(conn)
+    entities = await _hp_entities(conn)
+    ctx = await _staff_context(conn, event)
+    view = await group_consolidation.get(ctx, item, consolidation)
+    await group_consolidation.save_structure(
+        ctx,
+        item,
+        consolidation,
+        StructureIn(
+            entities=[
+                StructureEntityIn(
+                    client_entity_id=entities[key],
+                    parent_client_entity_id=None if parent is None else entities[parent],
+                    level=level,
+                    ownership_pct=100,
+                )
+                for key, level, parent in _hp.STRUCTURE
+            ]
+        ),
+        str(view.row_version),
+    )
+
+
+async def _harlow_interim_tb_attached(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-32 d: one entity's Aug 31 trial balance at the AUD-33 a captions, recorded as the
+    OneWorld pull's snapshot and attached to its interim slot by Omar."""
+    key = str(event.data["entity"])
+    entity = (await _hp_entities(conn))[key]
+    _engagement, item = await _hp_engagement(conn)
+    consolidation = await _hp_consolidation(conn)
+    column = group_figures.entity_column(key)
+    lines = tuple(
+        LedgerLine(
+            account_code=f"{n:02d}",
+            account_name=caption,
+            debit=amount if amount > 0 else Decimal(0),
+            credit=-amount if amount < 0 else Decimal(0),
+            source_ref=f"oneworld:{key}:{n:02d}",
+        )
+        for n, (caption, amount) in enumerate(column.items(), start=1)
+        if amount != 0
+    )
+    debit = sum((ln.debit for ln in lines), Decimal(0))
+    credit = sum((ln.credit for ln in lines), Decimal(0))
+    tb = NormalisedTrialBalance(
+        period_start=_hp.YEAR[0],
+        period_end=_hp.INTERIM_END,
+        currency="USD",
+        lines=lines,
+        declared_debit=debit,
+        declared_credit=credit,
+    )
+    kind, actor = _actor(event)
+    async with uow(TenantContext(TENANT, kind, actor)) as tx:  # type: ignore[arg-type]  # "human" or "system"
+        snapshot = await record_snapshot(
+            tx,
+            client_entity_id=entity,
+            period_start=_hp.YEAR[0],
+            period_end=_hp.INTERIM_END,
+            tb=tb,
+            raw_fingerprint=_fingerprint("harlow-pike-interim-tb", key, *lines),
+            pulled_at=event.at,
+            source="import_netsuite_tb_csv",
+        )
+    ctx = await _staff_context(conn, event)
+    view = await group_consolidation.get(ctx, item, consolidation)
+    slot_entity = next(e.id for e in view.entities if e.client_entity_id == entity)
+    await group_consolidation.attach(
+        ctx,
+        item,
+        consolidation,
+        slot_entity,
+        TbAttachIn(source="upload", label="interim", period_kind="current", upload_id=snapshot.id),
+    )
+
+
+async def _harlow_elimination_proposed(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """AUD-33 b: one of E1a to E5, proposed by Caleb (each line on the entity carrying it)."""
+    code = str(event.data["code"])
+    _code, level, description, lines = next(e for e in _hp.ELIMINATIONS if e[0] == code)
+    engagement, item = await _hp_engagement(conn)
+    entities = await _hp_entities(conn)
+    await eliminations.propose_elimination(
+        await _staff_context(conn, event),
+        engagement_id=engagement,
+        work_item_id=item,
+        consolidation_id=await _hp_consolidation(conn),
+        level=level,
+        description=description,
+        lines=[
+            EliminationLine(caption=caption, client_entity_id=entities[e], debit=d, credit=c)
+            for caption, e, d, c in lines
+        ],
+    )
+
+
+async def _harlow_eliminations_posted(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-33 a: Omar approves the six as one batch and posts each to the consolidation layer."""
+    ctx = await _staff_context(conn, event)
+    views = await eliminations.eliminations_of(ctx.tenant, await _hp_consolidation(conn))
+    pending = [v.id for v in views if v.status in ("proposed", "review_required")]
+    await eliminations.approve(ctx, pending)
+    for entry in pending:
+        await eliminations.post(ctx, entry)
+
+
 HANDLERS: Final[dict[str, Handler]] = {
+    # A-09-T39 stage 1: Harlow & Pike
+    "harlow.client_created": _harlow_client_created,
+    "harlow.engagement_created": _harlow_engagement_created,
+    "harlow.independence_confirmed": _harlow_independence_confirmed,
+    "harlow.connection_added": _harlow_connection_added,
+    "harlow.consolidation_created": _harlow_consolidation_created,
+    "harlow.structure_saved": _harlow_structure_saved,
+    "harlow.interim_tb_attached": _harlow_interim_tb_attached,
+    "harlow.elimination_proposed": _harlow_elimination_proposed,
+    "harlow.eliminations_posted": _harlow_eliminations_posted,
     "identity.firm_created": _firm_created,
     "organisations.office_created": _office_created,
     "identity.staff_member_added": _staff_member_added,

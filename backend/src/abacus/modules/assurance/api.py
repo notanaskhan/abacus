@@ -610,6 +610,9 @@ __all__ = [
     "BringDownResult",
     "BringDownWorkflow",
     "CompletionReadinessWorkflow",
+    "ConfirmationFollowUpWorkflow",  # the S45-S48 replay recorder (imported at the end)
+    "ConsolidationIn",  # A-09-T39: the Harlow & Pike slice (imported at the end)
+    "ConsolidationPullAll",
     "EbpImportTies",  # TASK-7815: the seed (EBP-03 on the Sep 24 pass)
     "EbpPlanFacts",
     "EbpResultIn",  # TASK-7815
@@ -628,6 +631,7 @@ __all__ = [
     "NewRisk",  # A-04-T28: the planning slice records the register through the service
     "PostReleaseClocksInput",
     "PostReleaseFireResult",
+    "PullAllInput",
     "ReadinessInput",
     "ReleaseRequest",
     "ReleaseWorkflow",
@@ -640,6 +644,9 @@ __all__ = [
     "SealVerifyWorkflow",
     "SectionState",
     "ShadowFacts",  # Q-04-T136
+    "StructureEntityIn",
+    "StructureIn",
+    "TbAttachIn",
     "TieOutCounts",
     "TieOutInput",
     "VerifyResult",
@@ -676,6 +683,8 @@ __all__ = [
     "governance_letter_pdf",
     "governance_request_approval",  # A-07-T41: the archive slice
     "governance_rooms",
+    "group_consolidation",
+    "group_figures",
     "import_ebp_source",  # TASK-7815
     "import_grouping_csv",
     "late_remittances",  # A-05-T30: AUD-27 and EBP-07 read the one late remittance
@@ -957,3 +966,17 @@ register_respondent_link("confirmation", _lifecycle.link_facts, _lifecycle.link_
 from abacus.modules.assurance import group_scoping as _group_scoping  # noqa: E402
 
 _group_scoping.register()
+
+# A-09-T39 (DEC-5529): the Harlow & Pike scenario slice drives the consolidation through these.
+from abacus.modules.assurance import group_consolidation  # noqa: E402
+from abacus.modules.assurance import group_fixtures as group_figures  # noqa: E402
+from abacus.modules.assurance.confirmations_follow_up import (  # noqa: E402  # the replay recorder
+    ConfirmationFollowUpWorkflow,
+)
+from abacus.modules.assurance.group_contract import (  # noqa: E402
+    ConsolidationIn,
+    StructureEntityIn,
+    StructureIn,
+    TbAttachIn,
+)
+from abacus.modules.assurance.group_pull import ConsolidationPullAll, PullAllInput  # noqa: E402

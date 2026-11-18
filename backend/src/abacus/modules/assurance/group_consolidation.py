@@ -64,6 +64,8 @@ _LABEL_WORDS: Final = {"interim": "Interim", "standard": "Year end", "prior": "P
 
 
 class IfMatchInvalid(DomainInvalid):
+    """The If-Match value is not a version this resource issued."""
+
     code = "if_match_invalid"
 
 

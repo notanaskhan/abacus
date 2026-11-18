@@ -21,9 +21,12 @@ from temporalio.client import Client
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.assurance.confirmations_follow_up import ConfirmationFollowUpWorkflow
-from abacus.modules.assurance.group_pull import ConsolidationPullAll, PullAllInput
-from abacus.modules.integrations.health_workflow import IntegrationHealthWorkflow
+from abacus.modules.assurance.api import (
+    ConfirmationFollowUpWorkflow,
+    ConsolidationPullAll,
+    PullAllInput,
+)
+from abacus.modules.integrations.api import IntegrationHealthWorkflow
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed
 from abacus_tools.workflows.record_retrieval import refuse_overwrite
