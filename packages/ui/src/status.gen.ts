@@ -6892,6 +6892,274 @@ export const STATUS_REGISTRY = {
         "by": "Accepted · {initials}"
       }
     }
+  },
+  "season_cohort": {
+    "draft": {
+      "label": "Draft",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "review_required": {
+      "label": "Review required",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "by": "Approved by {name} · {time}"
+      }
+    },
+    "queued": {
+      "label": "Queued",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true,
+      "contextLabels": {
+        "after": "Queued after cohort {n}"
+      }
+    },
+    "executing": {
+      "label": "Executing",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "progress": "{n} of {m}"
+      },
+      "disc": "spinner"
+    },
+    "executed": {
+      "label": "Executed",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "failed": {
+      "label": "Failed",
+      "variant": "red",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "season_manifest_row": {
+    "ready": {
+      "label": "Ready",
+      "variant": null,
+      "terminal": false,
+      "derived": true
+    },
+    "check": {
+      "label": "Check",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "excluded": {
+      "label": "Excluded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": true
+    },
+    "created": {
+      "label": "Created",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": true
+    },
+    "failed": {
+      "label": "Failed",
+      "variant": "red",
+      "terminal": false,
+      "derived": true
+    }
+  },
+  "standards_run": {
+    "queued": {
+      "label": "Queued",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "running": {
+      "label": "Running",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "spinner"
+    },
+    "complete": {
+      "label": "Complete",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "at": "Complete · {time}"
+      }
+    },
+    "failed": {
+      "label": "Failed",
+      "variant": "red",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "standards_run_item": {
+    "queued": {
+      "label": "Queued",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "running": {
+      "label": "Running",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "progress": "{n} of {m}"
+      },
+      "disc": "spinner"
+    },
+    "passed": {
+      "label": "Passed",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "exceptions": {
+      "label": "Exceptions",
+      "variant": "amber",
+      "terminal": true,
+      "derived": false
+    },
+    "failed": {
+      "label": "Failed",
+      "variant": "red",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "check_result": {
+    "pass": {
+      "label": "Passed",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "exception": {
+      "label": "Exception",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "manual_pending": {
+      "label": "Needs review",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "not_applicable": {
+      "label": "N/A",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "variance_explanation": {
+    "unexplained": {
+      "label": "Unexplained",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "proposed": {
+      "label": "Proposed",
+      "variant": "state",
+      "terminal": false,
+      "derived": true
+    },
+    "accepted": {
+      "label": "Accepted",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true,
+      "contextLabels": {
+        "by": "Accepted · {initials} {time}"
+      }
+    },
+    "stale": {
+      "label": "Stale",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    }
+  },
+  "planning_opportunity": {
+    "open": {
+      "label": "Open",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "raised": {
+      "label": "Raised",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "at": "Raised {date} · portal message"
+      }
+    },
+    "accepted": {
+      "label": "Accepted",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "declined": {
+      "label": "Declined",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "not_screened": {
+      "label": "Not screened",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "dismissed": {
+      "label": "Dismissed",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "amendment": {
+    "draft": {
+      "label": "Draft",
+      "variant": "state",
+      "terminal": false,
+      "derived": true
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true
+    },
+    "filed": {
+      "label": "Filed · accepted",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": true
+    }
   }
 } as const;
 

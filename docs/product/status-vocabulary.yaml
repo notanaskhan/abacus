@@ -1990,6 +1990,77 @@ objects:
       explained:   {label: "Explained", variant: state, terminal: false, derived: false, context_labels: {client_answer: "Client answer {date} · {name}"}}
       accepted:    {label: "Accepted", variant: green-tint, terminal: false, derived: false, context_labels: {by: "Accepted · {initials}"}}
 
+  # --- T-08-T03 (SPEC-710; DF-31; DEC-5602): season setup, standards runs, two-year, planning.
+  season_cohort:   # season_cohorts.status (ENG-07 a, b, c); "Review required" and "Queued" are derived
+    source: "T-08 §4.2, §4.10; ENG-07 a, b, c"
+    codes:
+      draft:           {label: "Draft", variant: state, terminal: false, derived: false}
+      review_required: {label: "Review required", variant: amber, terminal: false, derived: true}
+      approved:        {label: "Approved", variant: green-tint, terminal: false, derived: false, context_labels: {by: "Approved by {name} · {time}"}}
+      queued:          {label: "Queued", variant: neutral, terminal: false, derived: true, context_labels: {after: "Queued after cohort {n}"}}
+      executing:       {label: "Executing", variant: null, disc: spinner, terminal: false, derived: false, context_labels: {progress: "{n} of {m}"}}
+      executed:        {label: "Executed", variant: green-tint, terminal: true, derived: false}
+      failed:          {label: "Failed", variant: red, terminal: false, derived: false}
+
+  season_manifest_row:   # derived from exception codes, exclusion and the step log (ENG-07 a, c, d)
+    source: "T-08 §4.2, §4.10; ENG-07 a, c, d"
+    codes:
+      ready:    {label: "Ready", variant: null, terminal: false, derived: true}
+      check:    {label: "Check", variant: amber, terminal: false, derived: true}
+      excluded: {label: "Excluded", variant: muted, terminal: true, derived: true}
+      created:  {label: "Created", variant: green-tint, terminal: true, derived: true}
+      failed:   {label: "Failed", variant: red, terminal: false, derived: true}
+
+  standards_run:   # standards_runs.status (TAX-14 subbar pill)
+    source: "T-08 §4.2; TAX-14 A, B, C"
+    codes:
+      queued:   {label: "Queued", variant: neutral, terminal: false, derived: false}
+      running:  {label: "Running", variant: null, disc: spinner, terminal: false, derived: false}
+      complete: {label: "Complete", variant: green-tint, terminal: true, derived: false, context_labels: {at: "Complete · {time}"}}
+      failed:   {label: "Failed", variant: red, terminal: true, derived: false}
+
+  standards_run_item:   # standards_run_items.status (TAX-14 rows)
+    source: "T-08 §4.2; TAX-14 A, B, C"
+    codes:
+      queued:     {label: "Queued", variant: neutral, terminal: false, derived: false}
+      running:    {label: "Running", variant: null, disc: spinner, terminal: false, derived: false, context_labels: {progress: "{n} of {m}"}}
+      passed:     {label: "Passed", variant: green-tint, terminal: true, derived: false}
+      exceptions: {label: "Exceptions", variant: amber, terminal: true, derived: false}
+      failed:     {label: "Failed", variant: red, terminal: true, derived: false}
+
+  check_result:   # standards_check_results.outcome (TAX-14 expansion panel)
+    source: "T-08 §4.2; TAX-14 A, B"
+    codes:
+      pass:           {label: "Passed", variant: green-tint, terminal: true, derived: false}
+      exception:      {label: "Exception", variant: amber, terminal: false, derived: false}
+      manual_pending: {label: "Needs review", variant: state, terminal: false, derived: false}
+      not_applicable: {label: "N/A", variant: muted, terminal: true, derived: false}
+
+  variance_explanation:   # derived per flagged TAX-10 line from versions and acceptances
+    source: "T-08 §3.3; TAX-10 a, c, d, e"
+    codes:
+      unexplained: {label: "Unexplained", variant: amber, terminal: false, derived: true}
+      proposed:    {label: "Proposed", variant: state, terminal: false, derived: true}
+      accepted:    {label: "Accepted", variant: green-tint, terminal: false, derived: true, context_labels: {by: "Accepted · {initials} {time}"}}
+      stale:       {label: "Stale", variant: amber, terminal: false, derived: true}
+
+  planning_opportunity:   # planning_opportunities.status (TAX-15 queue rings)
+    source: "T-08 §4.2; TAX-15 a to f"
+    codes:
+      open:         {label: "Open", variant: state, terminal: false, derived: false}
+      raised:       {label: "Raised", variant: null, terminal: false, derived: false, context_labels: {at: "Raised {date} · portal message"}}
+      accepted:     {label: "Accepted", variant: green-tint, terminal: true, derived: false}
+      declined:     {label: "Declined", variant: muted, terminal: true, derived: false}
+      not_screened: {label: "Not screened", variant: amber, terminal: false, derived: false}
+      dismissed:    {label: "Dismissed", variant: muted, terminal: true, derived: false}
+
+  amendment:   # amendments: derived from the new return's status and the supersession
+    source: "T-08 §3.6; TAX-16 a, b, d"
+    codes:
+      draft:    {label: "Draft", variant: state, terminal: false, derived: true}
+      approved: {label: "Approved", variant: green-tint, terminal: false, derived: true}
+      filed:    {label: "Filed · accepted", variant: green-tint, terminal: true, derived: true}
+
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---
   "request_item.open":             {replacement: ["request.draft", "request.requested"], note: "draft while firm-only; requested once sent to the client"}

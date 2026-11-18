@@ -718,3 +718,6 @@ from abacus.modules.engagements.attention import (  # noqa: E402
 )
 
 _attention.register()
+
+# T-08-T03 (DEC-5602): season-setup error codes declared before their services.
+from abacus.modules.engagements import season_errors as season_errors  # noqa: E402

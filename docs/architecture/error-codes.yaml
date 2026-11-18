@@ -462,6 +462,11 @@ codes:
     raised_by:
     - abacus.modules.tax.workbook_service.CellSourceInvalid
     summary: Written by an engine (formula, engine import, TB link) or by a person, nothing else.
+  check_code_unknown:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.practice_tools_errors.CheckCodeUnknown
+    summary: A checklist item names a check code no module registered for this form.
   checklist_answered:
     status: 409
     raised_by:
@@ -559,6 +564,11 @@ codes:
     - abacus.modules.adjustments.posting_errors.ClosingDateLocked
     summary: 'The entry is dated on or before the client''s closing date: ask the client to lift the
       date, or re-date the entry (`facts.closing_date`).'
+  cohort_approved:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.season_errors.CohortApproved
+    summary: 'The cohort is approved: its rows are frozen until the approval is withdrawn (AC1.3).'
   column_map_invalid:
     status: 422
     raised_by:
@@ -655,6 +665,11 @@ codes:
     raised_by:
     - abacus.modules.agents.briefing.facts.ConsentRequired
     summary: 'A TRI subject of the engagement lacks the §7216 consents in force: no model call.'
+  consent_7216_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.practice_tools_errors.Consent7216Missing
+    summary: Both §7216 consents (use, ai_disclosure) are needed before the agent reads this return.
   consent_declined:
     status: 409
     raised_by:
@@ -1259,6 +1274,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.soc_reports.ExceptionNotHigh
     summary: 'AC7.5: only a High-impact exception routes to Findings.'
+  execution_started:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.season_errors.ExecutionStarted
+    summary: 'The cohort''s first step ran: the approval can no longer be withdrawn (AC1.5).'
   expansion_exceeds_population:
     status: 422
     raised_by:
@@ -1281,6 +1301,11 @@ codes:
     raised_by:
     - abacus.modules.review.issue_resolutions.ExplainUnavailable
     summary: No explainer is registered for the issue's record type (fail closed, T-04-T31).
+  explanation_stale:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.practice_tools_errors.ExplanationStale
+    summary: 'The line''s values changed since the explanation was read: read it again (`values_hash`).'
   explanation_uncited:
     status: 422
     raised_by:
@@ -2150,6 +2175,11 @@ codes:
     raised_by:
     - abacus.modules.workpapers.procedures.MandatoryStep
     summary: A mandatory step is never tailored (AC1.9).
+  manifest_superseded:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.season_errors.ManifestSuperseded
+    summary: A newer manifest version is ready; act on that one (`facts.manifest_version`).
   mapping_conflict:
     status: 409
     raised_by:
@@ -2406,6 +2436,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.governance_comms.NotApprovable
+  not_bba_signer:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.practice_tools_errors.NotBbaSigner
+    summary: Only the AAR return's signer decides the BBA election (AC6.6).
   not_closable:
     status: 409
     raised_by:
@@ -3302,6 +3337,11 @@ codes:
     raised_by:
     - abacus.modules.connections.entity.RetryUnavailable
     summary: Only a run a request item asked for can be retried until on-demand runs land (A-02-T30).
+  return_accepted:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.practice_tools_errors.ReturnAccepted
+    summary: 'The return is accepted: it is never changed; amend it instead (AC6.7).'
   return_locked:
     status: 409
     raised_by:

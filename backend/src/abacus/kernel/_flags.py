@@ -271,6 +271,11 @@ ENGAGEMENTS_ROLL_FORWARD_V2 = Flag(
     kind="boolean",
     default="false",
 )
+ENGAGEMENTS_SEASON_SETUP = Flag(
+    name="engagements.season_setup",
+    kind="boolean",
+    default="false",
+)
 EVIDENCE_CITATIONS_V2 = Flag(
     name="evidence.citations_v2",
     kind="boolean",
@@ -487,6 +492,11 @@ PORTAL_THIRD_PARTY_ROOM = Flag(
     kind="boolean",
     default="false",
 )
+PRACTICE_FILING_DEADLINES = Flag(
+    name="practice.filing_deadlines",
+    kind="boolean",
+    default="false",
+)
 PROMPT_CONSOLIDATION_ELIMINATION_PROPOSER = Flag(
     name="prompt.consolidation.elimination_proposer",
     kind="variant",
@@ -630,6 +640,11 @@ SUPPORT_PANEL_V2 = Flag(
     kind="boolean",
     default="false",
 )
+TAX_AMENDMENTS = Flag(
+    name="tax.amendments",
+    kind="boolean",
+    default="false",
+)
 TAX_DELIVERY_EFILE = Flag(
     name="tax.delivery_efile",
     kind="boolean",
@@ -685,13 +700,28 @@ TAX_OTHER_ENTITY_WORKPAPERS = Flag(
     kind="boolean",
     default="false",
 )
+TAX_PLANNING = Flag(
+    name="tax.planning",
+    kind="boolean",
+    default="false",
+)
 TAX_REVIEW_WORKSPACE = Flag(
     name="tax.review_workspace",
     kind="boolean",
     default="false",
 )
+TAX_STANDARDS_RUNS = Flag(
+    name="tax.standards_runs",
+    kind="boolean",
+    default="false",
+)
 TAX_TB_HANDOFF = Flag(
     name="tax.tb_handoff",
+    kind="boolean",
+    default="false",
+)
+TAX_TWO_YEAR = Flag(
+    name="tax.two_year",
     kind="boolean",
     default="false",
 )
@@ -795,6 +825,7 @@ FLAGS: dict[str, Flag] = {
     "engagement_run.enabled": ENGAGEMENT_RUN_ENABLED,
     "engagements.letter_composer": ENGAGEMENTS_LETTER_COMPOSER,
     "engagements.roll_forward_v2": ENGAGEMENTS_ROLL_FORWARD_V2,
+    "engagements.season_setup": ENGAGEMENTS_SEASON_SETUP,
     "evidence.citations_v2": EVIDENCE_CITATIONS_V2,
     "evidence.duplicate_review": EVIDENCE_DUPLICATE_REVIEW,
     "evidence.form_extraction": EVIDENCE_FORM_EXTRACTION,
@@ -837,6 +868,7 @@ FLAGS: dict[str, Flag] = {
     "portal.settings_editor": PORTAL_SETTINGS_EDITOR,
     "portal.sign_in_v2": PORTAL_SIGN_IN_V2,
     "portal.third_party_room": PORTAL_THIRD_PARTY_ROOM,
+    "practice.filing_deadlines": PRACTICE_FILING_DEADLINES,
     "prompt.consolidation.elimination_proposer": PROMPT_CONSOLIDATION_ELIMINATION_PROPOSER,
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
     "prompt.ledger.tb_mapper": PROMPT_LEDGER_TB_MAPPER,
@@ -861,6 +893,7 @@ FLAGS: dict[str, Flag] = {
     "signatures.envelopes": SIGNATURES_ENVELOPES,
     "signatures.esign_provider": SIGNATURES_ESIGN_PROVIDER,
     "support.panel_v2": SUPPORT_PANEL_V2,
+    "tax.amendments": TAX_AMENDMENTS,
     "tax.delivery_efile": TAX_DELIVERY_EFILE,
     "tax.engine_bridge": TAX_ENGINE_BRIDGE,
     "tax.entity_agents": TAX_ENTITY_AGENTS,
@@ -872,8 +905,11 @@ FLAGS: dict[str, Flag] = {
     "tax.form_preview": TAX_FORM_PREVIEW,
     "tax.individual_workpapers": TAX_INDIVIDUAL_WORKPAPERS,
     "tax.other_entity_workpapers": TAX_OTHER_ENTITY_WORKPAPERS,
+    "tax.planning": TAX_PLANNING,
     "tax.review_workspace": TAX_REVIEW_WORKSPACE,
+    "tax.standards_runs": TAX_STANDARDS_RUNS,
     "tax.tb_handoff": TAX_TB_HANDOFF,
+    "tax.two_year": TAX_TWO_YEAR,
     "tax.workbook_run": TAX_WORKBOOK_RUN,
     "tax_agents.enabled": TAX_AGENTS_ENABLED,
     "today_brief.enabled": TODAY_BRIEF_ENABLED,

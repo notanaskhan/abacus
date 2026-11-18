@@ -1642,6 +1642,61 @@ class AnalyticsLineStatus(StrEnum):
     ACCEPTED = "accepted"
 
 
+class SeasonCohortStatus(StrEnum):
+    DRAFT = "draft"
+    APPROVED = "approved"
+    EXECUTING = "executing"
+    EXECUTED = "executed"
+    FAILED = "failed"
+    # derived, never stored: review_required, queued
+
+
+class SeasonManifestRowStatus(StrEnum):
+    pass
+    # derived, never stored: ready, check, excluded, created, failed
+
+
+class StandardsRunStatus(StrEnum):
+    QUEUED = "queued"
+    RUNNING = "running"
+    COMPLETE = "complete"
+    FAILED = "failed"
+
+
+class StandardsRunItemStatus(StrEnum):
+    QUEUED = "queued"
+    RUNNING = "running"
+    PASSED = "passed"
+    EXCEPTIONS = "exceptions"
+    FAILED = "failed"
+
+
+class CheckResultStatus(StrEnum):
+    PASS = "pass"
+    EXCEPTION = "exception"
+    MANUAL_PENDING = "manual_pending"
+    NOT_APPLICABLE = "not_applicable"
+
+
+class VarianceExplanationStatus(StrEnum):
+    pass
+    # derived, never stored: unexplained, proposed, accepted, stale
+
+
+class PlanningOpportunityStatus(StrEnum):
+    OPEN = "open"
+    RAISED = "raised"
+    ACCEPTED = "accepted"
+    DECLINED = "declined"
+    NOT_SCREENED = "not_screened"
+    DISMISSED = "dismissed"
+
+
+class AmendmentStatus(StrEnum):
+    pass
+    # derived, never stored: draft, approved, filed
+
+
 # Each object's stored codes, and their SQL CHECK list.
 STORED: dict[str, tuple[str, ...]] = {
     "engagement": (
@@ -2974,6 +3029,46 @@ STORED: dict[str, tuple[str, ...]] = {
         "unexplained",
         "explained",
         "accepted",
+    ),
+    "season_cohort": (
+        "draft",
+        "approved",
+        "executing",
+        "executed",
+        "failed",
+    ),
+    "season_manifest_row": (
+    ),
+    "standards_run": (
+        "queued",
+        "running",
+        "complete",
+        "failed",
+    ),
+    "standards_run_item": (
+        "queued",
+        "running",
+        "passed",
+        "exceptions",
+        "failed",
+    ),
+    "check_result": (
+        "pass",
+        "exception",
+        "manual_pending",
+        "not_applicable",
+    ),
+    "variance_explanation": (
+    ),
+    "planning_opportunity": (
+        "open",
+        "raised",
+        "accepted",
+        "declined",
+        "not_screened",
+        "dismissed",
+    ),
+    "amendment": (
     ),
 }
 CHECKS: dict[str, str] = {
