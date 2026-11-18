@@ -41,4 +41,21 @@ export const AUD14_COPY = {
   secondRequest: "2nd request Sep 28",
   authorizationLink: "Authorization (SIG-02)",
   previewLink: "Preview respondent page (POR-17)",
+  // A-08-T32 (DEC-5530): the live log's words, from the handoff's rows (C1 to C4) with the dates
+  // and people the API answers.
+  items: {
+    bank: "Bank balances & debt",
+    accounts_receivable: "Accounts receivable",
+    accounts_payable: "Accounts payable",
+    other: "Other",
+  },
+  channels: {
+    network_recorded: "Bank confirmation network",
+    accrued_link: "Accrued link (POR-17)",
+    mail_recorded: "Mail",
+  },
+  noResponse: "No response",
+  addressCheck: (method: string, initials: string, on: string) => `${method} (${initials}, ${on})`,
+  viewedOn: (on: string) => `Viewed ${on}`,
+  secondRequestOn: (on: string) => `2nd request ${on}`,
 } as const; // fmt: skip
