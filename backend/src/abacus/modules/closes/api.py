@@ -135,3 +135,8 @@ __all__ = [
 
 # C-02-T02 (DEC-5501): the posting, W1 and delivery error codes, declared before their services.
 from abacus.modules.closes import delivery_errors as delivery_errors  # noqa: E402
+
+# T-06-T20 (DEC-5631): C12 hand-off gates this module owns (ledger never imports closes).
+from abacus.modules.closes import handoff_gate as _handoff_gate  # noqa: E402
+
+_handoff_gate.register()

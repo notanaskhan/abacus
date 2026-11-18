@@ -985,6 +985,8 @@ from abacus.modules.assurance.group_contract import (  # noqa: E402
 from abacus.modules.assurance.group_pull import ConsolidationPullAll, PullAllInput  # noqa: E402
 # Q-05-T02 (DEC-5609): consultations v2 and post-issuance error codes, before their services.
 # Q-05-T04: the contract module for the synthetic slice (tooling reaches assurance only here).
+# T-06-T20 (DEC-5631): C12 hand-off gates this module owns (ledger never imports assurance).
+from abacus.modules.assurance import handoff_gate as _handoff_gate  # noqa: E402
 from abacus.modules.assurance import post_issuance_contract as post_issuance_contract  # noqa: E402
 from abacus.modules.assurance import quality_log_errors as quality_log_errors  # noqa: E402
 
@@ -996,3 +998,5 @@ from abacus.modules.assurance.group_pull import (  # noqa: E402
     ConsolidationPullAll as ConsolidationPullAll,
 )
 from abacus.modules.assurance.group_pull import PullAllInput as PullAllInput  # noqa: E402
+
+_handoff_gate.register()

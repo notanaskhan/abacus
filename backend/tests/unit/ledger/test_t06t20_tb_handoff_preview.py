@@ -47,3 +47,14 @@ def test_the_hash_is_stable_and_moves_with_any_change() -> None:
 async def test_an_unregistered_source_kind_is_not_released() -> None:
     tenant = TenantContext(tenant_id=S, actor_kind="human", actor_id=str(S))
     assert not await h.source_released(tenant, "nobody_registered_this", S)
+
+
+def test_the_three_source_kinds_have_their_owners_gates() -> None:
+    import abacus.modules.assurance.api
+    import abacus.modules.closes.api  # noqa: F401  (registers close_lock)
+    from abacus.modules.assurance import handoff_gate as assurance_gate
+    from abacus.modules.closes import handoff_gate as closes_gate
+
+    assert h._GATES["audit_release"] is assurance_gate.report_released  # pyright: ignore[reportPrivateUsage]
+    assert h._GATES["review_release"] is assurance_gate.report_released  # pyright: ignore[reportPrivateUsage]
+    assert h._GATES["close_lock"] is closes_gate.close_locked  # pyright: ignore[reportPrivateUsage]
