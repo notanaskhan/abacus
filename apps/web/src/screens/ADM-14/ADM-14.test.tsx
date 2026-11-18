@@ -83,8 +83,13 @@ describe("ADM-14 Plan & usage", () => {
   it("e: Margaret reads only, with Request more… enabled", async () => {
     show("e", { readOnly: true });
     await meter();
-    expect(screen.getByText("Only firm admins can change alerts and billing contact.")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Request more…" })).toHaveProperty("disabled", false);
+    expect(
+      screen.getByText("Only firm admins can change alerts and billing contact."),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Request more…" })).toHaveProperty(
+      "disabled",
+      false,
+    );
   });
 
   it("f: Request more opens with the partner approver", async () => {

@@ -1162,5 +1162,14 @@ REVIEWED_FALLBACK: Final = frozenset(
         "tax_memo.section_edited",
         "tax_memo.went_stale",
         "workbench_session.titled",
+        # reviewed 2026-11-18 (S50 end pass, TASK-8631/8632/8621): CLI-03's relationship edits and
+        # external parties show on the relationship's own event log (`entity_relationship_events`)
+        # and C12's hand-off on AUD-38; a held entry's approval request on HOME-02's queue.
+        "external_party.created",
+        "relationship.created",
+        "relationship.updated",
+        "relationship.ended",
+        "tb_handoff.created",
+        "proposed_entry.approval_requested",
     }
 )

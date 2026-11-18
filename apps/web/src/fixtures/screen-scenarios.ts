@@ -393,36 +393,64 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   },
   // T-06-T23 (DEC-5636): the eight T-06 screens, one state per contract artboard (44).
   "TXP-03": {
-    scenarios: onE0(t06txp03, ["tax.entity_workspace", "tax.review_workspace", "tax.entity_depth"]),
+    scenarios: onE0(t06txp03, [
+      "tax.entity_workspace",
+      "tax.review_workspace",
+      "tax.entity_depth",
+    ]),
     opens: {},
     ids: idsOf(t06txp03, () => ({ returnId: RIDGELINE_RETURN_ID })),
   },
   "TXP-04": {
-    scenarios: onE0(t06txp04, ["tax.entity_workspace", "tax.review_workspace", "tax.entity_depth"]),
+    scenarios: onE0(t06txp04, [
+      "tax.entity_workspace",
+      "tax.review_workspace",
+      "tax.entity_depth",
+    ]),
     opens: {},
     ids: idsOf(t06txp04, () => ({ returnId: RIDGELINE_RETURN_ID })),
   },
   "TXP-08": {
-    scenarios: onE0(t06txp08, ["tax.entity_workspace", "tax.review_workspace", "tax.entity_depth"]),
+    scenarios: onE0(t06txp08, [
+      "tax.entity_workspace",
+      "tax.review_workspace",
+      "tax.entity_depth",
+    ]),
     opens: {},
     ids: idsOf(t06txp08, () => ({ returnId: RIDGELINE_RETURN_ID })),
   },
   "TXP-09": {
-    scenarios: onE0(t06txp09, ["tax.entity_workspace", "tax.review_workspace", "tax.entity_depth"]),
+    scenarios: onE0(t06txp09, [
+      "tax.entity_workspace",
+      "tax.review_workspace",
+      "tax.entity_depth",
+    ]),
     opens: {},
     ids: idsOf(t06txp09, () => ({ returnId: RIDGELINE_RETURN_ID })),
   },
   "TXP-13": {
-    scenarios: onE0(t06txp13, ["tax.entity_workspace", "tax.review_workspace", "tax.other_entity_workpapers"]),
+    scenarios: onE0(t06txp13, [
+      "tax.entity_workspace",
+      "tax.review_workspace",
+      "tax.other_entity_workpapers",
+    ]),
     opens: {},
   },
   "TAX-11": {
-    scenarios: onE0(t06tax11, ["tax.entity_workspace", "tax.review_workspace", "tax.form_preview"]),
+    scenarios: onE0(t06tax11, [
+      "tax.entity_workspace",
+      "tax.review_workspace",
+      "tax.form_preview",
+    ]),
     opens: {},
     ids: idsOf(t06tax11, () => ({ returnId: RIDGELINE_RETURN_ID })),
   },
   "CLI-03": {
-    scenarios: onE0(t06cli03, ["tax.entity_workspace", "tax.review_workspace", "clients.relationship_map"]),
+    scenarios: onE0(t06cli03, [
+      "tax.entity_workspace",
+      "tax.review_workspace",
+      "clients.relationship_map",
+    ]),
     opens: {},
   },
   "AUD-38": {

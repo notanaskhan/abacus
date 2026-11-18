@@ -88,6 +88,25 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    # S50 (T-08, Q-05 stubs): status moves, decisions and confirmations on existing records, 200.
+    "/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/reopen-for-reissue",
+    "/v1/destruction-batches/{batch_id}/cancel",
+    "/v1/planning-opportunities/{opportunity_id}:create-project",
+    "/v1/planning-opportunities/{opportunity_id}:decline",
+    "/v1/planning-opportunities/{opportunity_id}:dismiss",
+    "/v1/planning-opportunities/{opportunity_id}:prepare-raise",
+    "/v1/planning-opportunities/{opportunity_id}:raise",
+    "/v1/planning-opportunities/{opportunity_id}:restore",
+    "/v1/quality/evaluations/{year}/request-conclusion",
+    "/v1/quality/findings/{finding_id}/remediate",
+    "/v1/quality/imports/{import_id}/publish",
+    "/v1/quality/inspections/{inspection_id}/conclude",
+    "/v1/quality/inspections/{inspection_id}/start",
+    "/v1/season-asks/{ask_id}/answer",
+    "/v1/season-cohorts/{cohort_id}/rows:exclude",
+    "/v1/season-cohorts/{cohort_id}/withdraw-approval",
+    "/v1/standards-check-results/{result_id}:confirm",
+    "/v1/tax-returns/{return_id}/two-year/lines/{line_key}/explanation:accept",
     # C-01-T04, T05 and T-07-T05 (S44 stubs): status moves, adoption, publication, a resolution,
     # an answer, a reopen, an import-from-statement and an idempotent recompute act on existing
     # records, so 200.
@@ -667,6 +686,15 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/mapping-sets/{mapping_set_id}/suggestions",
         "/v1/platform/tenants",
         "/v1/platform/tenants/{tenant_code}/sandbox",
+        # S50 (T-08, Q-05 stubs): a manifest build, a standards run, a draft or an analysis
+        # starts work, so 202.
+        "/v1/aars/{aar_id}/recommendation:draft",
+        "/v1/amendments/{amendment_id}/proposals:draft",
+        "/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/analysis",
+        "/v1/seasons/{tax_year}/manifests",
+        "/v1/standards-runs",
+        "/v1/standards-runs/{run_id}:rerun",
+        "/v1/tax-returns/{return_id}/two-year:explain",
         # S49 (C-02, T-06 stubs): a package, a hand-off, a batch, a retry, an allocation run or an
         # explanation starts work, so 202.
         "/v1/closes/{close_id}/package/generate",
@@ -1091,6 +1119,21 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/support/conversation/messages",
         "/v1/platform/support/conversations/{conversation_id}/messages",
         "/v1/platform/status/incidents",
+        # S50 (T-08, Q-05 stubs): each inserts a new row, 201.
+        "/v1/audits/{work_item_id}/post-issuance/cases",
+        "/v1/destruction-batches/{batch_id}/approvals",
+        "/v1/planning-opportunities",
+        "/v1/postponement-applications",
+        "/v1/quality/findings",
+        "/v1/quality/findings/{finding_id}/evaluations",
+        "/v1/quality/findings/{finding_id}/remediation-todos",
+        "/v1/quality/imports",
+        "/v1/quality/inspections",
+        "/v1/quality/risk-assessment/reviews",
+        "/v1/retention/policies",
+        "/v1/season-cohorts/{cohort_id}/approve",
+        "/v1/tax-returns/{return_id}/aars",
+        "/v1/tax-returns/{return_id}/amendments",
         # S49 (C-02, T-06 stubs): each inserts a new row, 201.
         "/v1/client-entities/{client_entity_id}/w9-requests",
         "/v1/clients/{client_id}/external-parties",

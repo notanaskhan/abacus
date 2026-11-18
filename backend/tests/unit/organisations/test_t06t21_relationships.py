@@ -47,7 +47,7 @@ def test_the_graph_shows_edges_in_force_between_this_clients_nodes_only() -> Non
         _gedge(2, 1, 2, date(2020, 1, 1), date(2023, 12, 31)),  # ended before as_of
         _gedge(3, 1, 9, date(2024, 1, 1)),  # other end outside the client
     ]
-    g = r.project(nodes, edges, date(2026, 1, 1))
+    g = r.projection(nodes, edges, date(2026, 1, 1))
     assert [n.label for n in g.nodes] == ["A", "B"]
     assert [e.id for e in g.edges] == [UUID(int=101)]
-    assert [e.id for e in r.project(nodes, edges, date(2022, 6, 1)).edges] == [UUID(int=102)]
+    assert [e.id for e in r.projection(nodes, edges, date(2022, 6, 1)).edges] == [UUID(int=102)]

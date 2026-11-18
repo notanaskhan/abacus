@@ -1729,6 +1729,11 @@ class DestructionBatchStatus(StrEnum):
     CANCELLED = "cancelled"
 
 
+class QualityImportStatus(StrEnum):
+    DRY_RUN = "dry_run"
+    PUBLISHED = "published"
+
+
 # Each object's stored codes, and their SQL CHECK list.
 STORED: dict[str, tuple[str, ...]] = {
     "engagement": (
@@ -3126,6 +3131,10 @@ STORED: dict[str, tuple[str, ...]] = {
         "destroying",
         "destroyed",
         "cancelled",
+    ),
+    "quality_import": (
+        "dry_run",
+        "published",
     ),
 }
 CHECKS: dict[str, str] = {

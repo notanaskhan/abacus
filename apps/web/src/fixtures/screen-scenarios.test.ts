@@ -80,6 +80,15 @@ describe("screen scenarios on the firm entry", () => {
       "SHL-02", // P-02-T12: the palette spec and J13 4, J16 5 and 9
       "TAX-02", // P-04-T47: j06 coordination
       "TAX-09", // T-01-T29: j06 D1 and D2
+      // T-06-T23 (DEC-5636): the eight T-06 screens, one state per contract artboard.
+      "TXP-03",
+      "TXP-04",
+      "TXP-08",
+      "TXP-09",
+      "TXP-13",
+      "TAX-11",
+      "CLI-03",
+      "AUD-38",
       // T-05-T68: J08's entity-return screens over the Ridgeline 1065.
       "TXP-00",
       "TXP-01",

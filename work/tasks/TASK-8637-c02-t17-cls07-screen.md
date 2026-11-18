@@ -2,7 +2,7 @@
 id: TASK-8637
 title: "C-02-T17: CLS-07 Adjustments & thresholds on T6 (fixture then live)"
 spec: SPEC-700
-acceptance_criteria: []
+acceptance_criteria: [AC-6]
 risk_zone: amber
 status: in-review
 branch: c02-t17-cls07

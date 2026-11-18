@@ -143,6 +143,7 @@ def _sql(expression: ColumnElement[bool]) -> str:
 
 def test_ac7_the_client_data_actions_are_marked() -> None:
     assert MARKED == [
+        "aar.create",  # S50 (T-08, Q-05 bundles)
         "account_mapping.edit",  # A-03-T01 (DEC-1550)
         "adjusted_tb.read",  # A-06-T03 (DEC-1960)
         "adjustment.approve",  # SPEC-301 (TASK-302)
@@ -155,6 +156,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "agent_run.sign_off",  # S29
         "agent_run.start",  # S29
         "allocation_run.start",  # S49 (C-02, T-06, A-09 bundles)
+        "amendment.create",  # S50 (T-08, Q-05 bundles)
+        "amendment.edit",  # S50 (T-08, Q-05 bundles)
         "analytics.accept",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "analytics.configure",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "analytics.explain",  # S45 (A-08-T03, A-09-T02, W-01-T02)
@@ -233,7 +236,10 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "consolidation.read",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "consultation.conclude",  # S25 (DEC-2484): the consultations log
         "consultation.create",  # A-06-T04
+        "consultation.link",  # S50 (T-08, Q-05 bundles)
         "consultation.read",
+        "consultation.record_position",  # S50 (T-08, Q-05 bundles)
+        "consultation.reopen",  # S50 (T-08, Q-05 bundles)
         "control.edit",
         "control.read",
         "dashboard.read",  # SPEC-317 (TASK-460)
@@ -379,6 +385,10 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "pii.reveal",  # P-03-T02 (C4 v1)
         "population.create",  # A-03-T01 (DEC-1550)
         "population.read",  # A-03-T01 (DEC-1550)
+        "post_issuance.analyse",  # S50 (T-08, Q-05 bundles)
+        "post_issuance.create",  # S50 (T-08, Q-05 bundles)
+        "post_issuance.read",  # S50 (T-08, Q-05 bundles)
+        "post_issuance.reissue",  # S50 (T-08, Q-05 bundles)
         "posting_batch.dry_run",  # S49 (C-02, T-06, A-09 bundles)
         "posting_batch.post",  # S49 (C-02, T-06, A-09 bundles)
         "procedure.configure",
@@ -465,6 +475,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "sourcing.propose",  # S49 (C-02, T-06, A-09 bundles)
         "ssars.inquiry_manage",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "ssars.read",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "standards_check.confirm",  # S50 (T-08, Q-05 bundles)
         "statement.approve",  # SPEC-312 (TASK-324)
         "statement.draft",  # S26 or S27 matrix mark
         "statement.read",  # S26 or S27 matrix mark
@@ -503,8 +514,11 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "trial_balance.annotate",
         "trial_balance.export",  # A-02 §4.4 (TASK-1185)
         "trial_balance.read",
+        "two_year.explain",  # S50 (T-08, Q-05 bundles)
         "upload_review.read",  # SPEC-030 (TASK-059 D1)
         "upload_review.request",  # SPEC-030 (TASK-058)
+        "variance_explanation.accept",  # S50 (T-08, Q-05 bundles)
+        "variance_explanation.edit",  # S50 (T-08, Q-05 bundles)
         "vendor_1099.update",  # S49 (C-02, T-06, A-09 bundles)
         "w9.request",  # S49 (C-02, T-06, A-09 bundles)
         "workpaper.draft",

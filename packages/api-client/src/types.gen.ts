@@ -63706,7 +63706,7 @@ export type TaxPracticeTwoYearLineOut = {
     /**
      * Author Kind
      */
-    author_kind?: 'agent' | 'human' | null;
+    author_kind?: 'human' | 'agent' | null;
     /**
      * Below Reason
      */
@@ -70722,7 +70722,7 @@ export type WorkbookAllocationStructureOut = {
     /**
      * Proposed By
      */
-    proposed_by?: 'agent' | 'human' | null;
+    proposed_by?: 'human' | 'agent' | null;
     /**
      * Results
      */

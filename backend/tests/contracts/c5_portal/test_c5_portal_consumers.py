@@ -216,6 +216,7 @@ COINCIDENT = {
     "scoping": "a SOC 2 client stage (POR-02 h), not the project's status",
     "review": "a client stage position, not F-06's derived `signing_step` (S14 batch)",
     "sign": "a client stage position, not F-06's derived `signing_step` (S14 batch)",
+    "exceptions": "a SOC 2 client stage (POR-02 h), not a standards-run item's status (T-08, S50)",
 }
 
 

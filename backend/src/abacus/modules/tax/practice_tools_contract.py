@@ -96,7 +96,9 @@ class TaxPracticeTwoYearLineOut(BaseModel):
     state: Annotated[ExplanationState | None, Internal] = None
     explanation: Annotated[str | None, Field(max_length=2000), Tri] = None
     explanation_version_id: Annotated[UUID | None, Internal] = None
-    author_kind: Annotated[Literal["agent", "human"] | None, Internal] = None
+    author_kind: Annotated[Literal["human", "agent"] | None, Internal] = (
+        None  # this order: Literal is cached by members (tax_workbook v1 freezes human, agent)
+    )
     citations: Annotated[list[TaxPracticeCitationOut], Internal] = []
     accepted_by_initials: Annotated[str | None, Field(max_length=4), Tri] = None
     accepted_at: Annotated[datetime | None, Internal] = None
@@ -112,7 +114,7 @@ class TaxPracticeTwoYearOut(BaseModel):
     tax_return_id: Annotated[UUID, Internal]
     current_summary_id: Annotated[str, Field(max_length=60), Internal]
     filter: Annotated[TwoYearFilter, Internal]
-    threshold: TaxPracticeTwoYearThresholdOut
+    threshold: Annotated[TaxPracticeTwoYearThresholdOut, Internal]
     lines: Annotated[list[TaxPracticeTwoYearLineOut], Internal]
     agi: Money
     agi_delta_pct: MaybePct = None
@@ -193,7 +195,7 @@ class TaxPracticeRunOut(BaseModel):
     status: Annotated[RunStatus, Internal]
     started_at: Annotated[datetime, Internal]
     completed_at: Annotated[datetime | None, Internal] = None
-    tiles: TaxPracticeRunTilesOut
+    tiles: Annotated[TaxPracticeRunTilesOut, Internal]
     items: Annotated[list[TaxPracticeRunItemOut], Internal]
     allowed_actions: Annotated[list[str], Internal] = []
 

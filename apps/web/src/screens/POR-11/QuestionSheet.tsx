@@ -40,7 +40,9 @@ export function QuestionSheet({
           onClick={() => {
             send.mutate({
               path: { question_id: question.question_id },
-              headers: { "Idempotency-Key": `por11-${question.question_id}-${crypto.randomUUID()}` },
+              headers: {
+                "Idempotency-Key": `por11-${question.question_id}-${crypto.randomUUID()}`,
+              },
               body: { choice, note: note.trim() === "" ? null : note.trim() },
             });
           }}

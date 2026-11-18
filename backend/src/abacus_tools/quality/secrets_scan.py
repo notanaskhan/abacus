@@ -31,6 +31,18 @@ EXCLUDE: tuple[str, ...] = ()
 # (path glob, rule id, reason): findings that are known local fixtures, never real secrets.
 ALLOW: tuple[tuple[str, str, str], ...] = (
     (
+        "apps/web/src/fixtures/contracts/sheets.ts",
+        "SECRET-003",
+        "a SheetGrid row's `sectionKey` names its stratum (stratum_1), never a credential"
+        " (F-08-T02)",
+    ),
+    (
+        "apps/web/src/fixtures/seed/granite-peak-fy2026-surl-sheet.ts",
+        "SECRET-003",
+        "the SURL sheet's section `key` and row `sectionKey` name a stratum (stratum_1), never"
+        " a credential (F-08-T02)",
+    ),
+    (
         "backend/src/abacus/modules/tax/entity_run_plan.py",
         "SECRET-003",
         "a question step's `question_key` names the question (consent_7216), never a credential"

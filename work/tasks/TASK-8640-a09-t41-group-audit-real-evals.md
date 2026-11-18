@@ -2,7 +2,7 @@
 id: TASK-8640
 title: "A-09-T41: Real eval runs for ledger.tb_mapper and consolidation.elimination_proposer (harness)"
 spec: SPEC-658
-acceptance_criteria: []
+acceptance_criteria: [AC-1, AC-3]
 risk_zone: amber
 status: in-review
 branch: a09-t41-real-evals

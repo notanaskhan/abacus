@@ -38,8 +38,12 @@ describe("POR-11 transaction questions", () => {
     show("a");
     expect(await screen.findByText("Transaction questions · 3 to answer")).toBeTruthy();
     expect(screen.getAllByRole("button", { name: "Answer…" })).toHaveLength(3);
-    const text = document.body.textContent ?? "";
-    for (const firm of ["Pending incorporation", "Matched to uploaded document", "Visible to client"]) {
+    const text = document.body.textContent;
+    for (const firm of [
+      "Pending incorporation",
+      "Matched to uploaded document",
+      "Visible to client",
+    ]) {
       expect(text).not.toContain(firm);
     }
   });

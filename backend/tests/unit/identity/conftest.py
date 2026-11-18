@@ -63,6 +63,9 @@ def conditions_met(monkeypatch: pytest.MonkeyPatch) -> MeetConditions:
                 source_released=True,  # T-06-T03 `tb_handoff_source_released`
                 same_client=True,  # T-06-T03 `same_client`
                 owner_contact=True,  # T-06-T03 `decision_owner_contact`
+                consulted=True,  # Q-05-T02 `consulted_person`
+                distinct_approver=True,  # Q-05-T02 `distinct_approver_role`
+                monitoring_reader=True,  # Q-05-T02 `monitoring_reviewer`
             ),
         )
 

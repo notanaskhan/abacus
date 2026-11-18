@@ -5,7 +5,10 @@
 // requests in the C-16 Request kit (POR-03 on that binder). The client sees only questions
 // addressed to a contact they hold, in the firm's wording with a code-built context line.
 import type { PortalQuestionOut } from "@abacus/api-client";
-import { portalCloseQuestionsOptions, portalCloseQuestionsQueryKey } from "@abacus/api-client/query";
+import {
+  portalCloseQuestionsOptions,
+  portalCloseQuestionsQueryKey,
+} from "@abacus/api-client/query";
 import { Button, DEFAULT_TZ, Skeleton, StatusDisc, date, time } from "@abacus/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
@@ -56,7 +59,11 @@ export function QuestionsCard({
     setOpen(undefined);
   };
   return (
-    <section data-por11="questions" aria-label={C.questions(openOnes.length)} className="rounded-card bg-card shadow-e1">
+    <section
+      data-por11="questions"
+      aria-label={C.questions(openOnes.length)}
+      className="rounded-card bg-card shadow-e1"
+    >
       <header className="flex h-[44px] items-center px-[14px] text-[13.5px] font-medium">
         {C.questions(openOnes.length)}
       </header>
@@ -76,7 +83,9 @@ export function QuestionsCard({
                   {x.client_wording}
                 </p>
                 {done && x.answered_at ? (
-                  <p className="text-[12.5px] font-medium text-green-ink">{C.answered(receipt(x.answered_at, now))}</p>
+                  <p className="text-[12.5px] font-medium text-green-ink">
+                    {C.answered(receipt(x.answered_at, now))}
+                  </p>
                 ) : (
                   <p className="text-[12.5px] text-ink-2">{x.context_line}</p>
                 )}
@@ -109,9 +118,15 @@ export function QuestionsCard({
   );
 }
 
-export function POR11({ period, mobile = false, questionId, onNavigate }: POR11Props): JSX.Element {
+export function POR11({
+  period,
+  mobile = false,
+  questionId,
+  onNavigate,
+}: POR11Props): JSX.Element {
   const binders = useBinders(null);
-  if (binders.data === undefined) return <Skeleton aria-label={C.loading} className="h-[604px] w-full" />;
+  if (binders.data === undefined)
+    return <Skeleton aria-label={C.loading} className="h-[604px] w-full" />;
   const binder = binders.data.items.find((b) => b.period === period);
   return (
     <div data-screen="POR-11" className="flex min-h-0 flex-1 flex-col gap-[8px]">

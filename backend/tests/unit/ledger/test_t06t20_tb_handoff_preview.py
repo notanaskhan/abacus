@@ -4,10 +4,13 @@ an unregistered source kind refuses (fail closed). The DB paths run in the end-p
 from __future__ import annotations
 
 from decimal import Decimal
+from pathlib import Path
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
 from abacus.modules.ledger import tb_handoff as h
+
+SRC = Path(h.__file__).resolve().parents[1]
 
 D = Decimal
 S = UUID("00000000-0000-4000-8000-00000000a001")
@@ -50,11 +53,17 @@ async def test_an_unregistered_source_kind_is_not_released() -> None:
 
 
 def test_the_three_source_kinds_have_their_owners_gates() -> None:
-    import abacus.modules.assurance.api
-    import abacus.modules.closes.api  # noqa: F401  (registers close_lock)
+    # The owners' gate modules only (importing assurance.api would also swap G5's provider for
+    # the rest of the worker); each api.py calls `register()` at import (source checked below).
     from abacus.modules.assurance import handoff_gate as assurance_gate
     from abacus.modules.closes import handoff_gate as closes_gate
 
-    assert h._GATES["audit_release"] is assurance_gate.report_released  # pyright: ignore[reportPrivateUsage]
-    assert h._GATES["review_release"] is assurance_gate.report_released  # pyright: ignore[reportPrivateUsage]
-    assert h._GATES["close_lock"] is closes_gate.close_locked  # pyright: ignore[reportPrivateUsage]
+    assurance_gate.register()
+    closes_gate.register()
+    gates = h._GATES  # pyright: ignore[reportPrivateUsage] -- the registry under test
+    assert gates["audit_release"] is assurance_gate.report_released
+    assert gates["review_release"] is assurance_gate.report_released
+    assert gates["close_lock"] is closes_gate.close_locked
+    for module in ("assurance", "closes"):
+        source = (SRC / module / "api.py").read_text(encoding="utf-8")
+        assert "_handoff_gate.register()" in source

@@ -118,7 +118,6 @@ C13_EVENTS: Final = frozenset(
         "wall.created",
         "wall.approved",
         "wall.removed",
-        # S48 rest (G-04-T11): a plan request awaiting its partner, and its decision.
         # T-08-T03 (DEC-5602): a cohort awaiting its manager, an amendment awaiting its signer and
         # their decisions; the sources register with T-08-T12 and T-08-T30.
         # C-02-T14 (DEC-5622): a held entry asked for or decided (adjustments).
@@ -128,6 +127,7 @@ C13_EVENTS: Final = frozenset(
         "season_cohort.approved",
         "amendment.approval_requested",
         "amendment.approved",
+        # S48 rest (G-04-T11): a plan request awaiting its partner, and its decision.
         "plan_request.awaiting_partner",
         "plan_request.changed",
         "envelope.drafted",

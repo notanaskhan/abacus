@@ -14,7 +14,10 @@ export function CloseSourceSlot(props: {
 }
 
 /** C-01-T41 (DEC-5638): POR-11 on the close of `?period=` (the seam already checked the flag). */
-export function PortalCloseIntakeSlot(props: { period: string; children: ReactNode }): JSX.Element {
+export function PortalCloseIntakeSlot(props: {
+  period: string;
+  children: ReactNode;
+}): JSX.Element {
   const question = new URLSearchParams(window.location.search).get("question") ?? undefined;
   return <POR11 period={props.period} {...(question ? { questionId: question } : {})} />;
 }

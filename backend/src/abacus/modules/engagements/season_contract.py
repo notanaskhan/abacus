@@ -124,7 +124,7 @@ class SeasonCohortOut(BaseModel):
     letters: Count
     invitations: Count
     exceptions: Count
-    approver: SeasonPersonOut | None = None
+    approver: Annotated[SeasonPersonOut | None, Confidential] = None
     approved_at: Annotated[datetime | None, Internal] = None
     queued_after: Annotated[int | None, Field(ge=1, le=99), Internal] = None
     created_rows: Count = 0
@@ -152,7 +152,7 @@ class SeasonAskOut(BaseModel):
     source: Annotated[Literal["code", "agent"], Internal]
     suggestion_id: Annotated[UUID | None, Internal] = None
     answered_option: Annotated[str | None, Field(max_length=40), Internal] = None
-    answered_by: SeasonPersonOut | None = None
+    answered_by: Annotated[SeasonPersonOut | None, Confidential] = None
 
 
 class SeasonManifestOut(BaseModel):
@@ -163,10 +163,10 @@ class SeasonManifestOut(BaseModel):
     tax_year: Annotated[int, Field(ge=2020, le=2100), Internal]
     version: Annotated[int, Field(ge=1), Internal]
     status: Annotated[Literal["building", "ready", "superseded"], Internal]
-    built_by: SeasonPersonOut | None = None
+    built_by: Annotated[SeasonPersonOut | None, Confidential] = None
     built_at: Annotated[datetime | None, Internal] = None
     inputs_hash: Hash
-    tally: SeasonTallyOut
+    tally: Annotated[SeasonTallyOut, Internal]
     offices: Annotated[list[SeasonOfficeFootingOut], Internal]
     cohorts: Annotated[list[SeasonCohortOut], Internal]
     asks: Annotated[list[SeasonAskOut], Internal] = []
@@ -192,9 +192,9 @@ class SeasonManifestRowOut(BaseModel):
     client_id: Annotated[UUID, Internal]
     client_name: Annotated[str, Field(max_length=200), Confidential]
     forms: Annotated[list[str], Internal]
-    preparer: SeasonPersonOut | None = None
-    reviewer: SeasonPersonOut | None = None
-    signer: SeasonPersonOut | None = None
+    preparer: Annotated[SeasonPersonOut | None, Confidential] = None
+    reviewer: Annotated[SeasonPersonOut | None, Confidential] = None
+    signer: Annotated[SeasonPersonOut | None, Confidential] = None
     binder_summary: Annotated[str, Field(max_length=200), Internal]
     request_count: Count
     letter_kind: Annotated[Literal["renewal", "new", "none"], Internal]
@@ -271,7 +271,7 @@ class SeasonApprovalOut(BaseModel):
     approval_id: Annotated[UUID, Internal]
     cohort_id: Annotated[UUID, Internal]
     approval_grant_id: Annotated[UUID, Internal]
-    approved_by: SeasonPersonOut
+    approved_by: Annotated[SeasonPersonOut, Confidential]
     approved_at: Annotated[datetime, Internal]
     queued_after: Annotated[int | None, Field(ge=1, le=99), Internal] = None
     run_on: Annotated[date | None, Internal] = None

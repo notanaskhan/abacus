@@ -21,7 +21,7 @@ function person(name: string) {
 
 export function usage(state: Adm14State): FirmUsageOut {
   const key = state === "b" || state === "c" ? state : "a";
-  return exported.usage[key] as FirmUsageOut;
+  return exported.usage[key];
 }
 
 export function plan(): FirmPlanOut {
@@ -46,7 +46,7 @@ export function plan(): FirmPlanOut {
 export function alerts(): BudgetAlertsOut {
   return {
     rules: exported.alerts.map((r) => ({
-      id: stableId(`budget-alert:${r.threshold_pct}`),
+      id: stableId(`budget-alert:${String(r.threshold_pct)}`),
       enabled: true,
       threshold_pct: r.threshold_pct,
       threshold_minutes: r.threshold_minutes,
