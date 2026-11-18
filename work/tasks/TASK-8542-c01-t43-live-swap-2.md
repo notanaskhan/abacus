@@ -2,7 +2,7 @@
 id: TASK-8542
 title: "C-01-T43: live swap 2: CLS-04, CLS-05, CLS-06 and CLS-10 (code side)"
 spec: SPEC-655
-acceptance_criteria: []
+acceptance_criteria: [AC-7, AC-38]
 risk_zone: green
 status: in-review
 branch: c01-t43-live-swap-2

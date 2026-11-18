@@ -39,6 +39,8 @@ SNAPSHOTS: Final[tuple[Snapshot, ...]] = (
     Snapshot("E0", DEMO_INSTANT),  # Sep 14 9:24 AM: the memo adopted, awaiting Samuel
     Snapshot("2026-09-14T09:41", datetime(2026, 9, 14, 9, 41, tzinfo=CT)),  # P-10-T36 runs
     Snapshot("2026-09-14T09:52", datetime(2026, 9, 14, 9, 52, tzinfo=CT)),  # Run 3, memo stale
+    # A-09-T39: AUD-33 a, Harlow & Pike's eliminations posted at 2:01 PM (Omar at 2:05 PM).
+    Snapshot("2026-09-14T14:05", datetime(2026, 9, 14, 14, 5, tzinfo=CT)),
     Snapshot("2026-09-24", datetime(2026, 9, 24, 9, 0, tzinfo=CT)),
     Snapshot("2026-09-24T10:20", datetime(2026, 9, 24, 10, 20, tzinfo=CT)),  # AUD-11 f
     Snapshot("2026-10-01", datetime(2026, 10, 1, 9, 0, tzinfo=CT)),

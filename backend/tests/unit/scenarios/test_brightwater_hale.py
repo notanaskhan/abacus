@@ -93,6 +93,7 @@ def test_ac2_the_named_snapshots() -> None:
         "E0",
         "2026-09-14T09:41",  # P-10-T36: the agent runs at 9:41 AM
         "2026-09-14T09:52",  # T-05-T62: Run 3 after the fix, the memo stale (TXP-01 D)
+        "2026-09-14T14:05",  # A-09-T39: AUD-33 a, Harlow & Pike's eliminations posted
         "2026-09-24",
         "2026-09-24T10:20",
         "2026-10-01",

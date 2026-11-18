@@ -1613,6 +1613,11 @@ codes:
     raised_by:
     - abacus.modules.signatures.builder.IdentityMethodNotAllowed
     summary: The policy does not allow this identity method for this signer (DF-11).
+  if_match_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.group_consolidation.IfMatchInvalid
+    summary: The If-Match value is not a version this resource issued.
   if_match_required:
     status: 422
     raised_by:
