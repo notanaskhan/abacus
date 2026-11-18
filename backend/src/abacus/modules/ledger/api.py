@@ -465,6 +465,9 @@ __all__ = [
 # A-09-T19 (DEC-5311, DEC-5328): the consolidation engine and its workbook, for assurance's AUD-33.
 # T-06-T03 (DEC-5511): error codes declared before their services.
 from abacus.modules.ledger import handoff_errors as handoff_errors  # noqa: E402
+
+# T-06-T20 (DEC-5631): the TB hand-off service (C12), the only writer of tb_handoffs.
+from abacus.modules.ledger import tb_handoff as tb_handoff  # noqa: E402
 from abacus.modules.ledger.compute.consolidation import (  # noqa: E402
     CONSOLIDATED as CONSOLIDATED_COLUMN,
 )

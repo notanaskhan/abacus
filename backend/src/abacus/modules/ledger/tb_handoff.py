@@ -1,0 +1,340 @@
+"""T-06-T20: the TB hand-off service (C12; SPEC-702 F6; T-06 §4.3; DEC-5631). PROTECTED (red):
+the only writer of `tb_handoffs` and its children (HANDOFF-001).
+
+A released (audit or review) or locked (CAS close) Final trial balance becomes a tax return's
+starting TB:
+
+- **Preview** (`preview`, pure): every account travels with last year's tax-line code
+  (`prior_year`), a suggestion (`suggested`, adopted only by the person) or blank (`blank`,
+  needs review); schedules carried from the leadsheets; book income from the Final layer; the
+  tax-relevant items from C8's passed entries. Counts foot (prior + suggested + blank = total);
+  `preview_hash` pins exactly what the person saw.
+- **Create** (`create`): only when the source kind's registered gate says the source is
+  released (`register_handoff_gate`; G8 for audit and review, a locked close for CAS; fail
+  closed: an unregistered kind refuses, 409 `handoff_not_available`), and only for the preview
+  the person saw (409 `preview_changed`). One unit of work writes one immutable version and its
+  children; a previous version of the same target gains a supersession row (`rehandoff`).
+- **Supersede** (`supersede_for_snapshot`): a new Final snapshot after release marks the latest
+  hand-off superseded (`tb_changed_after_release`); the tax side shows the banner.
+
+Outbox `tb_handoff.created` and `tb_handoff.superseded` carry identifiers only (DEC-60). Ledger
+never imports identity: callers pass the tenant and the acting person's id.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from collections.abc import Awaitable, Callable, Mapping, Sequence
+from dataclasses import asdict, dataclass, field
+from decimal import Decimal
+from typing import Final, Literal
+from uuid import UUID
+
+from sqlalchemy import text
+
+from abacus.kernel.db import TenantContext
+from abacus.kernel.uow import DomainEvent, Scope, Target, UnitOfWork, uow
+from abacus.modules.ledger.handoff_errors import HandoffNotAvailable, PreviewChanged
+
+SourceKind = Literal["audit_release", "review_release", "close_lock"]
+Travel = Literal["prior_year", "suggested", "blank"]
+TARGET: Final = "tb_handoff"
+# (tenant, source work item) -> released? A source kind with no provider refuses (fail closed).
+HandoffGate = Callable[[TenantContext, UUID], Awaitable[bool]]
+_GATES: dict[str, HandoffGate] = {}
+
+
+def register_handoff_gate(kind: SourceKind, gate: HandoffGate) -> None:
+    known = _GATES.get(kind)
+    if known is not None and (known.__module__, known.__qualname__) != (
+        gate.__module__,
+        gate.__qualname__,
+    ):
+        raise ValueError(f"handoff gate {kind!r} is already registered")
+    _GATES[kind] = gate
+
+
+async def source_released(tenant: TenantContext, kind: str, source_work_item_id: UUID) -> bool:
+    gate = _GATES.get(kind)
+    return gate is not None and await gate(tenant, source_work_item_id)
+
+
+class TbHandoffCreated(DomainEvent):
+    event_type = "tb_handoff.created"
+    tb_handoff_id: UUID
+    tax_return_id: UUID
+    version_no: int
+
+
+class TbHandoffSuperseded(DomainEvent):
+    event_type = "tb_handoff.superseded"
+    tb_handoff_id: UUID
+    tax_return_id: UUID
+
+
+@dataclass(frozen=True)
+class AccountIn:
+    account_no: str
+    account_name: str
+    balance: Decimal
+
+
+@dataclass(frozen=True)
+class AccountChoice:
+    account_no: str
+    account_name: str
+    balance: Decimal
+    travel: Travel
+    tax_line_code: str | None
+    suggestion_id: UUID | None
+    needs_review: bool
+
+
+@dataclass(frozen=True)
+class TaxItem:
+    item_kind: Literal["passed_adjustment", "book_tax_expense"]
+    source_ref: Mapping[str, str]
+    amount: Decimal
+    create_issue: bool
+
+
+@dataclass(frozen=True)
+class Preview:
+    accounts: tuple[AccountChoice, ...]
+    counts: Mapping[str, int]
+    book_income: Mapping[str, str]
+    schedules: tuple[str, ...]
+    tax_items: tuple[TaxItem, ...]
+    preview_hash: str
+
+
+@dataclass(frozen=True)
+class Draft:
+    client_id: UUID
+    source_kind: SourceKind
+    source_engagement_id: UUID
+    source_work_item_id: UUID
+    source_snapshot_id: UUID
+    target_work_item_id: UUID
+    preview: Preview
+    schedule_facts: Mapping[str, Mapping[str, str]] = field(
+        default_factory=dict[str, Mapping[str, str]]
+    )
+
+
+def preview(
+    accounts: Sequence[AccountIn],
+    *,
+    prior_codes: Mapping[str, str],
+    suggestions: Mapping[str, tuple[str, UUID]],
+    book_income_before_tax: Decimal,
+    income_tax_expense: Decimal,
+    schedules: Sequence[str],
+    tax_items: Sequence[TaxItem],
+) -> Preview:
+    """The hand-off as code builds it (pure): last year's code first, then a suggestion, else
+    blank (a person decides). Book income is the Final layer's, less the tax expense."""
+    rows: list[AccountChoice] = []
+    for a in accounts:
+        if a.account_no in prior_codes:
+            rows.append(
+                AccountChoice(
+                    a.account_no,
+                    a.account_name,
+                    a.balance,
+                    "prior_year",
+                    prior_codes[a.account_no],
+                    None,
+                    False,
+                )
+            )
+        elif a.account_no in suggestions:
+            code, suggestion = suggestions[a.account_no]
+            rows.append(
+                AccountChoice(
+                    a.account_no, a.account_name, a.balance, "suggested", code, suggestion, True
+                )
+            )
+        else:
+            rows.append(
+                AccountChoice(a.account_no, a.account_name, a.balance, "blank", None, None, True)
+            )
+    counts = {
+        "total": len(rows),
+        "prior_year": sum(1 for r in rows if r.travel == "prior_year"),
+        "suggested": sum(1 for r in rows if r.travel == "suggested"),
+        "blank": sum(1 for r in rows if r.travel == "blank"),
+    }
+    book = {
+        "before_tax": str(book_income_before_tax),
+        "income_tax_expense": str(income_tax_expense),
+        "net_income_per_books": str(book_income_before_tax - income_tax_expense),
+    }
+    body = {
+        "accounts": [_jsonable(asdict(r)) for r in rows],
+        "book": book,
+        "schedules": sorted(schedules),
+        "items": [_jsonable(asdict(i)) for i in tax_items],
+    }
+    digest = hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
+    return Preview(tuple(rows), counts, book, tuple(sorted(schedules)), tuple(tax_items), digest)
+
+
+def _jsonable(d: Mapping[str, object]) -> dict[str, object]:
+    return {k: (str(v) if isinstance(v, Decimal | UUID) else v) for k, v in d.items()}
+
+
+async def create(tenant: TenantContext, actor_user_id: UUID, draft: Draft, seen_hash: str) -> UUID:
+    """One immutable hand-off version from a released source, for the preview the person saw."""
+    if not await source_released(tenant, draft.source_kind, draft.source_work_item_id):
+        raise HandoffNotAvailable(facts={"source_kind": draft.source_kind})
+    if seen_hash != draft.preview.preview_hash:
+        raise PreviewChanged(facts={"preview_hash": draft.preview.preview_hash})
+    scope = Scope(engagement_id=draft.source_engagement_id, work_item_id=draft.source_work_item_id)
+    async with uow(tenant) as tx:
+        prior = (
+            await tx.session.execute(
+                text(
+                    "SELECT id, version_no FROM tb_handoffs WHERE target_work_item_id = :t "
+                    "ORDER BY version_no DESC LIMIT 1 FOR UPDATE"
+                ),
+                {"t": draft.target_work_item_id},
+            )
+        ).first()
+        version = 1 if prior is None else int(prior[1]) + 1
+        new_id = (
+            await tx.session.execute(
+                text(
+                    "INSERT INTO tb_handoffs (tenant_id, client_id, source_kind, "
+                    "source_engagement_id, source_work_item_id, source_snapshot_id, "
+                    "target_work_item_id, version_no, preview_hash, book_income, counts, "
+                    "handed_off_by) VALUES (:tenant, :client, :kind, :eng, :src, :snap, :target, "
+                    ":v, :hash, CAST(:book AS jsonb), CAST(:counts AS jsonb), :by) RETURNING id"
+                ),
+                {
+                    "tenant": tenant.tenant_id,
+                    "client": draft.client_id,
+                    "kind": draft.source_kind,
+                    "eng": draft.source_engagement_id,
+                    "src": draft.source_work_item_id,
+                    "snap": draft.source_snapshot_id,
+                    "target": draft.target_work_item_id,
+                    "v": version,
+                    "hash": draft.preview.preview_hash,
+                    "book": json.dumps(dict(draft.preview.book_income)),
+                    "counts": json.dumps(dict(draft.preview.counts)),
+                    "by": actor_user_id,
+                },
+            )
+        ).scalar_one()
+        for a in draft.preview.accounts:
+            await tx.session.execute(
+                text(
+                    "INSERT INTO tb_handoff_account_choices (tenant_id, handoff_id, account_no, "
+                    "account_name, balance, tax_line_code, source, suggestion_id, needs_review) "
+                    "VALUES (:t, :h, :no, :name, :bal, :code, :src, :sug, :review)"
+                ),
+                {
+                    "t": tenant.tenant_id,
+                    "h": new_id,
+                    "no": a.account_no,
+                    "name": a.account_name,
+                    "bal": a.balance,
+                    "code": a.tax_line_code,
+                    "src": a.travel,
+                    "sug": a.suggestion_id,
+                    "review": a.needs_review,
+                },
+            )
+        for kind in draft.preview.schedules:
+            await tx.session.execute(
+                text(
+                    "INSERT INTO tb_handoff_schedules (tenant_id, handoff_id, kind, carried, "
+                    "facts) "
+                    "VALUES (:t, :h, :k, true, CAST(:f AS jsonb))"
+                ),
+                {
+                    "t": tenant.tenant_id,
+                    "h": new_id,
+                    "k": kind,
+                    "f": json.dumps(dict(draft.schedule_facts.get(kind, {}))),
+                },
+            )
+        for item in draft.preview.tax_items:
+            await tx.session.execute(
+                text(
+                    "INSERT INTO tb_handoff_tax_items (tenant_id, handoff_id, item_kind, "
+                    "source_ref, amount, create_issue) VALUES (:t, :h, :k, CAST(:r AS jsonb), "
+                    ":a, :c)"
+                ),
+                {
+                    "t": tenant.tenant_id,
+                    "h": new_id,
+                    "k": item.item_kind,
+                    "r": json.dumps(dict(item.source_ref)),
+                    "a": item.amount,
+                    "c": item.create_issue,
+                },
+            )
+        if prior is not None:
+            await _supersede(tx, tenant, UUID(str(prior[0])), new_id, "rehandoff", None)
+            tx.emit(
+                TbHandoffSuperseded(
+                    tb_handoff_id=UUID(str(prior[0])), tax_return_id=draft.target_work_item_id
+                )
+            )
+        tx.emit(
+            TbHandoffCreated(
+                tb_handoff_id=UUID(str(new_id)),
+                tax_return_id=draft.target_work_item_id,
+                version_no=version,
+            )
+        )
+        tx.record("tb_handoff.created", target=Target(TARGET, UUID(str(new_id))), scope=scope)
+    return UUID(str(new_id))
+
+
+async def _supersede(
+    tx: UnitOfWork,
+    tenant: TenantContext,
+    handoff_id: UUID,
+    by: UUID | None,
+    reason: Literal["tb_changed_after_release", "rehandoff"],
+    snapshot_id: UUID | None,
+) -> None:
+    await tx.session.execute(
+        text(
+            "INSERT INTO tb_handoff_supersessions (tenant_id, handoff_id, "
+            "superseded_by_handoff_id, "
+            "reason, detected_snapshot_id) VALUES (:t, :h, :by, :r, :s) "
+            "ON CONFLICT (tenant_id, handoff_id) DO NOTHING"
+        ),
+        {"t": tenant.tenant_id, "h": handoff_id, "by": by, "r": reason, "s": snapshot_id},
+    )
+
+
+async def supersede_for_snapshot(
+    tenant: TenantContext, source_work_item_id: UUID, snapshot_id: UUID
+) -> list[UUID]:
+    """A new Final snapshot after release: each target's latest hand-off from this source is
+    marked superseded once (the ON CONFLICT keeps it idempotent)."""
+    async with uow(tenant) as tx:
+        rows = (
+            await tx.session.execute(
+                text(
+                    "SELECT DISTINCT ON (target_work_item_id) id, target_work_item_id, "
+                    "source_snapshot_id FROM tb_handoffs WHERE source_work_item_id = :s "
+                    "ORDER BY target_work_item_id, version_no DESC"
+                ),
+                {"s": source_work_item_id},
+            )
+        ).all()
+        marked: list[UUID] = []
+        for handoff_id, target, snap in rows:
+            if snap == snapshot_id:
+                continue
+            await _supersede(tx, tenant, handoff_id, None, "tb_changed_after_release", snapshot_id)
+            tx.emit(TbHandoffSuperseded(tb_handoff_id=handoff_id, tax_return_id=target))
+            marked.append(UUID(str(handoff_id)))
+    return marked
