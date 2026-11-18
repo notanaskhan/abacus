@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Owner | evidence (Q-05; SPEC-711), extending Q-02's compliance kernel (`compliance-kernel.md` v1.1) |
-| Status | skeleton (Q-05-T01, 2026-11-18; DEC-5608); stub Q-05-T03; v1 S53 |
+| Status | stub (Q-05-T03, 2026-11-18; DEC-5610); skeleton Q-05-T01; v1 S53 |
 | Code | `backend/src/abacus/modules/evidence/records_governance_contract.py` (Q-05-T03) |
 | Flag | `records.governance` (default off; off: 404; on: 501 until each build task); kill switch `destruction_execute` |
 | Consumers | FIL-02, FIL-01 (N-01 views), R-03 (POR-18 intake store), N-03 (message threads) |

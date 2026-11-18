@@ -256,6 +256,9 @@ from abacus.modules.evidence.records import (
     put_record,
     record_key,
 )
+from abacus.modules.evidence.records_governance_contract import (
+    records_governance_router,
+)
 from abacus.modules.evidence.region_sources import (  # T-07-T11 (ADR-343 §4)
     RegionHit,
     register_region_source,
@@ -441,6 +444,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     firm_router,
     files_router,  # Files browser v1 stub (N-01-T02; ADR-158)
+    records_governance_router,  # Q-05-T03: records governance v1 (stubs; dark)
     withdrawal_router,  # C5 v1 stub (P-06-T01; ADR-162)
     duplicates_router,  # T-02-T17: a person resolves a flagged duplicate upload
     drops_router,  # C5 portal-pbc stub (R-01-T01): a portal drop

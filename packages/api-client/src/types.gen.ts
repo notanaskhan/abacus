@@ -44191,6 +44191,197 @@ export type PortalVisibilityOut = {
 };
 
 /**
+ * PostIssuanceCaseIn
+ *
+ * AUD-30 f: type, source, description.
+ */
+export type PostIssuanceCaseIn = {
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Source Evidence Version Id
+     */
+    source_evidence_version_id?: string | null;
+    /**
+     * Source Kind
+     */
+    source_kind: 'inbox_evidence' | 'inspection_finding' | 'other';
+    /**
+     * Type
+     */
+    type: 'subsequently_discovered_facts' | 'omitted_procedure' | 'reissuance_request';
+};
+
+/**
+ * PostIssuanceCaseListOut
+ */
+export type PostIssuanceCaseListOut = {
+    /**
+     * Archive Locked At
+     */
+    archive_locked_at?: string | null;
+    /**
+     * Items
+     */
+    items: Array<PostIssuanceCaseOut>;
+};
+
+/**
+ * PostIssuanceCaseOut
+ */
+export type PostIssuanceCaseOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Analysis Run Id
+     */
+    analysis_run_id?: string | null;
+    /**
+     * Case Id
+     */
+    case_id: string;
+    /**
+     * Comparison
+     */
+    comparison?: Array<PostIssuanceComparisonLineOut>;
+    /**
+     * Decision Card Id
+     */
+    decision_card_id?: string | null;
+    /**
+     * Description
+     */
+    description: string;
+    evaluation?: PostIssuanceEvaluationOut | null;
+    /**
+     * Received At
+     */
+    received_at: string;
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Source Kind
+     */
+    source_kind: 'inbox_evidence' | 'inspection_finding' | 'other';
+    /**
+     * Standard
+     */
+    standard?: 'au_c_560' | 'au_c_585' | null;
+    /**
+     * Status
+     */
+    status: 'under_evaluation' | 'concluded_no_action' | 'reissue_in_progress' | 'concluded';
+    /**
+     * Type
+     */
+    type: 'subsequently_discovered_facts' | 'omitted_procedure' | 'reissuance_request';
+};
+
+/**
+ * PostIssuanceComparisonLineOut
+ */
+export type PostIssuanceComparisonLineOut = {
+    /**
+     * As Certified
+     */
+    as_certified: string;
+    /**
+     * As Certified Citation Id
+     */
+    as_certified_citation_id?: string | null;
+    /**
+     * As Corrected
+     */
+    as_corrected: string;
+    /**
+     * As Corrected Citation Id
+     */
+    as_corrected_citation_id?: string | null;
+    /**
+     * Difference
+     */
+    difference: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Line Key
+     */
+    line_key: string;
+};
+
+/**
+ * PostIssuanceEvaluationOut
+ *
+ * AUD-30 a (AC-15): (12,250) below clearly trivial 12,610; 4.9% of 252,200.
+ */
+export type PostIssuanceEvaluationOut = {
+    /**
+     * Below Clearly Trivial
+     */
+    below_clearly_trivial: boolean;
+    /**
+     * Clearly Trivial
+     */
+    clearly_trivial: string;
+    /**
+     * Materiality Version Id
+     */
+    materiality_version_id: string;
+    /**
+     * Overall Materiality
+     */
+    overall_materiality: string;
+    /**
+     * Share Pct
+     */
+    share_pct: string;
+    /**
+     * Total Difference
+     */
+    total_difference: string;
+};
+
+/**
+ * PostIssuanceReissueOut
+ */
+export type PostIssuanceReissueOut = {
+    /**
+     * Case Id
+     */
+    case_id: string;
+    /**
+     * Href
+     */
+    href: string;
+    /**
+     * Report Release Id
+     */
+    report_release_id: string;
+};
+
+/**
+ * PostIssuanceRunOut
+ */
+export type PostIssuanceRunOut = {
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Started At
+     */
+    started_at: string;
+};
+
+/**
  * PostingApproveIn
  */
 export type PostingApproveIn = {
@@ -47264,6 +47455,266 @@ export type RecordedResponseIn = {
 };
 
 /**
+ * RecordsApprovalIn
+ *
+ * The second approval carries the typed confirmation (AC-23).
+ */
+export type RecordsApprovalIn = {
+    /**
+     * Confirmation
+     */
+    confirmation?: string | null;
+    /**
+     * Items Seen
+     */
+    items_seen: number;
+};
+
+/**
+ * RecordsApprovalOut
+ */
+export type RecordsApprovalOut = {
+    /**
+     * Approved At
+     */
+    approved_at: string;
+    approver: RecordsPersonOut;
+    /**
+     * Approver Role
+     */
+    approver_role: 'firm_admin' | 'security_admin';
+};
+
+/**
+ * RecordsBatchListOut
+ */
+export type RecordsBatchListOut = {
+    /**
+     * Items
+     */
+    items: Array<RecordsBatchOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+};
+
+/**
+ * RecordsBatchOut
+ *
+ * FIL-02 c (AC-22): 2026-Q3, 1,204 documents of 31 former clients, Grace Holloway Sep 8.
+ */
+export type RecordsBatchOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Approvals
+     */
+    approvals: Array<RecordsApprovalOut>;
+    /**
+     * Assembled At
+     */
+    assembled_at: string;
+    /**
+     * Batch Id
+     */
+    batch_id: string;
+    /**
+     * Certificate Ref
+     */
+    certificate_ref?: string | null;
+    /**
+     * Client Count
+     */
+    client_count: number;
+    /**
+     * Confirmation Phrase
+     */
+    confirmation_phrase: string;
+    /**
+     * Destroyed Count
+     */
+    destroyed_count: number;
+    /**
+     * Eligible Count
+     */
+    eligible_count: number;
+    /**
+     * Held Excluded Count
+     */
+    held_excluded_count: number;
+    /**
+     * Hold Recheck At
+     */
+    hold_recheck_at?: string | null;
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Scope Description
+     */
+    scope_description: string;
+    /**
+     * Status
+     */
+    status: 'awaiting_approval' | 'approved' | 'destroying' | 'destroyed' | 'cancelled';
+};
+
+/**
+ * RecordsCancelIn
+ */
+export type RecordsCancelIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * RecordsCertificateOut
+ *
+ * FIL-02 i (OQ-10): counts, approvers, hold re-check, manifest hash, checkpoint root.
+ */
+export type RecordsCertificateOut = {
+    /**
+     * Audit Checkpoint Root
+     */
+    audit_checkpoint_root: string;
+    /**
+     * Batch Id
+     */
+    batch_id: string;
+    /**
+     * Certificate Id
+     */
+    certificate_id: string;
+    /**
+     * Destroyed Count
+     */
+    destroyed_count: number;
+    /**
+     * Document Version Id
+     */
+    document_version_id: string;
+    /**
+     * Excluded Count
+     */
+    excluded_count: number;
+    /**
+     * Generated At
+     */
+    generated_at: string;
+    /**
+     * Manifest Sha256
+     */
+    manifest_sha256: string;
+    /**
+     * Ref
+     */
+    ref: string;
+};
+
+/**
+ * RecordsPersonOut
+ */
+export type RecordsPersonOut = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * RecordsPolicyCreateIn
+ *
+ * OQ-11: a service-line override at or above the record type's policy.
+ */
+export type RecordsPolicyCreateIn = {
+    /**
+     * Effective From
+     */
+    effective_from?: string | null;
+    /**
+     * Policy Text
+     */
+    policy_text?: string | null;
+    /**
+     * Record Type
+     */
+    record_type: string;
+    /**
+     * Retention Years
+     */
+    retention_years: number;
+    /**
+     * Service Line
+     */
+    service_line: 'audit' | 'tax' | 'cas' | 'advisory';
+};
+
+/**
+ * RecordsPolicyVersionListOut
+ */
+export type RecordsPolicyVersionListOut = {
+    /**
+     * Items
+     */
+    items: Array<RecordsPolicyVersionOut>;
+    /**
+     * Record Type
+     */
+    record_type: string;
+    /**
+     * Service Line
+     */
+    service_line?: string | null;
+};
+
+/**
+ * RecordsPolicyVersionOut
+ *
+ * FIL-02 g: one insert-only version (AC-20).
+ */
+export type RecordsPolicyVersionOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    created_by: RecordsPersonOut;
+    /**
+     * Effective From
+     */
+    effective_from?: string | null;
+    /**
+     * Legal Minimum Years
+     */
+    legal_minimum_years: number;
+    /**
+     * Policy Text
+     */
+    policy_text?: string | null;
+    /**
+     * Retention Years
+     */
+    retention_years: number;
+    /**
+     * Version Id
+     */
+    version_id: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
  * RecordsReadOut
  */
 export type RecordsReadOut = {
@@ -47283,6 +47734,38 @@ export type RecordsReadOut = {
      * Through
      */
     through?: string | null;
+};
+
+/**
+ * RecordsSummaryOut
+ *
+ * FIL-02 tiles: policies, active holds, pending batch, last certificate.
+ */
+export type RecordsSummaryOut = {
+    /**
+     * Active Holds
+     */
+    active_holds: number;
+    /**
+     * Last Certificate At
+     */
+    last_certificate_at?: string | null;
+    /**
+     * Last Certificate Ref
+     */
+    last_certificate_ref?: string | null;
+    /**
+     * Pending Batches
+     */
+    pending_batches: number;
+    /**
+     * Pending Documents
+     */
+    pending_documents: number;
+    /**
+     * Policies
+     */
+    policies: number;
 };
 
 /**
@@ -82402,6 +82885,322 @@ export type AuditPhaseResponses = {
 
 export type AuditPhaseResponse = AuditPhaseResponses[keyof AuditPhaseResponses];
 
+export type PostIssuanceCasesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/post-issuance/cases';
+};
+
+export type PostIssuanceCasesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PostIssuanceCasesError = PostIssuanceCasesErrors[keyof PostIssuanceCasesErrors];
+
+export type PostIssuanceCasesResponses = {
+    /**
+     * Successful Response
+     */
+    200: PostIssuanceCaseListOut;
+};
+
+export type PostIssuanceCasesResponse = PostIssuanceCasesResponses[keyof PostIssuanceCasesResponses];
+
+export type PostIssuanceCaseCreateData = {
+    body: PostIssuanceCaseIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/post-issuance/cases';
+};
+
+export type PostIssuanceCaseCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PostIssuanceCaseCreateError = PostIssuanceCaseCreateErrors[keyof PostIssuanceCaseCreateErrors];
+
+export type PostIssuanceCaseCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: PostIssuanceCaseOut;
+};
+
+export type PostIssuanceCaseCreateResponse = PostIssuanceCaseCreateResponses[keyof PostIssuanceCaseCreateResponses];
+
+export type PostIssuanceCaseData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Case Id
+         */
+        case_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/post-issuance/cases/{case_id}';
+};
+
+export type PostIssuanceCaseErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PostIssuanceCaseError = PostIssuanceCaseErrors[keyof PostIssuanceCaseErrors];
+
+export type PostIssuanceCaseResponses = {
+    /**
+     * Successful Response
+     */
+    200: PostIssuanceCaseOut;
+};
+
+export type PostIssuanceCaseResponse = PostIssuanceCaseResponses[keyof PostIssuanceCaseResponses];
+
+export type PostIssuanceAnalysisData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Case Id
+         */
+        case_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/analysis';
+};
+
+export type PostIssuanceAnalysisErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PostIssuanceAnalysisError = PostIssuanceAnalysisErrors[keyof PostIssuanceAnalysisErrors];
+
+export type PostIssuanceAnalysisResponses = {
+    /**
+     * Successful Response
+     */
+    202: PostIssuanceRunOut;
+};
+
+export type PostIssuanceAnalysisResponse = PostIssuanceAnalysisResponses[keyof PostIssuanceAnalysisResponses];
+
+export type PostIssuanceReissueData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Case Id
+         */
+        case_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/reopen-for-reissue';
+};
+
+export type PostIssuanceReissueErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PostIssuanceReissueError = PostIssuanceReissueErrors[keyof PostIssuanceReissueErrors];
+
+export type PostIssuanceReissueResponses = {
+    /**
+     * Successful Response
+     */
+    200: PostIssuanceReissueOut;
+};
+
+export type PostIssuanceReissueResponse = PostIssuanceReissueResponses[keyof PostIssuanceReissueResponses];
+
 export type AuditProfileData = {
     body: AuditProfileIn;
     headers?: {
@@ -96454,6 +97253,364 @@ export type DestinationsResponses = {
 };
 
 export type DestinationsResponse = DestinationsResponses[keyof DestinationsResponses];
+
+export type DestructionBatchesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Status
+         */
+        status?: 'awaiting_approval' | 'approved' | 'destroying' | 'destroyed' | 'cancelled' | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/destruction-batches';
+};
+
+export type DestructionBatchesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DestructionBatchesError = DestructionBatchesErrors[keyof DestructionBatchesErrors];
+
+export type DestructionBatchesResponses = {
+    /**
+     * Successful Response
+     */
+    200: RecordsBatchListOut;
+};
+
+export type DestructionBatchesResponse = DestructionBatchesResponses[keyof DestructionBatchesResponses];
+
+export type DestructionBatchData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Batch Id
+         */
+        batch_id: string;
+    };
+    query?: never;
+    url: '/v1/destruction-batches/{batch_id}';
+};
+
+export type DestructionBatchErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DestructionBatchError = DestructionBatchErrors[keyof DestructionBatchErrors];
+
+export type DestructionBatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: RecordsBatchOut;
+};
+
+export type DestructionBatchResponse = DestructionBatchResponses[keyof DestructionBatchResponses];
+
+export type DestructionApprovalData = {
+    body: RecordsApprovalIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Batch Id
+         */
+        batch_id: string;
+    };
+    query?: never;
+    url: '/v1/destruction-batches/{batch_id}/approvals';
+};
+
+export type DestructionApprovalErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DestructionApprovalError = DestructionApprovalErrors[keyof DestructionApprovalErrors];
+
+export type DestructionApprovalResponses = {
+    /**
+     * Successful Response
+     */
+    201: RecordsBatchOut;
+};
+
+export type DestructionApprovalResponse = DestructionApprovalResponses[keyof DestructionApprovalResponses];
+
+export type DestructionCancelData = {
+    body: RecordsCancelIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Batch Id
+         */
+        batch_id: string;
+    };
+    query?: never;
+    url: '/v1/destruction-batches/{batch_id}/cancel';
+};
+
+export type DestructionCancelErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DestructionCancelError = DestructionCancelErrors[keyof DestructionCancelErrors];
+
+export type DestructionCancelResponses = {
+    /**
+     * Successful Response
+     */
+    200: RecordsBatchOut;
+};
+
+export type DestructionCancelResponse = DestructionCancelResponses[keyof DestructionCancelResponses];
+
+export type DestructionDocumentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Batch Id
+         */
+        batch_id: string;
+    };
+    query?: never;
+    url: '/v1/destruction-batches/{batch_id}/documents.csv';
+};
+
+export type DestructionDocumentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DestructionDocumentsError = DestructionDocumentsErrors[keyof DestructionDocumentsErrors];
+
+export type DestructionDocumentsResponses = {
+    /**
+     * Response Destruction Documents
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type DestructionDocumentsResponse = DestructionDocumentsResponses[keyof DestructionDocumentsResponses];
+
+export type DestructionCertificateData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Certificate Id
+         */
+        certificate_id: string;
+    };
+    query?: never;
+    url: '/v1/destruction-certificates/{certificate_id}';
+};
+
+export type DestructionCertificateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DestructionCertificateError = DestructionCertificateErrors[keyof DestructionCertificateErrors];
+
+export type DestructionCertificateResponses = {
+    /**
+     * Successful Response
+     */
+    200: RecordsCertificateOut;
+};
+
+export type DestructionCertificateResponse = DestructionCertificateResponses[keyof DestructionCertificateResponses];
 
 export type PracticeDueDatesData = {
     body?: never;
@@ -150582,6 +151739,65 @@ export type ListRetentionPoliciesResponses = {
 
 export type ListRetentionPoliciesResponse = ListRetentionPoliciesResponses[keyof ListRetentionPoliciesResponses];
 
+export type RetentionPolicyCreateData = {
+    body: RecordsPolicyCreateIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/retention/policies';
+};
+
+export type RetentionPolicyCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RetentionPolicyCreateError = RetentionPolicyCreateErrors[keyof RetentionPolicyCreateErrors];
+
+export type RetentionPolicyCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: RecordsPolicyVersionOut;
+};
+
+export type RetentionPolicyCreateResponse = RetentionPolicyCreateResponses[keyof RetentionPolicyCreateResponses];
+
 export type SaveRetentionPolicyData = {
     body: RetentionPolicyIn;
     headers?: {
@@ -150628,6 +151844,113 @@ export type SaveRetentionPolicyResponses = {
 };
 
 export type SaveRetentionPolicyResponse = SaveRetentionPolicyResponses[keyof SaveRetentionPolicyResponses];
+
+export type RetentionPolicyVersionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Policy Id
+         */
+        policy_id: string;
+    };
+    query?: never;
+    url: '/v1/retention/policies/{policy_id}/versions';
+};
+
+export type RetentionPolicyVersionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RetentionPolicyVersionsError = RetentionPolicyVersionsErrors[keyof RetentionPolicyVersionsErrors];
+
+export type RetentionPolicyVersionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: RecordsPolicyVersionListOut;
+};
+
+export type RetentionPolicyVersionsResponse = RetentionPolicyVersionsResponses[keyof RetentionPolicyVersionsResponses];
+
+export type RetentionSummaryData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/retention/summary';
+};
+
+export type RetentionSummaryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RetentionSummaryError = RetentionSummaryErrors[keyof RetentionSummaryErrors];
+
+export type RetentionSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: RecordsSummaryOut;
+};
+
+export type RetentionSummaryResponse = RetentionSummaryResponses[keyof RetentionSummaryResponses];
 
 export type ReviewNoteListData = {
     body?: never;
