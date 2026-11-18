@@ -271,3 +271,91 @@ INSERT_COLUMNS["deliverable_download_links"] = frozenset(
     | {"user_id", "request_id"}
 )
 UPDATE_COLUMNS["deliverable_download_links"] = frozenset({"used_at"})
+
+# Q-05-T06 (0964, DEC-5612).
+Q05T06_TABLES: frozenset[str] = frozenset(
+    {
+        "destruction_approvals",
+        "destruction_batch_items",
+        "destruction_batches",
+        "destruction_certificates",
+        "destruction_item_exclusions",
+    }
+)
+TABLES = TABLES | Q05T06_TABLES
+INSERT_ONLY = INSERT_ONLY | frozenset(
+    {
+        "destruction_approvals",
+        "destruction_batch_items",
+        "destruction_certificates",
+        "destruction_item_exclusions",
+    }
+)
+INSERT_COLUMNS["destruction_batches"] = frozenset(
+    {
+        "client_count",
+        "confirmation_phrase",
+        "eligible_count",
+        "ref",
+        "scope_description",
+        "tenant_id",
+    }
+)
+UPDATE_COLUMNS["destruction_batches"] = frozenset(
+    {
+        "certificate_id",
+        "destroyed_count",
+        "held_excluded_count",
+        "hold_recheck_at",
+        "status",
+        "version",
+    }
+)
+INSERT_COLUMNS["destruction_batch_items"] = frozenset(
+    {
+        "batch_id",
+        "client_id",
+        "eligible_at",
+        "evidence_version_id",
+        "object_key",
+        "object_version_id",
+        "record_type",
+        "replica_version_id",
+        "retain_until_observed",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["destruction_item_exclusions"] = frozenset(
+    {
+        "item_id",
+        "reason",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["destruction_approvals"] = frozenset(
+    {
+        "approver_role",
+        "approver_user_id",
+        "batch_id",
+        "items_seen",
+        "mfa_verified_at",
+        "phrase_sha256",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["destruction_certificates"] = frozenset(
+    {
+        "audit_checkpoint_root",
+        "batch_id",
+        "document_version_id",
+        "manifest_object_key",
+        "manifest_sha256",
+        "ref",
+        "tenant_id",
+    }
+)
+# Q-05-T06 (0964): Q-02's tables extended; tombstone columns on evidence versions. The policy
+# versions' new columns are written by Q-02's policy trigger once Q-05-T11 extends it (Oct 24).
+UPDATE_COLUMNS["evidence_versions"] = UPDATE_COLUMNS.get(
+    "evidence_versions", frozenset()
+) | frozenset({"destroyed_at", "destruction_certificate_id"})

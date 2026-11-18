@@ -41,6 +41,9 @@ ControlName = Literal[
     # W-01-T07 rest (0948; DEC-5433): pauses one integration (keyed by its catalogue key, in the
     # `route` column), per firm or for everyone: Paused on WB-10 and WB-11, adapter calls refused.
     "integration_pause",
+    # Q-05-T06 (0964; DEC-5612): stops DestructionExecuteWorkflow between items, per firm or for
+    # everyone (AC-27).
+    "destruction_execute",
 ]
 # The controls a row names with a key (`route`): a model route, or an integration's catalogue key.
 _KEYED: Final = frozenset({"model_route_block", "integration_pause"})

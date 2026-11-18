@@ -264,6 +264,10 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "qm_finding_links": "qm_finding_links_immutable",  # 0963 (Q-05-T05)
     "qm_register_imports": "qm_register_imports_immutable",  # 0963 (Q-05-T05)
     "qm_risk_assessment_reviews": "qm_risk_assessment_reviews_immutable",  # 0963 (Q-05-T05)
+    "destruction_approvals": "destruction_approvals_immutable",  # 0964 (Q-05-T06)
+    "destruction_batch_items": "destruction_batch_items_immutable",  # 0964 (Q-05-T06)
+    "destruction_certificates": "destruction_certificates_immutable",  # 0964 (Q-05-T06)
+    "destruction_item_exclusions": "destruction_item_exclusions_immutable",  # 0964 (Q-05-T06)
     # S50 (0960+): the insert-only tables above.
     "tb_handoffs": "tb_handoffs_immutable",  # 0953 (T-06-T11)
     "tb_handoff_supersessions": "tb_handoff_supersessions_immutable",  # 0953 (T-06-T11)
