@@ -117,3 +117,105 @@ def usage_events() -> list[Event]:
             )
         )
     return events
+
+
+# --- ADM-14 a to f (G-04-T18, DEC-5639): the firm's plan, alerts, rates and budgets -------------
+# Every figure is the ADM-14 handoff's (spec.md and the docs/screens/ADM-14.md artboard table);
+# totals and percentages are computed from them in code (ADR-050). `make fixtures` exports
+# `adm14_rows()` to `apps/web/src/fixtures/seed/scenario.adm14.json` with no database.
+ADM14_LINES: Final = (  # (key, service line label, minutes at a)
+    ("tax", "Tax", 8_640),
+    ("audit", "Audit & assurance", 4_610),
+    ("cas", "Client accounting", 1_420),
+    ("advisory", "Advisory & attest", 120),
+    ("firm", "Firm operations", 130),
+)
+ADM14_USED: Final = {"a": ADM14_TOTAL, "b": 18_240, "c": 20_860}  # ADM-14 a, b, c
+ADM14_CLOCKS: Final = {
+    "a": "2026-10-01T09:20:00-05:00",
+    "b": "2026-10-09T16:30:00-05:00",
+    "c": "2026-10-14T17:00:00-05:00",
+    "d": "2026-10-01T09:20:00-05:00",
+    "e": "2026-10-01T09:14:00-05:00",
+    "f": "2026-10-01T09:20:00-05:00",
+}
+ADM14_ALERTS: Final = (  # (pct, recipients by name, recipient groups)
+    (75, ("Grace Holloway", "Margaret Okonkwo"), ()),
+    (90, ("Grace Holloway", "Margaret Okonkwo", "Felix Andersen"), ()),
+    (100, (), ("partners", "firm_admins")),
+)
+ADM14_RATES: Final = (  # (band, people, hourly rate or None for non-chargeable)
+    ("Partner", 7, "450.00"),
+    ("Manager & reviewer", 7, "300.00"),
+    ("Senior", 11, "210.00"),
+    ("Staff & preparer", 19, "150.00"),
+    ("Operations", 2, None),
+)
+ADM14_SEATS: Final = 46
+ADM14_WORKBENCH_ACTIVE: Final = 39  # "Workbench active, 30 days — 39 of 46 (85%)"
+ADM14_GRANITE: Final = (
+    "Granite Peak FY2026 FS audit",
+    1_240,
+    1_500,
+    "2026-09-30T10:00:00-05:00",
+    "HL",
+)
+ADM14_MODULES: Final = (
+    "tax_services", "audit_assurance", "client_accounting", "advisory", "attest", "internal_audit",
+)  # fmt: skip
+
+
+def adm14_rows() -> dict[str, object]:
+    people = {
+        name: str(stable_id(f"user:{name.lower().replace(' ', '-')}"))
+        for name in ("Grace Holloway", "Margaret Okonkwo", "Felix Andersen")
+    }
+    usage = {
+        state: {
+            "usage_month": "2026-09",
+            "starts_on": "2026-09-15",
+            "ends_on": "2026-10-14",
+            "included_minutes": INCLUDED_MINUTES,
+            "used_minutes": used,
+            # The handoff gives the month by service line at a only; b and c show the total.
+            "by_service_line": [
+                {"key": k, "label": label, "minutes": m} for k, label, m in ADM14_LINES
+            ]
+            if state == "a"
+            else [],
+            "by_capability": [],
+            "by_engagement": [],
+        }
+        for state, used in ADM14_USED.items()
+    }
+    name, used_m, budget, sent_at, initials = ADM14_GRANITE
+    return {
+        "clocks": ADM14_CLOCKS,
+        "people": people,
+        "usage": usage,
+        "alerts": [
+            {
+                "threshold_pct": pct,
+                "threshold_minutes": INCLUDED_MINUTES * pct // 100,
+                "recipients": [{"display_name": n, "user_id": people[n]} for n in names],
+                "recipient_groups": list(groups),
+            }
+            for pct, names, groups in ADM14_ALERTS
+        ],
+        "engagement_default_minutes": 1_500,
+        "engagement_alert_pct": 80,
+        "granite": {
+            "engagement_name": name,
+            "used_minutes": used_m,
+            "budget_minutes": budget,
+            "used_pct": str(used_m * 100 // budget),
+            "alert_sent_at": sent_at,
+            "alert_sent_to_initials": initials,
+        },
+        "rates": [{"label": b, "people": n, "hourly_rate": r} for b, n, r in ADM14_RATES],
+        "rates_people": sum(n for _, n, _ in ADM14_RATES),
+        "seats": ADM14_SEATS,
+        "workbench_active_30d": ADM14_WORKBENCH_ACTIVE,
+        "modules": list(ADM14_MODULES),
+        "term": {"start": "2026-01-01", "end": "2026-12-31", "renewal_on": "2027-01-01"},
+    }

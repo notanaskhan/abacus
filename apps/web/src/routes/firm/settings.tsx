@@ -98,6 +98,9 @@ const FirmSettingsIntegrations = lazyScreen(
 const INTEGRATION_SEARCH = ["segment", "ov"] as const;
 const SEGMENTS = ["tax-engine", "ledgers", "mailboxes"] as const;
 const FirmSettingsSecurity = lazyScreen(async () => (await import("../../screens/ADM-06")).ADM06);
+// G-04-T18 (DEC-5639): ADM-14 Plan & usage at /settings/plan; the matrix decides read-only
+// (`budget_alert.manage`, firm admin), a partner reads it with Request more… enabled.
+const FirmSettingsPlan = lazyScreen(async () => (await import("../../screens/ADM-14")).ADM14);
 const SECURITY_SEARCH = ["incident", "sessions", "export"] as const;
 
 // R-01-T25: POR-20 at /settings/portal/email-templates/$templateKey, lazy (the firm entry is at its
@@ -352,6 +355,28 @@ const settingsSecurityRoute = createRoute({
     );
   },
 });
+const settingsPlanRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/settings/plan",
+  component: function SettingsPlanPage(): JSX.Element {
+    const navigate = useNavigate();
+    const router = useRouter();
+    const canManage = useCan("budget_alert.manage");
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FirmSettingsPlan
+          readOnly={!canManage}
+          onNavigate={(section) => {
+            void navigate({ to: "/settings/$section", params: { section } });
+          }}
+          onBack={() => {
+            router.history.back();
+          }}
+        />
+      </div>
+    );
+  },
+});
 const settingsEmailTemplatesRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/settings/portal/email-templates/$templateKey",
@@ -510,6 +535,7 @@ export const settingsRoutes = [
   settingsConsentsRoute,
   settingsIntegrationsRoute,
   settingsSecurityRoute,
+  settingsPlanRoute,
   settingsPortalRoute,
   settingsPortalPreviewRoute,
   settingsEmailTemplatesRoute,
