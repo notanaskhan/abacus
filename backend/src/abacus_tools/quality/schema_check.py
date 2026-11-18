@@ -268,6 +268,9 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "destruction_batch_items": "destruction_batch_items_immutable",  # 0964 (Q-05-T06)
     "destruction_certificates": "destruction_certificates_immutable",  # 0964 (Q-05-T06)
     "destruction_item_exclusions": "destruction_item_exclusions_immutable",  # 0964 (Q-05-T06)
+    "close_deliverable_versions": "close_deliverable_versions_immutable",  # 0965 (C-02-T16)
+    "close_reopenings": "close_reopenings_immutable",  # 0965 (C-02-T16)
+    "tax_handoffs": "tax_handoffs_immutable",  # 0965 (C-02-T16)
     # S50 (0960+): the insert-only tables above.
     "tb_handoffs": "tb_handoffs_immutable",  # 0953 (T-06-T11)
     "tb_handoff_supersessions": "tb_handoff_supersessions_immutable",  # 0953 (T-06-T11)
