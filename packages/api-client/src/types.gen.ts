@@ -42473,6 +42473,10 @@ export type PortalBinderOut = {
  */
 export type PortalBinderRefOut = {
     /**
+     * Close Id
+     */
+    close_id?: string | null;
+    /**
      * Closed
      */
     closed: boolean;
@@ -42480,6 +42484,10 @@ export type PortalBinderRefOut = {
      * Id
      */
     id: string;
+    /**
+     * Period
+     */
+    period?: string | null;
     /**
      * Read Only
      */

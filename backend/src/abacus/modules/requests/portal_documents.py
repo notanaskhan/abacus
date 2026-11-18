@@ -87,6 +87,8 @@ class PortalBinderRef:
     work_item_id: UUID
     name: str
     status: str
+    # C-01-T41 (DEC-5638): `close_intake` for a close's binder (POR-11), else the binder's kind.
+    kind: str = ""
 
 
 @dataclass(frozen=True)
@@ -109,7 +111,12 @@ class PortalBinder:
 
 def _ref(binder: RequestList) -> PortalBinderRef:
     return PortalBinderRef(
-        binder.id, binder.engagement_id, binder.work_item_id, binder.name, binder.status
+        binder.id,
+        binder.engagement_id,
+        binder.work_item_id,
+        binder.name,
+        binder.status,
+        str(binder.kind),
     )
 
 

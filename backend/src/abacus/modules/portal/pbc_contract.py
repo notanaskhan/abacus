@@ -85,6 +85,10 @@ class PortalBinderRefOut(BaseModel):
     year: Annotated[int | None, classified("internal")] = None
     closed: Annotated[bool, classified("internal")]
     read_only: Annotated[bool, classified("internal")]
+    # C-01-T41 (DEC-5638): a close's binder names its close and `YYYY-MM` period (POR-11's picker
+    # and `/documents?period=`); None for every other binder. Additive.
+    close_id: Annotated[UUID | None, classified("internal")] = None
+    period: Annotated[str | None, classified("internal")] = None
 
 
 class PortalBinderListOut(BaseModel):

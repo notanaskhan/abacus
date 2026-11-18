@@ -90447,6 +90447,19 @@
       "PortalBinderRefOut": {
         "description": "One binder in the picker (\"2025 Binder\", \"2024 Binder (closed)\").",
         "properties": {
+          "close_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Close Id"
+          },
           "closed": {
             "cls": "internal",
             "title": "Closed",
@@ -90457,6 +90470,18 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Period"
           },
           "read_only": {
             "cls": "internal",
