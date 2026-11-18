@@ -75,4 +75,6 @@ __all__ = [
 ]
 
 # Q-05-T02 (DEC-5609): quality management error codes declared before their services.
+# Q-05-T04: the contract module for the synthetic slice (tooling reaches practice only here).
+from abacus.modules.practice import quality_contract as quality_contract  # noqa: E402
 from abacus.modules.practice import quality_errors as quality_errors  # noqa: E402

@@ -878,6 +878,11 @@ register_file_store(screen_for_store, read_staged)
 # P-02-T07 (DEC-4613): the C15 v1 search projection this module owns, registered at import.
 # Q-05-T02 (DEC-5609): records-governance error codes declared before their services.
 from abacus.modules.evidence import destruction_errors as destruction_errors  # noqa: E402
+
+# Q-05-T04: the contract module for the synthetic slice (tooling reaches evidence only here).
+from abacus.modules.evidence import (  # noqa: E402
+    records_governance_contract as records_governance_contract,
+)
 from abacus.modules.evidence import (  # noqa: E402
     search as _search,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
 )
