@@ -103,10 +103,14 @@ export default defineConfig(({ mode, command }) => {
   // `vite build --mode portal` (P-08-T07; `build:portal`): the client portal's own entry,
   // portal.html, into dist/portal, with no gallery and no firm entry (the same-origin CSP).
   const portal = mode === "portal";
+  // `vite build --mode console` (G-04-T14; `build:console`): the staff console's own entry,
+  // console.html, into dist/console, with no gallery, no firm entry and no portal (the same CSP).
+  const consoleMode = mode === "console";
   // The /components gallery (F-05-T09): on for the dev server and tests, off for any build unless
   // VITE_UI_GALLERY=1 opts in. `define` makes the flag a constant, so a production build drops the
   // gallery's routes and its lazy chunk entirely.
-  const gallery = portal ? "" : (env.VITE_UI_GALLERY ?? (command === "serve" ? "1" : ""));
+  const gallery =
+    portal || consoleMode ? "" : (env.VITE_UI_GALLERY ?? (command === "serve" ? "1" : ""));
   // This worktree's port offset (F-01-T09; `make worktree-env`): 0 in the primary checkout and CI.
   const offset = Number(env.ABACUS_PORT_OFFSET ?? "0") || 0;
   return {
@@ -129,32 +133,34 @@ export default defineConfig(({ mode, command }) => {
     // dist/.vite/manifest.json: scripts/bundle-budget.mjs (F-05-T17) reads the chunk graph from it.
     build: portal
       ? { manifest: true, outDir: "dist/portal", rolldownOptions: { input: "portal.html" } }
-      : {
-          manifest: true,
-          // TASK-1368 (DEC-464): the framework every firm page boots with in one chunk. Left to
-          // the default splitting, each lazy chunk that shares a few of these modules with the
-          // entry split them into their own small common chunks, and the firm initial load paid
-          // several KB of gzip for the fragmentation alone. Only modules the shell loads anyway.
-          rolldownOptions: {
-            output: {
-              codeSplitting: {
-                groups: [
-                  {
-                    name: "framework",
-                    test: /node_modules[\\/](react|react-dom|scheduler|@tanstack|@radix-ui|@floating-ui|tailwind-merge)[\\/]/,
-                  },
-                  // N-01-T23: the generated client in one chunk. The shell loads it anyway, and
-                  // sdk.gen and react-query.gen repeat each endpoint's id and URL, so gzip of the
-                  // two together is ~3.5 KB smaller than of each apart.
-                  {
-                    name: "api-client",
-                    test: /packages[\\/]api-client[\\/]src[\\/]/,
-                  },
-                ],
+      : consoleMode
+        ? { manifest: true, outDir: "dist/console", rolldownOptions: { input: "console.html" } }
+        : {
+            manifest: true,
+            // TASK-1368 (DEC-464): the framework every firm page boots with in one chunk. Left to
+            // the default splitting, each lazy chunk that shares a few of these modules with the
+            // entry split them into their own small common chunks, and the firm initial load paid
+            // several KB of gzip for the fragmentation alone. Only modules the shell loads anyway.
+            rolldownOptions: {
+              output: {
+                codeSplitting: {
+                  groups: [
+                    {
+                      name: "framework",
+                      test: /node_modules[\\/](react|react-dom|scheduler|@tanstack|@radix-ui|@floating-ui|tailwind-merge)[\\/]/,
+                    },
+                    // N-01-T23: the generated client in one chunk. The shell loads it anyway, and
+                    // sdk.gen and react-query.gen repeat each endpoint's id and URL, so gzip of the
+                    // two together is ~3.5 KB smaller than of each apart.
+                    {
+                      name: "api-client",
+                      test: /packages[\\/]api-client[\\/]src[\\/]/,
+                    },
+                  ],
+                },
               },
             },
           },
-        },
     server: {
       port: 5173 + offset,
       strictPort: true,
