@@ -221,6 +221,9 @@ from abacus.modules.assurance.phase import (
 from abacus.modules.assurance.phase import SUBSCRIPTIONS as PHASE_SUBSCRIPTIONS
 from abacus.modules.assurance.planning_contract import router as planning_router
 from abacus.modules.assurance.planning_gate import g4_facts
+
+# The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.assurance.post_issuance_contract import post_issuance_router
 from abacus.modules.assurance.post_release import ACTIVITIES as POST_RELEASE_ACTIVITIES
 from abacus.modules.assurance.post_release import SUBSCRIPTIONS as POST_RELEASE_SUBSCRIPTIONS
 from abacus.modules.assurance.post_release import WORKFLOWS as POST_RELEASE_WORKFLOWS
@@ -307,11 +310,11 @@ from abacus.modules.review.api import (
 )
 from abacus.modules.workpapers.api import register_sign_off_guard
 
-# The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     tb_router,  # C9 v1 (docs/contracts/c09-ledger.md): A-02-T03 stubs, A-02-T10 live reads
     audits_router,  # A-01-T02 audits family stub (docs/contracts/audits-cockpit.md)
+    post_issuance_router,  # Q-05-T03: post-issuance v1 (stubs; dark)
     completion_router,
     mapping_router,
     grouping_router,

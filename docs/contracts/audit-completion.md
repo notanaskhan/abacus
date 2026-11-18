@@ -183,7 +183,7 @@ Until then each flag is renewed per `docs/runbooks/RB-26-flag-expiry-wave.md`.
 
 ## Post-issuance (Q-05 skeleton; SPEC-711 AC-15 to AC-18; DEC-5608)
 
-Owner `assurance` (`assurance/post_issuance.py`, a red path beside `release.py`), behind `audit.post_issuance`. Cases on an archived audit (AU-C 560 subsequently discovered facts, AU-C 585 omitted procedures, reissuance requests); writes to the locked work item only under A-07's `post_issuance` exception kind. Stub Q-05-T03; v1 S54.
+Owner `assurance` (`assurance/post_issuance.py`, a red path beside `release.py`), behind `audit.post_issuance`. Cases on an archived audit (AU-C 560 subsequently discovered facts, AU-C 585 omitted procedures, reissuance requests); writes to the locked work item only under A-07's `post_issuance` exception kind. Stub `backend/src/abacus/modules/assurance/post_issuance_contract.py` (`post_issuance_router`; Q-05-T03, DEC-5610); v1 S54.
 
 | Method and path | Action | Notes |
 |---|---|---|
