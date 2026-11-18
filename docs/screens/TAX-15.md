@@ -26,6 +26,15 @@ Parity tier target: C (T-08 §5.5). Copy keys live in `apps/web/src/screens/TAX-
 - P-25 is not accepted: the send sheet opens on the firm's database template; an agent draft prefills only on a synthetic tenant.
 - PRJ-01 is a planned link until T-09; the catalogue's 'draft proposal (ENG-09)' is not built.
 
+## Design deltas (T-08-T02, DEC-5601)
+Each row is the frame it amends (a handoff screenshot) and the build answer; no new token or colour is introduced.
+
+| Frame | Handoff | Build | Why |
+|---|---|---|---|
+| `TAX-15b.png` raise | INB-04 thread composer | O3 send sheet over `message.send` on the firm's "Planning conversation" database template until N-03 lands INB-04 | OQ-10; DEC-79 (P-25 not accepted) |
+| `TAX-15d.png` consent banner | amber banner | banner adds the glyph and the words "Consent-blocked"; no outreach control on the row | non-colour risk cue; R-03 |
+| composed DF-04 | no frame | planning narrative off: code-templated rationale and talking points labelled "Template" | DF-04; cut item 3 fallback |
+
 ## Links
 
 The designed links of the handoff link graph (link-contract rule 5); each is wired when its screen task builds the screen.

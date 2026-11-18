@@ -25,6 +25,15 @@ Parity tier target: C (T-08 §5.5). Copy keys live in `apps/web/src/screens/TAX-
 - DF-39: the Review sub-navigation becomes SheetTabs inside the sheets pane (T-08-T02).
 - OQ-2: the threshold popover names the source actually used (checklist v6 > $1,000 and > 10%, else the variance policy).
 
+## Design deltas (T-08-T02, DEC-5601)
+Each row is the frame it amends (a handoff screenshot) and the build answer; no new token or colour is introduced.
+
+| Frame | Handoff | Build | Why |
+|---|---|---|---|
+| `TAX-10a.png` Review sub-navigation | pill row | SheetTabs inside the sheets pane ("2-Year Comparison" tab registered hidden by T-04 until the flag is on) | DF-39 |
+| composed DF-04 | no frame | agents off for this taxpayer or AI unavailable: "Explain…" disabled with the DF-04 copy, "Edit" enabled, acceptance unchanged | DF-04; SPEC-710 AC-23 |
+| `TAX-10a.png` threshold popover | "> $1,000 and > 10% · 1040 Review Checklist v6" | names the source actually used (checklist parameter or the variance policy row) and its version | OQ-2 |
+
 ## Links
 
 The designed links of the handoff link graph (link-contract rule 5); each is wired when its screen task builds the screen.

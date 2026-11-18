@@ -27,6 +27,16 @@ Parity tier target: C (T-08 §5.5). Copy keys live in `apps/web/src/screens/TAX-
 - DF-08: the TAX-07 'Amend…' entry and the 1065 BBA path are composed from kits (T-08-T02).
 - OQ-7: reviewed-year K-1s stay unchanged with a 'Form 8986 statement' note.
 
+## Design deltas (T-08-T02, DEC-5601)
+Each row is the frame it amends (a handoff screenshot) and the build answer; no new token or colour is introduced.
+
+| Frame | Handoff | Build | Why |
+|---|---|---|---|
+| TAX-07 "Amend…" entry | undesigned | an overflow-menu item on TAX-07 for accepted returns only, opening `?ov=amend` with kind and jurisdictions | DF-08 |
+| 1065 BBA path | undesigned beyond e | TAX-07 "Amend…" on a BBA 1065 opens the AAR variant (e); the note "BBA partnerships cannot file an amended Form 1065; the AAR is the only route." | DF-08 |
+| `TAX-16b.png` clock | rendered Sep 14 | scenario b runs at Tue Sep 15, 2026 | OQ-11; TAX-16 b clock |
+| `TAX-16e.png` reviewed-year K-1s | "Superseded (amended K-1)" | unchanged reviewed-year K-1s with a "Form 8986 statement" note until the tax CPA answers | OQ-7 |
+
 ## Links
 
 The designed links of the handoff link graph (link-contract rule 5); each is wired when its screen task builds the screen.
