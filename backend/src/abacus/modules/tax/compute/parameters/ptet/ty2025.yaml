@@ -1,0 +1,13 @@
+# E9 PTET rates, TY2025 (T-06-T17; DEC-76 / ADR-300 second category; DEC-77).
+# PROTECTED: CPA-reviewed repo file (docs/architecture/protected-paths.md, DEC-5511); a change is a
+# reviewed policy change with its goldens in the same diff. `reviewed_by` stays null until the
+# CPA's memo is signed. A state missing here is not published: the engine refuses it
+# (ParameterMissing), never guesses. TY2026-TY2028 files land when the CPA publishes their rates.
+version: 1
+tax_year: 2025
+reviewed_by: null
+source: "IL 35 ILCS 5/201(p) (4.95%); CO C.R.S. 39-22-104 SALT parity (4.40%); NY Tax Law Art. 24-A (6.85% bracket)"
+rates:
+  IL: "4.95"
+  CO: "4.40"
+  NY: "6.85"
