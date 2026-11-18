@@ -62,7 +62,7 @@ function Note({ line }: { line: AnalyticsLineOut }): ReactNode {
   );
 }
 
-function Statement({ set }: { set: AnalyticsSetOut }): JSX.Element {
+export function Statement({ set }: { set: AnalyticsSetOut }): JSX.Element {
   const final = set.stage === "final";
   const cols = [
     C.columns.account,

@@ -24,6 +24,8 @@ const ConfirmationsLive = lazyScreen(
 const AnalyticsLive = lazyScreen(
   async () => (await import("../../screens/AUD-13/live")).AUD13Live,
 );
+// A-08-T32 (TASK-8547): AUD-26 live on the SSARS workspace.
+const SsarsLive = lazyScreen(async () => (await import("../../screens/AUD-26/live")).AUD26Live);
 const JeTesting = lazyScreen(
   async () => (await import("../../screens/AUD-12/route")).JeTestingPage,
 );
@@ -474,6 +476,15 @@ export const analyticsRoute = createRoute({
   },
 });
 
+// A-08-T32 (TASK-8547, DEC-5531): AUD-26 `/audits/$auditId/ssars`, the SSARS workspace live.
+export const ssarsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/audits/$auditId/ssars",
+  component: function SsarsPage(): JSX.Element {
+    return gated(<SsarsLive workItemId={useParam("auditId")} />);
+  },
+});
+
 export const findingsRoute = evaluationRoute("findings");
 export const misstatementsRoute = evaluationRoute("misstatements");
 export const reviewNotesRoute = evaluationRoute("review-notes");
@@ -489,6 +500,7 @@ export const auditRoutes = [
   jeTestRoute,
   confirmationsRoute,
   analyticsRoute,
+  ssarsRoute,
   narrativeRoute,
   programRoute,
   findingsRoute,
