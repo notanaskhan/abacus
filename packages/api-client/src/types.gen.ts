@@ -2131,6 +2131,26 @@ export type AlertRuleOut = {
 };
 
 /**
+ * AlertSentOut
+ *
+ * A firm alert sent this usage month (ADM-14 b: "alert sent Oct 9, 1:47 PM to …").
+ */
+export type AlertSentOut = {
+    /**
+     * Recipients
+     */
+    recipients: Array<string>;
+    /**
+     * Sent At
+     */
+    sent_at: string;
+    /**
+     * Threshold Pct
+     */
+    threshold_pct: number;
+};
+
+/**
  * AllocationRowOut
  */
 export type AllocationRowOut = {
@@ -25929,6 +25949,10 @@ export type FirmTeamOut = {
  */
 export type FirmUsageOut = {
     /**
+     * Alerts Sent
+     */
+    alerts_sent?: Array<AlertSentOut>;
+    /**
      * By Capability
      */
     by_capability: Array<UsageLineOut>;
@@ -25948,6 +25972,10 @@ export type FirmUsageOut = {
      * Included Minutes
      */
     included_minutes: number;
+    /**
+     * Over Included
+     */
+    over_included?: number;
     /**
      * Starts On
      */

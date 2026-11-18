@@ -15,6 +15,12 @@ export const COPY = {
     nextAlert: (pct: number, at: string, away: string, reset: string) =>
       `Next alert at ${String(pct)}% (${at}) · ${away} agent-minutes away · included minutes reset ${reset}`,
     left: (left: string, reset: string) => `${left} left until ${reset}`,
+    // ADM-14 b: the banner names the newest alert; the helper the one before it.
+    sentBanner: (pct: number, at: string, to: string) =>
+      `${String(pct)}% of included agent-minutes used · alert sent ${at} to ${to}`,
+    sentEarlier: (pct: number, at: string) => ` · ${String(pct)}% alert sent ${at}`,
+    resetTomorrow: (on: string) => `Included minutes reset tomorrow, ${on}`,
+    and: " and ",
     over: (n: string) =>
       `${n} agent-minutes over included · agents keep running (setting: Keep agents running) · overage is billed on the next invoice at the order-form rate`,
     byLine: "By service line",

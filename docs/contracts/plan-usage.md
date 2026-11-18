@@ -27,7 +27,7 @@ Every route answers, in order: a client principal 404; the action on the firm; 4
 | Plan requests | GET · POST `/v1/firm/plan-requests` (Idempotency-Key) | `plan.read` · `plan_request.create` | T11 |
 | Decide | POST `/v1/firm/plan-requests/{id}/approve` · `/decline` (409 `plan_request_self_approval`, `plan_request_not_pending`) | `plan_request.approve` | T11 |
 | Withdraw | POST `/v1/firm/plan-requests/{id}/withdraw` | `plan_request.create` | T11 |
-| Usage (P-10, additive) | GET `/v1/firm/usage?month=` adds `next_alert`, `alerts_sent[]`, `over_included`, `at_100_behaviour` | `usage.read` | T11 (split PR) |
+| Usage (P-10, additive) | GET `/v1/firm/usage?month=` adds `alerts_sent[]` (`threshold_pct`, `sent_at`, recipients by name; lowest first) and `over_included` (G-04-T18, DEC-5642). The next alert and `at_100_behaviour` are read from `/v1/firm/budget-alerts` | `usage.read` | T11 (split PR), T18 |
 
 **In-process read:** `platform.api.over_limit_policy(tenant) -> (at_100_behaviour, over_included: bool)` for the admission hook (G-04-T08); schedule-triggered runs only (OQ-2).
 

@@ -31,6 +31,7 @@ import {
   amount,
   date,
   pct,
+  time,
   toast,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -67,6 +68,12 @@ function Meter({ used, included }: { used: number; included: number }): JSX.Elem
       ))}
     </div>
   );
+}
+
+/** "Grace Holloway, Margaret Okonkwo and Felix Andersen" (ADM-14 b). */
+function names(list: readonly string[]): string {
+  if (list.length <= 1) return list.join("");
+  return `${list.slice(0, -1).join(", ")}${C.minutes.and}${list[list.length - 1] ?? ""}`;
 }
 
 function pctText(used: number, included: number): string {
@@ -141,178 +148,224 @@ export function ADM14({
     const included = u.included_minutes;
     const used = u.used_minutes;
     const next = a.rules.find((r) => r.enabled && r.threshold_minutes > used);
-    const reset = u.ends_on ? fmt(new Date(Date.parse(u.ends_on) + DAY_MS).toISOString()) : "";
-    const over = used - included;
+    // The reset day is a calendar date (the day after the usage month ends), formatted as written:
+    // a UTC-midnight instant would read as the day before in Central Time.
+    const resetDay = u.ends_on
+      ? new Date(Date.parse(u.ends_on) + DAY_MS).toISOString().slice(0, 10)
+      : "";
+    const reset = resetDay === "" ? "" : fmt(resetDay);
+    const over = u.over_included ?? Math.max(used - included, 0);
+    const sent = u.alerts_sent ?? [];
+    const newest = sent[sent.length - 1];
+    const earlier = sent.length > 1 ? sent[sent.length - 2] : undefined;
+    // ADM-14 b: past the 90% alert the banner names it and the helper counts down instead.
+    const nearLimit = newest !== undefined && newest.threshold_pct >= 90;
+    const when = (iso: string): string => `${fmt(iso)}, ${time(iso, { tz: DEFAULT_TZ })}`;
+    const tomorrow =
+      resetDay !== "" && reset === fmt(new Date(now.getTime() + DAY_MS).toISOString());
+    const helper =
+      over > 0
+        ? tomorrow
+          ? C.minutes.resetTomorrow(reset)
+          : ""
+        : next && !nearLimit
+          ? C.minutes.nextAlert(
+              next.threshold_pct,
+              n(next.threshold_minutes),
+              n(next.threshold_minutes - used),
+              reset,
+            )
+          : `${C.minutes.left(n(included - used), reset)}${
+              earlier ? C.minutes.sentEarlier(earlier.threshold_pct, when(earlier.sent_at)) : ""
+            }`;
+    const banner =
+      over > 0 ? (
+        <div
+          role="status"
+          data-adm14="banner"
+          className="flex h-[32px] items-center rounded-tile bg-red-tint px-[12px] text-dense text-red-ink"
+        >
+          {C.minutes.over(n(over))}
+        </div>
+      ) : nearLimit ? (
+        <div
+          role="status"
+          data-adm14="banner"
+          className="flex h-[32px] items-center rounded-tile bg-amber-tint px-[12px] text-dense text-amber-ink"
+        >
+          {C.minutes.sentBanner(
+            newest.threshold_pct,
+            when(newest.sent_at),
+            names(newest.recipients),
+          )}
+        </div>
+      ) : null;
     const behaviour = at100 ?? a.at_100_behaviour;
     const granite = budgets.data?.items[0];
     return (
-      <div className="grid grid-cols-2 gap-[12px] p-[12px]">
-        <div className="flex flex-col gap-[12px]">
-          <Fieldset title={C.minutes.title} {...lock}>
-            <div data-adm14="meter" className="px-[12px] py-[10px]">
-              <div className="flex items-baseline justify-between">
-                <span>
-                  <span className="text-[22px] font-medium tabular-nums">{n(used)}</span>
-                  <span className="text-[13px] text-ink-2">{C.minutes.of(n(included))}</span>
-                </span>
-                <span className="text-[13px] font-medium">{pctText(used, included)}</span>
+      <div className="flex flex-col gap-[12px] p-[12px]">
+        {banner}
+        <div className="grid grid-cols-2 gap-[12px]">
+          <div className="flex flex-col gap-[12px]">
+            <Fieldset title={C.minutes.title} {...lock}>
+              <div data-adm14="meter" className="px-[12px] py-[10px]">
+                <div className="flex items-baseline justify-between">
+                  <span>
+                    <span className="text-[22px] font-medium tabular-nums">{n(used)}</span>
+                    <span className="text-[13px] text-ink-2">{C.minutes.of(n(included))}</span>
+                  </span>
+                  <span className="text-[13px] font-medium">{pctText(used, included)}</span>
+                </div>
+                <Meter used={used} included={included} />
+                <p data-adm14="helper" className="mt-[8px] text-[11.5px] text-ink-3">
+                  {helper}
+                </p>
               </div>
-              <Meter used={used} included={included} />
-              <p className="mt-[8px] text-[11.5px] text-ink-3">
-                {over > 0
-                  ? C.minutes.over(n(over))
-                  : next
-                    ? C.minutes.nextAlert(
-                        next.threshold_pct,
-                        n(next.threshold_minutes),
-                        n(next.threshold_minutes - used),
-                        reset,
-                      )
-                    : C.minutes.left(n(included - used), reset)}
+              {u.by_service_line.length > 0 ? (
+                <>
+                  <div className="h-[28px] bg-nested px-[12px] text-[12px] leading-[28px] text-ink-2">
+                    {C.minutes.byLine}
+                  </div>
+                  {u.by_service_line.map((l) => (
+                    <ValueRow key={l.key} kind="value" label={l.label}>
+                      <span className="tabular-nums">{n(l.minutes)}</span>
+                    </ValueRow>
+                  ))}
+                </>
+              ) : null}
+            </Fieldset>
+            <Fieldset title={C.alerts.title} {...lock}>
+              {a.rules.map((r, i) => (
+                <div
+                  key={r.id}
+                  data-adm14="rule"
+                  className="flex items-center justify-between px-[12px] py-[6px]"
+                >
+                  <div>
+                    <div className="text-[13px] text-ink-2">
+                      {C.alerts.rule(r.threshold_pct, n(r.threshold_minutes), i === 0)}
+                    </div>
+                    <div className="text-[11.5px] text-ink-3">
+                      {r.recipients.length > 0
+                        ? r.recipients.map((x) => x.display_name).join(", ")
+                        : C.alerts.groups}
+                    </div>
+                  </div>
+                  <Toggle
+                    checked={r.enabled}
+                    disabled={readOnly}
+                    label={C.alerts.rule(r.threshold_pct, n(r.threshold_minutes), i === 0)}
+                  />
+                </div>
+              ))}
+              <ValueRow
+                kind="select"
+                label={C.alerts.at100}
+                readOnly={readOnly}
+                value={behaviour === "keep_running" ? C.alerts.keep : C.alerts.pause}
+                options={[
+                  { value: C.alerts.keep, label: C.alerts.keep },
+                  { value: C.alerts.pause, label: C.alerts.pause },
+                ]}
+                onChange={(v) => {
+                  setAt100(v === C.alerts.pause ? "pause_scheduled" : "keep_running");
+                }}
+              />
+              <div className="h-[28px] bg-nested px-[12px] text-[12px] leading-[28px] text-ink-2">
+                {C.alerts.engagement}
+              </div>
+              <ValueRow kind="value" label={C.alerts.defaultBudget}>
+                {C.alerts.perMonth(n(a.engagement_default_minutes))}
+              </ValueRow>
+              <p className="px-[12px] pb-[6px] text-[11.5px] text-ink-3">
+                {C.alerts.defaultHelp(a.engagement_alert_pct)}
               </p>
-            </div>
-            {u.by_service_line.length > 0 ? (
-              <>
-                <div className="h-[28px] bg-nested px-[12px] text-[12px] leading-[28px] text-ink-2">
-                  {C.minutes.byLine}
-                </div>
-                {u.by_service_line.map((l) => (
-                  <ValueRow key={l.key} kind="value" label={l.label}>
-                    <span className="tabular-nums">{n(l.minutes)}</span>
-                  </ValueRow>
-                ))}
-              </>
-            ) : null}
-          </Fieldset>
-          <Fieldset title={C.alerts.title} {...lock}>
-            {a.rules.map((r, i) => (
-              <div
-                key={r.id}
-                data-adm14="rule"
-                className="flex items-center justify-between px-[12px] py-[6px]"
-              >
-                <div>
-                  <div className="text-[13px] text-ink-2">
-                    {C.alerts.rule(r.threshold_pct, n(r.threshold_minutes), i === 0)}
-                  </div>
-                  <div className="text-[11.5px] text-ink-3">
-                    {r.recipients.length > 0
-                      ? r.recipients.map((x) => x.display_name).join(", ")
-                      : C.alerts.groups}
-                  </div>
-                </div>
-                <Toggle
-                  checked={r.enabled}
-                  disabled={readOnly}
-                  label={C.alerts.rule(r.threshold_pct, n(r.threshold_minutes), i === 0)}
-                />
-              </div>
-            ))}
-            <ValueRow
-              kind="select"
-              label={C.alerts.at100}
-              readOnly={readOnly}
-              value={behaviour === "keep_running" ? C.alerts.keep : C.alerts.pause}
-              options={[
-                { value: C.alerts.keep, label: C.alerts.keep },
-                { value: C.alerts.pause, label: C.alerts.pause },
-              ]}
-              onChange={(v) => {
-                setAt100(v === C.alerts.pause ? "pause_scheduled" : "keep_running");
-              }}
-            />
-            <div className="h-[28px] bg-nested px-[12px] text-[12px] leading-[28px] text-ink-2">
-              {C.alerts.engagement}
-            </div>
-            <ValueRow kind="value" label={C.alerts.defaultBudget}>
-              {C.alerts.perMonth(n(a.engagement_default_minutes))}
-            </ValueRow>
-            <p className="px-[12px] pb-[6px] text-[11.5px] text-ink-3">
-              {C.alerts.defaultHelp(a.engagement_alert_pct)}
-            </p>
-            {granite ? (
-              <ValueRow kind="value" label={granite.engagement_name}>
+              {granite ? (
+                <ValueRow kind="value" label={granite.engagement_name}>
+                  <span className="flex items-center gap-[6px]">
+                    {C.alerts.budgetRow(
+                      n(granite.used_minutes),
+                      n(granite.budget_minutes),
+                      granite.used_pct,
+                    )}
+                    {granite.alert_sent_at ? (
+                      <Pill variant="amber">
+                        {C.alerts.sent(
+                          fmt(granite.alert_sent_at),
+                          granite.alert_sent_to_initials ?? "",
+                        )}
+                      </Pill>
+                    ) : null}
+                  </span>
+                </ValueRow>
+              ) : null}
+            </Fieldset>
+          </div>
+          <div className="flex flex-col gap-[12px]">
+            <Fieldset title={C.seats.title} {...lock}>
+              <ValueRow kind="value" label={C.seats.term}>
+                {C.seats.annual(fmt(p.term_start), fmt(p.term_end, true))}
+              </ValueRow>
+              <ValueRow kind="value" label={C.seats.renewal}>
+                {C.seats.inDays(fmt(p.renewal_on, true), p.renewal_in_days)}
+              </ValueRow>
+              <ValueRow kind="value" label={C.seats.contact}>
+                {p.billing_contact?.display_name ?? ""}
+              </ValueRow>
+              <ValueRow kind="value" label={C.seats.seats}>
                 <span className="flex items-center gap-[6px]">
-                  {C.alerts.budgetRow(
-                    n(granite.used_minutes),
-                    n(granite.budget_minutes),
-                    granite.used_pct,
-                  )}
-                  {granite.alert_sent_at ? (
-                    <Pill variant="amber">
-                      {C.alerts.sent(
-                        fmt(granite.alert_sent_at),
-                        granite.alert_sent_to_initials ?? "",
-                      )}
-                    </Pill>
-                  ) : null}
+                  {C.seats.used(p.seats.used, p.seats.total)}
+                  {p.seats.full ? <Pill variant="amber">{C.seats.full}</Pill> : null}
                 </span>
               </ValueRow>
-            ) : null}
-          </Fieldset>
-        </div>
-        <div className="flex flex-col gap-[12px]">
-          <Fieldset title={C.seats.title} {...lock}>
-            <ValueRow kind="value" label={C.seats.term}>
-              {C.seats.annual(fmt(p.term_start), fmt(p.term_end, true))}
-            </ValueRow>
-            <ValueRow kind="value" label={C.seats.renewal}>
-              {C.seats.inDays(fmt(p.renewal_on, true), p.renewal_in_days)}
-            </ValueRow>
-            <ValueRow kind="value" label={C.seats.contact}>
-              {p.billing_contact?.display_name ?? ""}
-            </ValueRow>
-            <ValueRow kind="value" label={C.seats.seats}>
-              <span className="flex items-center gap-[6px]">
-                {C.seats.used(p.seats.used, p.seats.total)}
-                {p.seats.full ? <Pill variant="amber">{C.seats.full}</Pill> : null}
-              </span>
-            </ValueRow>
-            {p.seats.full ? (
-              <p className="px-[12px] pb-[6px] text-[11.5px] text-ink-3">{C.seats.fullHelp}</p>
-            ) : null}
-            <ValueRow kind="value" label={C.seats.workbench}>
-              {C.seats.active(p.workbench_active_30d, p.seats.total)}
-            </ValueRow>
-          </Fieldset>
-          <Fieldset title={C.rates.title} action={<SettingsLock />}>
-            {rates.data?.connected ? (
-              <>
-                {rates.data.bands.map((b) => (
-                  <ValueRow key={b.label} kind="value" label={C.rates.band(b.label, b.people)}>
-                    {b.hourly_rate === null ? (
-                      <span className="text-ink-3">{C.rates.nonChargeable}</span>
-                    ) : (
-                      C.rates.perHour(amount(b.hourly_rate, "dollars").text)
-                    )}
-                  </ValueRow>
+              {p.seats.full ? (
+                <p className="px-[12px] pb-[6px] text-[11.5px] text-ink-3">{C.seats.fullHelp}</p>
+              ) : null}
+              <ValueRow kind="value" label={C.seats.workbench}>
+                {C.seats.active(p.workbench_active_30d, p.seats.total)}
+              </ValueRow>
+            </Fieldset>
+            <Fieldset title={C.rates.title} action={<SettingsLock />}>
+              {rates.data?.connected ? (
+                <>
+                  {rates.data.bands.map((b) => (
+                    <ValueRow key={b.label} kind="value" label={C.rates.band(b.label, b.people)}>
+                      {b.hourly_rate === null ? (
+                        <span className="text-ink-3">{C.rates.nonChargeable}</span>
+                      ) : (
+                        C.rates.perHour(amount(b.hourly_rate, "dollars").text)
+                      )}
+                    </ValueRow>
+                  ))}
+                  {rates.data.effective_from ? (
+                    <p className="px-[12px] pb-[6px] text-[11.5px] text-ink-3">
+                      {C.rates.effective(fmt(rates.data.effective_from, true))}
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <p className="px-[12px] py-[8px] text-[12.5px] text-ink-3">
+                  {C.rates.notConnected}
+                </p>
+              )}
+            </Fieldset>
+            <Fieldset title={C.modules.title} {...lock}>
+              <div className="flex flex-wrap gap-[6px] px-[12px] py-[10px]">
+                {p.modules.map((m) => (
+                  <span
+                    key={m}
+                    className="rounded-tag bg-nested px-[8px] py-[3px] text-[11.5px] font-medium text-ink-2"
+                  >
+                    {C.modules.names[m] ?? m}
+                  </span>
                 ))}
-                {rates.data.effective_from ? (
-                  <p className="px-[12px] pb-[6px] text-[11.5px] text-ink-3">
-                    {C.rates.effective(fmt(rates.data.effective_from, true))}
-                  </p>
-                ) : null}
-              </>
-            ) : (
-              <p className="px-[12px] py-[8px] text-[12.5px] text-ink-3">{C.rates.notConnected}</p>
-            )}
-          </Fieldset>
-          <Fieldset title={C.modules.title} {...lock}>
-            <div className="flex flex-wrap gap-[6px] px-[12px] py-[10px]">
-              {p.modules.map((m) => (
-                <span
-                  key={m}
-                  className="rounded-tag bg-nested px-[8px] py-[3px] text-[11.5px] font-medium text-ink-2"
-                >
-                  {C.modules.names[m] ?? m}
-                </span>
-              ))}
-            </div>
-            <ValueRow kind="value" label={C.modules.library}>
-              {C.modules.stable}
-            </ValueRow>
-            <p className="px-[12px] pb-[6px] text-[11.5px] text-ink-3">{C.modules.help}</p>
-          </Fieldset>
+              </div>
+              <ValueRow kind="value" label={C.modules.library}>
+                {C.modules.stable}
+              </ValueRow>
+              <p className="px-[12px] pb-[6px] text-[11.5px] text-ink-3">{C.modules.help}</p>
+            </Fieldset>
+          </div>
         </div>
       </div>
     );
