@@ -30,6 +30,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import importlib
+import re
 import sys
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -377,6 +378,11 @@ UNFORCED_TENANT_TABLES = frozenset(
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(
     {"work_slot_acquire", "work_slot_release", "work_slot_renew"}
+    # 0965 (C-02-T16), reviewed in the S50 follow-up (DEC-5641): after a hand-off insert, marks the
+    # version it supersedes (`superseded_by_id`, once) under a transaction-local flag the UPDATE
+    # trigger's WHEN admits; the app role has no UPDATE on tax_handoffs, so the flag alone
+    # changes nothing. Search path pinned, revoked from PUBLIC.
+    | {"tax_handoffs_supersede"}
     # 0893 (A-08-T15): a public link's token, code and page credential, before any tenant.
     | {"link_principal_resolve", "link_principal_challenge", "link_principal_issue"}
     | {"link_principal_attempt", "link_principal_missed", "link_principal_credential"}
@@ -881,7 +887,8 @@ async def _immutability_problems(conn: asyncpg.Connection, table: str, function:
         if str(trigger["proname"]) != function or state not in ("O", "A"):
             continue
         body = str(trigger["prosrc"]).upper()
-        if "RAISE EXCEPTION" not in body or "RETURN" in body:
+        # A RETURN statement, not an identifier containing the word (`return_supersessions`).
+        if "RAISE EXCEPTION" not in body or re.search(r"\bRETURN\b", body):
             continue  # a function that no longer refuses doesn't count
         kind = int(trigger["tgtype"])
         if kind & _BEFORE:
