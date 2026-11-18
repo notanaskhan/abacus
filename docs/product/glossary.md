@@ -785,3 +785,23 @@ T-08-T03 (DEC-14, DF-31; SPEC-710; DEC-5602). Code says `filing_deadline` or `du
 | Postponement application | A person's application of a relief notice to one client's due dates. | `postponement_applications` | — |
 | Deadline | A due date on the calendar, computed from the rules. | `filing_deadlines` | milestone (as a synonym) |
 
+## New terms: quality management and records governance (Q-05-T02)
+
+Q-05-T02 (DF-20, DF-31; SPEC-711; DEC-5609). "Consultation" is above (A-06).
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Difference of opinion | A disagreement between the EP and the EQR (or a consultee) on a consultation, resolved by the QM owner before release. | `consultation_positions`, `consultation_resolutions` | dispute |
+| Post-issuance case | A matter on a released, archived audit: subsequently discovered facts (AU-C 560), an omitted procedure (AU-C 585) or a reissuance request. | `post_issuance_events` | — |
+| Quality objective · risk · response | The SQMS No. 1 register: objectives per component, the risks to them and the firm's responses. | `qm_objectives`, `qm_risks`, `qm_responses` | control (for a response) |
+| Inspection | A monitoring review of one engagement in a cycle by an objective inspector. | `inspections` | audit (of the firm) |
+| Inspection grant | A time-boxed, read-only access grant to the inspected archive and its activity log. | `inspection_access_grants` | — |
+| QM finding | An observation from monitoring, evaluated by the QM owner. | `qm_findings`, `qm_finding_evaluations` | issue |
+| QM deficiency | A QM finding the QM owner evaluated as a deficiency in the system of quality management (not a control deficiency in an audit). | `qm_finding_evaluations.evaluation` | control deficiency |
+| Annual evaluation | The individual with ultimate responsibility's conclusion on the system, as of the evaluation date. | `annual_evaluations` | — |
+| Individual with ultimate responsibility | The person who concludes the annual evaluation (SQMS No. 1). | `qm_settings.ultimate_responsible_user_id` | QM owner (for this person, in conclusions) |
+| Retention policy version | One insert-only version of a firm's retention policy for a record type and service line. | `retention_policy_versions` | — |
+| Destruction batch | A quarterly set of records past retention, destroyed only after two approvals in distinct roles. | `destruction_batches`, `destruction_batch_items` | purge |
+| Destruction certificate | The deterministic record of a destroyed batch. | `destruction_certificates` | — |
+| Tombstone | What remains of a destroyed version: its identity and the certificate that destroyed it. | `evidence_versions.destroyed_at` | deleted |
+

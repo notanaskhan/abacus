@@ -176,3 +176,20 @@ flags:
     expires: 2027-02-12
     kind: boolean
     default: false
+  # --- Q-05-T02 (SPEC-711; DEC-5609): Q-05 rollout flags, default off.
+  - name: audit.consultations_log
+    description: 'Q-05 consultations log v2 (AUD-28 firm log, differences of opinion, the release blocker). Off: A-06''s minimal record only and no blocker. Q-05-T02, DEC-5609.'
+    owner: ayushkbhatia
+    created: 2026-11-18
+    expires: 2027-05-17
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: audit.post_issuance
+    description: 'Q-05 post-issuance cases (AUD-30, the intake destination, AUD-23 g live, the analysis). Off: 404 and AUD-23 g stays fixture-only. Q-05-T02, DEC-5609.'
+    owner: notanaskhan
+    created: 2026-11-18
+    expires: 2027-05-17
+    override: DEC-137
+    kind: boolean
+    default: false

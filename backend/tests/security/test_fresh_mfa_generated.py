@@ -88,6 +88,12 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("close.lock", "release", "engagement_partner"),
     ("form_preview.download_draft", "export", "engagement_partner"),
     ("filing_deadline.apply_postponement", "standards", "firm_admin"),
+    ("quality.manage", "standards", "quality_partner"),
+    ("consultation.resolve_difference", "sign_off", "quality_partner"),
+    ("post_issuance.reissue", "release", "engagement_partner"),
+    ("retention_policy.manage", "legal_hold", "firm_admin"),
+    ("destruction.export_list", "export", "firm_admin"),
+    ("destruction.approve", "legal_hold", "firm_admin"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
     (
@@ -102,11 +108,14 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "trial_balance.export",
     ),
     ("GET", "/v1/exports/{export_id}/download", "export.download"),
+    ("GET", "/v1/filing-deadlines/export", "export.create"),
     ("GET", "/v1/firm/clients", "wall.create"),
     ("GET", "/v1/firm/data-exports/{export_id}/links/{link_id}", "firm_export.download"),
     ("GET", "/v1/firm/members", "wall.create"),
     ("GET", "/v1/firm/safeguards/wisp-pack/{pack_id}", "security.manage"),
     ("GET", "/v1/firm/safeguards/wisp-pack/{pack_id}/download", "security.manage"),
+    ("GET", "/v1/seasons/{tax_year}/manifests/{manifest_id}/export.xlsx", "export.create"),
+    ("GET", "/v1/tax-returns/{return_id}/two-year.xlsx", "export.create"),
     ("GET", "/v1/tax/returns/{return_id}/issues/export", "export.create"),
     ("GET", "/v1/tax/returns/{return_id}/state-allocation.xlsx", "export.create"),
     ("GET", "/v1/walls/preview", "wall.create"),
@@ -189,6 +198,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/portal/connections/{connection_id}/write-grants", "connection.grant_write"),
     ("POST", "/v1/posting-batches/{batch_id}/entries/{entry_id}/retry", "posting_batch.post"),
     ("POST", "/v1/posting-batches/{batch_id}/undo", "posting_batch.post"),
+    ("POST", "/v1/postponement-applications", "filing_deadline.apply_postponement"),
     (
         "POST",
         "/v1/questionnaire-templates/{template_id}/versions/{version}:publish",

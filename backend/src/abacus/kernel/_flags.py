@@ -66,6 +66,16 @@ ASSURANCE_SERVICE_ORGS = Flag(
     kind="boolean",
     default="false",
 )
+AUDIT_CONSULTATIONS_LOG = Flag(
+    name="audit.consultations_log",
+    kind="boolean",
+    default="false",
+)
+AUDIT_POST_ISSUANCE = Flag(
+    name="audit.post_issuance",
+    kind="boolean",
+    default="false",
+)
 AUDIT_LOG_EXPLORER = Flag(
     name="audit_log.explorer",
     kind="boolean",
@@ -555,8 +565,18 @@ PROMPT_TAX_MEMO_DRAFTER = Flag(
         "tax.preparer_memo@v1",
     ),
 )
+QUALITY_MANAGEMENT = Flag(
+    name="quality.management",
+    kind="boolean",
+    default="false",
+)
 REALTIME_SSE = Flag(
     name="realtime.sse",
+    kind="boolean",
+    default="false",
+)
+RECORDS_GOVERNANCE = Flag(
+    name="records.governance",
     kind="boolean",
     default="false",
 )
@@ -784,6 +804,8 @@ FLAGS: dict[str, Flag] = {
     "assurance.materiality": ASSURANCE_MATERIALITY,
     "assurance.risk_register": ASSURANCE_RISK_REGISTER,
     "assurance.service_orgs": ASSURANCE_SERVICE_ORGS,
+    "audit.consultations_log": AUDIT_CONSULTATIONS_LOG,
+    "audit.post_issuance": AUDIT_POST_ISSUANCE,
     "audit_log.explorer": AUDIT_LOG_EXPLORER,
     "audit_log.values": AUDIT_LOG_VALUES,
     "audit_trail.engagement_activity": AUDIT_TRAIL_ENGAGEMENT_ACTIVITY,
@@ -876,7 +898,9 @@ FLAGS: dict[str, Flag] = {
     "prompt.tax.agreement_reader": PROMPT_TAX_AGREEMENT_READER,
     "prompt.tax.instrument_reader": PROMPT_TAX_INSTRUMENT_READER,
     "prompt.tax.memo_drafter": PROMPT_TAX_MEMO_DRAFTER,
+    "quality.management": QUALITY_MANAGEMENT,
     "realtime.sse": REALTIME_SSE,
+    "records.governance": RECORDS_GOVERNANCE,
     "reporting.fs_disclosure": REPORTING_FS_DISCLOSURE,
     "reporting.generated_documents": REPORTING_GENERATED_DOCUMENTS,
     "retrieval.auto": RETRIEVAL_AUTO,

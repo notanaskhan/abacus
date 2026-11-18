@@ -529,6 +529,44 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "aar.decision_requested": Kind(
         "aar_decision_requested", _listed, "tax_return", "tax_return_id"
     ),
+    # Q-05-T02 (Q-05 §4.8, DEC-5609): consultations, post-issuance, inspections, findings,
+    # evaluation and destruction; the services (Q-05-T08 onward) emit them and name recipients.
+    "consultation.requested": Kind(
+        "consultation_requested", _listed, "consultation", "consultation_id", None
+    ),
+    "consultation.concluded": Kind(
+        "consultation_concluded", _listed, "consultation", "consultation_id", None
+    ),
+    "consultation.difference_recorded": Kind(
+        "difference_recorded", _listed, "consultation", "consultation_id", None
+    ),
+    "post_issuance.case_opened": Kind(
+        "post_issuance_case_opened", _listed, "work_item", "work_item_id"
+    ),
+    "post_issuance.decision_requested": Kind(
+        "post_issuance_decision_requested", _listed, "work_item", "work_item_id"
+    ),
+    "inspection.assigned": Kind(
+        "inspection_assigned", _listed, "inspection", "inspection_id", None
+    ),
+    "qm_finding.assigned": Kind(
+        "qm_finding_assigned", _listed, "qm_finding", "qm_finding_id", None
+    ),
+    "qm_finding.due": Kind("qm_finding_due", _listed, "qm_finding", "qm_finding_id", None),
+    "qm_evaluation.due": Kind("qm_evaluation_due", _listed, "firm", None, None),
+    "destruction_batch.assembled": Kind(
+        "destruction_batch_assembled", _listed, "destruction_batch", "destruction_batch_id", None
+    ),
+    "destruction_batch.approval_requested": Kind(
+        "destruction_batch_approval_requested",
+        _listed,
+        "destruction_batch",
+        "destruction_batch_id",
+        None,
+    ),
+    "destruction_batch.destroyed": Kind(
+        "destruction_batch_destroyed", _listed, "destruction_batch", "destruction_batch_id", None
+    ),
     # G-04-T08 (AC-37, DEC-5420): scheduled agents paused at the plan limit, once a month.
     "usage.scheduled_paused": Kind("usage_scheduled_paused", _admins, "firm", None, None),
     # C-01-T17: an entity's scheduled ledger sync paused (needs reauth, monthly call budget).
@@ -866,6 +904,19 @@ TEMPLATES: Final[dict[str, str]] = {
     "variance_explanations.ready": "Two-year explanations are ready for review on {subject}.",
     "amendment.approval_requested": "An amendment of {subject} needs your approval.",
     "aar.decision_requested": "A BBA election on {subject} needs your decision.",
+    # Q-05-T02 (DEC-5609). Identifiers only (DEC-61).
+    "consultation.requested": "A consultation needs your conclusion: {subject}.",
+    "consultation.concluded": "A consultation was concluded: {subject}.",
+    "consultation.difference_recorded": "A difference of opinion needs resolving: {subject}.",
+    "post_issuance.case_opened": "A post-issuance case was opened on {subject}.",
+    "post_issuance.decision_requested": "A post-issuance case on {subject} needs your decision.",
+    "inspection.assigned": "You were assigned an inspection: {subject}.",
+    "qm_finding.assigned": "A QM finding was assigned to you: {subject}.",
+    "qm_finding.due": "A QM finding is due: {subject}.",
+    "qm_evaluation.due": "The annual quality evaluation is due.",
+    "destruction_batch.assembled": "A destruction batch is ready for approval: {subject}.",
+    "destruction_batch.approval_requested": "A destruction batch awaits approval: {subject}.",
+    "destruction_batch.destroyed": "A destruction batch was destroyed: {subject}.",
     # C-02-T02 (DEC-5501): posting, delivery and hand-off. Values stay out (DEC-60).
     "proposed_entry.approval_requested": "An adjusting entry on {subject} needs your approval.",
     "posting_batch.failed": "An entry in a posting batch for {subject} failed to post.",
@@ -1079,6 +1130,19 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("variance_explanations_ready", "approval", "FileText"),
     NotificationKind("amendment_approval_requested", "approval", "Gavel", email_default=True),
     NotificationKind("aar_decision_requested", "approval", "Gavel"),
+    # Q-05-T02 (DEC-5609): decisions and approvals are actionable; the rest inform.
+    NotificationKind("consultation_requested", "approval", "MessageSquareText"),
+    NotificationKind("consultation_concluded", "system", "CircleCheck"),
+    NotificationKind("difference_recorded", "approval", "Gavel"),
+    NotificationKind("post_issuance_case_opened", "approval", "FileText"),
+    NotificationKind("post_issuance_decision_requested", "approval", "Gavel"),
+    NotificationKind("inspection_assigned", "approval", "UserCheck"),
+    NotificationKind("qm_finding_assigned", "approval", "UserCheck"),
+    NotificationKind("qm_finding_due", "deadline", "CalendarClock"),
+    NotificationKind("qm_evaluation_due", "deadline", "CalendarClock"),
+    NotificationKind("destruction_batch_assembled", "approval", "ListChecks"),
+    NotificationKind("destruction_batch_approval_requested", "approval", "Gavel"),
+    NotificationKind("destruction_batch_destroyed", "system", "CircleCheck"),
     # C-02-T02 (DEC-5501): posting, delivery and hand-off; the approval request is actionable.
     NotificationKind("entry_approval_requested", "approval", "ListChecks"),
     NotificationKind("posting_failed", "run", "TriangleAlert", email_default=True),

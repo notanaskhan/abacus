@@ -180,3 +180,16 @@ actions:
   # T-08-T03 (SPEC-710; DEC-5602): a relief notice applied to a client (OQ-17).
   - action: filing_deadline.apply_postponement
     group: standards
+  # Q-05-T02 (SPEC-711; DEC-5609): quality publish, resolving a difference, reissue, retention and destruction.
+  - action: quality.manage
+    group: standards
+  - action: consultation.resolve_difference
+    group: sign_off
+  - action: post_issuance.reissue
+    group: release
+  - action: retention_policy.manage
+    group: legal_hold
+  - action: destruction.export_list
+    group: export
+  - action: destruction.approve
+    group: legal_hold
