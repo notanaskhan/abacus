@@ -20,6 +20,10 @@ const Cockpit = lazyScreen(async () => (await import("../../screens/AUD-02")).AU
 const ConfirmationsLive = lazyScreen(
   async () => (await import("../../screens/AUD-14/live")).AUD14Live,
 );
+// A-08-T32 (TASK-8546): AUD-13 live on one analytics set.
+const AnalyticsLive = lazyScreen(
+  async () => (await import("../../screens/AUD-13/live")).AUD13Live,
+);
 const JeTesting = lazyScreen(
   async () => (await import("../../screens/AUD-12/route")).JeTestingPage,
 );
@@ -461,6 +465,15 @@ export const confirmationsRoute = createRoute({
   },
 });
 
+// A-08-T32 (TASK-8546): AUD-13 `/audits/$auditId/analytics/$analyticsSetId`, one set live.
+export const analyticsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/audits/$auditId/analytics/$analyticsSetId",
+  component: function AnalyticsPage(): JSX.Element {
+    return gated(<AnalyticsLive analyticsSetId={useParam("analyticsSetId")} />);
+  },
+});
+
 export const findingsRoute = evaluationRoute("findings");
 export const misstatementsRoute = evaluationRoute("misstatements");
 export const reviewNotesRoute = evaluationRoute("review-notes");
@@ -475,6 +488,7 @@ export const auditRoutes = [
   controlsRoute,
   jeTestRoute,
   confirmationsRoute,
+  analyticsRoute,
   narrativeRoute,
   programRoute,
   findingsRoute,
