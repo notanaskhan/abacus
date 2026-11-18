@@ -78,6 +78,15 @@ from abacus.modules.platform.file_store import (
     register_file_store,
     screen_and_store,
 )
+from abacus.modules.platform.filing_deadline_sources import (
+    FilingDeadlineFact,
+    FilingDeadlineProvider,
+    FilingDeadlineWindow,
+    UnknownFilingDeadlineSource,
+    filing_deadline_source,
+    filing_deadline_source_kinds,
+    register_filing_deadline_source,
+)
 from abacus.modules.platform.governance_errors import DeciderMustDiffer
 from abacus.modules.platform.incident_activities import INCIDENT_ACTIVITIES
 from abacus.modules.platform.incident_routes import platform_router as incident_platform_router
@@ -463,6 +472,9 @@ __all__ = [
     "Entitlement",
     "EntitlementRequired",
     "FanOutInput",
+    "FilingDeadlineFact",
+    "FilingDeadlineProvider",
+    "FilingDeadlineWindow",
     "FirmRead",
     "Form8879For",
     "Heartbeat",
@@ -517,6 +529,7 @@ __all__ = [
     "TenantProvisioningWorkflow",
     "ThresholdFor",
     "TolerancesFor",
+    "UnknownFilingDeadlineSource",
     "UsageAlertReconcileWorkflow",
     "WispPackFacts",
     "WispPackFailure",
@@ -544,6 +557,8 @@ __all__ = [
     "entitlement",
     "expected_route",
     "facts_sha256",
+    "filing_deadline_source",
+    "filing_deadline_source_kinds",
     "finish_propagation",
     "firm_usage",
     "form_8879_for",
@@ -573,6 +588,7 @@ __all__ = [
     "register_audit_tenant_labeler",  # Q-03-T235
     "register_audit_value_resolver",
     "register_file_store",
+    "register_filing_deadline_source",
     "register_home_count",
     "register_module_review",
     "register_pilot_metric_source",
