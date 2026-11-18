@@ -246,6 +246,10 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "fixed_asset_versions": "fixed_asset_versions_immutable",  # 0952 (T-06-T10)
     "fixed_asset_dispositions": "fixed_asset_dispositions_immutable",  # 0952 (T-06-T10)
     "ptet_payments": "ptet_payments_immutable",  # 0952 (T-06-T10)
+    "season_cohort_approvals": "season_cohort_approvals_immutable",  # 0960 (T-08-T05)
+    "season_cohort_withdrawals": "season_cohort_withdrawals_immutable",  # 0960 (T-08-T05)
+    "season_row_steps": "season_row_steps_immutable",  # 0960 (T-08-T05)
+    # S50 (0960+): the insert-only tables above.
     "tb_handoffs": "tb_handoffs_immutable",  # 0953 (T-06-T11)
     "tb_handoff_supersessions": "tb_handoff_supersessions_immutable",  # 0953 (T-06-T11)
     "tb_handoff_account_choices": "tb_handoff_account_choices_immutable",  # 0953 (T-06-T11)

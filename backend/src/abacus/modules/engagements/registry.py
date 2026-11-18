@@ -255,3 +255,143 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"template_decision", "created_engagement_id", "version", "saved_at", "discarded_at"}
     ),
 }
+
+# T-08-T05 (0960, DEC-5604).
+T08T05_TABLES: frozenset[str] = frozenset(
+    {
+        "season_asks",
+        "season_cohort_approvals",
+        "season_cohort_withdrawals",
+        "season_cohorts",
+        "season_manifest_rows",
+        "season_manifests",
+        "season_row_steps",
+        "seasons",
+    }
+)
+TABLES = TABLES | T08T05_TABLES
+INSERT_ONLY = INSERT_ONLY | frozenset(
+    {
+        "season_cohort_approvals",
+        "season_cohort_withdrawals",
+        "season_row_steps",
+    }
+)
+INSERT_COLUMNS["seasons"] = frozenset(
+    {
+        "opened_by",
+        "tax_year",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["season_manifests"] = frozenset(
+    {
+        "built_by",
+        "inputs_hash",
+        "planner_run_id",
+        "season_id",
+        "status",
+        "tenant_id",
+        "version",
+    }
+)
+UPDATE_COLUMNS["season_manifests"] = frozenset(
+    {
+        "planner_run_id",
+        "status",
+    }
+)
+INSERT_COLUMNS["season_cohorts"] = frozenset(
+    {
+        "approver_user_id",
+        "manifest_id",
+        "office_id",
+        "position",
+        "segment",
+        "tenant_id",
+    }
+)
+UPDATE_COLUMNS["season_cohorts"] = frozenset(
+    {
+        "approver_user_id",
+        "status",
+    }
+)
+INSERT_COLUMNS["season_manifest_rows"] = frozenset(
+    {
+        "binder_source",
+        "client_entity_ids",
+        "client_id",
+        "cohort_id",
+        "consent_purposes",
+        "exception_codes",
+        "forms",
+        "invitee_contact_ids",
+        "letter_plan",
+        "preparer_user_id",
+        "prior_engagement_id",
+        "reviewer_user_id",
+        "signer_user_id",
+        "tenant_id",
+    }
+)
+UPDATE_COLUMNS["season_manifest_rows"] = frozenset(
+    {
+        "exception_codes",
+        "excluded_at",
+        "excluded_by",
+        "exclusion_reason",
+        "preparer_user_id",
+        "reviewer_user_id",
+        "row_version",
+        "signer_user_id",
+    }
+)
+INSERT_COLUMNS["season_asks"] = frozenset(
+    {
+        "manifest_id",
+        "options",
+        "question_code",
+        "recommended_option",
+        "row_ids",
+        "source",
+        "suggestion_id",
+        "tenant_id",
+    }
+)
+UPDATE_COLUMNS["season_asks"] = frozenset(
+    {
+        "answered_at",
+        "answered_by",
+        "answered_option",
+    }
+)
+INSERT_COLUMNS["season_cohort_approvals"] = frozenset(
+    {
+        "approval_grant_id",
+        "approved_by",
+        "cohort_id",
+        "manifest_version",
+        "rows_hash",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["season_cohort_withdrawals"] = frozenset(
+    {
+        "approval_id",
+        "reason",
+        "tenant_id",
+        "withdrawn_by",
+    }
+)
+INSERT_COLUMNS["season_row_steps"] = frozenset(
+    {
+        "attempt",
+        "error_code",
+        "ref_ids",
+        "row_id",
+        "status",
+        "step",
+        "tenant_id",
+    }
+)
