@@ -64,11 +64,20 @@ _OPEN: Final = frozenset({S.PROPOSED, S.WITHIN_THRESHOLD, S.REVIEW_REQUIRED})
 _POSTED: Final = frozenset({S.POSTED, S.FAILED_POST, S.REVERSED})
 
 
+class EntryApprovalDecided(DomainEvent):
+    """A close approval, Undo or withdrawal: HOME-02 recomputes the entry's gate (C-02-T14)."""
+
+    event_type = "proposed_entry.approval_decided"
+    proposed_entry_id: UUID
+    engagement_id: UUID
+    work_item_id: UUID
+
+
 class EntryApprovalRequested(DomainEvent):
     """C16 `entry_approval_requested` and the HOME-02 gate (identifiers only, DEC-60)."""
 
     event_type = "proposed_entry.approval_requested"
-    entry_id: UUID
+    proposed_entry_id: UUID
     engagement_id: UUID
     work_item_id: UUID
     recipient_user_ids: list[UUID]
@@ -339,6 +348,11 @@ async def _write(
                 {"id": entry_id},
             )
         ).scalar_one()
+        tx.emit(
+            EntryApprovalDecided(
+                proposed_entry_id=entry_id, engagement_id=engagement_id, work_item_id=work_item_id
+            )
+        )
         tx.record(
             f"proposed_entry.{decision}",
             target=Target(TARGET, entry_id),
@@ -430,7 +444,7 @@ async def request_approval(ctx: AuthContext, entry_id: UUID, approver_user_id: U
     async with uow(ctx.tenant) as tx:
         tx.emit(
             EntryApprovalRequested(
-                entry_id=entry_id,
+                proposed_entry_id=entry_id,
                 engagement_id=engagement_id,
                 work_item_id=work_item_id,
                 recipient_user_ids=[approver_user_id],
