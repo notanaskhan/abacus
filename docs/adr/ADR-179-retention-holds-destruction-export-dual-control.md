@@ -79,6 +79,17 @@ The floor set's rows, for counsel. Each value is a placeholder until counsel's s
 ### What is built
 Parts of this decision shipped under their own decision rows before this ADR was drafted, so the ADR records them rather than introducing them: floors, defaults and policies with two-person publish (migration 0112, DEC-156); Object Lock per record class and COMPLIANCE records (DEC-168); legal holds (migration 0126, DEC-228, DEC-229); the firm-export contract stub (DEC-72; `docs/contracts/compliance-kernel.md`). Not built: the daily `RetentionClock`, destruction batches and certificates (Q-05), the live firm export (Q-02-T43), the nightly hold reconciliation with S3.
 
+## Amendment: the destruction mechanism and synthetic-tenant retention (proposed 2026-11-18; Q-05-T32, DEC-5614)
+Status: **proposed**. Deciders ayushkbhatia and notanaskhan; counsel informed. Accepted only on `origin/main` with counsel's acknowledgement recorded (Q-05 §0.1, OQ-1 and OQ-3); until then Q-05-T14 and T15 (version deletion) are not built, and §Decision's crypto-shred line binds as written.
+
+**Why.** §Decision says stored objects are destroyed by crypto-shredding their keys. ADR-104's envelope stores each object's wrapped data key inside the immutable object (`backend/src/abacus/kernel/crypto/__init__.py`, header `ABE1 | key_id | wrapped | nonce | ciphertext`), so one object's key cannot be destroyed without deleting the object. Shredding the tenant key destroys every object of the firm: right for offboarding (ADR-034, RB-13), wrong for one batch.
+
+- **Per-record destruction is version deletion.** After retain-until, `DestructionExecuteWorkflow` deletes the object version on the primary and the replica bucket (`DeleteObjectVersion`) through a destruction-only role `abacus-<env>-destruction`: no `BypassGovernanceRetention`, no legal-hold edit, no other write. S3 still enforces retention and legal hold; an object under either is refused by S3 as well as by the batch's per-item re-check.
+- **Then** derived stores registered with the evidence module are purged (search, extracted text, thumbnails), the database version is tombstoned once under `destruction_tombstone` (0964: `destroyed_at`, `destruction_certificate_id`, never unset), and reads answer 410 `destroyed` with the certificate reference.
+- **The certificate** (C11, byte-identical; COMPLIANCE-mode, 7 years, OQ-10) names the batch, scope, counts, both approvers and times, the hold re-check, exclusions, the manifest hash and the audit checkpoint root, and states that encrypted backups age out within 35 days.
+- **Crypto-shred stays the offboarding mechanism** (ADR-034, RB-13); it is never used for a batch.
+- **Synthetic tenants (OQ-3).** `synthetic_min_retention_days = 1` for `firms.synthetic = true` in local, test and staging only, so the compose stack, CI and the drill exercise destruction against real-time S3 retention; the settings validator refuses it in production (the demo-clock rule of DEC-27).
+
 ## Options considered
 ### Option A: per record type × service line, floors as two-person reference data, reference-counted holds, dual-approved destruction and export — chosen
 - Pros: matches how the law is written (by record, with its own clock); floors change without a deploy and never sit in a public commit; holds survive overlapping matters; the two irreversible acts (destroy, export everything) need two people.
