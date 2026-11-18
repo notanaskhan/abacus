@@ -22,3 +22,4 @@ Spec section: docs/plan/epics/T-06.md §3 F6, §4.3. Code preview (prior-year ta
 
 ## Progress log
 - `2026-11-18` — Built in the S50 sequential stack (DEC-5631). Partial: the gate providers (assurance G8 for audit and review, closes for a locked close) and the C12 routes wiring in tax/tb_handoff_contract.py land with T-06-T25 (live swap); the DB acceptance (409 before release, one version after, one supersession) runs at the end pass. Gates and tests run once at the S50 end pass (build first, test last).
+- `2026-11-18` — Gate providers built (S50 completion round): `assurance/handoff_gate.py` registers `audit_release` and `review_release` (released only once G8 `released()` returns a release); `closes/handoff_gate.py` registers `close_lock` (a Locked close only); each registers at its api import, ledger imports neither. Unit test pins the three registrations. Still with T-06-T25 (live swap): the C12 routes in tax/tb_handoff_contract.py.
