@@ -85,3 +85,8 @@ register_client_approval_kind("proposed_entry", ProposedEntryApprovals())
 
 # C-02-T02 (DEC-5501): the posting, W1 and delivery error codes, declared before their services.
 from abacus.modules.adjustments import posting_errors as posting_errors  # noqa: E402
+
+# C-02-T14 (DEC-5622): held entries as C13 human gates (HOME-02 Approvals & sends).
+from abacus.modules.adjustments.approval_gates import register_approval_gates  # noqa: E402
+
+register_approval_gates()
