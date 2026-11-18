@@ -33,6 +33,7 @@ from abacus.kernel.errors import DomainConflict, NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.closes.contract import ClosePersonOut, PlannedLinkOut
 from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
+from abacus.modules.requests.api import QuestionRow
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -1029,7 +1030,25 @@ async def accept_flux_line_route(line_id: UUID, ctx: Ctx, if_match: IfMatch) -> 
 async def portal_close_questions_route(close_id: UUID, ctx: Ctx) -> PortalQuestionsOut:
     """POR-11's questions, inside the grant (INV-4; C-01-T27)."""
     await _portal_on(ctx)
-    _not_yet()
+    from abacus.modules.closes import portal_questions as pq
+
+    rows = await pq.mine(ctx, close_id)
+    names = await pq.asked_by_names(rows)
+    return PortalQuestionsOut(items=[_portal_question(q, names) for q in rows])
+
+
+def _portal_question(q: QuestionRow, names: dict[UUID, str]) -> PortalQuestionOut:
+    from abacus.modules.closes import portal_questions as pq
+
+    return PortalQuestionOut(
+        question_id=q.id,
+        client_wording=q.client_wording,
+        context_line=pq.context_line(q.context),
+        status=q.status,
+        asked_by_name=names.get(q.asked_by, ""),
+        asked_at=q.asked_at,
+        answered_at=q.answered_at,
+    )
 
 
 @portal_close_router.post(
@@ -1041,6 +1060,13 @@ async def portal_close_questions_route(close_id: UUID, ctx: Ctx) -> PortalQuesti
 async def portal_answer_question_route(
     question_id: UUID, body: PortalAnswerIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> PortalQuestionOut:
-    """The client's answer, sealed; an attachment fulfils the linked request (C-01-T27)."""
+    """The client's answer, sealed; an attachment fulfils the linked request (C-01-T27). The
+    attachment's upload links its evidence version through the portal upload route first."""
     await _portal_on(ctx)
-    _not_yet()
+    from abacus.modules.closes import portal_questions as pq
+
+    if body.choice is None and not (body.note and body.note.strip()):
+        raise NotFound("transaction_question")
+    row = await pq.answer(ctx, question_id, body.choice, body.note, None, None)
+    names = await pq.asked_by_names([row])
+    return _portal_question(row, names)
