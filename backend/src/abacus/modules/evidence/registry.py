@@ -7,7 +7,7 @@ every module's registry (schema_check), so adding a table edits only this file.
 from __future__ import annotations
 
 # The tables this module owns; no other module reads or writes them (ADR-008).
-TABLES: frozenset[str] = frozenset(
+_TABLES_PRE_S50: frozenset[str] = frozenset(
     {
         "evidence_items",
         "evidence_versions",
@@ -64,7 +64,7 @@ TABLES: frozenset[str] = frozenset(
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
-INSERT_ONLY: frozenset[str] = frozenset(
+_INSERT_ONLY_PRE_S50: frozenset[str] = frozenset(
     {
         "evidence_versions",
         "upload_extractions",  # SPEC-029 (TASK-054): a derived record, rebuilt, never edited
@@ -282,8 +282,7 @@ Q05T06_TABLES: frozenset[str] = frozenset(
         "destruction_item_exclusions",
     }
 )
-TABLES = TABLES | Q05T06_TABLES
-INSERT_ONLY = INSERT_ONLY | frozenset(
+_S50_INSERT_ONLY_1: frozenset[str] = frozenset(
     {
         "destruction_approvals",
         "destruction_batch_items",
@@ -359,3 +358,7 @@ INSERT_COLUMNS["destruction_certificates"] = frozenset(
 UPDATE_COLUMNS["evidence_versions"] = UPDATE_COLUMNS.get(
     "evidence_versions", frozenset()
 ) | frozenset({"destroyed_at", "destruction_certificate_id"})
+
+# The tables this module owns and its insert-only tables, after S50 (one definition each).
+TABLES: frozenset[str] = _TABLES_PRE_S50 | Q05T06_TABLES
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1

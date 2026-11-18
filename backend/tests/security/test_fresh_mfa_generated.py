@@ -102,6 +102,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "connection.revoke_write",
     ),
     ("GET", "/v1/audit-events/exports/{export_id}/download", "audit_event.export"),
+    ("GET", "/v1/destruction-batches/{batch_id}/documents.csv", "destruction.export_list"),
     (
         "GET",
         "/v1/engagements/{engagement_id}/trial-balances/{tb_id}/export.xlsx",
@@ -119,6 +120,8 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/tax/returns/{return_id}/issues/export", "export.create"),
     ("GET", "/v1/tax/returns/{return_id}/state-allocation.xlsx", "export.create"),
     ("GET", "/v1/walls/preview", "wall.create"),
+    ("PATCH", "/v1/quality/evaluations/{year}/checklist", "quality.manage"),
+    ("PATCH", "/v1/quality/objectives/{objective_id}", "quality.manage"),
     ("POST", "/v1/agent-runs/{run_id}/trace-exports", "run_trace.export"),
     ("POST", "/v1/audit-events/exports", "audit_event.export"),
     ("POST", "/v1/audit-events/exports/{export_id}/link", "audit_event.export"),
@@ -140,6 +143,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/audits/{work_item_id}/governance-communications/{communication_id}/approve-and-send",
         "governance_comm.approve_send",
     ),
+    (
+        "POST",
+        "/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/reopen-for-reissue",
+        "post_issuance.reissue",
+    ),
     ("POST", "/v1/audits/{work_item_id}/release", "report.release"),
     ("POST", "/v1/audits/{work_item_id}/release-record", "assurance.record_release"),
     (
@@ -160,6 +168,8 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/consents/{consent_id}/revocations", "consent.record"),
     ("POST", "/v1/contacts/{contact_id}/unlock", "contact.unlock"),
     ("POST", "/v1/decision-cards/{card_id}/decide", "decision.decide"),
+    ("POST", "/v1/destruction-batches/{batch_id}/approvals", "destruction.approve"),
+    ("POST", "/v1/destruction-batches/{batch_id}/cancel", "destruction.approve"),
     ("POST", "/v1/engagements/{engagement_id}/acceptance/decision", "acceptance.decide"),
     (
         "POST",
@@ -199,6 +209,10 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/posting-batches/{batch_id}/entries/{entry_id}/retry", "posting_batch.post"),
     ("POST", "/v1/posting-batches/{batch_id}/undo", "posting_batch.post"),
     ("POST", "/v1/postponement-applications", "filing_deadline.apply_postponement"),
+    ("POST", "/v1/quality/evaluations/{year}/request-conclusion", "quality.manage"),
+    ("POST", "/v1/quality/imports", "quality.manage"),
+    ("POST", "/v1/quality/imports/{import_id}/publish", "quality.manage"),
+    ("POST", "/v1/quality/risk-assessment/reviews", "quality.manage"),
     (
         "POST",
         "/v1/questionnaire-templates/{template_id}/versions/{version}:publish",
@@ -214,6 +228,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/report-templates/{template_id}/versions/{version_no}/publish",
         "report_template.publish",
     ),
+    ("POST", "/v1/retention/policies", "retention_policy.manage"),
     ("POST", "/v1/sign-offs", "sign_off.create"),
     ("POST", "/v1/sign-offs:bulk", "sign_off.bulk"),
     ("POST", "/v1/standards", "firm_standard.create"),

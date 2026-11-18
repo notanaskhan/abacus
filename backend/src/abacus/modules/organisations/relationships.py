@@ -7,7 +7,7 @@ Writes to `entity_relationships` (P-07's table, widened by 0954) and its insert-
   `relationship_self_edge`); an ownership edge (`owner_of`, `gp_of`, `lp_of`) may not take the
   owned entity past 100 percent on any day it is in force (422 `relationship_percent_exceeds`,
   checked here in code and again by 0954's deferred constraint trigger).
-- **Update** (`update`): percent, note or the end date, with optimistic concurrency on `version`.
+- **Change** (`change`): percent, note or the end date, with optimistic concurrency on `version`.
 - **End** (`end`): an end date and a reason; ended, never deleted.
 - **External parties** (`add_external_party`): a person or organisation outside the firm's
   clients, kept on the client.
@@ -205,7 +205,7 @@ async def create(
     return rel
 
 
-async def update(
+async def change(
     tenant: TenantContext,
     client_id: UUID,
     rel_id: UUID,

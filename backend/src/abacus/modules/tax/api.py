@@ -164,7 +164,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     estate_router,  # EW-1 estate workpapers, TXT-04 (T-07-T05 stub; dark)
     entity_depth_router,  # T-06-T07: entity depth, other workpapers, form pages (stubs; dark)
     tb_handoff_router,  # T-06-T05: C12 v1, the TB hand-off (stub; dark); ledger owns the tables
-    practice_tools_router,  # T-08-T04: TP-1 two-year, standards runs, planning, amendments (stubs; dark)
+    practice_tools_router,  # T-08-T04: TP-1 tax practice tools (stubs; dark)
 )
 
 

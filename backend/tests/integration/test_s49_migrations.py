@@ -130,11 +130,12 @@ def test_the_guard_triggers_exist(private_db: sc.Database, table: str, name: str
 
 
 def test_the_head_reaches_0954(private_db: sc.Database) -> None:
+    """0954 is on the single head's line (S50's 0960+ build on it)."""
     scripts = ScriptDirectory.from_config(
         Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
     )
     head = str(_value(private_db, "SELECT version_num FROM alembic_version"))
-    assert head == scripts.get_current_head() == "0954"
+    assert head == scripts.get_current_head()
     assert {"0950", "0951", "0952", "0953", "0954"} <= {
         r.revision for r in scripts.walk_revisions("base", head)
     }

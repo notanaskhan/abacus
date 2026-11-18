@@ -1,4 +1,4 @@
-"""C-01-T27: POR-11's transaction questions in the portal (SPEC-656; C-01 §3; DEC-5633).
+"""C-01-T27: POR-11's transaction questions in the portal (SPEC-655; C-01 §3; DEC-5633).
 
 The client sees only questions addressed to a contact the signed-in person holds (an inquiry is
 its addressee's only), in the firm's wording with a context line built from code facts

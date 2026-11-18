@@ -7,7 +7,7 @@ every module's registry (schema_check), so adding a table edits only this file.
 from __future__ import annotations
 
 # The tables this module owns; no other module reads or writes them (ADR-008).
-TABLES: frozenset[str] = frozenset(
+_TABLES_PRE_S50: frozenset[str] = frozenset(
     {
         "engagements",
         # The methodology_* tables are the methodology module's since K-01-T02 (0180).
@@ -48,7 +48,7 @@ TABLES: frozenset[str] = frozenset(
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
-INSERT_ONLY: frozenset[str] = frozenset(
+_INSERT_ONLY_PRE_S50: frozenset[str] = frozenset(
     {
         "work_item_assignments",  # F-03-T05 (0068)
         "engagement_entities",  # F-03-T05 (0068)
@@ -269,8 +269,7 @@ T08T05_TABLES: frozenset[str] = frozenset(
         "seasons",
     }
 )
-TABLES = TABLES | T08T05_TABLES
-INSERT_ONLY = INSERT_ONLY | frozenset(
+_S50_INSERT_ONLY_1: frozenset[str] = frozenset(
     {
         "season_cohort_approvals",
         "season_cohort_withdrawals",
@@ -395,3 +394,7 @@ INSERT_COLUMNS["season_row_steps"] = frozenset(
         "tenant_id",
     }
 )
+
+# The tables this module owns and its insert-only tables, after S50 (one definition each).
+TABLES: frozenset[str] = _TABLES_PRE_S50 | T08T05_TABLES
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1

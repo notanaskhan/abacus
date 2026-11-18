@@ -1117,8 +1117,8 @@ T06T10_TABLES: frozenset[str] = frozenset(
         "tax_properties",
     }
 )
-TABLES: frozenset[str] = _TABLES_BEFORE_S49 | T06T10_TABLES
-INSERT_ONLY: frozenset[str] = _INSERT_ONLY_BEFORE_S49 | frozenset(
+_TABLES_PRE_S50: frozenset[str] = _TABLES_BEFORE_S49 | T06T10_TABLES
+_INSERT_ONLY_PRE_S50: frozenset[str] = _INSERT_ONLY_BEFORE_S49 | frozenset(
     {
         "fixed_asset_dispositions",
         "fixed_asset_versions",
@@ -1459,8 +1459,7 @@ T08T06_TABLES: frozenset[str] = frozenset(
         "variance_explanation_versions",
     }
 )
-TABLES = TABLES | T08T06_TABLES
-INSERT_ONLY = INSERT_ONLY | frozenset(
+_S50_INSERT_ONLY_1: frozenset[str] = frozenset(
     {
         "aar_elections",
         "amendment_explanation_versions",
@@ -1684,7 +1683,6 @@ T06T14_TABLES: frozenset[str] = frozenset(
         "tax_provisions",
     }
 )
-TABLES = TABLES | T06T14_TABLES
 INSERT_COLUMNS["aaa_lines"] = frozenset(
     {
         "col_aaa",
@@ -1916,3 +1914,7 @@ UPDATE_COLUMNS["form_diagnostics"] = frozenset(
         "status",
     }
 )
+
+# The tables this module owns and its insert-only tables, after S50 (one definition each).
+TABLES: frozenset[str] = _TABLES_PRE_S50 | T08T06_TABLES | T06T14_TABLES
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1

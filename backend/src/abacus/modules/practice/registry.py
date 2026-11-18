@@ -7,8 +7,8 @@ from __future__ import annotations
 
 # I-01-T12 (migration 0320): HOME-01's client activity projection. Inserted once per event and
 # pruned after 90 days (the app role may delete), never updated.
-TABLES: frozenset[str] = frozenset({"home_activity_items"})
-INSERT_ONLY: frozenset[str] = frozenset()
+_TABLES_PRE_S50: frozenset[str] = frozenset({"home_activity_items"})
+_INSERT_ONLY_PRE_S50: frozenset[str] = frozenset()
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "home_activity_items": frozenset(
         {"tenant_id", "source_event_id", "event_type", "occurred_at", "client_id"}
@@ -25,8 +25,7 @@ T08T07_TABLES: frozenset[str] = frozenset(
         "filing_deadlines",
     }
 )
-TABLES = TABLES | T08T07_TABLES
-INSERT_ONLY = INSERT_ONLY | frozenset(
+_S50_INSERT_ONLY_1: frozenset[str] = frozenset(
     {
         "filing_deadline_alerts",
     }
@@ -112,8 +111,7 @@ Q05T05_TABLES: frozenset[str] = frozenset(
         "qm_settings",
     }
 )
-TABLES = TABLES | Q05T05_TABLES
-INSERT_ONLY = INSERT_ONLY | frozenset(
+_S50_INSERT_ONLY_2: frozenset[str] = frozenset(
     {
         "inspection_selection_rules",
         "qm_finding_evaluations",
@@ -358,3 +356,7 @@ UPDATE_COLUMNS["draft_final_field_facts"] = frozenset(
         "filed_at",
     }
 )
+
+# The tables this module owns and its insert-only tables, after S50 (one definition each).
+TABLES: frozenset[str] = _TABLES_PRE_S50 | T08T07_TABLES | Q05T05_TABLES
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1 | _S50_INSERT_ONLY_2

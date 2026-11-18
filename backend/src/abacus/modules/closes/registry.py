@@ -5,7 +5,7 @@ The tables it owns (ADR-103) and what the app role may do with them.
 
 from __future__ import annotations
 
-TABLES: frozenset[str] = frozenset(
+_TABLES_PRE_S50: frozenset[str] = frozenset(
     {
         "closes",  # F-03-T22 (0089); lifecycle columns C-01-T09 (0881)
         # C-01-T09 (0881): plans, versions, rows, request templates, templates, procedures.
@@ -31,7 +31,7 @@ TABLES: frozenset[str] = frozenset(
     }
 )
 # Insert-only (ADR-004): a recompute or an edit is a new row or version, never an update.
-INSERT_ONLY: frozenset[str] = frozenset(
+_INSERT_ONLY_PRE_S50: frozenset[str] = frozenset(
     {"close_templates", "reconciliations", "reconciling_item_resolutions", "statement_lines"}
     | {"reconciliation_matches", "arrangements", "arrangement_versions"}
     | {"close_schedule_results", "analytic_sets"}
@@ -169,8 +169,7 @@ C02T16_TABLES: frozenset[str] = frozenset(
         "tax_handoffs",
     }
 )
-TABLES = TABLES | C02T16_TABLES
-INSERT_ONLY = INSERT_ONLY | frozenset(
+_S50_INSERT_ONLY_1: frozenset[str] = frozenset(
     {
         "close_deliverable_versions",
         "close_reopenings",
@@ -239,3 +238,7 @@ INSERT_COLUMNS["tax_handoffs"] = frozenset(
         "version_no",
     }
 )
+
+# The tables this module owns and its insert-only tables, after S50 (one definition each).
+TABLES: frozenset[str] = _TABLES_PRE_S50 | C02T16_TABLES
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1

@@ -76,7 +76,7 @@ def test_an_unknown_source_kind_fails_closed() -> None:
         return []
 
     with pytest.raises(slot.UnknownFilingDeadlineSource):
-        slot.register_filing_deadline_source("payroll_941", provider)  # type: ignore[arg-type]
+        slot.register_filing_deadline_source("payroll_941", provider)  # type: ignore[arg-type] -- a deliberately wrong provider shape
 
 
 # The fields T-08's screens read from the contracts it consumes (T-08 §8.2).

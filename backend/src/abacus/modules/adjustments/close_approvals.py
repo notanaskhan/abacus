@@ -43,8 +43,14 @@ from abacus.kernel.uow import DomainEvent, Scope, Target, uow
 from abacus.modules.adjustments import decisions as _decisions
 from abacus.modules.adjustments.entries import TARGET, engagement_of
 from abacus.modules.adjustments.posting_errors import EntryLocked, OverApprovalLimit
-from abacus.modules.engagements.api import attest_of, lock_ref
-from abacus.modules.identity.api import AuthContext, Forbidden, engagement_role_of, names_of
+from abacus.modules.engagements.api import attest_of, engagement_resource_of, lock_ref
+from abacus.modules.identity.api import (
+    AuthContext,
+    Forbidden,
+    authorise,
+    engagement_role_of,
+    names_of,
+)
 from abacus.modules.integrations.api import posting_enabled_for
 from abacus.modules.methodology.api import EntryClassification, aje_classification_for
 
@@ -183,9 +189,16 @@ async def _labels(ctx: AuthContext, entry_ids: Sequence[UUID]) -> dict[UUID, str
         }
 
 
+async def _authorised(ctx: AuthContext, action: str, engagement_id: UUID) -> None:
+    """Security review (S50 end pass): every close-approval act is authorised on the entry's own
+    engagement (walls, team, conditions), not only by the route's firm-level role check."""
+    await authorise(ctx, action, await engagement_resource_of(ctx.tenant, engagement_id))
+
+
 async def close_entries(ctx: AuthContext, work_item_id: UUID) -> CloseEntries:
     """CLS-07's list: entries, classification now, tallies by code and the approver's context."""
     engagement_id = await engagement_of(ctx.tenant, work_item_id)
+    await _authorised(ctx, "proposed_entry.read", engagement_id)
     attest = await attest_of(ctx.tenant, engagement_id) is True
     role = await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id)
     rows = await _rows(ctx, work_item_id)
@@ -241,6 +254,7 @@ async def approve_batch(ctx: AuthContext, work_item_id: UUID, entry_ids: Sequenc
     now; one outside its class limit, an attest client or a role below an entry's level refuses
     the whole batch (409 `over_approval_limit`)."""
     view = await close_entries(ctx, work_item_id)
+    await _authorised(ctx, "approval_batch.create", await engagement_of(ctx.tenant, work_item_id))
     chosen = [e for e in view.entries if e.entry_id in set(entry_ids)]
     if len(chosen) != len(set(entry_ids)):
         raise NotFound(TARGET)
@@ -294,6 +308,7 @@ async def approve_held(ctx: AuthContext, entry_id: UUID, seen_version: int) -> D
     row = await _entry(ctx, entry_id)
     engagement_id = UUID(str(row["engagement_id"]))
     work_item_id = UUID(str(row["work_item_id"]))
+    await _authorised(ctx, "proposed_entry.approve", engagement_id)
     attest = await attest_of(ctx.tenant, engagement_id) is True
     cls = await _classify(ctx, Decimal(str(row["amount"])), _str(row["account_class"]), attest)
     level = "manager_or_partner" if cls is None else cls.approver_level
@@ -393,6 +408,7 @@ async def undo(ctx: AuthContext, decision_id: UUID) -> Decided:
     if row is None:
         raise NotFound("proposed_entry_decision")
     entry_id = UUID(str(row["entry_id"]))
+    await _authorised(ctx, "proposed_entry.undo_approval", UUID(str(row["engagement_id"])))
     if str(row["actor_id"]) != str(ctx.user_id):
         raise Forbidden("proposed_entry.undo_approval", "role")
     created = row["created_at"]
@@ -422,6 +438,7 @@ async def withdraw(
 ) -> Decided:
     """An approved, unposted entry returns to its threshold result (`approval_withdrawn`)."""
     row = await _entry(ctx, entry_id)
+    await _authorised(ctx, "proposed_entry.withdraw_approval", UUID(str(row["engagement_id"])))
     if str(row["status"]) != S.APPROVED or await _in_batch(ctx, entry_id):
         raise EntryLocked(facts={"status": str(row["status"])})
     status = await _threshold_status(ctx, row)
@@ -438,6 +455,7 @@ async def request_approval(ctx: AuthContext, entry_id: UUID, approver_user_id: U
     row = await _entry(ctx, entry_id)
     engagement_id = UUID(str(row["engagement_id"]))
     work_item_id = UUID(str(row["work_item_id"]))
+    await _authorised(ctx, "proposed_entry.request_approval", engagement_id)
     role = await engagement_role_of(ctx.tenant, engagement_id, approver_user_id)
     if not meets(role, "manager_or_partner"):
         raise OverApprovalLimit(facts={"approver": str(approver_user_id)})
@@ -461,6 +479,8 @@ async def request_approval(ctx: AuthContext, entry_id: UUID, approver_user_id: U
 
 async def reject(ctx: AuthContext, entry_id: UUID, reason_code: str, note: str | None) -> Decided:
     """Rejected with the person's reason (DF-23); the CLS-06 issue follows from the event."""
+    row = await _entry(ctx, entry_id)
+    await _authorised(ctx, "proposed_entry.reject_close", UUID(str(row["engagement_id"])))
     if note is None:
         await _decisions.reject(ctx, entry_id, reason_code)
     else:
