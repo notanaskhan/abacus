@@ -12263,6 +12263,7 @@ export type ConfirmationRequestOut = {
  * One AUD-14 log row: C1…C4, its status and sub-line facts.
  */
 export type ConfirmationRowOut = {
+    address_check?: RowAddressCheckOut | null;
     /**
      * Address Independent
      */
@@ -12283,6 +12284,14 @@ export type ConfirmationRowOut = {
      * Channel
      */
     channel: 'accrued_link' | 'network_recorded' | 'mail_recorded';
+    /**
+     * Confirmed Total
+     */
+    confirmed_total?: string | null;
+    /**
+     * Difference
+     */
+    difference?: string | null;
     /**
      * Id
      */
@@ -53095,6 +53104,26 @@ export type RoutedOut = {
      * Routed Ref
      */
     routed_ref: string;
+};
+
+/**
+ * RowAddressCheckOut
+ *
+ * A-08-T32 (DEC-5530): the log's Address column, the newest verification of the address.
+ */
+export type RowAddressCheckOut = {
+    /**
+     * Method
+     */
+    method: string;
+    /**
+     * Verified By Name
+     */
+    verified_by_name: string;
+    /**
+     * Verified On
+     */
+    verified_on: string;
 };
 
 /**

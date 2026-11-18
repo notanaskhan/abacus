@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import hashlib
 from collections import Counter
+from collections.abc import Mapping
 from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Final, cast
@@ -48,6 +49,7 @@ from abacus.modules.assurance.confirmations_contract_models import (
     RespondentAccountOut,
     RespondentRequestOut,
     RespondentViewOut,
+    RowAddressCheckOut,
     StatusTileOut,
 )
 from abacus.modules.engagements.api import get_ref, work_item_engagement
@@ -137,13 +139,31 @@ _ROWS: Final = text(
     "'second_request'), "
     "(SELECT submitted_at FROM confirmation_responses r WHERE r.confirmation_id = c.id), "
     "c.tb_account_refs, "
-    "(SELECT confirmed_total FROM confirmation_responses r WHERE r.confirmation_id = c.id) "
+    "(SELECT confirmed_total FROM confirmation_responses r WHERE r.confirmation_id = c.id), "
+    # A-08-T32 (DEC-5530): the newest address verification, for the log's Address column.
+    "(SELECT v.method FROM address_verifications v WHERE v.confirmation_id = c.id "
+    "ORDER BY v.verified_at DESC LIMIT 1), "
+    "(SELECT v.verified_by FROM address_verifications v WHERE v.confirmation_id = c.id "
+    "ORDER BY v.verified_at DESC LIMIT 1), "
+    "(SELECT v.verified_at FROM address_verifications v WHERE v.confirmation_id = c.id "
+    "ORDER BY v.verified_at DESC LIMIT 1) "
     "FROM confirmations c WHERE c.work_item_id = :w ORDER BY c.number"
 )
 
 
-def _row_out(r: tuple[object, ...]) -> ConfirmationRowOut:
+def _row_out(r: tuple[object, ...], names: Mapping[UUID, str]) -> ConfirmationRowOut:
     status = str(r[5])
+    book = Decimal(str(r[7]))
+    confirmed = None if r[14] is None else Decimal(str(r[14]))
+    check = (
+        None
+        if r[15] is None
+        else RowAddressCheckOut(
+            method=str(r[15]),
+            verified_by_name=names.get(cast(UUID, r[16]), "—"),
+            verified_on=cast(datetime, r[17]).date(),
+        )
+    )
     actions: list[str] = []
     if status == "draft":
         actions = [
@@ -162,7 +182,7 @@ def _row_out(r: tuple[object, ...]) -> ConfirmationRowOut:
         respondent_org=str(r[3]),
         channel=r[4],  # pyright: ignore[reportArgumentType] -- CHECKed words
         status=status,  # pyright: ignore[reportArgumentType] -- a confirmation word
-        book_total=Decimal(str(r[7])),
+        book_total=book,
         address_independent=bool(r[8]),
         authorization_on_file=False,
         sent_at=cast(datetime | None, r[9]),
@@ -171,6 +191,9 @@ def _row_out(r: tuple[object, ...]) -> ConfirmationRowOut:
         responded_at=cast(datetime | None, r[12]),
         sample_item_ref=cast(str | None, r[6]),
         allowed_actions=actions,  # pyright: ignore[reportArgumentType] -- matrix action words
+        address_check=check,
+        confirmed_total=confirmed,
+        difference=None if confirmed is None else book - confirmed,
     )
 
 
@@ -178,8 +201,10 @@ async def confirmation_list(ctx: AuthContext, work_item_id: UUID) -> Confirmatio
     await _scope(ctx, work_item_id, "confirmation.read")
     async with tenant_session(ctx.tenant) as session:
         rows = (await session.execute(_ROWS, {"w": work_item_id})).all()
+    verifiers = sorted({r[16] for r in rows if r[16] is not None}, key=str)
+    names = await names_of(verifiers) if verifiers else {}
     return ConfirmationLogOut(
-        items=[_row_out(tuple(r)) for r in rows],
+        items=[_row_out(tuple(r), names) for r in rows],
         links_paused=await control_active("confirmation_links", ctx.tenant_id),
         allowed_actions=["confirmation.create", "confirmation.export"],
     )

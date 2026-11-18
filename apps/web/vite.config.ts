@@ -98,25 +98,6 @@ function portalProduct(): Plugin {
   };
 }
 
-// INV-4: firm-only status codes whose own key names the product (`sent_to_accrued`,
-// `accrued_tie_out_shadow`) leave the portal build's copy of the generated registry; the portal
-// never renders those objects (plan requests, estate computation labels), and their labels already
-// go through product.ts. scripts/portal-dist-check.mjs holds the bundle to it.
-const PRODUCT_KEYED_CODE = /\n {4}"[a-z0-9_]*accrued[a-z0-9_]*": \{\n(?: {6}.*\n)*? {4}\},?/g;
-export function dropProductKeyedCodes(code: string): string {
-  return code.replace(PRODUCT_KEYED_CODE, "");
-}
-function portalStatuses(): Plugin {
-  return {
-    name: "abacus-portal-statuses",
-    enforce: "pre", // the generated TypeScript as written, before the compile step
-    transform(code, id) {
-      if (!/[\\/]packages[\\/]ui[\\/]src[\\/]status\.gen\.ts$/.test(id)) return null;
-      return { code: dropProductKeyedCodes(code), map: null };
-    },
-  };
-}
-
 export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, ".", ["VITE_", "ABACUS_PORT_OFFSET"]);
   // `vite build --mode portal` (P-08-T07; `build:portal`): the client portal's own entry,
@@ -138,7 +119,7 @@ export default defineConfig(({ mode, command }) => {
       tailwindcss(),
       contentSecurityPolicy(),
       fontPreload(),
-      ...(portal ? [portalIcons(), portalProduct(), portalStatuses()] : []),
+      ...(portal ? [portalIcons(), portalProduct()] : []),
     ],
     define: {
       "import.meta.env.VITE_UI_GALLERY": JSON.stringify(gallery),
