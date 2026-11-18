@@ -7,6 +7,7 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
+from abacus.modules.organisations import relationships as r
 from abacus.modules.organisations.relationships import Edge, cap_exceeded
 
 D = Decimal
@@ -28,3 +29,25 @@ def test_an_ended_period_frees_its_percent_for_later_days() -> None:
 def test_non_ownership_edges_never_count() -> None:
     existing = [Edge(E, "owner_of", D("100"), date(2024, 1, 1), None)]
     assert not cap_exceeded(existing, Edge(E, "trustee_of", None, date(2025, 1, 1), None))
+
+
+# T-06-T21 completion: the graph projection.
+def _node(n: int, label: str) -> r.GraphNode:
+    return r.GraphNode(UUID(int=n), "entity", label, {})
+
+
+def _gedge(n: int, a: int, b: int, start: date, end: date | None = None) -> r.GraphEdge:
+    return r.GraphEdge(UUID(int=100 + n), UUID(int=a), UUID(int=b), "owner_of", None, start, end)
+
+
+def test_the_graph_shows_edges_in_force_between_this_clients_nodes_only() -> None:
+    nodes = [_node(2, "B"), _node(1, "A")]
+    edges = [
+        _gedge(1, 1, 2, date(2024, 1, 1)),
+        _gedge(2, 1, 2, date(2020, 1, 1), date(2023, 12, 31)),  # ended before as_of
+        _gedge(3, 1, 9, date(2024, 1, 1)),  # other end outside the client
+    ]
+    g = r.project(nodes, edges, date(2026, 1, 1))
+    assert [n.label for n in g.nodes] == ["A", "B"]
+    assert [e.id for e in g.edges] == [UUID(int=101)]
+    assert [e.id for e in r.project(nodes, edges, date(2022, 6, 1)).edges] == [UUID(int=102)]
