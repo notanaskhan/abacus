@@ -159,3 +159,83 @@ UPDATE_COLUMNS.update(
         "close_entry_recordings": frozenset({"confirmed_by", "confirmed_at"}),
     }
 )
+
+# C-02-T16 (0965, DEC-5620).
+C02T16_TABLES: frozenset[str] = frozenset(
+    {
+        "close_deliverable_versions",
+        "close_deliverables",
+        "close_reopenings",
+        "tax_handoffs",
+    }
+)
+TABLES = TABLES | C02T16_TABLES
+INSERT_ONLY = INSERT_ONLY | frozenset(
+    {
+        "close_deliverable_versions",
+        "close_reopenings",
+        "tax_handoffs",
+    }
+)
+INSERT_COLUMNS["close_deliverables"] = frozenset(
+    {
+        "close_id",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["close_deliverables"] = frozenset(
+    {
+        "c10_deliverable_ref",
+        "c18_approval_ref",
+        "client_approved_at",
+        "client_approved_by_contact_id",
+        "current_version_no",
+        "released_at",
+        "released_by",
+        "status",
+    }
+)
+INSERT_COLUMNS["close_deliverable_versions"] = frozenset(
+    {
+        "cas_answer",
+        "commentary",
+        "content_hash",
+        "deliverable_id",
+        "generated_document_ids",
+        "legend_key",
+        "posted_tb_ref",
+        "route",
+        "run_id",
+        "sections",
+        "ssars_settings_version_id",
+        "studio_version",
+        "tenant_id",
+        "version_no",
+    }
+)
+INSERT_COLUMNS["close_reopenings"] = frozenset(
+    {
+        "close_id",
+        "reason",
+        "reopened_by",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["tax_handoffs"] = frozenset(
+    {
+        "c12_ref",
+        "client_entity_id",
+        "close_id",
+        "created_tax_issue_ids",
+        "engine",
+        "handed_off_by",
+        "items",
+        "schedules",
+        "supersedes_id",
+        "target_tax_return_id",
+        "tb_snapshot_id",
+        "tenant_id",
+        "version_no",
+    }
+)
