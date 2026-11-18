@@ -250,13 +250,13 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "season_cohort_withdrawals": "season_cohort_withdrawals_immutable",  # 0960 (T-08-T05)
     "season_row_steps": "season_row_steps_immutable",  # 0960 (T-08-T05)
     "aar_elections": "aar_elections_immutable",  # 0961 (T-08-T06)
-    "amendment_explanation_versions": "amendment_explanation_versions_immutable",  # 0961 (T-08-T06)
+    "amendment_explanation_versions": "amendment_explanation_versions_immutable",  # 0961
     "planning_opportunity_events": "planning_opportunity_events_immutable",  # 0961 (T-08-T06)
     "planning_screens": "planning_screens_immutable",  # 0961 (T-08-T06)
     "return_supersessions": "return_supersessions_immutable",  # 0961 (T-08-T06)
     "standards_check_confirmations": "standards_check_confirmations_immutable",  # 0961 (T-08-T06)
     "standards_check_results": "standards_check_results_immutable",  # 0961 (T-08-T06)
-    "variance_explanation_acceptances": "variance_explanation_acceptances_immutable",  # 0961 (T-08-T06)
+    "variance_explanation_acceptances": "variance_explanation_acceptances_immutable",  # 0961
     "variance_explanation_versions": "variance_explanation_versions_immutable",  # 0961 (T-08-T06)
     "filing_deadline_alerts": "filing_deadline_alerts_immutable",  # 0962 (T-08-T07)
     "inspection_selection_rules": "inspection_selection_rules_immutable",  # 0963 (Q-05-T05)

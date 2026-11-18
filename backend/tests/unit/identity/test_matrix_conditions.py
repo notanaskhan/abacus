@@ -235,6 +235,25 @@ CASES: list[tuple[str, dict[str, str], ConditionFacts, ConditionFacts]] = [
         ConditionFacts(owner_contact=True),
         ConditionFacts(owner_contact=None),
     ),
+    # Q-05-T02 (SPEC-711): resource facts, failing closed while unknown.
+    (
+        "consulted_person",
+        {**ALLOW, "consulted_person": "required"},
+        ConditionFacts(consulted=True),
+        ConditionFacts(consulted=None),
+    ),
+    (
+        "distinct_approver_role",
+        {**ALLOW, "distinct_approver_role": "required"},
+        ConditionFacts(distinct_approver=True),
+        ConditionFacts(distinct_approver=False),
+    ),
+    (
+        "monitoring_reviewer",
+        {**ALLOW, "monitoring_reviewer": "required"},
+        ConditionFacts(monitoring_reader=True),
+        ConditionFacts(monitoring_reader=None),
+    ),
 ]
 IDS = [f"{c[0]}-{i}" for i, c in enumerate(CASES)]
 

@@ -1,8 +1,8 @@
 ---
 id: TASK-8633
 title: "C-01-T27: Portal close read model: POR-11 transaction questions and answers"
-spec: SPEC-656
-acceptance_criteria: [AC-47]
+spec: SPEC-655
+acceptance_criteria: [AC-47, AC-52]
 risk_zone: amber
 status: in-review
 branch: c01-t27-portal-close

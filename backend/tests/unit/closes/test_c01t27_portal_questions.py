@@ -1,4 +1,4 @@
-"""C-01-T27 (SPEC-656; DEC-5633): what POR-11 shows a client about a transaction question, from
+"""C-01-T27 (SPEC-655; DEC-5633): what POR-11 shows a client about a transaction question, from
 code facts only; the answer text from the sheet's choice and the client's note."""
 
 from __future__ import annotations

@@ -386,7 +386,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.evidence.destruction_errors.BatchPhraseMismatch
-    summary: The typed confirmation is not `DESTROY ‹ref›` (AC-23).
+    summary: The typed confirmation is not `DESTROY <ref>` (AC-23).
   before_date_as_of:
     status: 409
     raised_by:
@@ -3238,6 +3238,11 @@ codes:
     raised_by:
     - abacus.modules.organisations.relationship_errors.RelationshipSelfEdge
     summary: An entity cannot be related to itself.
+  relationship_version_moved:
+    status: 409
+    raised_by:
+    - abacus.modules.organisations.relationships.RelationshipVersionMoved
+    summary: The relationship changed since it was read (`facts.version`).
   release_date_before_period_end:
     status: 422
     raised_by:

@@ -987,3 +987,12 @@ from abacus.modules.assurance.group_pull import ConsolidationPullAll, PullAllInp
 # Q-05-T04: the contract module for the synthetic slice (tooling reaches assurance only here).
 from abacus.modules.assurance import post_issuance_contract as post_issuance_contract  # noqa: E402
 from abacus.modules.assurance import quality_log_errors as quality_log_errors  # noqa: E402
+
+# S50 end pass (BOUND-001, main red): the replay-history recorder reaches these through api.
+from abacus.modules.assurance.confirmations_follow_up import (  # noqa: E402
+    ConfirmationFollowUpWorkflow as ConfirmationFollowUpWorkflow,
+)
+from abacus.modules.assurance.group_pull import (  # noqa: E402
+    ConsolidationPullAll as ConsolidationPullAll,
+)
+from abacus.modules.assurance.group_pull import PullAllInput as PullAllInput  # noqa: E402

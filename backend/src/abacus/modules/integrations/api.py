@@ -227,6 +227,11 @@ _register_firm_health()
 # C-02-T02 (DEC-5501): the posting, W1 and delivery error codes, declared before their services.
 from abacus.modules.integrations import write_errors as write_errors  # noqa: E402
 
+# S50 end pass (BOUND-001, main red): the replay-history recorder reaches it through api.
+from abacus.modules.integrations.health_workflow import (  # noqa: E402
+    IntegrationHealthWorkflow as IntegrationHealthWorkflow,
+)
+
 # C-02-T12 (DEC-5621): the engagement posting switch, for adjustments' close approvals.
 from abacus.modules.integrations.posting_settings import (  # noqa: E402
     posting_enabled_for as posting_enabled_for,
