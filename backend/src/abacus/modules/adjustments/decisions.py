@@ -527,3 +527,8 @@ async def _one(
             scope=Scope(engagement_id=row["engagement_id"], work_item_id=row["work_item_id"]),
         )
     return entry_id
+
+
+# C-02-T12 (DEC-5621): close approvals write through the same decision writer and status setter.
+write_decision = _decide
+set_status = _set_status
