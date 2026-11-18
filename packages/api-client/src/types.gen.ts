@@ -24734,6 +24734,246 @@ export type FiledDestinationOut = {
 };
 
 /**
+ * FilingDeadlineCalendarOut
+ */
+export type FilingDeadlineCalendarOut = {
+    /**
+     * Days
+     */
+    days?: Array<FilingDeadlineDayOut>;
+    /**
+     * Firm Zone
+     */
+    firm_zone: string;
+    /**
+     * Items
+     */
+    items: Array<FilingDeadlineItemOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Remaining
+     */
+    remaining: number;
+    /**
+     * Today
+     */
+    today: string;
+    /**
+     * View
+     */
+    view: 'month' | 'week' | 'list';
+    /**
+     * Window From
+     */
+    window_from: string;
+    /**
+     * Window To
+     */
+    window_to: string;
+};
+
+/**
+ * FilingDeadlineDayOut
+ *
+ * A grid cell: three chips and "+n more" (AC-10: Sep 15 holds 12).
+ */
+export type FilingDeadlineDayOut = {
+    /**
+     * Holiday
+     */
+    holiday?: string | null;
+    /**
+     * On
+     */
+    on: string;
+    /**
+     * Shown
+     */
+    shown: Array<string>;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * FilingDeadlineDetailOut
+ *
+ * The rule popover (AC-11): the rule text and the reference-set versions come from the row.
+ */
+export type FilingDeadlineDetailOut = {
+    /**
+     * Computed At
+     */
+    computed_at: string;
+    /**
+     * Extended Due On
+     */
+    extended_due_on?: string | null;
+    /**
+     * Extension Filed On
+     */
+    extension_filed_on?: string | null;
+    /**
+     * Internal Target On
+     */
+    internal_target_on?: string | null;
+    item: FilingDeadlineItemOut;
+    /**
+     * Original Due On
+     */
+    original_due_on: string;
+    /**
+     * Postponement Notice Id
+     */
+    postponement_notice_id?: string | null;
+    /**
+     * Reference Set Version Ids
+     */
+    reference_set_version_ids: Array<string>;
+};
+
+/**
+ * FilingDeadlineItemOut
+ *
+ * One chip or list row (HOME-03 a, b, c, f).
+ */
+export type FilingDeadlineItemOut = {
+    /**
+     * Client Id
+     */
+    client_id?: string | null;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Days Left
+     */
+    days_left: number;
+    /**
+     * Due On
+     */
+    due_on: string;
+    /**
+     * Extension Form
+     */
+    extension_form?: string | null;
+    /**
+     * Filing Deadline Id
+     */
+    filing_deadline_id: string;
+    /**
+     * Filing Label
+     */
+    filing_label: string;
+    /**
+     * Href
+     */
+    href?: string | null;
+    /**
+     * Original Due On
+     */
+    original_due_on: string;
+    /**
+     * Owners
+     */
+    owners: Array<FilingDeadlineOwnerOut>;
+    /**
+     * Postponed From
+     */
+    postponed_from?: string | null;
+    /**
+     * Risk
+     */
+    risk: 'overdue' | 'due_7' | 'due_30' | 'later' | 'done';
+    /**
+     * Risk Label
+     */
+    risk_label: string;
+    /**
+     * Rule Text
+     */
+    rule_text?: string | null;
+    signer?: FilingDeadlineOwnerOut | null;
+    /**
+     * Source Kind
+     */
+    source_kind: 'tax_return' | 'extension' | 'estimate_batch' | 'fiduciary_statement' | 'election_window' | 'notice_response' | 'envelope' | 'close' | 'assurance_report' | 'form_5500' | 'consent';
+    /**
+     * Stage Code
+     */
+    stage_code: string;
+    /**
+     * Stage Label
+     */
+    stage_label: string;
+    /**
+     * Work Item Id
+     */
+    work_item_id?: string | null;
+};
+
+/**
+ * FilingDeadlineOwnerOut
+ */
+export type FilingDeadlineOwnerOut = {
+    /**
+     * Initials
+     */
+    initials: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * FilingDeadlinePostponementIn
+ *
+ * DF-10 client relief (T-08-T44): a person applies a published notice to one client.
+ */
+export type FilingDeadlinePostponementIn = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Notice Id
+     */
+    notice_id: string;
+    /**
+     * Reference Set Version Id
+     */
+    reference_set_version_id: string;
+};
+
+/**
+ * FilingDeadlinePostponementOut
+ */
+export type FilingDeadlinePostponementOut = {
+    /**
+     * Application Id
+     */
+    application_id: string;
+    /**
+     * Applied At
+     */
+    applied_at: string;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Moved
+     */
+    moved: number;
+};
+
+/**
  * FilingIn
  *
  * Manual EFAST2 tracking; `filed` needs the date and the acknowledgement evidence.
@@ -53789,6 +54029,538 @@ export type SearchTargetOut = {
 };
 
 /**
+ * SeasonApprovalOut
+ */
+export type SeasonApprovalOut = {
+    /**
+     * Approval Grant Id
+     */
+    approval_grant_id: string;
+    /**
+     * Approval Id
+     */
+    approval_id: string;
+    /**
+     * Approved At
+     */
+    approved_at: string;
+    approved_by: SeasonPersonOut;
+    /**
+     * Cohort Id
+     */
+    cohort_id: string;
+    /**
+     * Queued After
+     */
+    queued_after?: number | null;
+    /**
+     * Run On
+     */
+    run_on?: string | null;
+};
+
+/**
+ * SeasonAskAnswerIn
+ */
+export type SeasonAskAnswerIn = {
+    /**
+     * Option
+     */
+    option: string;
+};
+
+/**
+ * SeasonAskOptionOut
+ */
+export type SeasonAskOptionOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
+ * SeasonAskOut
+ *
+ * ENG-07 e: code finds the ambiguity; the planner may phrase it; a person answers (AC-4).
+ */
+export type SeasonAskOut = {
+    answered_by?: SeasonPersonOut | null;
+    /**
+     * Answered Option
+     */
+    answered_option?: string | null;
+    /**
+     * Ask Id
+     */
+    ask_id: string;
+    /**
+     * Options
+     */
+    options: Array<SeasonAskOptionOut>;
+    /**
+     * Question Code
+     */
+    question_code: string;
+    /**
+     * Recommended Option
+     */
+    recommended_option?: string | null;
+    /**
+     * Row Ids
+     */
+    row_ids: Array<string>;
+    /**
+     * Source
+     */
+    source: 'code' | 'agent';
+    /**
+     * Suggestion Id
+     */
+    suggestion_id?: string | null;
+};
+
+/**
+ * SeasonCohortApproveIn
+ *
+ * The approval pins what the manager saw (AC-5).
+ */
+export type SeasonCohortApproveIn = {
+    /**
+     * Manifest Version
+     */
+    manifest_version: number;
+    /**
+     * Rows Hash
+     */
+    rows_hash: string;
+};
+
+/**
+ * SeasonCohortOut
+ */
+export type SeasonCohortOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Approved At
+     */
+    approved_at?: string | null;
+    approver?: SeasonPersonOut | null;
+    /**
+     * Binders
+     */
+    binders: number;
+    /**
+     * Cohort Id
+     */
+    cohort_id: string;
+    /**
+     * Created Rows
+     */
+    created_rows?: number;
+    /**
+     * Display
+     */
+    display: 'draft' | 'review_required' | 'approved' | 'queued' | 'executing' | 'executed' | 'failed';
+    /**
+     * Engagements
+     */
+    engagements: number;
+    /**
+     * Exceptions
+     */
+    exceptions: number;
+    /**
+     * Invitations
+     */
+    invitations: number;
+    /**
+     * Letters
+     */
+    letters: number;
+    /**
+     * Office Id
+     */
+    office_id: string;
+    /**
+     * Office Name
+     */
+    office_name: string;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Queued After
+     */
+    queued_after?: number | null;
+    /**
+     * Returns
+     */
+    returns: number;
+    /**
+     * Rows Hash
+     */
+    rows_hash: string;
+    /**
+     * Segment
+     */
+    segment: 'individuals_trusts' | 'entities_exempt';
+    /**
+     * Status
+     */
+    status: 'draft' | 'approved' | 'executing' | 'executed' | 'failed';
+};
+
+/**
+ * SeasonCohortWithdrawIn
+ */
+export type SeasonCohortWithdrawIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * SeasonListOut
+ */
+export type SeasonListOut = {
+    /**
+     * Items
+     */
+    items: Array<SeasonOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+};
+
+/**
+ * SeasonManifestBuildIn
+ */
+export type SeasonManifestBuildIn = {
+    /**
+     * Rebuild
+     */
+    rebuild?: boolean;
+};
+
+/**
+ * SeasonManifestOut
+ */
+export type SeasonManifestOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Asks
+     */
+    asks?: Array<SeasonAskOut>;
+    /**
+     * Built At
+     */
+    built_at?: string | null;
+    built_by?: SeasonPersonOut | null;
+    /**
+     * Cohorts
+     */
+    cohorts: Array<SeasonCohortOut>;
+    /**
+     * Inputs Hash
+     */
+    inputs_hash: string;
+    /**
+     * Manifest Id
+     */
+    manifest_id: string;
+    /**
+     * Offices
+     */
+    offices: Array<SeasonOfficeFootingOut>;
+    /**
+     * Planner Available
+     */
+    planner_available: boolean;
+    /**
+     * Season Id
+     */
+    season_id: string;
+    /**
+     * Status
+     */
+    status: 'building' | 'ready' | 'superseded';
+    tally: SeasonTallyOut;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * SeasonManifestRowListOut
+ */
+export type SeasonManifestRowListOut = {
+    /**
+     * Items
+     */
+    items: Array<SeasonManifestRowOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * SeasonManifestRowOut
+ *
+ * ENG-07 a, c, d rows (AC-2, AC-3): forms, carried assignments, binder, letter, consents.
+ */
+export type SeasonManifestRowOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Binder Summary
+     */
+    binder_summary: string;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Cohort Id
+     */
+    cohort_id: string;
+    /**
+     * Consent Purposes
+     */
+    consent_purposes: Array<string>;
+    /**
+     * Display
+     */
+    display: 'ready' | 'check' | 'excluded' | 'created' | 'failed';
+    /**
+     * Exception Codes
+     */
+    exception_codes?: Array<'assignee_seasonal_not_started' | 'contact_bounced' | 'offshore_without_consent' | 'assignee_walled_or_departed' | 'signer_missing' | 'confirmation_missing' | 'binder_ambiguous' | 'continuance_changed'>;
+    /**
+     * Fee Change Pct
+     */
+    fee_change_pct?: string | null;
+    /**
+     * Forms
+     */
+    forms: Array<string>;
+    /**
+     * Invitees
+     */
+    invitees: Array<string>;
+    /**
+     * Letter Kind
+     */
+    letter_kind: 'renewal' | 'new' | 'none';
+    preparer?: SeasonPersonOut | null;
+    /**
+     * Request Count
+     */
+    request_count: number;
+    reviewer?: SeasonPersonOut | null;
+    /**
+     * Row Id
+     */
+    row_id: string;
+    /**
+     * Row Version
+     */
+    row_version: number;
+    signer?: SeasonPersonOut | null;
+    /**
+     * Signers
+     */
+    signers: number;
+    /**
+     * Steps
+     */
+    steps?: Array<SeasonStepOut>;
+    /**
+     * Sub Line
+     */
+    sub_line?: string | null;
+};
+
+/**
+ * SeasonOfficeFootingOut
+ */
+export type SeasonOfficeFootingOut = {
+    /**
+     * Office Id
+     */
+    office_id: string;
+    /**
+     * Office Name
+     */
+    office_name: string;
+    /**
+     * Returns
+     */
+    returns: number;
+};
+
+/**
+ * SeasonOut
+ */
+export type SeasonOut = {
+    /**
+     * Manifest Id
+     */
+    manifest_id?: string | null;
+    /**
+     * Opened At
+     */
+    opened_at: string;
+    /**
+     * Season Id
+     */
+    season_id: string;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
+ * SeasonPersonOut
+ */
+export type SeasonPersonOut = {
+    /**
+     * Initials
+     */
+    initials: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * SeasonRowPatchIn
+ *
+ * Reassign a preparer, reviewer or signer to an eligible person (AC-3).
+ */
+export type SeasonRowPatchIn = {
+    /**
+     * Preparer User Id
+     */
+    preparer_user_id?: string | null;
+    /**
+     * Reviewer User Id
+     */
+    reviewer_user_id?: string | null;
+    /**
+     * Signer User Id
+     */
+    signer_user_id?: string | null;
+};
+
+/**
+ * SeasonRowsExcludeIn
+ */
+export type SeasonRowsExcludeIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Reason
+     */
+    reason: 'client_departed' | 'not_continuing' | 'duplicate' | 'other';
+    /**
+     * Row Ids
+     */
+    row_ids: Array<string>;
+};
+
+/**
+ * SeasonStepOut
+ */
+export type SeasonStepOut = {
+    /**
+     * Error Code
+     */
+    error_code?: string | null;
+    /**
+     * Status
+     */
+    status: 'ok' | 'failed' | 'pending';
+    /**
+     * Step
+     */
+    step: 'engagement' | 'returns' | 'assignments' | 'binder' | 'letter' | 'consents' | 'invitations';
+};
+
+/**
+ * SeasonTallyOut
+ *
+ * ENG-07 tally strip (AC-1): 214 · 224 · 241; created 126 = 65 + 30 + 31; 4 of 6; 3.
+ */
+export type SeasonTallyOut = {
+    /**
+     * Binders
+     */
+    binders: number;
+    /**
+     * Cohorts
+     */
+    cohorts: number;
+    /**
+     * Cohorts Approved
+     */
+    cohorts_approved: number;
+    /**
+     * Created
+     */
+    created: number;
+    /**
+     * Engagements
+     */
+    engagements: number;
+    /**
+     * Exceptions
+     */
+    exceptions: number;
+    /**
+     * Returns
+     */
+    returns: number;
+};
+
+/**
  * SeasonalAccessEndsIn
  *
  * ADM-03a's Seasonal group: one date for every seasonal member, one audit row each.
@@ -60914,6 +61686,892 @@ export type TaxPlanRowOut = {
 };
 
 /**
+ * TaxPracticeAarAdjustmentOut
+ */
+export type TaxPracticeAarAdjustmentOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Reviewed Year
+     */
+    reviewed_year: number;
+};
+
+/**
+ * TaxPracticeAarCreateIn
+ */
+export type TaxPracticeAarCreateIn = {
+    /**
+     * Reviewed Year
+     */
+    reviewed_year: number;
+};
+
+/**
+ * TaxPracticeAarOut
+ *
+ * TAX-16 e (AC-30): 14,800 = 40,000 x 37%; the election is the signer's decision.
+ */
+export type TaxPracticeAarOut = {
+    /**
+     * Aar Id
+     */
+    aar_id: string;
+    /**
+     * Adjustments
+     */
+    adjustments: Array<TaxPracticeAarAdjustmentOut>;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Decided Route
+     */
+    decided_route?: 'pay_imputed_underpayment' | 'push_out' | null;
+    /**
+     * Decision Card Id
+     */
+    decision_card_id?: string | null;
+    /**
+     * Imputed Underpayment
+     */
+    imputed_underpayment: string;
+    /**
+     * Iu Source
+     */
+    iu_source: 'engine' | 'shadow';
+    /**
+     * Recommendation
+     */
+    recommendation?: 'pay_imputed_underpayment' | 'push_out' | null;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * TaxPracticeAcceptIn
+ */
+export type TaxPracticeAcceptIn = {
+    /**
+     * Explanation Version Id
+     */
+    explanation_version_id: string;
+    /**
+     * Values Hash
+     */
+    values_hash: string;
+};
+
+/**
+ * TaxPracticeAmendmentCreateIn
+ */
+export type TaxPracticeAmendmentCreateIn = {
+    /**
+     * Jurisdictions
+     */
+    jurisdictions: Array<'federal' | 'il'>;
+    /**
+     * Kind
+     */
+    kind?: 'amended_return' | 'bba_aar';
+};
+
+/**
+ * TaxPracticeAmendmentExplanationIn
+ */
+export type TaxPracticeAmendmentExplanationIn = {
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * TaxPracticeAmendmentLineOut
+ */
+export type TaxPracticeAmendmentLineOut = {
+    /**
+     * As Amended
+     */
+    as_amended: string;
+    /**
+     * As Filed
+     */
+    as_filed: string;
+    /**
+     * Change
+     */
+    change: string;
+    /**
+     * Citations
+     */
+    citations?: Array<TaxPracticeCitationOut>;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Line Key
+     */
+    line_key: string;
+    /**
+     * Value Source
+     */
+    value_source: 'engine' | 'shadow' | 'code';
+};
+
+/**
+ * TaxPracticeAmendmentOut
+ *
+ * TAX-16 a (AC-28): refund due 2,708 = 41,000 - 37,678 - 614; IL change (495).
+ */
+export type TaxPracticeAmendmentOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Amendment Id
+     */
+    amendment_id: string;
+    /**
+     * Balance Due
+     */
+    balance_due?: string | null;
+    /**
+     * Explanation
+     */
+    explanation?: string | null;
+    /**
+     * Explanation Author
+     */
+    explanation_author?: string | null;
+    /**
+     * Jurisdiction
+     */
+    jurisdiction: 'federal' | 'il';
+    /**
+     * Jurisdictions
+     */
+    jurisdictions: Array<'federal' | 'il'>;
+    /**
+     * Kind
+     */
+    kind: 'amended_return' | 'bba_aar';
+    /**
+     * Lines
+     */
+    lines: Array<TaxPracticeAmendmentLineOut>;
+    /**
+     * Original Superseded
+     */
+    original_superseded: boolean;
+    /**
+     * Original Work Item Id
+     */
+    original_work_item_id: string;
+    /**
+     * Refund Due
+     */
+    refund_due?: string | null;
+    /**
+     * Row Version
+     */
+    row_version: number;
+    /**
+     * Status
+     */
+    status: 'draft' | 'approved' | 'filed';
+    /**
+     * Total Change
+     */
+    total_change: string;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * TaxPracticeCheckListOut
+ */
+export type TaxPracticeCheckListOut = {
+    /**
+     * Items
+     */
+    items: Array<TaxPracticeCheckOut>;
+};
+
+/**
+ * TaxPracticeCheckOut
+ */
+export type TaxPracticeCheckOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Check Key
+     */
+    check_key: string;
+    /**
+     * Created Issue Id
+     */
+    created_issue_id?: string | null;
+    /**
+     * Difference
+     */
+    difference?: string | null;
+    /**
+     * Display Code
+     */
+    display_code: string;
+    /**
+     * Linked Issue Id
+     */
+    linked_issue_id?: string | null;
+    /**
+     * Outcome
+     */
+    outcome: 'pass' | 'exception' | 'manual_pending' | 'not_applicable';
+    /**
+     * Result Id
+     */
+    result_id: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * TaxPracticeCitationOut
+ */
+export type TaxPracticeCitationOut = {
+    /**
+     * Citation Id
+     */
+    citation_id: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Verified
+     */
+    verified: boolean;
+};
+
+/**
+ * TaxPracticeConfirmIn
+ */
+export type TaxPracticeConfirmIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Outcome
+     */
+    outcome: 'pass' | 'exception';
+};
+
+/**
+ * TaxPracticeDismissIn
+ */
+export type TaxPracticeDismissIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Reason
+     */
+    reason: 'not_suitable' | 'already_in_place' | 'client_declined' | 'other';
+};
+
+/**
+ * TaxPracticeExplainIn
+ */
+export type TaxPracticeExplainIn = {
+    /**
+     * Line Keys
+     */
+    line_keys?: Array<string>;
+};
+
+/**
+ * TaxPracticeExplanationIn
+ *
+ * A human version (two lines; "Edited by <name>").
+ */
+export type TaxPracticeExplanationIn = {
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * TaxPracticeOpportunityCreateIn
+ */
+export type TaxPracticeOpportunityCreateIn = {
+    /**
+     * Source
+     */
+    source: 'txt03_add_to_planning' | 'txp01_memo';
+    /**
+     * Source Ref
+     */
+    source_ref: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * TaxPracticeOpportunityListOut
+ */
+export type TaxPracticeOpportunityListOut = {
+    /**
+     * Items
+     */
+    items: Array<TaxPracticeOpportunityOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * TaxPracticeOpportunityOut
+ */
+export type TaxPracticeOpportunityOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Category
+     */
+    category: string;
+    /**
+     * Citations
+     */
+    citations?: Array<TaxPracticeCitationOut>;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Consent Envelope Id
+     */
+    consent_envelope_id?: string | null;
+    /**
+     * Est Savings
+     */
+    est_savings?: string | null;
+    /**
+     * Opportunity Id
+     */
+    opportunity_id: string;
+    /**
+     * Project Engagement Id
+     */
+    project_engagement_id?: string | null;
+    /**
+     * Raised At
+     */
+    raised_at?: string | null;
+    /**
+     * Rationale
+     */
+    rationale?: string | null;
+    /**
+     * Rationale Source
+     */
+    rationale_source?: 'agent' | 'template' | null;
+    /**
+     * Row Version
+     */
+    row_version: number;
+    /**
+     * Rule Key
+     */
+    rule_key: string;
+    /**
+     * Status
+     */
+    status: 'open' | 'raised' | 'accepted' | 'declined' | 'not_screened' | 'dismissed';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Work Item Id
+     */
+    work_item_id?: string | null;
+};
+
+/**
+ * TaxPracticePlanningSummaryOut
+ *
+ * The strip (AC-27): 58 clients · about $1.2M · Drafted · 1 consent-blocked; 9 of 71.
+ */
+export type TaxPracticePlanningSummaryOut = {
+    /**
+     * Clients
+     */
+    clients: number;
+    /**
+     * Clients To Contact
+     */
+    clients_to_contact: number;
+    /**
+     * Consent Blocked
+     */
+    consent_blocked: number;
+    /**
+     * Est Savings
+     */
+    est_savings: string;
+    /**
+     * Opportunities
+     */
+    opportunities: number;
+    /**
+     * Talking Points
+     */
+    talking_points: 'drafted' | 'template' | 'none';
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
+ * TaxPracticeProjectPrefillOut
+ */
+export type TaxPracticeProjectPrefillOut = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Engagement Name
+     */
+    engagement_name: string;
+    /**
+     * Owner User Id
+     */
+    owner_user_id: string;
+    /**
+     * Source Ref
+     */
+    source_ref: string;
+};
+
+/**
+ * TaxPracticeRaiseIn
+ */
+export type TaxPracticeRaiseIn = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Recipient Contact Ids
+     */
+    recipient_contact_ids: Array<string>;
+    /**
+     * Subject
+     */
+    subject: string;
+};
+
+/**
+ * TaxPracticeRaiseSheetOut
+ *
+ * The send sheet's payload: the firm's database template, or a permitted draft (DEC-79).
+ */
+export type TaxPracticeRaiseSheetOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Draft From Agent
+     */
+    draft_from_agent: boolean;
+    /**
+     * Recipients
+     */
+    recipients: Array<string>;
+    /**
+     * Subject
+     */
+    subject: string;
+    /**
+     * Template Id
+     */
+    template_id?: string | null;
+};
+
+/**
+ * TaxPracticeRerunIn
+ */
+export type TaxPracticeRerunIn = {
+    /**
+     * Return Ids
+     */
+    return_ids: Array<string>;
+};
+
+/**
+ * TaxPracticeRunItemOut
+ */
+export type TaxPracticeRunItemOut = {
+    /**
+     * Checks Passed
+     */
+    checks_passed: number;
+    /**
+     * Checks Total
+     */
+    checks_total: number;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Created Issues
+     */
+    created_issues: number;
+    /**
+     * Exceptions
+     */
+    exceptions: number;
+    /**
+     * Issue Count
+     */
+    issue_count: number;
+    /**
+     * Linked Issues
+     */
+    linked_issues: number;
+    /**
+     * Status
+     */
+    status: 'queued' | 'running' | 'passed' | 'exceptions' | 'failed';
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * TaxPracticeRunListOut
+ */
+export type TaxPracticeRunListOut = {
+    /**
+     * Items
+     */
+    items: Array<TaxPracticeRunOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+};
+
+/**
+ * TaxPracticeRunOut
+ *
+ * TAX-14 A at 9:24 AM (AC-26): 6 = 1 running + 3 passed + 2 with exceptions.
+ */
+export type TaxPracticeRunOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Completed At
+     */
+    completed_at?: string | null;
+    /**
+     * Form
+     */
+    form: string;
+    /**
+     * Items
+     */
+    items: Array<TaxPracticeRunItemOut>;
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Standard Label
+     */
+    standard_label: string;
+    /**
+     * Standard Version Id
+     */
+    standard_version_id: string;
+    /**
+     * Started At
+     */
+    started_at: string;
+    /**
+     * Status
+     */
+    status: 'queued' | 'running' | 'complete' | 'failed';
+    tiles: TaxPracticeRunTilesOut;
+};
+
+/**
+ * TaxPracticeRunStartIn
+ */
+export type TaxPracticeRunStartIn = {
+    /**
+     * Return Ids
+     */
+    return_ids: Array<string>;
+    /**
+     * Standard Version Id
+     */
+    standard_version_id: string;
+};
+
+/**
+ * TaxPracticeRunStartedOut
+ */
+export type TaxPracticeRunStartedOut = {
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Started At
+     */
+    started_at: string;
+};
+
+/**
+ * TaxPracticeRunTilesOut
+ */
+export type TaxPracticeRunTilesOut = {
+    /**
+     * Exceptions
+     */
+    exceptions: number;
+    /**
+     * Passed
+     */
+    passed: number;
+    /**
+     * Queued
+     */
+    queued: number;
+    /**
+     * Running
+     */
+    running: number;
+    /**
+     * Selected
+     */
+    selected: number;
+};
+
+/**
+ * TaxPracticeTwoYearLineOut
+ */
+export type TaxPracticeTwoYearLineOut = {
+    /**
+     * Accepted At
+     */
+    accepted_at?: string | null;
+    /**
+     * Accepted By Initials
+     */
+    accepted_by_initials?: string | null;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Author Kind
+     */
+    author_kind?: 'agent' | 'human' | null;
+    /**
+     * Below Reason
+     */
+    below_reason?: string | null;
+    /**
+     * Citations
+     */
+    citations?: Array<TaxPracticeCitationOut>;
+    /**
+     * Current
+     */
+    current: string;
+    /**
+     * Delta
+     */
+    delta: string;
+    /**
+     * Delta Pct
+     */
+    delta_pct?: string | null;
+    /**
+     * Explanation
+     */
+    explanation?: string | null;
+    /**
+     * Explanation Version Id
+     */
+    explanation_version_id?: string | null;
+    /**
+     * Flagged
+     */
+    flagged: boolean;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Line Key
+     */
+    line_key: string;
+    /**
+     * Prior
+     */
+    prior: string;
+    /**
+     * State
+     */
+    state?: 'unexplained' | 'proposed' | 'accepted' | 'stale' | null;
+    /**
+     * Values Hash
+     */
+    values_hash: string;
+};
+
+/**
+ * TaxPracticeTwoYearOut
+ *
+ * TAX-10 a (AC-21): AGI 598,030 (+8.4%) · total tax 123,223 · 8 flagged · 7 of 8 accepted.
+ */
+export type TaxPracticeTwoYearOut = {
+    /**
+     * Accepted
+     */
+    accepted: number;
+    /**
+     * Agi
+     */
+    agi: string;
+    /**
+     * Agi Delta Pct
+     */
+    agi_delta_pct?: string | null;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Current Summary Id
+     */
+    current_summary_id: string;
+    /**
+     * Explain Available
+     */
+    explain_available: boolean;
+    /**
+     * Filter
+     */
+    filter: 'all' | 'over_threshold';
+    /**
+     * Lines
+     */
+    lines: Array<TaxPracticeTwoYearLineOut>;
+    /**
+     * Over Threshold
+     */
+    over_threshold: number;
+    /**
+     * Prior Refund
+     */
+    prior_refund?: string | null;
+    /**
+     * Refund
+     */
+    refund?: string | null;
+    /**
+     * Tax Return Id
+     */
+    tax_return_id: string;
+    threshold: TaxPracticeTwoYearThresholdOut;
+    /**
+     * Total Tax
+     */
+    total_tax: string;
+    /**
+     * Total Tax Delta Pct
+     */
+    total_tax_delta_pct?: string | null;
+};
+
+/**
+ * TaxPracticeTwoYearThresholdOut
+ *
+ * OQ-2: the source actually used, named and pinned (AC-22).
+ */
+export type TaxPracticeTwoYearThresholdOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Percent
+     */
+    percent: string;
+    /**
+     * Source
+     */
+    source: 'checklist_parameter' | 'variance_policy';
+    /**
+     * Source Label
+     */
+    source_label: string;
+    /**
+     * Version Id
+     */
+    version_id: string;
+};
+
+/**
  * TaxProfileFileOut
  *
  * A file staged for a transcript or an authorization: scanned before storage, named by id
@@ -67781,7 +69439,7 @@ export type WorkbookAllocationStructureOut = {
     /**
      * Proposed By
      */
-    proposed_by?: 'human' | 'agent' | null;
+    proposed_by?: 'agent' | 'human' | null;
     /**
      * Results
      */
@@ -71280,6 +72938,126 @@ export type WebhookAcceptedOutWritable = {
     [key: string]: unknown;
 };
 
+export type AarData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Aar Id
+         */
+        aar_id: string;
+    };
+    query?: never;
+    url: '/v1/aars/{aar_id}';
+};
+
+export type AarErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AarError = AarErrors[keyof AarErrors];
+
+export type AarResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeAarOut;
+};
+
+export type AarResponse = AarResponses[keyof AarResponses];
+
+export type AarRecommendationData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Aar Id
+         */
+        aar_id: string;
+    };
+    query?: never;
+    url: '/v1/aars/{aar_id}/recommendation:draft';
+};
+
+export type AarRecommendationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AarRecommendationError = AarRecommendationErrors[keyof AarRecommendationErrors];
+
+export type AarRecommendationResponses = {
+    /**
+     * Successful Response
+     */
+    202: TaxPracticeRunStartedOut;
+};
+
+export type AarRecommendationResponse = AarRecommendationResponses[keyof AarRecommendationResponses];
+
 export type CreateFeedbackData = {
     body: AgentFeedbackIn;
     headers: {
@@ -72533,6 +74311,195 @@ export type ListCapabilitiesResponses = {
 };
 
 export type ListCapabilitiesResponse = ListCapabilitiesResponses[keyof ListCapabilitiesResponses];
+
+export type AmendmentData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Amendment Id
+         */
+        amendment_id: string;
+    };
+    query?: {
+        /**
+         * Jurisdiction
+         */
+        jurisdiction?: 'federal' | 'il';
+    };
+    url: '/v1/amendments/{amendment_id}';
+};
+
+export type AmendmentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AmendmentError = AmendmentErrors[keyof AmendmentErrors];
+
+export type AmendmentResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeAmendmentOut;
+};
+
+export type AmendmentResponse = AmendmentResponses[keyof AmendmentResponses];
+
+export type AmendmentExplanationData = {
+    body: TaxPracticeAmendmentExplanationIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Amendment Id
+         */
+        amendment_id: string;
+    };
+    query?: never;
+    url: '/v1/amendments/{amendment_id}/explanation';
+};
+
+export type AmendmentExplanationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AmendmentExplanationError = AmendmentExplanationErrors[keyof AmendmentExplanationErrors];
+
+export type AmendmentExplanationResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeAmendmentOut;
+};
+
+export type AmendmentExplanationResponse = AmendmentExplanationResponses[keyof AmendmentExplanationResponses];
+
+export type AmendmentDraftData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Amendment Id
+         */
+        amendment_id: string;
+    };
+    query?: never;
+    url: '/v1/amendments/{amendment_id}/proposals:draft';
+};
+
+export type AmendmentDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AmendmentDraftError = AmendmentDraftErrors[keyof AmendmentDraftErrors];
+
+export type AmendmentDraftResponses = {
+    /**
+     * Successful Response
+     */
+    202: TaxPracticeRunStartedOut;
+};
+
+export type AmendmentDraftResponse = AmendmentDraftResponses[keyof AmendmentDraftResponses];
 
 export type AcceptFluxLineData = {
     body?: never;
@@ -86042,7 +88009,7 @@ export type ListClientsData = {
         /**
          * Service Line
          */
-        service_line?: 'audit' | 'tax' | 'cas' | 'advisory' | null;
+        service_line?: 'tax' | 'audit' | 'cas' | 'advisory' | null;
         /**
          * Status
          */
@@ -95211,7 +97178,7 @@ export type EngagementIndexData = {
         /**
          * Service Line
          */
-        service_line?: 'audit' | 'tax' | 'cas' | 'advisory' | null;
+        service_line?: 'tax' | 'audit' | 'cas' | 'advisory' | null;
         /**
          * Status
          */
@@ -118334,6 +120301,212 @@ export type FileTreeResponses = {
 
 export type FileTreeResponse = FileTreeResponses[keyof FileTreeResponses];
 
+export type FilingDeadlinesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * From
+         */
+        from: string;
+        /**
+         * To
+         */
+        to: string;
+        /**
+         * View
+         */
+        view?: 'month' | 'week' | 'list';
+        /**
+         * Office Id
+         */
+        office_id?: string | null;
+        /**
+         * Service
+         */
+        service?: 'tax' | 'audit' | 'cas' | 'advisory' | null;
+        /**
+         * Person Id
+         */
+        person_id?: string | null;
+        /**
+         * Risk
+         */
+        risk?: 'overdue' | 'due_7' | 'due_30' | 'later' | 'done' | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/filing-deadlines';
+};
+
+export type FilingDeadlinesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FilingDeadlinesError = FilingDeadlinesErrors[keyof FilingDeadlinesErrors];
+
+export type FilingDeadlinesResponses = {
+    /**
+     * Successful Response
+     */
+    200: FilingDeadlineCalendarOut;
+};
+
+export type FilingDeadlinesResponse = FilingDeadlinesResponses[keyof FilingDeadlinesResponses];
+
+export type FilingDeadlinesExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Format
+         */
+        format: 'xlsx' | 'ics';
+        /**
+         * From
+         */
+        from: string;
+        /**
+         * To
+         */
+        to: string;
+    };
+    url: '/v1/filing-deadlines/export';
+};
+
+export type FilingDeadlinesExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FilingDeadlinesExportError = FilingDeadlinesExportErrors[keyof FilingDeadlinesExportErrors];
+
+export type FilingDeadlinesExportResponses = {
+    /**
+     * Response Filing Deadlines Export
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type FilingDeadlinesExportResponse = FilingDeadlinesExportResponses[keyof FilingDeadlinesExportResponses];
+
+export type FilingDeadlineData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Filing Deadline Id
+         */
+        filing_deadline_id: string;
+    };
+    query?: never;
+    url: '/v1/filing-deadlines/{filing_deadline_id}';
+};
+
+export type FilingDeadlineErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FilingDeadlineError = FilingDeadlineErrors[keyof FilingDeadlineErrors];
+
+export type FilingDeadlineResponses = {
+    /**
+     * Successful Response
+     */
+    200: FilingDeadlineDetailOut;
+};
+
+export type FilingDeadlineResponse = FilingDeadlineResponses[keyof FilingDeadlineResponses];
+
 export type AuditFindingData = {
     body?: never;
     headers?: {
@@ -136901,6 +139074,637 @@ export type ReadNotificationResponses = {
 
 export type ReadNotificationResponse = ReadNotificationResponses[keyof ReadNotificationResponses];
 
+export type PlanningOpportunitiesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Status
+         */
+        status?: 'open' | 'raised' | 'accepted' | 'declined' | 'not_screened' | 'dismissed' | null;
+        /**
+         * Client Id
+         */
+        client_id?: string | null;
+        /**
+         * Work Item Id
+         */
+        work_item_id?: string | null;
+        /**
+         * Include Dismissed
+         */
+        include_dismissed?: boolean;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/planning-opportunities';
+};
+
+export type PlanningOpportunitiesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PlanningOpportunitiesError = PlanningOpportunitiesErrors[keyof PlanningOpportunitiesErrors];
+
+export type PlanningOpportunitiesResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeOpportunityListOut;
+};
+
+export type PlanningOpportunitiesResponse = PlanningOpportunitiesResponses[keyof PlanningOpportunitiesResponses];
+
+export type PlanningCreateData = {
+    body: TaxPracticeOpportunityCreateIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/planning-opportunities';
+};
+
+export type PlanningCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PlanningCreateError = PlanningCreateErrors[keyof PlanningCreateErrors];
+
+export type PlanningCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: TaxPracticeOpportunityOut;
+};
+
+export type PlanningCreateResponse = PlanningCreateResponses[keyof PlanningCreateResponses];
+
+export type PlanningOpportunityData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Opportunity Id
+         */
+        opportunity_id: string;
+    };
+    query?: never;
+    url: '/v1/planning-opportunities/{opportunity_id}';
+};
+
+export type PlanningOpportunityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PlanningOpportunityError = PlanningOpportunityErrors[keyof PlanningOpportunityErrors];
+
+export type PlanningOpportunityResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeOpportunityOut;
+};
+
+export type PlanningOpportunityResponse = PlanningOpportunityResponses[keyof PlanningOpportunityResponses];
+
+export type PlanningCreateProjectData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Opportunity Id
+         */
+        opportunity_id: string;
+    };
+    query?: never;
+    url: '/v1/planning-opportunities/{opportunity_id}:create-project';
+};
+
+export type PlanningCreateProjectErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PlanningCreateProjectError = PlanningCreateProjectErrors[keyof PlanningCreateProjectErrors];
+
+export type PlanningCreateProjectResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeProjectPrefillOut;
+};
+
+export type PlanningCreateProjectResponse = PlanningCreateProjectResponses[keyof PlanningCreateProjectResponses];
+
+export type PlanningDeclineData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Opportunity Id
+         */
+        opportunity_id: string;
+    };
+    query?: never;
+    url: '/v1/planning-opportunities/{opportunity_id}:decline';
+};
+
+export type PlanningDeclineErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PlanningDeclineError = PlanningDeclineErrors[keyof PlanningDeclineErrors];
+
+export type PlanningDeclineResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeOpportunityOut;
+};
+
+export type PlanningDeclineResponse = PlanningDeclineResponses[keyof PlanningDeclineResponses];
+
+export type PlanningDismissData = {
+    body: TaxPracticeDismissIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Opportunity Id
+         */
+        opportunity_id: string;
+    };
+    query?: never;
+    url: '/v1/planning-opportunities/{opportunity_id}:dismiss';
+};
+
+export type PlanningDismissErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PlanningDismissError = PlanningDismissErrors[keyof PlanningDismissErrors];
+
+export type PlanningDismissResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeOpportunityOut;
+};
+
+export type PlanningDismissResponse = PlanningDismissResponses[keyof PlanningDismissResponses];
+
+export type PlanningPrepareRaiseData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Opportunity Id
+         */
+        opportunity_id: string;
+    };
+    query?: never;
+    url: '/v1/planning-opportunities/{opportunity_id}:prepare-raise';
+};
+
+export type PlanningPrepareRaiseErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PlanningPrepareRaiseError = PlanningPrepareRaiseErrors[keyof PlanningPrepareRaiseErrors];
+
+export type PlanningPrepareRaiseResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeRaiseSheetOut;
+};
+
+export type PlanningPrepareRaiseResponse = PlanningPrepareRaiseResponses[keyof PlanningPrepareRaiseResponses];
+
+export type PlanningRaiseData = {
+    body: TaxPracticeRaiseIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Opportunity Id
+         */
+        opportunity_id: string;
+    };
+    query?: never;
+    url: '/v1/planning-opportunities/{opportunity_id}:raise';
+};
+
+export type PlanningRaiseErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PlanningRaiseError = PlanningRaiseErrors[keyof PlanningRaiseErrors];
+
+export type PlanningRaiseResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeOpportunityOut;
+};
+
+export type PlanningRaiseResponse = PlanningRaiseResponses[keyof PlanningRaiseResponses];
+
+export type PlanningRestoreData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Opportunity Id
+         */
+        opportunity_id: string;
+    };
+    query?: never;
+    url: '/v1/planning-opportunities/{opportunity_id}:restore';
+};
+
+export type PlanningRestoreErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PlanningRestoreError = PlanningRestoreErrors[keyof PlanningRestoreErrors];
+
+export type PlanningRestoreResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeOpportunityOut;
+};
+
+export type PlanningRestoreResponse = PlanningRestoreResponses[keyof PlanningRestoreResponses];
+
+export type PlanningSummaryData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Tax Year
+         */
+        tax_year: number;
+        /**
+         * Partner Id
+         */
+        partner_id?: string | null;
+    };
+    url: '/v1/planning-summary';
+};
+
+export type PlanningSummaryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PlanningSummaryError = PlanningSummaryErrors[keyof PlanningSummaryErrors];
+
+export type PlanningSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticePlanningSummaryOut;
+};
+
+export type PlanningSummaryResponse = PlanningSummaryResponses[keyof PlanningSummaryResponses];
+
 export type PutAgentStageData = {
     body: AgentStageIn;
     headers?: {
@@ -144635,6 +147439,65 @@ export type UndoBatchResponses = {
 
 export type UndoBatchResponse = UndoBatchResponses[keyof UndoBatchResponses];
 
+export type PostponementApplicationData = {
+    body: FilingDeadlinePostponementIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/postponement-applications';
+};
+
+export type PostponementApplicationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PostponementApplicationError = PostponementApplicationErrors[keyof PostponementApplicationErrors];
+
+export type PostponementApplicationResponses = {
+    /**
+     * Successful Response
+     */
+    201: FilingDeadlinePostponementOut;
+};
+
+export type PostponementApplicationResponse = PostponementApplicationResponses[keyof PostponementApplicationResponses];
+
 export type ProposalApproveData = {
     body: ApproveProposalIn;
     headers?: {
@@ -149281,6 +152144,636 @@ export type RecordRecentResponses = {
 
 export type RecordRecentResponse = RecordRecentResponses[keyof RecordRecentResponses];
 
+export type SeasonAskAnswerData = {
+    body: SeasonAskAnswerIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Ask Id
+         */
+        ask_id: string;
+    };
+    query?: never;
+    url: '/v1/season-asks/{ask_id}/answer';
+};
+
+export type SeasonAskAnswerErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SeasonAskAnswerError = SeasonAskAnswerErrors[keyof SeasonAskAnswerErrors];
+
+export type SeasonAskAnswerResponses = {
+    /**
+     * Successful Response
+     */
+    200: SeasonAskOut;
+};
+
+export type SeasonAskAnswerResponse = SeasonAskAnswerResponses[keyof SeasonAskAnswerResponses];
+
+export type SeasonCohortApproveData = {
+    body: SeasonCohortApproveIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Cohort Id
+         */
+        cohort_id: string;
+    };
+    query?: never;
+    url: '/v1/season-cohorts/{cohort_id}/approve';
+};
+
+export type SeasonCohortApproveErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SeasonCohortApproveError = SeasonCohortApproveErrors[keyof SeasonCohortApproveErrors];
+
+export type SeasonCohortApproveResponses = {
+    /**
+     * Successful Response
+     */
+    201: SeasonApprovalOut;
+};
+
+export type SeasonCohortApproveResponse = SeasonCohortApproveResponses[keyof SeasonCohortApproveResponses];
+
+export type SeasonCohortRowsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Cohort Id
+         */
+        cohort_id: string;
+    };
+    query?: {
+        /**
+         * Exceptions Only
+         */
+        exceptions_only?: boolean;
+        /**
+         * Office Id
+         */
+        office_id?: string | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/season-cohorts/{cohort_id}/rows';
+};
+
+export type SeasonCohortRowsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SeasonCohortRowsError = SeasonCohortRowsErrors[keyof SeasonCohortRowsErrors];
+
+export type SeasonCohortRowsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SeasonManifestRowListOut;
+};
+
+export type SeasonCohortRowsResponse = SeasonCohortRowsResponses[keyof SeasonCohortRowsResponses];
+
+export type SeasonRowsExcludeData = {
+    body: SeasonRowsExcludeIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Cohort Id
+         */
+        cohort_id: string;
+    };
+    query?: never;
+    url: '/v1/season-cohorts/{cohort_id}/rows:exclude';
+};
+
+export type SeasonRowsExcludeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SeasonRowsExcludeError = SeasonRowsExcludeErrors[keyof SeasonRowsExcludeErrors];
+
+export type SeasonRowsExcludeResponses = {
+    /**
+     * Successful Response
+     */
+    200: SeasonManifestRowListOut;
+};
+
+export type SeasonRowsExcludeResponse = SeasonRowsExcludeResponses[keyof SeasonRowsExcludeResponses];
+
+export type SeasonCohortWithdrawData = {
+    body: SeasonCohortWithdrawIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Cohort Id
+         */
+        cohort_id: string;
+    };
+    query?: never;
+    url: '/v1/season-cohorts/{cohort_id}/withdraw-approval';
+};
+
+export type SeasonCohortWithdrawErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SeasonCohortWithdrawError = SeasonCohortWithdrawErrors[keyof SeasonCohortWithdrawErrors];
+
+export type SeasonCohortWithdrawResponses = {
+    /**
+     * Successful Response
+     */
+    200: SeasonCohortOut;
+};
+
+export type SeasonCohortWithdrawResponse = SeasonCohortWithdrawResponses[keyof SeasonCohortWithdrawResponses];
+
+export type SeasonRowPatchData = {
+    body: SeasonRowPatchIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Row Id
+         */
+        row_id: string;
+    };
+    query?: never;
+    url: '/v1/season-manifest-rows/{row_id}';
+};
+
+export type SeasonRowPatchErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SeasonRowPatchError = SeasonRowPatchErrors[keyof SeasonRowPatchErrors];
+
+export type SeasonRowPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: SeasonManifestRowOut;
+};
+
+export type SeasonRowPatchResponse = SeasonRowPatchResponses[keyof SeasonRowPatchResponses];
+
+export type SeasonsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/seasons';
+};
+
+export type SeasonsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SeasonsError = SeasonsErrors[keyof SeasonsErrors];
+
+export type SeasonsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SeasonListOut;
+};
+
+export type SeasonsResponse = SeasonsResponses[keyof SeasonsResponses];
+
+export type SeasonManifestBuildData = {
+    body: SeasonManifestBuildIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Tax Year
+         */
+        tax_year: number;
+    };
+    query?: never;
+    url: '/v1/seasons/{tax_year}/manifests';
+};
+
+export type SeasonManifestBuildErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SeasonManifestBuildError = SeasonManifestBuildErrors[keyof SeasonManifestBuildErrors];
+
+export type SeasonManifestBuildResponses = {
+    /**
+     * Successful Response
+     */
+    202: SeasonManifestOut;
+};
+
+export type SeasonManifestBuildResponse = SeasonManifestBuildResponses[keyof SeasonManifestBuildResponses];
+
+export type SeasonManifestData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Tax Year
+         */
+        tax_year: number;
+        /**
+         * Manifest Id
+         */
+        manifest_id: string;
+    };
+    query?: never;
+    url: '/v1/seasons/{tax_year}/manifests/{manifest_id}';
+};
+
+export type SeasonManifestErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SeasonManifestError = SeasonManifestErrors[keyof SeasonManifestErrors];
+
+export type SeasonManifestResponses = {
+    /**
+     * Successful Response
+     */
+    200: SeasonManifestOut;
+};
+
+export type SeasonManifestResponse = SeasonManifestResponses[keyof SeasonManifestResponses];
+
+export type SeasonManifestExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Tax Year
+         */
+        tax_year: number;
+        /**
+         * Manifest Id
+         */
+        manifest_id: string;
+    };
+    query?: never;
+    url: '/v1/seasons/{tax_year}/manifests/{manifest_id}/export.xlsx';
+};
+
+export type SeasonManifestExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SeasonManifestExportError = SeasonManifestExportErrors[keyof SeasonManifestExportErrors];
+
+export type SeasonManifestExportResponses = {
+    /**
+     * Response Season Manifest Export
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type SeasonManifestExportResponse = SeasonManifestExportResponses[keyof SeasonManifestExportResponses];
+
 export type SignOffLadderData = {
     body?: never;
     headers?: {
@@ -149724,6 +153217,369 @@ export type CreateStandardResponses = {
 };
 
 export type CreateStandardResponse = CreateStandardResponses[keyof CreateStandardResponses];
+
+export type StandardsCheckConfirmData = {
+    body: TaxPracticeConfirmIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Result Id
+         */
+        result_id: string;
+    };
+    query?: never;
+    url: '/v1/standards-check-results/{result_id}:confirm';
+};
+
+export type StandardsCheckConfirmErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type StandardsCheckConfirmError = StandardsCheckConfirmErrors[keyof StandardsCheckConfirmErrors];
+
+export type StandardsCheckConfirmResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeCheckOut;
+};
+
+export type StandardsCheckConfirmResponse = StandardsCheckConfirmResponses[keyof StandardsCheckConfirmResponses];
+
+export type StandardsRunsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Form
+         */
+        form?: string | null;
+        /**
+         * Status
+         */
+        status?: 'queued' | 'running' | 'complete' | 'failed' | null;
+    };
+    url: '/v1/standards-runs';
+};
+
+export type StandardsRunsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type StandardsRunsError = StandardsRunsErrors[keyof StandardsRunsErrors];
+
+export type StandardsRunsResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeRunListOut;
+};
+
+export type StandardsRunsResponse = StandardsRunsResponses[keyof StandardsRunsResponses];
+
+export type StandardsRunStartData = {
+    body: TaxPracticeRunStartIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/standards-runs';
+};
+
+export type StandardsRunStartErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type StandardsRunStartError = StandardsRunStartErrors[keyof StandardsRunStartErrors];
+
+export type StandardsRunStartResponses = {
+    /**
+     * Successful Response
+     */
+    202: TaxPracticeRunOut;
+};
+
+export type StandardsRunStartResponse = StandardsRunStartResponses[keyof StandardsRunStartResponses];
+
+export type StandardsRunData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/v1/standards-runs/{run_id}';
+};
+
+export type StandardsRunErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type StandardsRunError = StandardsRunErrors[keyof StandardsRunErrors];
+
+export type StandardsRunResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeRunOut;
+};
+
+export type StandardsRunResponse = StandardsRunResponses[keyof StandardsRunResponses];
+
+export type StandardsRunChecksData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/standards-runs/{run_id}/items/{work_item_id}/checks';
+};
+
+export type StandardsRunChecksErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type StandardsRunChecksError = StandardsRunChecksErrors[keyof StandardsRunChecksErrors];
+
+export type StandardsRunChecksResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeCheckListOut;
+};
+
+export type StandardsRunChecksResponse = StandardsRunChecksResponses[keyof StandardsRunChecksResponses];
+
+export type StandardsRunRerunData = {
+    body: TaxPracticeRerunIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/v1/standards-runs/{run_id}:rerun';
+};
+
+export type StandardsRunRerunErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type StandardsRunRerunError = StandardsRunRerunErrors[keyof StandardsRunRerunErrors];
+
+export type StandardsRunRerunResponses = {
+    /**
+     * Successful Response
+     */
+    202: TaxPracticeRunOut;
+};
+
+export type StandardsRunRerunResponse = StandardsRunRerunResponses[keyof StandardsRunRerunResponses];
 
 export type ImportStandardsData = {
     body?: never;
@@ -151999,6 +155855,70 @@ export type ReturnRecordResponses = {
 
 export type ReturnRecordResponse = ReturnRecordResponses[keyof ReturnRecordResponses];
 
+export type AarCreateData = {
+    body: TaxPracticeAarCreateIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/aars';
+};
+
+export type AarCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AarCreateError = AarCreateErrors[keyof AarCreateErrors];
+
+export type AarCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: TaxPracticeAarOut;
+};
+
+export type AarCreateResponse = AarCreateResponses[keyof AarCreateResponses];
+
 export type RecordAckData = {
     body: EfileAckIn;
     headers: {
@@ -152351,6 +156271,70 @@ export type EntityAllocationPreviewResponses = {
 };
 
 export type EntityAllocationPreviewResponse = EntityAllocationPreviewResponses[keyof EntityAllocationPreviewResponses];
+
+export type AmendmentCreateData = {
+    body: TaxPracticeAmendmentCreateIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/amendments';
+};
+
+export type AmendmentCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AmendmentCreateError = AmendmentCreateErrors[keyof AmendmentCreateErrors];
+
+export type AmendmentCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: TaxPracticeAmendmentOut;
+};
+
+export type AmendmentCreateResponse = AmendmentCreateResponses[keyof AmendmentCreateResponses];
 
 export type ReturnAssignData = {
     body: AssignmentIn;
@@ -156382,6 +160366,325 @@ export type EntityTalliesResponses = {
 };
 
 export type EntityTalliesResponse = EntityTalliesResponses[keyof EntityTalliesResponses];
+
+export type TwoYearData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: {
+        /**
+         * Filter
+         */
+        filter?: 'all' | 'over_threshold';
+    };
+    url: '/v1/tax-returns/{return_id}/two-year';
+};
+
+export type TwoYearErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TwoYearError = TwoYearErrors[keyof TwoYearErrors];
+
+export type TwoYearResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeTwoYearOut;
+};
+
+export type TwoYearResponse = TwoYearResponses[keyof TwoYearResponses];
+
+export type TwoYearExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/two-year.xlsx';
+};
+
+export type TwoYearExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TwoYearExportError = TwoYearExportErrors[keyof TwoYearExportErrors];
+
+export type TwoYearExportResponses = {
+    /**
+     * Response Two Year Export
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type TwoYearExportResponse = TwoYearExportResponses[keyof TwoYearExportResponses];
+
+export type TwoYearExplanationData = {
+    body: TaxPracticeExplanationIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+        /**
+         * Line Key
+         */
+        line_key: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/two-year/lines/{line_key}/explanation';
+};
+
+export type TwoYearExplanationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TwoYearExplanationError = TwoYearExplanationErrors[keyof TwoYearExplanationErrors];
+
+export type TwoYearExplanationResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeTwoYearLineOut;
+};
+
+export type TwoYearExplanationResponse = TwoYearExplanationResponses[keyof TwoYearExplanationResponses];
+
+export type TwoYearAcceptData = {
+    body: TaxPracticeAcceptIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+        /**
+         * Line Key
+         */
+        line_key: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/two-year/lines/{line_key}/explanation:accept';
+};
+
+export type TwoYearAcceptErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TwoYearAcceptError = TwoYearAcceptErrors[keyof TwoYearAcceptErrors];
+
+export type TwoYearAcceptResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeTwoYearLineOut;
+};
+
+export type TwoYearAcceptResponse = TwoYearAcceptResponses[keyof TwoYearAcceptResponses];
+
+export type TwoYearExplainData = {
+    body: TaxPracticeExplainIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/two-year:explain';
+};
+
+export type TwoYearExplainErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TwoYearExplainError = TwoYearExplainErrors[keyof TwoYearExplainErrors];
+
+export type TwoYearExplainResponses = {
+    /**
+     * Successful Response
+     */
+    202: TaxPracticeRunStartedOut;
+};
+
+export type TwoYearExplainResponse = TwoYearExplainResponses[keyof TwoYearExplainResponses];
 
 export type WorkbookData = {
     body?: never;

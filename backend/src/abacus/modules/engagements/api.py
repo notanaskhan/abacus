@@ -171,6 +171,7 @@ from abacus.modules.engagements.routes import (
     router,
     work_items_router,
 )
+from abacus.modules.engagements.season_contract import season_router
 from abacus.modules.engagements.service import (
     CheckFacts,
     EngagementMetadata,
@@ -443,6 +444,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     client_imports_router,
     letter_router,  # C7 v1 letter half stub (N-02-T03): ENG-04 composer
     roll_forward_router,  # P-07-T55: ENG-13 v2, behind engagements.roll_forward_v2
+    season_router,  # T-08-T04: SS-1 season setup (stubs behind engagements.season_setup)
     router,
     work_items_router,
     firm_router,
