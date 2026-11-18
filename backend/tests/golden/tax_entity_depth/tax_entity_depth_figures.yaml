@@ -1,0 +1,66 @@
+# T-06-T19 (TASK-8630; ADR-078 independent author, solo edition; implementer of E3/E4/E8/E9 AY):
+# every figure the TXP-03, TXP-04, TXP-08 and TXP-09 contracts print, as a golden case with its
+# source, screen, state and parameter set. Amounts are quoted text read as Decimal.
+e3_register:
+  source: "TXP-03 spec acceptance; Ridgeline 2025 register"
+  screen: TXP-03
+  state: a
+  parameter_set: depreciation/ty2025
+  cost: "15752000"
+  prior: "1891667"
+  current: "733500"
+  accumulated: "2625167"
+  by_property: {elm_street: "169500", larimer: "360000", bergen: "204000"}
+e4_m3:
+  source: "TXP-04 spec acceptance"
+  screen: TXP-04
+  state: A
+  parameter_set: none
+  total_assets: "17914500"
+  rows:
+    - {item: "Interest income (Form 8916-A)", a: "24600", b: "0", c: "-6200", d: "18400"}
+    - {item: "Other items with no differences", a: "1231600", b: "0", c: "0", d: "1231600"}
+  part_i_line_11: "1256200"
+  analysis_line_1: "1250000"
+  permanent: "-6200"
+e4_m2:
+  source: "TXP-04 spec states B and C"
+  screen: TXP-04
+  state: B
+  parameter_set: none
+  beginning: "5610000"
+  net_income: "1250000"
+  schedule_l_line_21: "6866200"
+  drafted_off: "-6200"
+  fix_other_increase: "6200"
+e8_basis:
+  source: "TXP-08 spec acceptance"
+  screen: TXP-08
+  state: A
+  parameter_set: none
+  liabilities: "11048300"
+  partners:
+    - {name: "Ridgeline GP LLC", profit_pct: "2", tax_capital: "93124", share: "220966", outside: "314090"}
+    - {name: "Meera Shah", profit_pct: "38", tax_capital: "2529356", share: "4198354", outside: "6727710"}
+    - {name: "Pell Street Ventures LLC", profit_pct: "30", tax_capital: "1996860", share: "3314490", outside: "5311350"}
+    - {name: "Pell Street II LLC", profit_pct: "5", tax_capital: "332810", share: "552415", outside: "913820"}
+    - {name: "Jonah Feld", profit_pct: "25", tax_capital: "1914050", share: "2762075", outside: "4676125"}
+  total_outside: "17943095"
+  total_inside: "17914500"
+  premium: {paid: "360000", capital_acquired: "331405", placeholder: "28595"}
+e9_states:
+  source: "TXP-09 spec acceptance"
+  screen: TXP-09
+  state: A
+  parameter_set: ptet/ty2025
+  base: "1231600"
+  numerators: {IL: "566536", CO: "387954", NY: "277110"}
+  shares: {IL: "46.0", CO: "31.5", NY: "22.5"}
+  ptet: {IL: "28044", CO: "17070", NY: "18982"}
+  weights: {"Ridgeline GP LLC": "2", "Meera Shah": "38", "Pell Street Ventures LLC": "32.5", "Pell Street II LLC": "2.5", "Jonah Feld": "25"}
+  half_up: ["Jonah Feld"]
+  credits:
+    IL: ["561", "10657", "9114", "701", "7011"]
+    CO: ["341", "6486", "5548", "427", "4268"]
+    NY: ["380", "7213", "6169", "474", "4746"]
+  feld_total: "16025"
