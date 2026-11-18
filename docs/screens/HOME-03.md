@@ -29,6 +29,16 @@ Parity tier target: C (T-08 §5.5). Copy keys live in `apps/web/src/screens/HOME
 - DF-39: the subbar Segmented gains Insights behind its entitlement (I-01 owns the segment).
 - The footer cites Knowledge › Standards → KNW-04 section j (K-02).
 
+## Design deltas (T-08-T02, DEC-5601)
+Each row is the frame it amends (a handoff screenshot) and the build answer; no new token or colour is introduced.
+
+| Frame | Handoff | Build | Why |
+|---|---|---|---|
+| `HOME-03a.png` Sep 15 cell | 12 items | 12 = 8 × 1065 + 3 × 1120-S + 1 estimate row; TPL-13's 13 does not apply | OQ-12; F-07 R6 |
+| `HOME-03a.png` chips | risk shown by tint only | each chip's accessible name and a leading glyph carry the risk in words ("7 days left", "Past due") so risk never relies on colour | non-colour risk cue; F-07 Q1 |
+| `HOME-03a.png` done chips | Rao "1040 filed" Sep 11, Harborview "1065 synced" Sep 11 | green on the completion date; the Harborview export is not a deadline | OQ-4 |
+| subbar Segmented | four options | five: Insights shown behind its entitlement | DF-39 (I-01 owns the segment) |
+
 ## Links
 
 The designed links of the handoff link graph (link-contract rule 5); each is wired when its screen task builds the screen.

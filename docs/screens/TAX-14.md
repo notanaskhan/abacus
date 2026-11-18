@@ -24,6 +24,14 @@ Parity tier target: C (T-08 §5.5). Copy keys live in `apps/web/src/screens/TAX-
 - README: the eight named checks are drawn inline; the other 34 bind to data-presence checks or stay manual (OQ-3).
 - Check ids are namespaced in code as 1065-v4/C-17; the UI keeps 'C-17' (T-08-T02).
 
+## Design deltas (T-08-T02, DEC-5601)
+Each row is the frame it amends (a handoff screenshot) and the build answer; no new token or colour is introduced.
+
+| Frame | Handoff | Build | Why |
+|---|---|---|---|
+| `TAX-14a.png` check ids | "C-17", "C-31" | code key `1065-v4/C-17`; the UI keeps "C-17" | check-id namespace (component codes collide) |
+| `TAX-14a.png` unnamed checks | 8 of 42 named | the other 34 bind to data-presence checks or read "Needs review" for a reviewer to confirm | OQ-3 |
+
 ## Links
 
 The designed links of the handoff link graph (link-contract rule 5); each is wired when its screen task builds the screen.
