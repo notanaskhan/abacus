@@ -5,7 +5,7 @@
 // bar, and never totals a figure. Save stays disabled until an alert setting changes; a partner
 // reads the page with every band locked and Request more… still enabled (ADM-14 e). Overage shows
 // no amount (P-27).
-import type { BudgetAlertsOut, PlanRequestIn } from "@abacus/api-client";
+import type { BudgetAlertsOut } from "@abacus/api-client";
 import {
   billingRatesOptions,
   budgetAlertsGetOptions,
@@ -14,13 +14,11 @@ import {
   engagementBudgetsOptions,
   firmUsageOptions,
   planGetOptions,
-  planRequestsCreateMutation,
   settingsOverviewOptions,
 } from "@abacus/api-client/query";
 import {
   Button,
   DEFAULT_TZ,
-  Dialog,
   Fieldset,
   Pill,
   SettingsLayout,
@@ -39,6 +37,7 @@ import { type JSX, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { GROUPS } from "../ADM-01/copy";
 import { COPY as C } from "./copy";
+import { RequestMoreDialog } from "./RequestMore";
 
 export interface ADM14Props {
   /** A partner reads the page: every band locked, Request more… enabled (ADM-14 e). */
@@ -99,20 +98,12 @@ export function ADM14({
     initial.at100,
   );
   const [requestOpen, setRequestOpen] = useState(initial.requestOpen === true);
-  const [reason, setReason] = useState("");
-  const [seatsTo, setSeatsTo] = useState<string>("");
   const save = useMutation({
     ...budgetAlertsPutMutation(),
     onSuccess: () => {
       setAt100(undefined);
       void qc.invalidateQueries({ queryKey: budgetAlertsGetQueryKey() });
       toast.show(C.saved);
-    },
-  });
-  const request = useMutation({
-    ...planRequestsCreateMutation(),
-    onSuccess: () => {
-      setRequestOpen(false);
     },
   });
 
@@ -423,61 +414,7 @@ export function ADM14({
       >
         <div data-screen="ADM-14">{body}</div>
       </SettingsLayout>
-      <Dialog
-        open={requestOpen}
-        onOpenChange={setRequestOpen}
-        title={C.request.title}
-        action={
-          <Button
-            variant="primary"
-            disabled={reason.trim() === ""}
-            onClick={() => {
-              const input: PlanRequestIn = {
-                kind: "seats",
-                reason: reason.trim(),
-                to_value: Number(seatsTo || p?.seats.total || 0),
-              };
-              request.mutate({
-                headers: { "Idempotency-Key": `adm14-${crypto.randomUUID()}` },
-                body: input,
-              });
-            }}
-          >
-            {C.request.send}
-          </Button>
-        }
-      >
-        <div data-adm14="request" className="flex flex-col gap-[8px] p-[16px] text-[13px]">
-          <label className="flex items-center justify-between gap-[8px]">
-            <span className="text-ink-2">{C.request.seats}</span>
-            <input
-              type="number"
-              min={p?.seats.total ?? 0}
-              value={seatsTo === "" ? String(p?.seats.total ?? "") : seatsTo}
-              onChange={(e) => {
-                setSeatsTo(e.target.value);
-              }}
-              className="h-[30px] w-[96px] rounded-input bg-card px-[8px] text-right inset-ring-[0.5px] inset-ring-stroke"
-            />
-          </label>
-          <label className="flex flex-col gap-[4px]">
-            <span className="text-ink-2">{C.request.reason}</span>
-            <textarea
-              value={reason}
-              maxLength={2000}
-              onChange={(e) => {
-                setReason(e.target.value);
-              }}
-              className="min-h-[72px] rounded-input bg-card p-[8px] inset-ring-[0.5px] inset-ring-stroke"
-            />
-          </label>
-          {a?.partner_approver ? (
-            <p className="text-[12.5px] text-ink-3">
-              {C.request.approval(a.partner_approver.display_name)}
-            </p>
-          ) : null}
-        </div>
-      </Dialog>
+      <RequestMoreDialog open={requestOpen} onOpenChange={setRequestOpen} />
     </>
   );
 }

@@ -18,6 +18,7 @@ import type {
 } from "@abacus/api-client";
 import { nowMs } from "../../app-core/clock";
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
+import { alerts as adm14Alerts, plan as adm14Plan } from "../seed/adm14";
 import { getSeed, meFor } from "../seed";
 import {
   ASHFORD_CLIENT,
@@ -78,6 +79,13 @@ export function firmSettingsHandlers(
       return me === undefined ? json({ detail: "unknown_persona" }, 404) : json(me);
     },
     "GET /v1/firm/settings/overview": () => json(settingsOverview(viewer)),
+    // G-04-T18: the plan and the partner approver behind "Add seats" (ADM-01, ADM-02). IT/Security
+    // holds no plan.read (ADM-01e), so its plan answers 403 and the helper stays plain text.
+    "GET /v1/firm/plan": () =>
+      viewer === "security" ? json({ detail: "forbidden" }, 403) : json(adm14Plan()),
+    "GET /v1/firm/budget-alerts": () =>
+      viewer === "security" ? json({ detail: "forbidden" }, 403) : json(adm14Alerts()),
+    "POST /v1/firm/plan-requests": () => json({ status: "awaiting_partner" }, 201),
     "GET /v1/firm/settings/{section}": ({ params }) => {
       const found = section(params.section ?? "");
       return found === undefined ? json(NOT_FOUND, 404) : json(found);

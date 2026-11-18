@@ -59,6 +59,11 @@ export const COPY = {
   replaceLogo: "Replace…",
   seatsUsed: (used: number, total: number) => `${String(used)} of ${String(total)} used`,
   seatsFull: "All seats are assigned. Add seats before inviting another user.",
+  // The same sentence with "Add seats" as the link to the plan request dialog (G-04-T18; ADM-01
+  // spec: "Add seats" helper link → plan dialog).
+  seatsFullLead: "All seats are assigned. ",
+  addSeats: "Add seats",
+  seatsFullTail: " before inviting another user.",
   peopleLine: (partners: number, professionals: number, operations: number, seatless: number) =>
     `${String(partners)} partners · ${String(professionals)} professional staff · ${String(operations)} operations; ${String(seatless)} back-office staff hold no seat`,
   help: {

@@ -56,7 +56,7 @@ Copy keys live in `screens/ADM-01/copy.ts`; strings verbatim from spec.md. Key s
 | Section row "People"; At a glance People | ADM-02 `/settings/people` | built by G-01-T10 (fixture); wired in `routes/firm/settings.tsx` (DEC-195) |
 | Section row "Offices & teams"; At a glance Offices & teams; an office row | ADM-03 `/settings/offices` (`?expand=<code>`) | planned (G-01-T14) |
 | Security · AI policy · Consents · Developer · Integrations · Portal · Quality · Monitoring · Audit log | ADM-06 · ADM-04 · ADM-05 · ADM-09 · ADM-08 · ADM-10 · ADM-11 · ADM-12 · ADM-07 | planned (G-02, T-01, R-01, Q-05); "not built yet" in dev and fixture builds, hidden in production |
-| "Add seats" helper | ADM-14 plan dialog (`?ov=add-seats`) | fixture only until G-04 |
+| "Add seats" helper | ADM-14 plan request dialog (`RequestMoreDialog`, a `seats` request) | live once `/v1/firm/plan` answers (G-04-T18, DEC-5642); plain text otherwise |
 | "‹ Back" | the previous screen | live |
 
 Inbound: SHL-03 "Firm settings", SHL-06 first sign-in after provisioning (PLT-01).
@@ -85,7 +85,7 @@ Gradients in product UI, emoji, saturated blue toggles or links, heavy shadows, 
 | DEC-288 | The section list is the fourteen sections of G-01 §2.1 in four groups (FIRM · SECURITY & AI · CLIENTS · QUALITY), not the canvas's eight; unbuilt sections are planned (hidden in production) | One section list for every ADM screen | DEC-288 |
 | DEC-288 | The People line reads "…; 6 back-office staff hold no seat" computed from the People glance row's facts | Never typed | DEC-288 |
 | — | At a glance in production shows only rows whose owners registered a provider (People, Offices & teams); fixture mode shows all eleven for parity | AC2.1, AC2.2 | G-01 §3.2 |
-| — | "Add seats" helper and "Replace…" logo are planned controls (hidden in production) | G-04 owns seats purchase; logo upload is P-08's | G-01 §2.2 |
+| — | "Replace…" logo is a planned control (hidden in production); "Add seats" went live with G-04-T18 | Logo upload is P-08's | G-01 §2.2 |
 | DEC-352 | The step-up copy "Confirm it's you to save firm settings" has no handoff artboard | F-05 R10: G-01 decides the T12 slot's words | DEC-352 |
 
 ## Parity
