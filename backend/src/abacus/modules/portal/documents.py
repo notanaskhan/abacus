@@ -246,6 +246,7 @@ async def list_binders(ctx: AuthContext, scope_id: UUID | None) -> PortalBinderL
         ):
             continue
         closed = ref.status == "closed"
+        period = await _close_period(ctx, ref)
         items.append(
             PortalBinderRefOut(
                 id=ref.id,
@@ -253,11 +254,26 @@ async def list_binders(ctx: AuthContext, scope_id: UUID | None) -> PortalBinderL
                 year=year_of(ref.name),
                 closed=closed,
                 read_only=closed or engagement.archived,
+                close_id=ref.work_item_id if period is not None else None,
+                period=period,
             )
         )
     if not checked:
         await _scope_readable(ctx, [f for f in facts if f is not None])
     return PortalBinderListOut(items=items, total=len(items))
+
+
+async def _close_period(ctx: AuthContext, ref: PortalBinderRef) -> str | None:
+    """A close binder's period (C-01-T41): the binder's work item is the close (`closes`' key is
+    its work item); the caller already read this binder, so the close is inside its grant."""
+    if ref.kind != "close_intake":
+        return None
+    from abacus.modules.closes.api import close_for
+
+    try:
+        return (await close_for(ctx.tenant, ref.work_item_id)).period
+    except NotFound:
+        return None
 
 
 async def _scope_readable(ctx: AuthContext, facts: list[ScopeFacts]) -> None:
