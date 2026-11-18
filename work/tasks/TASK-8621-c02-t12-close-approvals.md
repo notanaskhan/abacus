@@ -24,3 +24,4 @@ Spec section: docs/plan/epics/C-02.md §3 F2 (CLS-07). Close entry projection wi
 
 ## Progress log
 - `2026-11-18` — Built in the S50 sequential stack (DEC-5621). Partial: the class limit per row needs K-02 to return the payload row's limit with the outcome (row class_limit is empty until then); the CLS-06 issue on reject is the closes consumer's (C-02-T19); the DB acceptance (Raj batch, the 14,900 refusal, Priya's Undo) runs as integration tests at the end pass. Open in Excel stays 501 (C-02-T19 export). Gates and tests run once at the S50 end pass (build first, test last).
+- `2026-11-18` — Completed (S50 round 2): K-02's EntryClassification now carries the listed class's `limit_usd`, and each CLS-07 row shows its class limit. The engagement authorise on every act landed in the S50 gate fixes (#2316).

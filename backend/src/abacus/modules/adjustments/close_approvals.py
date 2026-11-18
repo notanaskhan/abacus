@@ -101,7 +101,7 @@ class ClosedEntry:
     version: int
     classification: EntryClassification | None
     approval_label: str | None
-    # The class limit is the K-02 payload row's; it joins when K-02 exposes it with the outcome.
+    # The listed class's limit from K-02 (None for an unlisted class or an attest client).
     limit: Decimal | None = None
 
 
@@ -223,6 +223,9 @@ async def close_entries(ctx: AuthContext, work_item_id: UUID) -> CloseEntries:
                 version=int(str(r["version"])),
                 classification=cls,
                 approval_label=labels.get(entry_id),
+                limit=None
+                if cls is None or cls.limit_usd is None
+                else Decimal(cls.limit_usd).quantize(Decimal("0.01")),
             )
         )
     live = [e for e in entries if e.status != S.REJECTED]
