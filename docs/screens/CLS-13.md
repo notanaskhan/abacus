@@ -2,11 +2,37 @@
 
 | Field | Value |
 |---|---|
-| Route and params | None yet: fixture mode only. Route `/closes/1099?client=&year=` (alias `/closes/$closeId/1099`). |
+| Route and params | `/clients/$clientId/information-returns` (C-02 §5.1); artboards `/components/screens/CLS-13?st=…` |
+| Template and host frame | T1 IndexList |
 | Surface | firm |
-| Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/CLS-13 1099 W-9 tracker - Copperleaf 2026/` (README.md, spec.md, screenshots) |
-| Epic and tasks | C-02 · contract stub C-02-T07 (closes-delivery); design deltas C-02-T10; screen and live swap per `docs/plan/epics/C-02.tasks.csv` |
-| Manifest status | planned (this file holds the C-02-T10 design deltas until the screen task writes the full contract) |
+| Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/CLS-13 1099 W-9 tracker - Copperleaf 2026/` |
+| Epic and tasks | C-02 · SPEC-700, SPEC-701; screen contracts and scenarios C-02-T15 (TASK-8624); screen and live swap per `docs/plan/epics/C-02.tasks.csv` |
+| Manifest status | planned |
+
+Parity tier target: C (C-02 §5.5). Copy keys live in `apps/web/src/screens/CLS-13/copy.ts` when the screen task builds it; words from the handoff and the status vocabulary only. Fixtures come from the Python scenario through `make fixtures` (F-04-T31), never hand-written.
+
+## States
+| Letter | Artboard | Scenario | Persona | Clock (CT) | Build | Owner |
+|---|---|---|---|---|---|---|
+| a | September tracking | `see fixtures/scenarios/CLS-13.ts` | Raj Malhotra | Mon Sep 14, 9:24 AM | planned | AY |
+| b | W-9 request batch | `see fixtures/scenarios/CLS-13.ts` | Raj Malhotra | Mon 14 Sep 2026, 9:24 AM | planned | AY |
+| c | TIN mismatch | `see fixtures/scenarios/CLS-13.ts` | Elena Ruiz | Mon 14 Sep 2026, 9:24 AM | planned | AY |
+| d | January · approve batch | `see fixtures/scenarios/CLS-13.ts` | Raj Malhotra | Tue Jan 26, 2027 | planned | AY |
+| d2 | January · filed | `see fixtures/scenarios/CLS-13.ts` | Raj Malhotra | Mon 14 Sep 2026, 9:24 AM | planned | AY |
+| e | Prior year · 2025 | `see fixtures/scenarios/CLS-13.ts` | Raj Malhotra | Mon 14 Sep 2026, 9:24 AM | planned | AY |
+| f | Empty | `see fixtures/scenarios/CLS-13.ts` | Raj Malhotra | Mon 14 Sep 2026, 9:24 AM | planned | AY |
+
+## Deviations
+- Personas and clocks per state are in the scenario file. CLS-13c's README viewer cell names the vendor string; the state is Raj Malhotra's.
+
+## Links
+
+The designed links of the handoff link graph (link-contract rule 5); each is wired when its screen task builds the screen.
+
+| From | To | Status |
+|---|---|---|
+| Opens CLS-01 · Closes | CLS-01 | designed (handoff link graph) |
+| Opens SHL-08 · the signed Form W-9 | SHL-08 | designed (handoff link graph) |
 
 ## Design deltas (C-02-T10, DEC-5509)
 Each row is the frame it amends (an annotated handoff screenshot) and the build answer; none needs a backend change outside the C-02 backlog.

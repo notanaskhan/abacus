@@ -1,0 +1,44 @@
+// CLS-08 fixture scenarios (C-02-T15, DEC-5624; handoff CLS-08): Copperleaf August 2026 close package, released by Priya Raman.
+// Each artboard's persona and clock (CDT until Sun Nov 1, 2026; CST after). Data handlers join
+// with the screen task (fixtures from the Python scenario through `make fixtures`, never hand
+// written); until then every state serves the E0 seed and the closes and posting flags on.
+import { type Scenario, defineScenarios, json } from "../../app-core/fixture-mode";
+import { seedScenario } from "../scenario";
+import { getSeed } from "../seed";
+import { capabilitiesFor } from "../seed/shell";
+
+const E0 = seedScenario();
+
+function at(state: string, persona: string, clock: string): Scenario {
+  return {
+    state,
+    persona,
+    clock,
+    get handlers() {
+      return {
+        ...E0.handlers,
+        "GET /v1/me/capabilities": ({ persona: who }: { persona?: string | undefined }) => {
+          const base = capabilitiesFor(getSeed(), who ?? persona);
+          return json({
+            ...base,
+            flags: { ...base.flags, "closes.engine": true, "adjustments.posting": true },
+          });
+        },
+      };
+    },
+  };
+}
+
+export const scenarios = defineScenarios({
+  a: at("a", "priya-raman", "2026-09-14T16:10:00-05:00"),
+  a2: at("a2", "priya-raman", "2026-09-14T16:10:00-05:00"),
+  b: at("b", "priya-raman", "2026-09-14T16:10:00-05:00"),
+  c: at("c", "priya-raman", "2026-09-14T16:10:00-05:00"),
+  d: at("d", "priya-raman", "2026-09-14T16:25:00-05:00"),
+  e: at("e", "priya-raman", "2026-09-14T08:42:00-05:00"),
+  f: at("f", "priya-raman", "2026-09-14T16:10:00-05:00"),
+  g: at("g", "priya-raman", "2026-09-14T16:10:00-05:00"),
+});
+
+export type Cls08State = keyof typeof scenarios;
+export const INITIAL: Cls08State = "a";
