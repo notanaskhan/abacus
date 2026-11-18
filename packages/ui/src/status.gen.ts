@@ -7279,6 +7279,20 @@ export const STATUS_REGISTRY = {
       "terminal": true,
       "derived": false
     }
+  },
+  "quality_import": {
+    "dry_run": {
+      "label": "Dry run",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "published": {
+      "label": "Published",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    }
   }
 } as const;
 

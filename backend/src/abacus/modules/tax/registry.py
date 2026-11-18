@@ -1592,7 +1592,7 @@ INSERT_COLUMNS["amendment_explanation_versions"] = frozenset(
         "amendment_id",
         "author_kind",
         "created_by",
-        "edit_dif",
+        "edit_diff",
         "suggestion_id",
         "tenant_id",
         "text",

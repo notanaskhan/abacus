@@ -198,7 +198,7 @@ TABLES: tuple[tuple[str, str, tuple[str, ...], tuple[str, ...], bool], ...] = (
             UNIQUE (amendment_id, version_no),
             FOREIGN KEY (tenant_id, amendment_id) REFERENCES amendments (tenant_id, id),""",
      ("tenant_id", "amendment_id", "version_no", "text", "author_kind", "suggestion_id",
-      "edit_dif", "created_by"), (), True),
+      "edit_diff", "created_by"), (), True),
     ("return_supersessions", """
             original_work_item_id uuid NOT NULL,
             superseded_by_work_item_id uuid NOT NULL,

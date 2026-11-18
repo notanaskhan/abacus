@@ -53412,7 +53412,8 @@
             "title": "Internal Target On"
           },
           "item": {
-            "$ref": "#/components/schemas/FilingDeadlineItemOut"
+            "$ref": "#/components/schemas/FilingDeadlineItemOut",
+            "cls": "internal"
           },
           "original_due_on": {
             "cls": "internal",
@@ -53590,7 +53591,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "confidential"
           },
           "source_kind": {
             "cls": "internal",
@@ -117939,7 +117941,8 @@
             "type": "string"
           },
           "approved_by": {
-            "$ref": "#/components/schemas/SeasonPersonOut"
+            "$ref": "#/components/schemas/SeasonPersonOut",
+            "cls": "confidential"
           },
           "cohort_id": {
             "cls": "internal",
@@ -118037,7 +118040,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "confidential"
           },
           "answered_option": {
             "anyOf": [
@@ -118184,7 +118188,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "confidential"
           },
           "binders": {
             "cls": "internal",
@@ -118431,7 +118436,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "confidential"
           },
           "cohorts": {
             "cls": "internal",
@@ -118483,7 +118489,8 @@
             "type": "string"
           },
           "tally": {
-            "$ref": "#/components/schemas/SeasonTallyOut"
+            "$ref": "#/components/schemas/SeasonTallyOut",
+            "cls": "internal"
           },
           "tax_year": {
             "cls": "internal",
@@ -118674,7 +118681,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "confidential"
           },
           "request_count": {
             "cls": "internal",
@@ -118690,7 +118698,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "confidential"
           },
           "row_id": {
             "cls": "internal",
@@ -118712,7 +118721,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "confidential"
           },
           "signers": {
             "cls": "internal",
@@ -135585,7 +135595,8 @@
             "type": "string"
           },
           "tiles": {
-            "$ref": "#/components/schemas/TaxPracticeRunTilesOut"
+            "$ref": "#/components/schemas/TaxPracticeRunTilesOut",
+            "cls": "internal"
           }
         },
         "required": [
@@ -135739,8 +135750,8 @@
             "anyOf": [
               {
                 "enum": [
-                  "agent",
-                  "human"
+                  "human",
+                  "agent"
                 ],
                 "type": "string"
               },
@@ -135998,7 +136009,8 @@
             "type": "string"
           },
           "threshold": {
-            "$ref": "#/components/schemas/TaxPracticeTwoYearThresholdOut"
+            "$ref": "#/components/schemas/TaxPracticeTwoYearThresholdOut",
+            "cls": "internal"
           },
           "total_tax": {
             "cls": "restricted",
@@ -150715,8 +150727,8 @@
             "anyOf": [
               {
                 "enum": [
-                  "agent",
-                  "human"
+                  "human",
+                  "agent"
                 ],
                 "type": "string"
               },

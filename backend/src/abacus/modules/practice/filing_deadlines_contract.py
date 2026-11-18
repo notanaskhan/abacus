@@ -86,7 +86,7 @@ class FilingDeadlineItemOut(BaseModel):
     days_left: Annotated[int, Internal]
     risk_label: Annotated[str, Field(max_length=60), Internal]
     owners: Annotated[list[FilingDeadlineOwnerOut], Internal]
-    signer: FilingDeadlineOwnerOut | None = None
+    signer: Annotated[FilingDeadlineOwnerOut | None, Confidential] = None
     work_item_id: Annotated[UUID | None, Internal] = None
     href: Annotated[str | None, Field(max_length=200), Internal] = None
 
@@ -121,7 +121,7 @@ class FilingDeadlineDetailOut(BaseModel):
 
     model_config = _cfg()
 
-    item: FilingDeadlineItemOut
+    item: Annotated[FilingDeadlineItemOut, Internal]
     original_due_on: Annotated[date, Internal]
     extended_due_on: Annotated[date | None, Internal] = None
     extension_filed_on: Annotated[date | None, Internal] = None

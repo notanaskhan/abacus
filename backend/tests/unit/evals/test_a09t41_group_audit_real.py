@@ -49,7 +49,7 @@ def test_the_direct_route_a_missed_threshold_and_no_baseline_never_clear() -> No
         cap, "direct", rates, _attempts(), None, last_parity=None, today=TODAY
     )
     assert c["client_data"] == "none"
-    assert set(c["reasons"]) >= {  # type: ignore[arg-type]
+    assert set(c["reasons"]) >= {  # type: ignore[arg-type]  # reasons is a list[str]
         "not_the_production_route",
         "below_threshold:balanced",
         "cost_regression:no_baseline",
@@ -63,7 +63,7 @@ def test_a_failed_zero_tolerance_case_or_an_error_never_clears() -> None:
     c = g.capability_clearance(
         cap, "bedrock", _pass(cap), bad, Decimal("0.05"), last_parity=PARITY, today=TODAY
     )
-    assert {"zero_tolerance_case_failed", "errored"} <= set(c["reasons"])  # type: ignore[arg-type]
+    assert {"zero_tolerance_case_failed", "errored"} <= set(c["reasons"])  # type: ignore[arg-type]  # reasons is a list[str]
 
 
 def test_the_report_reads_each_capabilitys_baseline_tier_and_is_signed(

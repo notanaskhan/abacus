@@ -348,7 +348,7 @@ def in_force(edge: GraphEdge, as_of: date) -> bool:
     )
 
 
-def project(nodes: Sequence[GraphNode], edges: Sequence[GraphEdge], as_of: date) -> Graph:
+def projection(nodes: Sequence[GraphNode], edges: Sequence[GraphEdge], as_of: date) -> Graph:
     """The graph a person sees on `as_of`: edges in force that day whose two ends are both this
     client's nodes (an edge to a node outside the client never shows; DEC-43), nodes sorted by
     label, edges by kind then start."""
@@ -396,4 +396,4 @@ async def graph(tenant: TenantContext, client_id: UUID, as_of: date) -> Graph:
         GraphNode(r[0], "external_party", str(r[1]), facts.get(r[0], {})) for r in party_rows
     ]
     edges = [GraphEdge(r[0], r[1], r[2], str(r[3]), r[4], r[5], r[6]) for r in edge_rows]
-    return project(nodes, edges, as_of)
+    return projection(nodes, edges, as_of)

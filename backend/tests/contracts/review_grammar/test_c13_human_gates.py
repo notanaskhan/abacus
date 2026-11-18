@@ -127,6 +127,13 @@ EVENTS: Final = {
     # G-04 (plan requests awaiting the partner, C13).
     "plan_request.awaiting_partner",
     "plan_request.changed",
+    # S50: T-08 (season cohorts, amendments) and C-02 (held close entries, C-02-T14).
+    "season_cohort.ready_for_approval",
+    "season_cohort.approved",
+    "amendment.approval_requested",
+    "amendment.approved",
+    "proposed_entry.approval_requested",
+    "proposed_entry.approval_decided",
 }
 # Contract §2: firm admin, practice leader (in scope), quality partner, engagement partner,
 # manager, senior, staff, reviewer, EQR reviewer.

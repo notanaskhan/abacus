@@ -18,7 +18,8 @@ function at(state: Cls07Fixture, persona: string, clock: string): Scenario {
     get handlers() {
       return {
         ...E0.handlers,
-        "GET /v1/work-items/{work_item_id}/proposed-entries:close": () => json(closeEntries(state)),
+        "GET /v1/work-items/{work_item_id}/proposed-entries:close": () =>
+          json(closeEntries(state)),
         "GET /v1/work-items/{work_item_id}/proposed-entries": () =>
           json({ items: entries(state), next_cursor: null }),
         "GET /v1/me/capabilities": ({ persona: who }: { persona?: string | undefined }) => {

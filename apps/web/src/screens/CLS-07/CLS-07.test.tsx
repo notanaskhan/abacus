@@ -75,7 +75,9 @@ describe("CLS-07 Adjustments & thresholds", () => {
     show("a2", { initial: { batchOpen: true } });
     await rows();
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getAllByText("Approve 4 under BH AJE thresholds v2").length).toBeGreaterThan(0);
+    expect(
+      within(dialog).getAllByText("Approve 4 under BH AJE thresholds v2").length,
+    ).toBeGreaterThan(0);
     expect(within(dialog).getByText("$20,020.00")).toBeTruthy();
     expect(within(dialog).getByRole("button", { name: "Approve adjustments" })).toBeTruthy();
   });
@@ -83,7 +85,9 @@ describe("CLS-07 Adjustments & thresholds", () => {
   it("b: four approved in Raj's name, 4 of 5, Post 4 approved… while AJE-05 waits", async () => {
     show("b");
     await rows();
-    expect(screen.getAllByText("Approved by RM under BH AJE thresholds v2 · 9:31 AM")).toHaveLength(4);
+    expect(
+      screen.getAllByText("Approved by RM under BH AJE thresholds v2 · 9:31 AM"),
+    ).toHaveLength(4);
     expect(screen.getByText("4 of 5")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Post 4 approved…" })).toBeTruthy();
   });

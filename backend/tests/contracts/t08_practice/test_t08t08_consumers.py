@@ -115,8 +115,10 @@ def _operations() -> list[tuple[str, str, str]]:
     return found
 
 
-def test_the_three_stubs_declare_41_operations() -> None:
-    assert len(_operations()) == 41
+def test_the_three_stubs_declare_42_operations() -> None:
+    # SS-1 10 + FD-1 4 + TP-1 28, as docs/contracts lists them (the build-time count of 41 was
+    # off by one: TP-1's planning family has ten operations, not nine).
+    assert len(_operations()) == 42
 
 
 @pytest.mark.parametrize(("method", "path", "action"), _operations())

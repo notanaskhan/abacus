@@ -73,8 +73,15 @@ async def test_ac5_g5_is_registered_and_fails_closed(monkeypatch: pytest.MonkeyP
         raise RuntimeError
 
     monkeypatch.setattr(matrix_module, "reviewables_of", broken)
-    fact = await gate_fact(TenantContext(uuid4(), "system", "test"), uuid4(), "G5")
+    tenant = TenantContext(uuid4(), "system", "test")
+    # Review's provider fails closed. Once assurance's api is imported in the same process it
+    # takes G5 over (A-06-T15, DEC-2215), so the registered provider depends on what else the
+    # worker imported: the registration is checked as "some provider", the fail-closed rule on
+    # review's own provider (S50 end pass: the test was order-dependent under xdist).
+    fact = await matrix_module.review_gate(tenant, uuid4())
     assert (fact.met, fact.blockers) == (False, ("review_unavailable",))
+    registered = await gate_fact(tenant, uuid4(), "G5")
+    assert registered.blockers != ("no_gate_provider",)
 
 
 def test_ac2_people_raise_answer_and_clear_notes() -> None:

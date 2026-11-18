@@ -63,7 +63,11 @@ const manifest: SeasonManifestOut = {
   planner_available: true,
 };
 
-const SEP15 = [...Array(8).fill("1065"), ...Array(3).fill("1120-S"), "1040-ES"];
+const SEP15: string[] = [
+  ...Array<string>(8).fill("1065"),
+  ...Array<string>(3).fill("1120-S"),
+  "1040-ES",
+];
 const calendar: FilingDeadlineCalendarOut = {
   view: "month",
   window_from: "2026-08-30",
@@ -73,7 +77,7 @@ const calendar: FilingDeadlineCalendarOut = {
   items: SEP15.map((form, i) => ({
     filing_deadline_id: id(100 + i),
     source_kind: form === "1040-ES" ? "estimate_batch" : "tax_return",
-    client_name: `Client ${i + 1}`,
+    client_name: `Client ${String(i + 1)}`,
     filing_label: form,
     due_on: "2026-09-15",
     original_due_on: form === "1040-ES" ? "2026-09-15" : "2026-03-16",

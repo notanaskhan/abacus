@@ -52,7 +52,7 @@ function cents(v: string): number {
 }
 
 function dollars(c: number): string {
-  return `${Math.trunc(c / 100)}.${String(c % 100).padStart(2, "0")}`;
+  return `${String(Math.trunc(c / 100))}.${String(c % 100).padStart(2, "0")}`;
 }
 
 interface Row {
@@ -72,22 +72,34 @@ function rowsOf(state: Cls07Fixture): Row[] {
       case "a":
       case "a2":
       case "g":
-        return { e, status: state === "g" ? "review_required" : (e.initial as ProposedEntryStatus), label: null };
+        return {
+          e,
+          status: state === "g" ? "review_required" : (e.initial as ProposedEntryStatus),
+          label: null,
+        };
       case "f":
         // DEC-53 / ADR-187: the policy-acceptance frame is fixture-only, never live.
         return within
           ? { e, status: "approved", label: `Accepted by Policy · ${POLICY}` }
           : { e, status: "review_required", label: null };
       case "b":
-        return within ? { e, status: "approved", label: batch } : { e, status: "review_required", label: null };
+        return within
+          ? { e, status: "approved", label: batch }
+          : { e, status: "review_required", label: null };
       case "c":
-        return within ? { e, status: "approved", label: batch } : { e, status: "review_required", label: null };
+        return within
+          ? { e, status: "approved", label: batch }
+          : { e, status: "review_required", label: null };
       case "c2":
         return { e, status: "approved", label: within ? batch : held };
       case "d":
         return { e, status: "posted", label: within ? batch : held };
       case "e":
-        return { e, status: e.ref === FAILED_REF ? "failed_post" : "posted", label: within ? batch : held };
+        return {
+          e,
+          status: e.ref === FAILED_REF ? "failed_post" : "posted",
+          label: within ? batch : held,
+        };
     }
   });
 }
@@ -100,7 +112,8 @@ function allowed(
   row: Row,
   persona: Persona,
 ): NonNullable<PostingCloseEntryRowOut["allowed_actions"]> {
-  if (row.status === "within_threshold") return ["proposed_entry.approve", "proposed_entry.reject_close"];
+  if (row.status === "within_threshold")
+    return ["proposed_entry.approve", "proposed_entry.reject_close"];
   if (row.status === "review_required") {
     return persona === "priya-raman"
       ? ["proposed_entry.approve", "proposed_entry.reject_close"]
@@ -122,7 +135,12 @@ export function closeEntries(state: Cls07Fixture): PostingCloseEntriesOut {
   const live = rows.filter((r) => r.status !== "rejected");
   const within = live.filter((r) => r.e.initial === "within_threshold" && state !== "g");
   const review = live.filter((r) => !within.includes(r));
-  const done = new Set<ProposedEntryStatus>(["approved", "posted", "failed_post", "recorded_externally"]);
+  const done = new Set<ProposedEntryStatus>([
+    "approved",
+    "posted",
+    "failed_post",
+    "recorded_externally",
+  ]);
   const posted = rows.every((r) => r.status === "posted");
   return {
     items: rows.map((r) => ({

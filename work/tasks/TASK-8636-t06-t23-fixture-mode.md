@@ -2,7 +2,7 @@
 id: TASK-8636
 title: "T-06-T23: Fixture mode for the eight T-06 screens (44 artboards)"
 spec: SPEC-702
-acceptance_criteria: []
+acceptance_criteria: [AC-19, AC-34]
 risk_zone: green
 status: in-review
 branch: t06-t23-fixture-mode

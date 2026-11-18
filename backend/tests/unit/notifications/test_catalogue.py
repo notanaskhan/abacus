@@ -49,6 +49,28 @@ def test_the_realtime_invalidations_subscribe_apart_from_the_catalogue() -> None
 
 def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
     assert set(CATALOGUE) == {
+        # S50: T-08 season, deadlines and practice tools; Q-05 quality and records (DEC-5602,
+        # DEC-5609).
+        "aar.decision_requested",
+        "amendment.approval_requested",
+        "consultation.concluded",
+        "consultation.difference_recorded",
+        "consultation.requested",
+        "destruction_batch.approval_requested",
+        "destruction_batch.assembled",
+        "destruction_batch.destroyed",
+        "filing_deadline.approaching",
+        "inspection.assigned",
+        "post_issuance.case_opened",
+        "post_issuance.decision_requested",
+        "qm_evaluation.due",
+        "qm_finding.assigned",
+        "qm_finding.due",
+        "season_cohort.executed",
+        "season_cohort.ready_for_approval",
+        "season_row.failed",
+        "standards_run.completed",
+        "variance_explanations.ready",
         # S49: C-02 posting, delivery and the 1099 tracker; T-06 hand-offs and decisions.
         "close_deliverable.client_approved",
         "posting_batch.failed",

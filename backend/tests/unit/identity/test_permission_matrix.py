@@ -199,7 +199,15 @@ def _arranged(
     (test_matrix_conditions.py, tests/security/test_resolution_actions_generated.py)."""
     if role in FIRM_ROLES:
         ctx = _ctx(firm_role=role, mfa_ago=mfa_ago)
-        return ctx, _resource(ctx.tenant_id, archived=archived)
+        # Q-05-T02: the firm-level conditions (consulted person, distinct approver role,
+        # monitoring reviewer) read their target's facts; met here, tested in
+        # test_matrix_conditions.py.
+        return ctx, Resource(
+            ctx.tenant_id,
+            None,
+            archived,
+            target=TargetFacts(consulted=True, distinct_approver=True, monitoring_reader=True),
+        )
     ctx = _ctx(mfa_ago=mfa_ago)
     engagement.role = role
     resource = Resource(
@@ -216,6 +224,9 @@ def _arranged(
             source_released=True,  # T-06-T03 `tb_handoff_source_released`
             same_client=True,  # T-06-T03 `same_client`
             owner_contact=True,  # T-06-T03 `decision_owner_contact`
+            consulted=True,  # Q-05-T02 `consulted_person`
+            distinct_approver=True,  # Q-05-T02 `distinct_approver_role`
+            monitoring_reader=True,  # Q-05-T02 `monitoring_reviewer`
         ),
     )
     return ctx, resource

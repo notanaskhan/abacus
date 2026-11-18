@@ -5,14 +5,18 @@
 // /v1/approval-batches`, SHL-10 batch variant); a held entry is approved by a Manager or Partner
 // with a 10-second Undo. The attest client never shows Post (DEC-69); with posting off the
 // primary is "Export approved entries…" (DF-19). Accrued Agent never approves.
-import type { EntryOut, PostingCloseEntriesOut, PostingCloseEntryRowOut } from "@abacus/api-client";
+import type {
+  EntryOut,
+  PostingCloseEntriesOut,
+  PostingCloseEntryRowOut,
+} from "@abacus/api-client";
 import {
   approvalBatchMutation,
   approveEntryMutation,
   closeEntriesOptions,
   closeEntriesQueryKey,
   proposedEntriesOptions,
-  requestApproval2Mutation,
+  postingRequestApprovalMutation,
   undoApprovalMutation,
 } from "@abacus/api-client/query";
 import {
@@ -76,16 +80,19 @@ function Disc({ row }: { row: PostingCloseEntryRowOut }): JSX.Element {
 
 function Tallies({ view }: { view: PostingCloseEntriesOut }): JSX.Element {
   const t = view.tallies;
-  const pair = (n: number, v: string): string => `${n} · ${amount(v).text}`;
+  const pair = (n: number, v: string): string => `${String(n)} · ${amount(v).text}`;
   return (
     <TallyStrip
       className="px-[12px]"
       label={C.tallyLabel}
       items={[
         { label: C.tally.proposed, value: pair(t.proposed.count, t.proposed.amount) },
-        { label: C.tally.within, value: pair(t.within_threshold.count, t.within_threshold.amount) },
+        {
+          label: C.tally.within,
+          value: pair(t.within_threshold.count, t.within_threshold.amount),
+        },
         { label: C.tally.review, value: pair(t.review_required.count, t.review_required.amount) },
-        { label: C.tally.approved, value: `${t.approved} of ${t.of}` },
+        { label: C.tally.approved, value: `${String(t.approved)} of ${String(t.of)}` },
         {
           label: C.tally.posted,
           pill:
@@ -118,7 +125,10 @@ function Detail({
   const held = row.status === "review_required";
   const lines = entry?.lines ?? [];
   return (
-    <section aria-label={`${row.ref} · ${row.description ?? ""}`} className="flex min-h-0 flex-col">
+    <section
+      aria-label={`${row.ref} · ${row.description ?? ""}`}
+      className="flex min-h-0 flex-col"
+    >
       <header className="flex h-[46px] items-center justify-center text-[13px] font-medium">
         {`${row.ref} · ${row.description ?? ""}`}
       </header>
@@ -237,7 +247,7 @@ export function CLS07(props: CLS07Props): JSX.Element {
   };
   const batch = useMutation({ ...approvalBatchMutation(), onSuccess: refresh });
   const approve = useMutation({ ...approveEntryMutation(), onSuccess: refresh });
-  const request = useMutation({ ...requestApproval2Mutation(), onSuccess: refresh });
+  const request = useMutation({ ...postingRequestApprovalMutation(), onSuccess: refresh });
   const undo = useMutation({ ...undoApprovalMutation(), onSuccess: refresh });
 
   if (view.data === undefined) {
@@ -317,7 +327,10 @@ export function CLS07(props: CLS07Props): JSX.Element {
       </div>
       <Tallies view={data} />
       <div className="flex min-h-0 flex-1 gap-[10px] p-[10px]">
-        <section aria-label={C.entries} className="flex min-w-0 flex-[866] flex-col rounded-card bg-card shadow-e1">
+        <section
+          aria-label={C.entries}
+          className="flex min-w-0 flex-[866] flex-col rounded-card bg-card shadow-e1"
+        >
           <header className="flex h-[46px] items-center justify-between px-[12px]">
             <span className="text-[13px] text-ink-3">{C.search}</span>
             <span className="text-[13px] font-medium">{C.entries}</span>
@@ -342,7 +355,10 @@ export function CLS07(props: CLS07Props): JSX.Element {
               {rows.map((r) => {
                 const th = thresholdText(r);
                 const on = r.entry_id === selected?.entry_id;
-                const n = lines.data?.items.find((e) => e.ref === r.ref)?.lines.length || props.lineCount?.(r.ref) || 0;
+                const n =
+                  lines.data?.items.find((e) => e.ref === r.ref)?.lines.length ||
+                  props.lineCount?.(r.ref) ||
+                  0;
                 return (
                   <tr
                     key={r.entry_id}
@@ -352,7 +368,10 @@ export function CLS07(props: CLS07Props): JSX.Element {
                     onClick={() => {
                       setPicked(r.ref);
                     }}
-                    className={cn("h-[52px] cursor-pointer border-b border-hair", on && "bg-selected")}
+                    className={cn(
+                      "h-[52px] cursor-pointer border-b border-hair",
+                      on && "bg-selected",
+                    )}
                   >
                     <td className={TD}>
                       <Disc row={r} />
@@ -368,7 +387,12 @@ export function CLS07(props: CLS07Props): JSX.Element {
                     <td className={cn(TD, "text-right")}>
                       <Amount value={r.amount} />
                     </td>
-                    <td className={cn(TD, r.status === "review_required" && "font-medium text-amber-ink")}>
+                    <td
+                      className={cn(
+                        TD,
+                        r.status === "review_required" && "font-medium text-amber-ink",
+                      )}
+                    >
                       {C.status[r.status] ?? r.status}
                       {r.external_txn_ref ? ` · QBO ${r.external_txn_ref}` : ""}
                     </td>
@@ -389,7 +413,11 @@ export function CLS07(props: CLS07Props): JSX.Element {
           </table>
           <footer className="mt-auto flex h-[56px] items-center justify-between gap-[8px] border-t border-hair px-[12px]">
             <span className="text-[12.5px] text-ink-3">
-              {C.approvingAs(data.approver.display_name, data.approver.role_label, data.approver.policy_label)}
+              {C.approvingAs(
+                data.approver.display_name,
+                data.approver.role_label,
+                data.approver.policy_label,
+              )}
             </span>
             <span className="flex gap-[8px]">
               {held.length > 0 ? (
@@ -415,7 +443,10 @@ export function CLS07(props: CLS07Props): JSX.Element {
               props={props}
               onApprove={() => {
                 approve.mutate(
-                  { path: { entry_id: selected.entry_id }, body: { seen_version: selected.version } },
+                  {
+                    path: { entry_id: selected.entry_id },
+                    body: { seen_version: selected.version },
+                  },
                   {
                     onSuccess: (d) => {
                       toast.undoable({

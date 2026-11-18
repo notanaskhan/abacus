@@ -2,7 +2,7 @@
 // spec and POR-04 frame e). No firm words: never "Pending incorporation", "Matched to uploaded
 // document", "Visible to client" or a review count (QC-9).
 export const COPY = {
-  questions: (n: number) => `Transaction questions · ${n} to answer`,
+  questions: (n: number) => `Transaction questions · ${String(n)} to answer`,
   answer: "Answer…",
   answerMobile: "Answer",
   answered: (when: string) => `✓ You answered ${when}`,

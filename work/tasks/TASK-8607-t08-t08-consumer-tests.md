@@ -21,3 +21,4 @@ Spec section: docs/plan/epics/T-08.md §8.2. Consumer tests for C21 (due dates),
 
 ## Progress log
 - `2026-11-18` — Built in the S50 sequential stack (DEC-5607). Not run: tests run once at the S50 end pass (build first, test last). Gates and tests run once at the S50 end pass (build first, test last).
+- `2026-11-18` — End pass: the operations count is 42 (SS-1 10, FD-1 4, TP-1 28 per docs/contracts); the build-time 41 was a miscount, corrected; nested VMs classified.

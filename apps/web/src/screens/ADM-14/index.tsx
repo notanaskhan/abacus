@@ -15,6 +15,7 @@ import {
   firmUsageOptions,
   planGetOptions,
   planRequestsCreateMutation,
+  settingsOverviewOptions,
 } from "@abacus/api-client/query";
 import {
   Button,
@@ -29,6 +30,7 @@ import {
   ValueRow,
   amount,
   date,
+  pct,
   toast,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -55,9 +57,13 @@ function Meter({ used, included }: { used: number; included: number }): JSX.Elem
   const tone = share > 1 ? "bg-red-ink" : share >= 0.9 ? "bg-amber-ink" : "bg-ink";
   return (
     <div className="relative mt-[8px] h-[8px] rounded-pill bg-hair" aria-hidden="true">
-      <div className={`h-full rounded-pill ${tone}`} style={{ width: `${fill}%` }} />
+      <div className={`h-full rounded-pill ${tone}`} style={{ width: `${String(fill)}%` }} />
       {[75, 90, 100].map((t) => (
-        <span key={t} className="absolute top-[-3px] h-[14px] w-px bg-ink-3" style={{ left: `${t}%` }} />
+        <span
+          key={t}
+          className="absolute top-[-3px] h-[14px] w-px bg-ink-3"
+          style={{ left: `${String(t)}%` }}
+        />
       ))}
     </div>
   );
@@ -65,18 +71,26 @@ function Meter({ used, included }: { used: number; included: number }): JSX.Elem
 
 function pctText(used: number, included: number): string {
   // Display rounding of the server's two integers (one decimal, as the artboards print it).
-  return included === 0 ? "0%" : `${(Math.round((used * 1000) / included) / 10).toFixed(1)}%`;
+  return pct(String(included === 0 ? 0 : used / included), { decimals: 1 });
 }
 
-export function ADM14({ readOnly = false, initial = {}, onNavigate, onBack }: ADM14Props): JSX.Element {
+export function ADM14({
+  readOnly = false,
+  initial = {},
+  onNavigate,
+  onBack,
+}: ADM14Props): JSX.Element {
   const now = useNow();
   const qc = useQueryClient();
+  const overview = useQuery({ ...settingsOverviewOptions(), retry: false });
   const plan = useQuery(planGetOptions());
   const usage = useQuery(firmUsageOptions());
   const alerts = useQuery(budgetAlertsGetOptions());
   const budgets = useQuery(engagementBudgetsOptions());
   const rates = useQuery(billingRatesOptions());
-  const [at100, setAt100] = useState<BudgetAlertsOut["at_100_behaviour"] | undefined>(initial.at100);
+  const [at100, setAt100] = useState<BudgetAlertsOut["at_100_behaviour"] | undefined>(
+    initial.at100,
+  );
   const [requestOpen, setRequestOpen] = useState(initial.requestOpen === true);
   const [reason, setReason] = useState("");
   const [seatsTo, setSeatsTo] = useState<string>("");
@@ -88,7 +102,12 @@ export function ADM14({ readOnly = false, initial = {}, onNavigate, onBack }: AD
       toast.show(C.saved);
     },
   });
-  const request = useMutation({ ...planRequestsCreateMutation(), onSuccess: () => setRequestOpen(false) });
+  const request = useMutation({
+    ...planRequestsCreateMutation(),
+    onSuccess: () => {
+      setRequestOpen(false);
+    },
+  });
 
   const onSave = (): void => {
     if (a === undefined || at100 === undefined) return;
@@ -110,7 +129,8 @@ export function ADM14({ readOnly = false, initial = {}, onNavigate, onBack }: AD
   const p = plan.data;
   const u = usage.data;
   const a = alerts.data;
-  const fmt = (iso: string, withYear = false): string => date(iso, { tz: DEFAULT_TZ, now, withYear });
+  const fmt = (iso: string, withYear = false): string =>
+    date(iso, { tz: DEFAULT_TZ, now, withYear });
   const dirty = at100 !== undefined && a !== undefined && at100 !== a.at_100_behaviour;
   const lock = readOnly ? { action: <SettingsLock /> } : {};
 
@@ -142,13 +162,20 @@ export function ADM14({ readOnly = false, initial = {}, onNavigate, onBack }: AD
                 {over > 0
                   ? C.minutes.over(n(over))
                   : next
-                    ? C.minutes.nextAlert(next.threshold_pct, n(next.threshold_minutes), n(next.threshold_minutes - used), reset)
+                    ? C.minutes.nextAlert(
+                        next.threshold_pct,
+                        n(next.threshold_minutes),
+                        n(next.threshold_minutes - used),
+                        reset,
+                      )
                     : C.minutes.left(n(included - used), reset)}
               </p>
             </div>
             {u.by_service_line.length > 0 ? (
               <>
-                <div className="h-[28px] bg-nested px-[12px] text-[12px] leading-[28px] text-ink-2">{C.minutes.byLine}</div>
+                <div className="h-[28px] bg-nested px-[12px] text-[12px] leading-[28px] text-ink-2">
+                  {C.minutes.byLine}
+                </div>
                 {u.by_service_line.map((l) => (
                   <ValueRow key={l.key} kind="value" label={l.label}>
                     <span className="tabular-nums">{n(l.minutes)}</span>
@@ -159,14 +186,26 @@ export function ADM14({ readOnly = false, initial = {}, onNavigate, onBack }: AD
           </Fieldset>
           <Fieldset title={C.alerts.title} {...lock}>
             {a.rules.map((r, i) => (
-              <div key={r.id} data-adm14="rule" className="flex items-center justify-between px-[12px] py-[6px]">
+              <div
+                key={r.id}
+                data-adm14="rule"
+                className="flex items-center justify-between px-[12px] py-[6px]"
+              >
                 <div>
-                  <div className="text-[13px] text-ink-2">{C.alerts.rule(r.threshold_pct, n(r.threshold_minutes), i === 0)}</div>
+                  <div className="text-[13px] text-ink-2">
+                    {C.alerts.rule(r.threshold_pct, n(r.threshold_minutes), i === 0)}
+                  </div>
                   <div className="text-[11.5px] text-ink-3">
-                    {r.recipients.length > 0 ? r.recipients.map((x) => x.display_name).join(", ") : C.alerts.groups}
+                    {r.recipients.length > 0
+                      ? r.recipients.map((x) => x.display_name).join(", ")
+                      : C.alerts.groups}
                   </div>
                 </div>
-                <Toggle checked={r.enabled} disabled={readOnly} label={C.alerts.rule(r.threshold_pct, n(r.threshold_minutes), i === 0)} />
+                <Toggle
+                  checked={r.enabled}
+                  disabled={readOnly}
+                  label={C.alerts.rule(r.threshold_pct, n(r.threshold_minutes), i === 0)}
+                />
               </div>
             ))}
             <ValueRow
@@ -182,17 +221,30 @@ export function ADM14({ readOnly = false, initial = {}, onNavigate, onBack }: AD
                 setAt100(v === C.alerts.pause ? "pause_scheduled" : "keep_running");
               }}
             />
-            <div className="h-[28px] bg-nested px-[12px] text-[12px] leading-[28px] text-ink-2">{C.alerts.engagement}</div>
+            <div className="h-[28px] bg-nested px-[12px] text-[12px] leading-[28px] text-ink-2">
+              {C.alerts.engagement}
+            </div>
             <ValueRow kind="value" label={C.alerts.defaultBudget}>
               {C.alerts.perMonth(n(a.engagement_default_minutes))}
             </ValueRow>
-            <p className="px-[12px] pb-[6px] text-[11.5px] text-ink-3">{C.alerts.defaultHelp(a.engagement_alert_pct)}</p>
+            <p className="px-[12px] pb-[6px] text-[11.5px] text-ink-3">
+              {C.alerts.defaultHelp(a.engagement_alert_pct)}
+            </p>
             {granite ? (
               <ValueRow kind="value" label={granite.engagement_name}>
                 <span className="flex items-center gap-[6px]">
-                  {C.alerts.budgetRow(n(granite.used_minutes), n(granite.budget_minutes), granite.used_pct)}
+                  {C.alerts.budgetRow(
+                    n(granite.used_minutes),
+                    n(granite.budget_minutes),
+                    granite.used_pct,
+                  )}
                   {granite.alert_sent_at ? (
-                    <Pill variant="amber">{C.alerts.sent(fmt(granite.alert_sent_at), granite.alert_sent_to_initials ?? "")}</Pill>
+                    <Pill variant="amber">
+                      {C.alerts.sent(
+                        fmt(granite.alert_sent_at),
+                        granite.alert_sent_to_initials ?? "",
+                      )}
+                    </Pill>
                   ) : null}
                 </span>
               </ValueRow>
@@ -216,7 +268,9 @@ export function ADM14({ readOnly = false, initial = {}, onNavigate, onBack }: AD
                 {p.seats.full ? <Pill variant="amber">{C.seats.full}</Pill> : null}
               </span>
             </ValueRow>
-            {p.seats.full ? <p className="px-[12px] pb-[6px] text-[11.5px] text-ink-3">{C.seats.fullHelp}</p> : null}
+            {p.seats.full ? (
+              <p className="px-[12px] pb-[6px] text-[11.5px] text-ink-3">{C.seats.fullHelp}</p>
+            ) : null}
             <ValueRow kind="value" label={C.seats.workbench}>
               {C.seats.active(p.workbench_active_30d, p.seats.total)}
             </ValueRow>
@@ -246,7 +300,10 @@ export function ADM14({ readOnly = false, initial = {}, onNavigate, onBack }: AD
           <Fieldset title={C.modules.title} {...lock}>
             <div className="flex flex-wrap gap-[6px] px-[12px] py-[10px]">
               {p.modules.map((m) => (
-                <span key={m} className="rounded-tag bg-nested px-[8px] py-[3px] text-[11.5px] font-medium text-ink-2">
+                <span
+                  key={m}
+                  className="rounded-tag bg-nested px-[8px] py-[3px] text-[11.5px] font-medium text-ink-2"
+                >
                   {C.modules.names[m] ?? m}
                 </span>
               ))}
@@ -268,7 +325,7 @@ export function ADM14({ readOnly = false, initial = {}, onNavigate, onBack }: AD
         wide
         toolbar={{ nav: [], active: "", firm: "" }}
         title={C.firmSettings}
-        context={C.context}
+        context={overview.data?.firm_name ?? ""}
         backLabel={C.back}
         {...(onBack ? { onBack } : {})}
         navTitle={C.settings}
@@ -327,7 +384,10 @@ export function ADM14({ readOnly = false, initial = {}, onNavigate, onBack }: AD
                 reason: reason.trim(),
                 to_value: Number(seatsTo || p?.seats.total || 0),
               };
-              request.mutate({ headers: { "Idempotency-Key": `adm14-${crypto.randomUUID()}` }, body: input });
+              request.mutate({
+                headers: { "Idempotency-Key": `adm14-${crypto.randomUUID()}` },
+                body: input,
+              });
             }}
           >
             {C.request.send}
@@ -359,7 +419,9 @@ export function ADM14({ readOnly = false, initial = {}, onNavigate, onBack }: AD
             />
           </label>
           {a?.partner_approver ? (
-            <p className="text-[12.5px] text-ink-3">{C.request.approval(a.partner_approver.display_name)}</p>
+            <p className="text-[12.5px] text-ink-3">
+              {C.request.approval(a.partner_approver.display_name)}
+            </p>
           ) : null}
         </div>
       </Dialog>

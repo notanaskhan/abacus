@@ -2099,6 +2099,12 @@ objects:
       destroyed:         {label: "Destroyed", variant: muted, terminal: true, derived: false, context_labels: {history: "Completed"}}
       cancelled:         {label: "Cancelled", variant: muted, terminal: true, derived: false}
 
+  quality_import:   # QualityImportOut.status (ADM-12 import: a dry run, then publish)
+    source: "Q-05 §4.2; ADM-12 import"
+    codes:
+      dry_run:   {label: "Dry run", variant: neutral, terminal: false, derived: false}
+      published: {label: "Published", variant: green, terminal: true, derived: false}
+
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---
   "request_item.open":             {replacement: ["request.draft", "request.requested"], note: "draft while firm-only; requested once sent to the client"}
