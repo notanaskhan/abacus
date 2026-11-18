@@ -259,6 +259,11 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "variance_explanation_acceptances": "variance_explanation_acceptances_immutable",  # 0961 (T-08-T06)
     "variance_explanation_versions": "variance_explanation_versions_immutable",  # 0961 (T-08-T06)
     "filing_deadline_alerts": "filing_deadline_alerts_immutable",  # 0962 (T-08-T07)
+    "inspection_selection_rules": "inspection_selection_rules_immutable",  # 0963 (Q-05-T05)
+    "qm_finding_evaluations": "qm_finding_evaluations_immutable",  # 0963 (Q-05-T05)
+    "qm_finding_links": "qm_finding_links_immutable",  # 0963 (Q-05-T05)
+    "qm_register_imports": "qm_register_imports_immutable",  # 0963 (Q-05-T05)
+    "qm_risk_assessment_reviews": "qm_risk_assessment_reviews_immutable",  # 0963 (Q-05-T05)
     # S50 (0960+): the insert-only tables above.
     "tb_handoffs": "tb_handoffs_immutable",  # 0953 (T-06-T11)
     "tb_handoff_supersessions": "tb_handoff_supersessions_immutable",  # 0953 (T-06-T11)

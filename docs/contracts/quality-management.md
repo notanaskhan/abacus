@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Owner | practice (Q-05; SPEC-711) |
-| Status | skeleton (Q-05-T01, 2026-11-18; DEC-5608); stub Q-05-T05; v1 S53 |
+| Status | stub (Q-05-T05, 2026-11-18; DEC-5611); skeleton Q-05-T01; v1 S53 |
 | Code | `backend/src/abacus/modules/practice/quality_contract.py` (Q-05-T05) |
 | Flag | `quality.management` (default off; off: 404; on: 501 until each build task) |
 | Consumers | ADM-11, ADM-12; I-03 (INS-02 equality with ADM-11), K-05 (DEC-96 projection), W-03 (WB-08) |

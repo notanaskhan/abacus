@@ -46262,6 +46262,798 @@ export type QualitativeFactorOut = {
 };
 
 /**
+ * QualityAccuracyOut
+ *
+ * ADM-11 f (AC-4): 1,320 of 41,260 fields changed; 96.8%.
+ */
+export type QualityAccuracyOut = {
+    /**
+     * Accuracy
+     */
+    accuracy?: string | null;
+    /**
+     * Changed
+     */
+    changed: number;
+    /**
+     * Fields
+     */
+    fields: number;
+    /**
+     * Returns Filed
+     */
+    returns_filed: number;
+};
+
+/**
+ * QualityAgentRowOut
+ *
+ * ADM-11 c (AC-3): EBP Audit Workpapers 37 = 21 + 9 + 7.
+ */
+export type QualityAgentRowOut = {
+    /**
+     * Above Tolerance
+     */
+    above_tolerance: boolean;
+    /**
+     * Agent Key
+     */
+    agent_key: string;
+    /**
+     * Finding Ref
+     */
+    finding_ref?: string | null;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Outputs
+     */
+    outputs: number;
+    /**
+     * Overrides
+     */
+    overrides: number;
+    /**
+     * Rate
+     */
+    rate?: string | null;
+    /**
+     * Rated
+     */
+    rated: boolean;
+};
+
+/**
+ * QualityAnnualEvaluationOut
+ *
+ * ADM-12 d, f (AC-10): the card reserved to the individual with ultimate responsibility.
+ */
+export type QualityAnnualEvaluationOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Checklist
+     */
+    checklist?: {
+        [key: string]: boolean;
+    };
+    /**
+     * Concluded At
+     */
+    concluded_at?: string | null;
+    /**
+     * Decision Card Id
+     */
+    decision_card_id?: string | null;
+    /**
+     * Inspections Open
+     */
+    inspections_open: number;
+    responsible: QualityPersonOut;
+    /**
+     * Status
+     */
+    status: 'not_started' | 'concluded';
+    /**
+     * Year
+     */
+    year: number;
+};
+
+/**
+ * QualityCandidateListOut
+ */
+export type QualityCandidateListOut = {
+    /**
+     * Items
+     */
+    items: Array<QualityCandidateOut>;
+    /**
+     * Rule Version
+     */
+    rule_version: number;
+};
+
+/**
+ * QualityCandidateOut
+ *
+ * ADM-12 b (AC-7): risk score by code; the objectivity verdict per inspector.
+ */
+export type QualityCandidateOut = {
+    /**
+     * Engagement Name
+     */
+    engagement_name: string;
+    /**
+     * Not Objective User Ids
+     */
+    not_objective_user_ids?: Array<string>;
+    /**
+     * Risk Score
+     */
+    risk_score: string;
+    /**
+     * Selected Because
+     */
+    selected_because: string;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * QualityChecklistIn
+ */
+export type QualityChecklistIn = {
+    /**
+     * Checklist
+     */
+    checklist: {
+        [key: string]: boolean;
+    };
+};
+
+/**
+ * QualityComponentOut
+ */
+export type QualityComponentOut = {
+    /**
+     * Component
+     */
+    component: 'governance_leadership' | 'ethical_requirements' | 'acceptance_continuance' | 'engagement_performance' | 'resources' | 'information_communication';
+    /**
+     * Health
+     */
+    health: 'ok' | 'at_risk';
+    /**
+     * Signals
+     */
+    signals?: Array<string>;
+};
+
+/**
+ * QualityCycleListOut
+ */
+export type QualityCycleListOut = {
+    /**
+     * Items
+     */
+    items: Array<QualityCycleOut>;
+};
+
+/**
+ * QualityCycleOut
+ */
+export type QualityCycleOut = {
+    /**
+     * As Of
+     */
+    as_of: string;
+    /**
+     * Concluded
+     */
+    concluded: number;
+    /**
+     * Cycle Id
+     */
+    cycle_id: string;
+    /**
+     * Findings Open
+     */
+    findings_open: number;
+    /**
+     * In Progress
+     */
+    in_progress: number;
+    /**
+     * Planned
+     */
+    planned: number;
+    /**
+     * Year
+     */
+    year: number;
+};
+
+/**
+ * QualityDashboardOut
+ */
+export type QualityDashboardOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Components
+     */
+    components: Array<QualityComponentOut>;
+    /**
+     * Cycle Year
+     */
+    cycle_year: number;
+    /**
+     * Objectives Firm Wide
+     */
+    objectives_firm_wide: boolean;
+    /**
+     * Office Id
+     */
+    office_id?: string | null;
+    tiles: QualityTilesOut;
+};
+
+/**
+ * QualityEvaluationIn
+ *
+ * Only the QM owner evaluates (AC-9); the rationale is required.
+ */
+export type QualityEvaluationIn = {
+    /**
+     * Evaluation
+     */
+    evaluation: 'finding_open' | 'not_a_deficiency' | 'deficiency' | 'severe_deficiency' | 'severe_and_pervasive';
+    /**
+     * Rationale
+     */
+    rationale: string;
+};
+
+/**
+ * QualityFindingIn
+ */
+export type QualityFindingIn = {
+    /**
+     * Cycle Id
+     */
+    cycle_id: string;
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Inspection Id
+     */
+    inspection_id?: string | null;
+    /**
+     * Owner User Id
+     */
+    owner_user_id?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * QualityFindingListOut
+ */
+export type QualityFindingListOut = {
+    /**
+     * Items
+     */
+    items: Array<QualityFindingOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+};
+
+/**
+ * QualityFindingOut
+ */
+export type QualityFindingOut = {
+    /**
+     * Agent Key
+     */
+    agent_key?: string | null;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Evaluation
+     */
+    evaluation?: 'finding_open' | 'not_a_deficiency' | 'deficiency' | 'severe_deficiency' | 'severe_and_pervasive' | null;
+    /**
+     * Finding Id
+     */
+    finding_id: string;
+    /**
+     * Inspection Ref
+     */
+    inspection_ref?: string | null;
+    owner?: QualityPersonOut | null;
+    /**
+     * Raised By Kind
+     */
+    raised_by_kind: 'human' | 'system';
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Root Cause Category
+     */
+    root_cause_category?: 'people' | 'process' | 'methodology' | 'technology' | 'culture' | null;
+    /**
+     * Source
+     */
+    source: 'inspection' | 'agent_monitoring' | 'other';
+    /**
+     * Status
+     */
+    status: 'open' | 'in_progress' | 'remediated';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * QualityFindingPatchIn
+ */
+export type QualityFindingPatchIn = {
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Owner User Id
+     */
+    owner_user_id?: string | null;
+    /**
+     * Remediation
+     */
+    remediation?: string | null;
+    /**
+     * Root Cause
+     */
+    root_cause?: string | null;
+    /**
+     * Root Cause Category
+     */
+    root_cause_category?: 'people' | 'process' | 'methodology' | 'technology' | 'culture' | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * QualityImportIn
+ */
+export type QualityImportIn = {
+    /**
+     * Kind
+     */
+    kind: 'register' | 'cycle';
+    /**
+     * Source Evidence Version Id
+     */
+    source_evidence_version_id: string;
+};
+
+/**
+ * QualityImportOut
+ */
+export type QualityImportOut = {
+    /**
+     * Counts
+     */
+    counts: {
+        [key: string]: number;
+    };
+    /**
+     * Import Id
+     */
+    import_id: string;
+    /**
+     * Kind
+     */
+    kind: 'register' | 'cycle';
+    /**
+     * Status
+     */
+    status: 'dry_run' | 'published';
+};
+
+/**
+ * QualityInspectionIn
+ */
+export type QualityInspectionIn = {
+    /**
+     * Cycle Id
+     */
+    cycle_id: string;
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Inspector User Id
+     */
+    inspector_user_id: string;
+    /**
+     * Kind
+     */
+    kind: 'post_issuance_archived' | 'pre_lock' | 'in_process' | 'post_filing';
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * QualityInspectionListOut
+ */
+export type QualityInspectionListOut = {
+    /**
+     * Items
+     */
+    items: Array<QualityInspectionOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+};
+
+/**
+ * QualityInspectionOut
+ */
+export type QualityInspectionOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Basis
+     */
+    basis: 'sqms1' | 'firm_policy_c230_10_36';
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Engagement Name
+     */
+    engagement_name: string;
+    /**
+     * Inspection Id
+     */
+    inspection_id: string;
+    inspector: QualityPersonOut;
+    /**
+     * Kind
+     */
+    kind: 'post_issuance_archived' | 'pre_lock' | 'in_process' | 'post_filing';
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Status
+     */
+    status: 'planned' | 'in_progress' | 'concluded';
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * QualityObjectiveOut
+ */
+export type QualityObjectiveOut = {
+    /**
+     * Component
+     */
+    component: 'governance_leadership' | 'ethical_requirements' | 'acceptance_continuance' | 'engagement_performance' | 'resources' | 'information_communication';
+    /**
+     * Health Flag
+     */
+    health_flag?: 'at_risk' | null;
+    /**
+     * Objective Id
+     */
+    objective_id: string;
+    owner?: QualityPersonOut | null;
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Responses
+     */
+    responses: number;
+    /**
+     * Risks
+     */
+    risks: number;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * QualityObjectivePatchIn
+ */
+export type QualityObjectivePatchIn = {
+    /**
+     * Health Flag
+     */
+    health_flag?: 'at_risk' | null;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Owner User Id
+     */
+    owner_user_id?: string | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * QualityOverridesOut
+ */
+export type QualityOverridesOut = {
+    /**
+     * Outputs
+     */
+    outputs: number;
+    /**
+     * Overrides
+     */
+    overrides: number;
+    /**
+     * Rate
+     */
+    rate?: string | null;
+    /**
+     * Rows
+     */
+    rows: Array<QualityAgentRowOut>;
+    /**
+     * Sample N
+     */
+    sample_n: number;
+    /**
+     * Tolerance Pct
+     */
+    tolerance_pct: string;
+    /**
+     * Unrated
+     */
+    unrated: number;
+    /**
+     * Window Days
+     */
+    window_days: number;
+};
+
+/**
+ * QualityPersonOut
+ */
+export type QualityPersonOut = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * QualityReasonOut
+ */
+export type QualityReasonOut = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Reason Code
+     */
+    reason_code: string;
+};
+
+/**
+ * QualityReasonsOut
+ */
+export type QualityReasonsOut = {
+    /**
+     * Agent Key
+     */
+    agent_key: string;
+    /**
+     * Items
+     */
+    items: Array<QualityReasonOut>;
+};
+
+/**
+ * QualityRegisterOut
+ *
+ * 24 objectives, 38 risks, 58 responses (AC-34).
+ */
+export type QualityRegisterOut = {
+    /**
+     * Objectives
+     */
+    objectives: Array<QualityObjectiveOut>;
+    /**
+     * Responses
+     */
+    responses: number;
+    /**
+     * Risks
+     */
+    risks: number;
+};
+
+/**
+ * QualityRemediateIn
+ */
+export type QualityRemediateIn = {
+    /**
+     * Note
+     */
+    note: string;
+};
+
+/**
+ * QualityRiskReviewIn
+ */
+export type QualityRiskReviewIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Reviewed On
+     */
+    reviewed_on: string;
+};
+
+/**
+ * QualityRiskReviewOut
+ */
+export type QualityRiskReviewOut = {
+    /**
+     * Review Id
+     */
+    review_id: string;
+    reviewed_by: QualityPersonOut;
+    /**
+     * Reviewed On
+     */
+    reviewed_on: string;
+};
+
+/**
+ * QualityTilesOut
+ *
+ * ADM-11 a (AC-1): 2 of 24 · 5 · 6.0% (206 of 3,410) · 96.8% · 2 · 92 days.
+ */
+export type QualityTilesOut = {
+    /**
+     * Accuracy
+     */
+    accuracy?: string | null;
+    /**
+     * Consultations Open
+     */
+    consultations_open: number;
+    /**
+     * Days To Evaluation
+     */
+    days_to_evaluation: number;
+    /**
+     * Findings Open
+     */
+    findings_open: number;
+    /**
+     * Objectives
+     */
+    objectives: number;
+    /**
+     * Objectives At Risk
+     */
+    objectives_at_risk: number;
+    /**
+     * Outputs
+     */
+    outputs: number;
+    /**
+     * Override Rate
+     */
+    override_rate?: string | null;
+    /**
+     * Overrides
+     */
+    overrides: number;
+    /**
+     * Tolerance Pct
+     */
+    tolerance_pct: string;
+};
+
+/**
+ * QualityTodoIn
+ */
+export type QualityTodoIn = {
+    /**
+     * Assignee User Id
+     */
+    assignee_user_id: string;
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * QualityTodoOut
+ */
+export type QualityTodoOut = {
+    /**
+     * Finding Id
+     */
+    finding_id: string;
+    /**
+     * Todo Id
+     */
+    todo_id: string;
+};
+
+/**
  * QuestionAnswerIn
  */
 export type QuestionAnswerIn = {
@@ -149762,6 +150554,1505 @@ export type UndoApprovalResponses = {
 };
 
 export type UndoApprovalResponse = UndoApprovalResponses[keyof UndoApprovalResponses];
+
+export type QualityAccuracyData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Cycle
+         */
+        cycle?: number | null;
+        /**
+         * Office Id
+         */
+        office_id?: string | null;
+    };
+    url: '/v1/quality/accuracy';
+};
+
+export type QualityAccuracyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityAccuracyError = QualityAccuracyErrors[keyof QualityAccuracyErrors];
+
+export type QualityAccuracyResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityAccuracyOut;
+};
+
+export type QualityAccuracyResponse = QualityAccuracyResponses[keyof QualityAccuracyResponses];
+
+export type QualityOverridesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Window
+         */
+        window?: '30d' | '90d' | 'cycle';
+        /**
+         * Office Id
+         */
+        office_id?: string | null;
+    };
+    url: '/v1/quality/agent-overrides';
+};
+
+export type QualityOverridesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityOverridesError = QualityOverridesErrors[keyof QualityOverridesErrors];
+
+export type QualityOverridesResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityOverridesOut;
+};
+
+export type QualityOverridesResponse = QualityOverridesResponses[keyof QualityOverridesResponses];
+
+export type QualityOverrideReasonsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Agent Key
+         */
+        agent_key: string;
+    };
+    query?: never;
+    url: '/v1/quality/agent-overrides/{agent_key}/reasons';
+};
+
+export type QualityOverrideReasonsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityOverrideReasonsError = QualityOverrideReasonsErrors[keyof QualityOverrideReasonsErrors];
+
+export type QualityOverrideReasonsResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityReasonsOut;
+};
+
+export type QualityOverrideReasonsResponse = QualityOverrideReasonsResponses[keyof QualityOverrideReasonsResponses];
+
+export type QualityCyclesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/quality/cycles';
+};
+
+export type QualityCyclesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityCyclesError = QualityCyclesErrors[keyof QualityCyclesErrors];
+
+export type QualityCyclesResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityCycleListOut;
+};
+
+export type QualityCyclesResponse = QualityCyclesResponses[keyof QualityCyclesResponses];
+
+export type QualityDashboardData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Office Id
+         */
+        office_id?: string | null;
+        /**
+         * Cycle
+         */
+        cycle?: number | null;
+    };
+    url: '/v1/quality/dashboard';
+};
+
+export type QualityDashboardErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityDashboardError = QualityDashboardErrors[keyof QualityDashboardErrors];
+
+export type QualityDashboardResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityDashboardOut;
+};
+
+export type QualityDashboardResponse = QualityDashboardResponses[keyof QualityDashboardResponses];
+
+export type QualityEvaluationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Year
+         */
+        year: number;
+    };
+    query?: never;
+    url: '/v1/quality/evaluations/{year}';
+};
+
+export type QualityEvaluationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityEvaluationError = QualityEvaluationErrors[keyof QualityEvaluationErrors];
+
+export type QualityEvaluationResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityAnnualEvaluationOut;
+};
+
+export type QualityEvaluationResponse = QualityEvaluationResponses[keyof QualityEvaluationResponses];
+
+export type QualityEvaluationChecklistData = {
+    body: QualityChecklistIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Year
+         */
+        year: number;
+    };
+    query?: never;
+    url: '/v1/quality/evaluations/{year}/checklist';
+};
+
+export type QualityEvaluationChecklistErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityEvaluationChecklistError = QualityEvaluationChecklistErrors[keyof QualityEvaluationChecklistErrors];
+
+export type QualityEvaluationChecklistResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityAnnualEvaluationOut;
+};
+
+export type QualityEvaluationChecklistResponse = QualityEvaluationChecklistResponses[keyof QualityEvaluationChecklistResponses];
+
+export type QualityEvaluationRequestData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Year
+         */
+        year: number;
+    };
+    query?: never;
+    url: '/v1/quality/evaluations/{year}/request-conclusion';
+};
+
+export type QualityEvaluationRequestErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityEvaluationRequestError = QualityEvaluationRequestErrors[keyof QualityEvaluationRequestErrors];
+
+export type QualityEvaluationRequestResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityAnnualEvaluationOut;
+};
+
+export type QualityEvaluationRequestResponse = QualityEvaluationRequestResponses[keyof QualityEvaluationRequestResponses];
+
+export type QualityFindingsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Cycle
+         */
+        cycle?: number | null;
+        /**
+         * Status
+         */
+        status?: 'open' | 'in_progress' | 'remediated' | null;
+    };
+    url: '/v1/quality/findings';
+};
+
+export type QualityFindingsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityFindingsError = QualityFindingsErrors[keyof QualityFindingsErrors];
+
+export type QualityFindingsResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityFindingListOut;
+};
+
+export type QualityFindingsResponse = QualityFindingsResponses[keyof QualityFindingsResponses];
+
+export type QualityFindingCreateData = {
+    body: QualityFindingIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/quality/findings';
+};
+
+export type QualityFindingCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityFindingCreateError = QualityFindingCreateErrors[keyof QualityFindingCreateErrors];
+
+export type QualityFindingCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: QualityFindingOut;
+};
+
+export type QualityFindingCreateResponse = QualityFindingCreateResponses[keyof QualityFindingCreateResponses];
+
+export type QualityFindingData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Finding Id
+         */
+        finding_id: string;
+    };
+    query?: never;
+    url: '/v1/quality/findings/{finding_id}';
+};
+
+export type QualityFindingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityFindingError = QualityFindingErrors[keyof QualityFindingErrors];
+
+export type QualityFindingResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityFindingOut;
+};
+
+export type QualityFindingResponse = QualityFindingResponses[keyof QualityFindingResponses];
+
+export type QualityFindingPatchData = {
+    body: QualityFindingPatchIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Finding Id
+         */
+        finding_id: string;
+    };
+    query?: never;
+    url: '/v1/quality/findings/{finding_id}';
+};
+
+export type QualityFindingPatchErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityFindingPatchError = QualityFindingPatchErrors[keyof QualityFindingPatchErrors];
+
+export type QualityFindingPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityFindingOut;
+};
+
+export type QualityFindingPatchResponse = QualityFindingPatchResponses[keyof QualityFindingPatchResponses];
+
+export type QualityFindingEvaluateData = {
+    body: QualityEvaluationIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Finding Id
+         */
+        finding_id: string;
+    };
+    query?: never;
+    url: '/v1/quality/findings/{finding_id}/evaluations';
+};
+
+export type QualityFindingEvaluateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityFindingEvaluateError = QualityFindingEvaluateErrors[keyof QualityFindingEvaluateErrors];
+
+export type QualityFindingEvaluateResponses = {
+    /**
+     * Successful Response
+     */
+    201: QualityFindingOut;
+};
+
+export type QualityFindingEvaluateResponse = QualityFindingEvaluateResponses[keyof QualityFindingEvaluateResponses];
+
+export type QualityFindingRemediateData = {
+    body: QualityRemediateIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Finding Id
+         */
+        finding_id: string;
+    };
+    query?: never;
+    url: '/v1/quality/findings/{finding_id}/remediate';
+};
+
+export type QualityFindingRemediateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityFindingRemediateError = QualityFindingRemediateErrors[keyof QualityFindingRemediateErrors];
+
+export type QualityFindingRemediateResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityFindingOut;
+};
+
+export type QualityFindingRemediateResponse = QualityFindingRemediateResponses[keyof QualityFindingRemediateResponses];
+
+export type QualityFindingTodoData = {
+    body: QualityTodoIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Finding Id
+         */
+        finding_id: string;
+    };
+    query?: never;
+    url: '/v1/quality/findings/{finding_id}/remediation-todos';
+};
+
+export type QualityFindingTodoErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityFindingTodoError = QualityFindingTodoErrors[keyof QualityFindingTodoErrors];
+
+export type QualityFindingTodoResponses = {
+    /**
+     * Successful Response
+     */
+    201: QualityTodoOut;
+};
+
+export type QualityFindingTodoResponse = QualityFindingTodoResponses[keyof QualityFindingTodoResponses];
+
+export type QualityImportData = {
+    body: QualityImportIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/quality/imports';
+};
+
+export type QualityImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityImportError = QualityImportErrors[keyof QualityImportErrors];
+
+export type QualityImportResponses = {
+    /**
+     * Successful Response
+     */
+    201: QualityImportOut;
+};
+
+export type QualityImportResponse = QualityImportResponses[keyof QualityImportResponses];
+
+export type QualityImportPublishData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Import Id
+         */
+        import_id: string;
+    };
+    query?: never;
+    url: '/v1/quality/imports/{import_id}/publish';
+};
+
+export type QualityImportPublishErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityImportPublishError = QualityImportPublishErrors[keyof QualityImportPublishErrors];
+
+export type QualityImportPublishResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityImportOut;
+};
+
+export type QualityImportPublishResponse = QualityImportPublishResponses[keyof QualityImportPublishResponses];
+
+export type QualityCandidatesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Cycle
+         */
+        cycle: number;
+    };
+    url: '/v1/quality/inspection-candidates';
+};
+
+export type QualityCandidatesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityCandidatesError = QualityCandidatesErrors[keyof QualityCandidatesErrors];
+
+export type QualityCandidatesResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityCandidateListOut;
+};
+
+export type QualityCandidatesResponse = QualityCandidatesResponses[keyof QualityCandidatesResponses];
+
+export type QualityInspectionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Cycle
+         */
+        cycle?: number | null;
+        /**
+         * Type
+         */
+        type?: 'post_issuance_archived' | 'pre_lock' | 'in_process' | 'post_filing' | null;
+        /**
+         * Inspector
+         */
+        inspector?: string | null;
+        /**
+         * Status
+         */
+        status?: 'planned' | 'in_progress' | 'concluded' | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/quality/inspections';
+};
+
+export type QualityInspectionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityInspectionsError = QualityInspectionsErrors[keyof QualityInspectionsErrors];
+
+export type QualityInspectionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityInspectionListOut;
+};
+
+export type QualityInspectionsResponse = QualityInspectionsResponses[keyof QualityInspectionsResponses];
+
+export type QualityInspectionCreateData = {
+    body: QualityInspectionIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/quality/inspections';
+};
+
+export type QualityInspectionCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityInspectionCreateError = QualityInspectionCreateErrors[keyof QualityInspectionCreateErrors];
+
+export type QualityInspectionCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: QualityInspectionOut;
+};
+
+export type QualityInspectionCreateResponse = QualityInspectionCreateResponses[keyof QualityInspectionCreateResponses];
+
+export type QualityInspectionConcludeData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Inspection Id
+         */
+        inspection_id: string;
+    };
+    query?: never;
+    url: '/v1/quality/inspections/{inspection_id}/conclude';
+};
+
+export type QualityInspectionConcludeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityInspectionConcludeError = QualityInspectionConcludeErrors[keyof QualityInspectionConcludeErrors];
+
+export type QualityInspectionConcludeResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityInspectionOut;
+};
+
+export type QualityInspectionConcludeResponse = QualityInspectionConcludeResponses[keyof QualityInspectionConcludeResponses];
+
+export type QualityInspectionStartData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Inspection Id
+         */
+        inspection_id: string;
+    };
+    query?: never;
+    url: '/v1/quality/inspections/{inspection_id}/start';
+};
+
+export type QualityInspectionStartErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityInspectionStartError = QualityInspectionStartErrors[keyof QualityInspectionStartErrors];
+
+export type QualityInspectionStartResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityInspectionOut;
+};
+
+export type QualityInspectionStartResponse = QualityInspectionStartResponses[keyof QualityInspectionStartResponses];
+
+export type QualityObjectiveData = {
+    body: QualityObjectivePatchIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Objective Id
+         */
+        objective_id: string;
+    };
+    query?: never;
+    url: '/v1/quality/objectives/{objective_id}';
+};
+
+export type QualityObjectiveErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityObjectiveError = QualityObjectiveErrors[keyof QualityObjectiveErrors];
+
+export type QualityObjectiveResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityObjectiveOut;
+};
+
+export type QualityObjectiveResponse = QualityObjectiveResponses[keyof QualityObjectiveResponses];
+
+export type QualityRegisterData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Component
+         */
+        component?: 'governance_leadership' | 'ethical_requirements' | 'acceptance_continuance' | 'engagement_performance' | 'resources' | 'information_communication' | null;
+    };
+    url: '/v1/quality/register';
+};
+
+export type QualityRegisterErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityRegisterError = QualityRegisterErrors[keyof QualityRegisterErrors];
+
+export type QualityRegisterResponses = {
+    /**
+     * Successful Response
+     */
+    200: QualityRegisterOut;
+};
+
+export type QualityRegisterResponse = QualityRegisterResponses[keyof QualityRegisterResponses];
+
+export type QualityRiskReviewData = {
+    body: QualityRiskReviewIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/quality/risk-assessment/reviews';
+};
+
+export type QualityRiskReviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QualityRiskReviewError = QualityRiskReviewErrors[keyof QualityRiskReviewErrors];
+
+export type QualityRiskReviewResponses = {
+    /**
+     * Successful Response
+     */
+    201: QualityRiskReviewOut;
+};
+
+export type QualityRiskReviewResponse = QualityRiskReviewResponses[keyof QualityRiskReviewResponses];
 
 export type QuestionnaireListTemplatesData = {
     body?: never;
