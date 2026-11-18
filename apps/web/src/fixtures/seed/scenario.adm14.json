@@ -1,0 +1,174 @@
+{
+  "scenario": "bh-2026.10.3",
+  "slice": "agent_minutes",
+  "snapshot": "E0",
+  "clocks": {
+    "a": "2026-10-01T09:20:00-05:00",
+    "b": "2026-10-09T16:30:00-05:00",
+    "c": "2026-10-14T17:00:00-05:00",
+    "d": "2026-10-01T09:20:00-05:00",
+    "e": "2026-10-01T09:14:00-05:00",
+    "f": "2026-10-01T09:20:00-05:00"
+  },
+  "people": {
+    "Grace Holloway": "3df80696-4f09-467a-85c3-f8c394a4665b",
+    "Margaret Okonkwo": "40b8ea53-b369-4daa-a11b-b009713cb844",
+    "Felix Andersen": "3cb7e97f-1777-42ca-b45b-7833db31a5a8"
+  },
+  "usage": {
+    "a": {
+      "usage_month": "2026-09",
+      "starts_on": "2026-09-15",
+      "ends_on": "2026-10-14",
+      "included_minutes": 20000,
+      "used_minutes": 14920,
+      "by_service_line": [
+        {
+          "key": "tax",
+          "label": "Tax",
+          "minutes": 8640
+        },
+        {
+          "key": "audit",
+          "label": "Audit & assurance",
+          "minutes": 4610
+        },
+        {
+          "key": "cas",
+          "label": "Client accounting",
+          "minutes": 1420
+        },
+        {
+          "key": "advisory",
+          "label": "Advisory & attest",
+          "minutes": 120
+        },
+        {
+          "key": "firm",
+          "label": "Firm operations",
+          "minutes": 130
+        }
+      ],
+      "by_capability": [],
+      "by_engagement": []
+    },
+    "b": {
+      "usage_month": "2026-09",
+      "starts_on": "2026-09-15",
+      "ends_on": "2026-10-14",
+      "included_minutes": 20000,
+      "used_minutes": 18240,
+      "by_service_line": [],
+      "by_capability": [],
+      "by_engagement": []
+    },
+    "c": {
+      "usage_month": "2026-09",
+      "starts_on": "2026-09-15",
+      "ends_on": "2026-10-14",
+      "included_minutes": 20000,
+      "used_minutes": 20860,
+      "by_service_line": [],
+      "by_capability": [],
+      "by_engagement": []
+    }
+  },
+  "alerts": [
+    {
+      "threshold_pct": 75,
+      "threshold_minutes": 15000,
+      "recipients": [
+        {
+          "display_name": "Grace Holloway",
+          "user_id": "3df80696-4f09-467a-85c3-f8c394a4665b"
+        },
+        {
+          "display_name": "Margaret Okonkwo",
+          "user_id": "40b8ea53-b369-4daa-a11b-b009713cb844"
+        }
+      ],
+      "recipient_groups": []
+    },
+    {
+      "threshold_pct": 90,
+      "threshold_minutes": 18000,
+      "recipients": [
+        {
+          "display_name": "Grace Holloway",
+          "user_id": "3df80696-4f09-467a-85c3-f8c394a4665b"
+        },
+        {
+          "display_name": "Margaret Okonkwo",
+          "user_id": "40b8ea53-b369-4daa-a11b-b009713cb844"
+        },
+        {
+          "display_name": "Felix Andersen",
+          "user_id": "3cb7e97f-1777-42ca-b45b-7833db31a5a8"
+        }
+      ],
+      "recipient_groups": []
+    },
+    {
+      "threshold_pct": 100,
+      "threshold_minutes": 20000,
+      "recipients": [],
+      "recipient_groups": [
+        "partners",
+        "firm_admins"
+      ]
+    }
+  ],
+  "engagement_default_minutes": 1500,
+  "engagement_alert_pct": 80,
+  "granite": {
+    "engagement_name": "Granite Peak FY2026 FS audit",
+    "used_minutes": 1240,
+    "budget_minutes": 1500,
+    "used_pct": "82",
+    "alert_sent_at": "2026-09-30T10:00:00-05:00",
+    "alert_sent_to_initials": "HL"
+  },
+  "rates": [
+    {
+      "label": "Partner",
+      "people": 7,
+      "hourly_rate": "450.00"
+    },
+    {
+      "label": "Manager & reviewer",
+      "people": 7,
+      "hourly_rate": "300.00"
+    },
+    {
+      "label": "Senior",
+      "people": 11,
+      "hourly_rate": "210.00"
+    },
+    {
+      "label": "Staff & preparer",
+      "people": 19,
+      "hourly_rate": "150.00"
+    },
+    {
+      "label": "Operations",
+      "people": 2,
+      "hourly_rate": null
+    }
+  ],
+  "rates_people": 46,
+  "seats": 46,
+  "workbench_active_30d": 39,
+  "modules": [
+    "tax_services",
+    "audit_assurance",
+    "client_accounting",
+    "advisory",
+    "attest",
+    "internal_audit"
+  ],
+  "term": {
+    "start": "2026-01-01",
+    "end": "2026-12-31",
+    "renewal_on": "2027-01-01"
+  }
+}
