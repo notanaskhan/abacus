@@ -28,6 +28,7 @@ import {
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useState } from "react";
+import { closeReadFrame } from "../../domain/closes";
 import { AJE_06_DRAFT } from "../kit-close-data";
 import { COPY as C } from "./copy";
 
@@ -394,6 +395,9 @@ export function CLS05({
   const data = rec.data;
   const signed = data?.signed_off_by != null;
   const blockers = data?.sign_off_blockers ?? [];
+  // C-01-T43: a refused or failed read is the C-20 frame, with no record data.
+  const frame = closeReadFrame("CLS-05", rec);
+  if (frame !== null) return frame;
   return (
     <div data-screen="CLS-05" data-account={account} className="flex gap-[10px] bg-shell p-[12px]">
       <section

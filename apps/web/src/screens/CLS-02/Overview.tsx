@@ -41,11 +41,16 @@ import { useFlag } from "../../app-core/flags";
 import { useRunFeed } from "../../domain/agents";
 import { RUN_POLL_MS, runIsLive } from "../../domain/closes";
 import { OVERVIEW, completeWords, idleWords, progressWords } from "./overview-copy";
+import { useNavigate } from "@tanstack/react-router";
+import { to } from "../../routes/to";
 
 export type OverviewFrame = "a" | "b" | "c" | "d" | "e";
 type RowState = "done" | "warn" | "run" | "todo" | "fail";
 
 /** The frame a close's newest run puts the Overview in (the handoff's A to E). */
+/** Operating Checking (Front Range Bank) ••4410: the CLS-05 account ref (CLS-05 copy). */
+const OPERATING_CHECKING = "35";
+
 export function frameOfRun(run: CloseRunOut | undefined): OverviewFrame {
   if (run === undefined) return "c";
   if (run.status === "running") return "a";
@@ -195,7 +200,26 @@ function Rail({
   summary: CloseSummaryOut;
   props: CloseOverviewProps;
 }): JSX.Element {
-  const open = (t: string): void => props.onOpen?.(t);
+  // C-01-T43: the rail's designed links are the screen's own; a caller may still pass onOpen.
+  const navigate = useNavigate();
+  const open = (t: string): void => {
+    if (props.onOpen !== undefined) {
+      props.onOpen(t);
+      return;
+    }
+    const closeId = props.closeId;
+    const link =
+      t === "CLS-03"
+        ? to.CLS03({ closeId })
+        : t === "CLS-04"
+          ? to.CLS04({ closeId })
+          : t === "CLS-05"
+            ? to.CLS05({ closeId, accountRef: OPERATING_CHECKING })
+            : t === "CLS-06"
+              ? to.CLS06({ closeId })
+              : null;
+    if (link !== null) void navigate(link);
+  };
   const pct =
     summary.accounts_total === 0
       ? 0

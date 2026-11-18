@@ -25,6 +25,7 @@ import {
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, useId, useState } from "react";
+import { closeReadFrame } from "../../domain/closes";
 import {
   ASSIGNEES,
   CLIENT_ANSWER,
@@ -33,9 +34,13 @@ import {
   RESOLVED_SHOPIFY,
 } from "../kit-close-data";
 import { COPY as C } from "./copy";
+import { useNavigate } from "@tanstack/react-router";
+import { to } from "../../routes/to";
 
 /** The person's grants as the server's allowed actions answer them (Raj holds issue.resolve). */
-export const PERSON_GRANTS = ["issue.resolve"] as const;
+export /** Operating Checking (Front Range Bank) ••4410: the CLS-05 account ref (CLS-05 copy). */
+const OPERATING_CHECKING = "35";
+const PERSON_GRANTS = ["issue.resolve"] as const;
 
 export interface CLS06Props {
   closeId: string;
@@ -173,6 +178,18 @@ export function CLS06({
       query: { include_resolved: initial.showResolved === true },
     }),
   );
+  // C-01-T43: the issue's designed links (CLS-03 request, CLS-04 account, CLS-05 bank
+  // reconciliation) are the screen's own.
+  const navigate = useNavigate();
+  const openRecord = (title: string): void => {
+    if (title.includes("••4410")) {
+      void navigate(to.CLS05({ closeId, accountRef: OPERATING_CHECKING }));
+    } else if (title.includes("invoice")) {
+      void navigate(to.CLS03({ closeId }));
+    } else {
+      void navigate(to.CLS04({ closeId }));
+    }
+  };
   const [tab, setTab] = useState(initial.tab ?? "exceptions");
   const [registerView, setRegisterView] = useState(initial.register ?? "detail");
   const [resolving, setResolving] = useState(initial.resolving === true);
@@ -201,6 +218,9 @@ export function CLS06({
   const canResolve = grants.includes("issue.resolve");
   const isResolved = selected?.status === "resolved";
   const who = assignee ?? detail?.assignee ?? "RM";
+  // C-01-T43: a refused or failed read is the C-20 frame, with no record data.
+  const frame = closeReadFrame("CLS-06", issues);
+  if (frame !== null) return frame;
   return (
     <div data-screen="CLS-06" className="flex gap-[10px] bg-shell p-[12px]">
       <section
@@ -360,7 +380,18 @@ export function CLS06({
                     </div>
                     <div className="flex h-[35px] items-center justify-between px-[13px]">
                       <dt className="text-ink-2">{C.fields.account}</dt>
-                      <dd className="font-medium">{detail.account}</dd>
+                      <dd className="font-medium">
+                        <button
+                          type="button"
+                          data-cls06="account-link"
+                          className="font-medium hover:underline"
+                          onClick={() => {
+                            openRecord(detail.account);
+                          }}
+                        >
+                          {detail.account}
+                        </button>
+                      </dd>
                     </div>
                   </dl>
                   {selected.why_surfaced && (
@@ -403,9 +434,18 @@ export function CLS06({
                       <h4 className="text-[13.5px] font-medium">{C.linked}</h4>
                       <ul>
                         {detail.linked.map((l) => (
-                          <li key={l.title} className="flex h-[46px] flex-col justify-center">
-                            <span className="text-[13px]">{l.title}</span>
-                            <span className="text-[11.5px] text-ink-3">{l.sub}</span>
+                          <li key={l.title}>
+                            <button
+                              type="button"
+                              data-cls06="linked"
+                              className="flex h-[46px] w-full flex-col justify-center text-left"
+                              onClick={() => {
+                                openRecord(l.title);
+                              }}
+                            >
+                              <span className="text-[13px]">{l.title}</span>
+                              <span className="text-[11.5px] text-ink-3">{l.sub}</span>
+                            </button>
                           </li>
                         ))}
                       </ul>
