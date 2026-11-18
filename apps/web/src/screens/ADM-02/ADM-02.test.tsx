@@ -188,6 +188,14 @@ describe("ADM-02 artboards", () => {
     ).toBeTruthy();
   });
 
+  // G-04-T18 (SPEC-680 AC-43): "Add seats…" opens the same plan request as ADM-01 and ADM-14.
+  it("ADM-02a: Add seats… opens the plan request dialog", async () => {
+    show("a");
+    fireEvent.click(await screen.findByRole("button", { name: "Add seats…" }));
+    const dialog = await screen.findByRole("dialog", { name: "Request more" });
+    await within(dialog).findByText("Partner approval: Margaret Okonkwo");
+  });
+
   it("ADM-02c invite with every seat held: the banner and Send invite off (AC3.3)", async () => {
     show("c");
     expect(

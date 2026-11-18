@@ -21,3 +21,4 @@ Spec section: docs/plan/epics/T-06.md §3 F5 (TXP-13 c). Part IX allocation by d
 
 ## Progress log
 - `2026-11-18` — Built in the S50 sequential stack (DEC-5629). Partial: the 87.4% public-support golden needs the five-year Schedule A support table from the Public Support frame, which the handoff does not give line by line; the formula and threshold are tested, the figure joins with the Lakeshore slice (T-06-T22). Gates and tests run once at the S50 end pass (build first, test last).
+- `2026-11-18` — Rechecked for the S50 partials round: the TXP-13 handoff (spec, README, screenshots c to c3), the blueprint §9 Lakeshore seed and the T-06 epic give public support 87.4% only as a finished figure; no frame draws the Public Support tab or the five-year Schedule A table. The golden stays open until that table exists (never invented, AGENTS.md frontend rule 5).

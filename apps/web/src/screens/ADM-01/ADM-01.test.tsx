@@ -75,7 +75,11 @@ describe("ADM-01 artboards", () => {
     expect(screen.getByText("46 seats · 224 returns")).toBeTruthy();
     expect(await screen.findByText("46 of 46 used")).toBeTruthy();
     expect(
-      screen.getByText("All seats are assigned. Add seats before inviting another user."),
+      await screen.findByText(
+        (_, el) =>
+          el?.textContent === "All seats are assigned. Add seats before inviting another user." &&
+          [...el.children].every((c) => c.textContent !== el.textContent),
+      ),
     ).toBeTruthy();
     expect(
       screen.getByText(
@@ -89,6 +93,27 @@ describe("ADM-01 artboards", () => {
     expect(within(glance).getAllByRole("button")).toHaveLength(11);
     expect(save().disabled).toBe(true);
     expect(screen.queryByText("Unsaved changes")).toBeNull();
+  });
+
+  // G-04-T18 (SPEC-680 AC-43): "Add seats" opens the plan request dialog ADM-14 uses.
+  it("ADM-01a: Add seats opens the plan request with the partner approver", async () => {
+    show("a");
+    fireEvent.click(await screen.findByRole("button", { name: "Add seats" }));
+    const dialog = await screen.findByRole("dialog", { name: "Request more" });
+    await within(dialog).findByText("Partner approval: Margaret Okonkwo");
+    const send = within(dialog).getByRole("button", { name: "Send request" });
+    expect(send).toHaveProperty("disabled", true);
+    fireEvent.change(within(dialog).getByRole("spinbutton"), { target: { value: "48" } });
+    fireEvent.change(within(dialog).getByRole("textbox"), {
+      target: { value: "October extension deadline and four FS audits in fieldwork" },
+    });
+    expect(send).toHaveProperty("disabled", false);
+  });
+
+  it("ADM-01e: IT/Security gets no Add seats link", async () => {
+    show("e");
+    await screen.findByText("Brightwater Hale LLP");
+    expect(screen.queryByRole("button", { name: "Add seats" })).toBeNull();
   });
 
   it("ADM-01b dirty: Eastern Time makes the form unsaved and Save enabled", async () => {

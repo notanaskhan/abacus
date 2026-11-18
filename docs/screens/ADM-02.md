@@ -70,7 +70,7 @@ Copy keys live in `screens/ADM-02/copy.ts`; strings verbatim from spec.md and th
 |---|---|
 | `title` | "People" |
 | `segments` | "Users" · "Role templates" · "Invitations" · "Independence" (g; DF-07) |
-| `addSeats` · `invite` | "Add seats…" (planned until G-04) · "Invite user…" |
+| `addSeats` · `invite` | "Add seats…" (G-04-T18) · "Invite user…" |
 | `tally` | "SEATS" "{used} of {total}" (f: "46 of 46 · 1 pending") + "Full" · "ROLES" "{p} partners · {n} professionals · {o} operations" · "SIGN-IN" "SSO + MFA {n} of {of}" · "WALLS" "{n} active" · "SEASONAL" "{n} · access ends {date}" |
 | `search` | "Search people" |
 | `chips` | "Role │ All" · "Office │ All offices" · "Team │ All" · "Status │ All" (a's canvas reads "Active": DEC-353) |
@@ -95,7 +95,7 @@ Row text (names, emails, titles, offices, teams, groups) is seed data, never `co
 | A row (its name is the button) | the person drawer (`?ov=person:<userId>`); role changes from its "Change role…" menu with a confirm | in-screen |
 | "Wall n" tag; the drawer's wall line | ADM-03 walls (`/settings/offices#walls`) | planned (G-01-T14); plain text until then |
 | "Invite user…" | the invite drawer (`?ov=invite`) | in-screen |
-| "Add seats…" | ADM-14 plan dialog | planned (G-04); hidden in production |
+| "Add seats…" | ADM-14 plan request dialog (a `seats` request) | live once `/v1/firm/plan` answers (G-04-T18, DEC-5642) |
 | Role change | ADM-07 "Role changed by Grace Holloway" | planned (G-02) |
 | Section list | ADM-01 and the other sections | ADM-01 built; others planned |
 | A person (later) | CLI-08 independence drawer | planned (P-07) |
@@ -146,7 +146,7 @@ Gradients in product UI, emoji, saturated blue SaaS defaults, heavy shadows, inv
 | DEC-353 | g's table has no Office column | a partner can't read the people list (DEC-286), and the year's rows carry ids only | DEC-353 |
 | DEC-353 | A role changes from the person drawer's "Change role…" menu (confirm, then fresh MFA), not from a menu on the Role cell; the row's ··· is drawn but the row itself opens the drawer | one place for a person's writes | DEC-353 |
 | DEC-353 | The invite drawer opens with Tax Preparer and the HQ office, and no team chosen (the canvas shows Tax) | a default team is a guess; the person picks it | DEC-353 |
-| — | "Add seats…" is hidden in production | G-04 owns the seat purchase | G-01 §2.1 |
+| — | "Add seats…" shows only to `firm.manage_users` holders once the plan answers | G-04-T18 made it live | G-01 §2.1 |
 | — | The role template editor is not built; the grid is read-only | OQ-4 | G-01 §2.2 |
 
 ## Parity

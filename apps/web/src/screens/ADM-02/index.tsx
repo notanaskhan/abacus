@@ -5,6 +5,7 @@ import {
   firmMembersOptions,
   listWallsOptions,
   officesOptions,
+  planGetOptions,
   roleTemplatesOptions,
   settingsOverviewOptions,
   staffOptions,
@@ -29,6 +30,7 @@ import { useNow } from "../../app-core/clock";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useSession } from "../../app-core/session";
 import { GROUPS } from "../ADM-01/copy";
+import { RequestMoreDialog } from "../ADM-14/RequestMore";
 import { COPY } from "./copy";
 import { InviteDrawer, PersonDrawer, detailOf } from "./drawers";
 import { Independence } from "./independence";
@@ -107,6 +109,8 @@ export function ADM02({ search, onSearch, onNavigate, onBack }: ADM02Props): JSX
   const queryClient = useQueryClient();
   const [stepUp, setStepUp] = useState(false);
   const canManage = useCan("firm.manage_users");
+  const firmPlan = useQuery({ ...planGetOptions(), enabled: canManage, retry: false });
+  const [addSeats, setAddSeats] = useState(false);
   const canRead = useCan("firm.read_people");
   const canAnnual = useCan("independence.annual_read");
   const canWalls = useCan("wall.list");
@@ -219,11 +223,13 @@ export function ADM02({ search, onSearch, onNavigate, onBack }: ADM02Props): JSX
   );
   const actions = (
     <>
-      {PLANNED_VISIBLE && canManage && (
+      {/* G-04-T18 (SPEC-680 AC-43): the same seats request as ADM-01's "Add seats" and ADM-14's
+          "Request more…", once the plan answers. */}
+      {canManage && firmPlan.data !== undefined && (
         <Button
           variant="secondary"
           onClick={() => {
-            onNavigate?.("plan-usage");
+            setAddSeats(true);
           }}
         >
           {COPY.addSeats}
@@ -341,6 +347,7 @@ export function ADM02({ search, onSearch, onNavigate, onBack }: ADM02Props): JSX
       stepUp={<StepUp open={stepUp} onOpenChange={setStepUp} />}
       overlay={
         <>
+          <RequestMoreDialog open={addSeats} onOpenChange={setAddSeats} />
           {inviting && (
             <InviteDrawer
               open

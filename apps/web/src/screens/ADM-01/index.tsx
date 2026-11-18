@@ -7,6 +7,7 @@ import type {
 import {
   firmMembersOptions,
   officesOptions,
+  planGetOptions,
   settingsOverviewOptions,
   settingsOverviewQueryKey,
   settingsSectionOptions,
@@ -37,6 +38,7 @@ import { useNow } from "../../app-core/clock";
 import { useOpenHref } from "../../app-core/open";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { hrefOf, to } from "../../routes/to";
+import { RequestMoreDialog } from "../ADM-14/RequestMore";
 import { COPY, GLANCE, GROUPS } from "./copy";
 
 // ADM-01 · Settings home & firm profile (G-01-T07; G-01 §3.1–3.2) on the T12 frame. The screen is
@@ -163,12 +165,14 @@ export function ADM01({ onNavigate, onBack }: ADM01Props): JSX.Element {
   const profile = useSection("profile", visible("profile"));
   const defaults = useSection("defaults", visible("defaults"));
   const plan = useSection("plan", visible("plan"));
+  const firmPlan = useQuery({ ...planGetOptions(), enabled: visible("plan"), retry: false });
   const offices = useQuery({ ...officesOptions(), enabled: overview.isSuccess, retry: false });
   const members = useQuery({ ...firmMembersOptions(), enabled: overview.isSuccess, retry: false });
   const save = useMutation(updateSettingsSectionMutation());
   const [edits, setEdits] = useState<Edits>({});
   const [stepUp, setStepUp] = useState(false);
   const [leaving, setLeaving] = useState<(() => void) | null>(null);
+  const [addSeats, setAddSeats] = useState(false);
 
   if (overview.isError) {
     // AC1.8: someone without a settings role is answered 404 and sees the not-allowed state.
@@ -299,6 +303,26 @@ export function ADM01({ onNavigate, onBack }: ADM01Props): JSX.Element {
     );
   };
   const lock = readOnly ? { action: <SettingsLock /> } : {};
+  // G-04-T18 (SPEC-680 AC-43): "Add seats" opens ADM-14's plan request dialog once the plan
+  // answers (plan.read held and `platform.plan_usage` on); otherwise the helper is plain text.
+  const canAddSeats = firmPlan.data !== undefined && !readOnly;
+  const seatsFullHelp = canAddSeats ? (
+    <>
+      {COPY.seatsFullLead}
+      <button
+        type="button"
+        className="underline-offset-2 hover:underline"
+        onClick={() => {
+          setAddSeats(true);
+        }}
+      >
+        {COPY.addSeats}
+      </button>
+      {COPY.seatsFullTail}
+    </>
+  ) : (
+    COPY.seatsFull
+  );
 
   const people = overview.data?.at_a_glance.find((r) => r.key === "people")?.facts ?? {};
   const seatTotal = valueOf(plan.data, edits, "seats");
@@ -400,23 +424,26 @@ export function ADM01({ onNavigate, onBack }: ADM01Props): JSX.Element {
       aside={glance}
       stepUp={<StepUp open={stepUp} onOpenChange={setStepUp} />}
       overlay={
-        <ConfirmDialog
-          open={leaving !== null}
-          onOpenChange={(open) => {
-            if (!open) setLeaving(null);
-          }}
-          title={COPY.discardTitle}
-          confirmLabel={COPY.discardConfirm}
-          cancelLabel={COPY.keepEditing}
-          onConfirm={() => {
-            const go = leaving;
-            setEdits({});
-            setLeaving(null);
-            go?.();
-          }}
-        >
-          {COPY.discardBody}
-        </ConfirmDialog>
+        <>
+          <RequestMoreDialog open={addSeats} onOpenChange={setAddSeats} />
+          <ConfirmDialog
+            open={leaving !== null}
+            onOpenChange={(open) => {
+              if (!open) setLeaving(null);
+            }}
+            title={COPY.discardTitle}
+            confirmLabel={COPY.discardConfirm}
+            cancelLabel={COPY.keepEditing}
+            onConfirm={() => {
+              const go = leaving;
+              setEdits({});
+              setLeaving(null);
+              go?.();
+            }}
+          >
+            {COPY.discardBody}
+          </ConfirmDialog>
+        </>
       }
     >
       {profile.data !== undefined && (
@@ -485,7 +512,7 @@ export function ADM01({ onNavigate, onBack }: ADM01Props): JSX.Element {
               label={COPY.rows.seats}
               readOnly={readOnly}
               {...((people.used ?? 0) >= seatTotal
-                ? { help: COPY.seatsFull, helpTone: "amber" as const }
+                ? { help: seatsFullHelp, helpTone: "amber" as const }
                 : {})}
             >
               {COPY.seatsUsed(people.used ?? 0, seatTotal)}
