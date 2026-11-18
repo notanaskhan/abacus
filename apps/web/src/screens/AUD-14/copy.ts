@@ -34,8 +34,10 @@ export const AUD14_COPY = {
     ct: string,
   ) =>
     `AR sent for confirmation ${sent} of ${population} (${pct}%) · confirmed ${confirmed} · differences ${differences} · CT ${ct}`,
-  clientNote:
-    "Requests and responses travel only between Brightwater Hale and the respondent. Granite Peak sees only the authorization it signs.",
+  // The handoff's sentence with the firm and the client as data (the fixture's names live in
+  // fixture-note.ts, gallery and tests only, so a production build never carries them).
+  clientNote: (firm: string, client: string) =>
+    `Requests and responses travel only between ${firm} and the respondent. ${client} sees only the authorization it signs.`,
   waitingOn: "Waiting on Luis Ferrante (SIG-02)",
   viewed: "Viewed Sep 19",
   secondRequest: "2nd request Sep 28",

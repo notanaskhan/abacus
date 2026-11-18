@@ -1,5 +1,6 @@
 import { StrictMode } from "react";
 import { bootWithRuntimeConfig } from "../app-core/boot";
+import { configureConsoleClient } from "../console/auth";
 import { ConsoleShell } from "../console/ConsoleShell";
 import "../index.css";
 
@@ -8,6 +9,8 @@ import "../index.css";
 // the firm app or the portal (scripts/console-dist-check.mjs). Same-origin /v1 under the console CSP
 // (vite.config.ts); staff sign in on the staff issuer through the console BFF (console/StaffAuth.tsx,
 // DEC-5528).
+
+configureConsoleClient();
 
 const root = document.getElementById("root");
 if (root === null) throw new Error("Missing #root element");

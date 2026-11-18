@@ -66,7 +66,7 @@ and `ratio`, sizes through `bytes`). `src/screens/amounts.ts` stays as a thin wr
 em dash, which is those screens' decision to change.
 
 Five files stay in `LEGACY_CLOCK` in `apps/web/eslint.config.js`, each with its reason there (the
-portal auth client, `app-core/auth/bff.ts`, joined with P-08-T11): they read `Date.now()` for token lifetime or an elapsed polling window, which is not business time.
+portal auth client, `app-core/auth/bff.ts`, joined with P-08-T11; the console's staff auth client, `console/auth.ts`, with G-04-T14 / DEC-5532): they read `Date.now()` for token lifetime or an elapsed polling window, which is not business time.
 Business time comes from `useNow`, `useToday` and `useFormat`, fed by `ClockProvider`.
 
 ### Status kit (F-05-T12)

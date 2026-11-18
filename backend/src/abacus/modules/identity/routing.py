@@ -85,6 +85,10 @@ PRE_SESSION_PATHS: Final = frozenset(
     # A-02-T33 (DEC-3902): the connect host's hand-off. The OAuth state authenticates it; it
     # answers only the host a live state began on (404 otherwise) and never spends the state.
     | {"/v1/connections/handoff"}
+    # G-04-T14 (DEC-5532): the console BFF on the staff issuer; sign-out reads only its cookie
+    # (CSRF header and the console's Origin), so it too comes before any bearer.
+    | {"/v1/platform/auth/sign-in", "/v1/platform/auth/callback"}
+    | {"/v1/platform/auth/refresh", "/v1/platform/auth/sign-out"}
 )
 # P-08-T05 (ADR-163 §6, ADR-152; on the ROUTE-001 exception list): the portal's branding, read
 # before anyone signs in. Public fields only, the same shape for any host; no other path may

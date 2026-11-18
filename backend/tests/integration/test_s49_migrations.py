@@ -139,3 +139,28 @@ def test_the_head_reaches_0954(private_db: sc.Database) -> None:
     assert {"0950", "0951", "0952", "0953", "0954"} <= {
         r.revision for r in scripts.walk_revisions("base", head)
     }
+
+
+STAFF_TABLES = ("platform_staff_sessions", "platform_staff_session_cookies")
+
+
+def test_0969_staff_sessions_go_down_and_up_with_no_app_privileges(
+    private_db: sc.Database,
+) -> None:
+    """G-04-T14 (TASK-8548): the console's staff-session tables are reached only by definers."""
+    migrate(private_db.owner_url, "0968", down=True)
+    for table in STAFF_TABLES:
+        assert _value(private_db, f"SELECT to_regclass('{table}') IS NULL"), table
+    migrate(private_db.owner_url, "head")
+    for table in STAFF_TABLES:
+        for privilege in ("SELECT", "INSERT", "UPDATE", "DELETE"):
+            held = _value(
+                private_db, f"SELECT has_table_privilege('abacus_app', '{table}', '{privilege}')"
+            )
+            assert held is False, (table, privilege)
+    definers = _value(
+        private_db,
+        "SELECT count(*) FROM pg_proc WHERE proname LIKE 'platform_staff_session_%' "
+        "AND prosecdef AND has_function_privilege('abacus_app', oid, 'EXECUTE')",
+    )
+    assert definers == 5

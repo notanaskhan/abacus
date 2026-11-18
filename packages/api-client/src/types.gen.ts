@@ -141747,6 +141747,190 @@ export type PutAgentStageResponses = {
 
 export type PutAgentStageResponse = PutAgentStageResponses[keyof PutAgentStageResponses];
 
+export type ConsoleCallbackData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Code
+         */
+        code?: string | null;
+        /**
+         * State
+         */
+        state?: string | null;
+    };
+    url: '/v1/platform/auth/callback';
+};
+
+export type ConsoleCallbackErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type ConsoleCallbackError = ConsoleCallbackErrors[keyof ConsoleCallbackErrors];
+
+export type ConsoleRefreshData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Csrf
+         */
+        'X-Abacus-CSRF'?: string | null;
+        /**
+         * Origin
+         */
+        origin?: string | null;
+        /**
+         * X-Abacus-Activity
+         */
+        'X-Abacus-Activity'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/platform/auth/refresh';
+};
+
+export type ConsoleRefreshErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type ConsoleRefreshError = ConsoleRefreshErrors[keyof ConsoleRefreshErrors];
+
+export type ConsoleRefreshResponses = {
+    /**
+     * Successful Response
+     */
+    200: SessionTokenOut;
+};
+
+export type ConsoleRefreshResponse = ConsoleRefreshResponses[keyof ConsoleRefreshResponses];
+
+export type ConsoleSignInData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Return To
+         */
+        return_to?: string | null;
+        /**
+         * Reauthenticate
+         */
+        reauthenticate?: boolean;
+    };
+    url: '/v1/platform/auth/sign-in';
+};
+
+export type ConsoleSignInErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type ConsoleSignInError = ConsoleSignInErrors[keyof ConsoleSignInErrors];
+
+export type ConsoleSignOutData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Csrf
+         */
+        'X-Abacus-CSRF'?: string | null;
+        /**
+         * Origin
+         */
+        origin?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/platform/auth/sign-out';
+};
+
+export type ConsoleSignOutErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ConsoleSignOutError = ConsoleSignOutErrors[keyof ConsoleSignOutErrors];
+
+export type ConsoleSignOutResponses = {
+    /**
+     * Successful Response
+     */
+    200: SignedOutOut;
+};
+
+export type ConsoleSignOutResponse = ConsoleSignOutResponses[keyof ConsoleSignOutResponses];
+
 export type ImportEmailTemplateData = {
     body: EmailTemplateImportIn;
     headers?: {

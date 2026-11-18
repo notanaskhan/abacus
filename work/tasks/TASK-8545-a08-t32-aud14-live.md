@@ -23,3 +23,4 @@ AUD-14 fixture-to-live: the log, coverage line and drawer on the generated clien
 
 ## Progress log
 - `2026-11-18` — Built 2026-11-18 (S49 open rows, round 2). Not done: the staging run against the scenario (needs staging). The mail channel's label 'Mail' is undesigned (DEC-5530). Gates and tests run once at the S49 open-rows end pass (build first, test last).
+- `2026-11-18` — End pass: the client note named Brightwater Hale and Granite Peak in copy, which the live route carried into the production build (dist test). Now `clientNote(firm, client)` with the fixture names in `fixture-note.ts` (gallery and tests only). Live shows no note until a client-name read reaches the confirmations workspace (open).

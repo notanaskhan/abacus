@@ -3,6 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import type { JSX, ReactNode } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ConfirmationsWorkspace, MANAGER_GRANTS } from ".";
+import { AUD14_FIXTURE_NOTE } from "./fixture-note";
 import { AUD14_SCENARIOS } from "./scenarios";
 
 // A-08-T29 (AUD-14 a to e): every artboard renders; state e disables Send with the red helper;
@@ -50,7 +51,9 @@ describe("AUD-14 confirmations", () => {
   });
 
   it("shows the coverage line and the client-control note", () => {
-    const { container } = render(wrap(<ConfirmationsWorkspace st="a" />));
+    const { container } = render(
+      wrap(<ConfirmationsWorkspace st="a" note={AUD14_FIXTURE_NOTE} />),
+    );
     const coverage = container.querySelector("[data-aud14='coverage']")?.textContent ?? "";
     expect(coverage).toContain("$897,950.00 of $5,860,000.00 (15.3%)");
     expect(coverage).toContain("differences $4,300.00 · CT $7,750");

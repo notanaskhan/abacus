@@ -234,11 +234,14 @@ export function ConfirmationsWorkspace({
   st,
   grants = [],
   data,
+  note,
 }: {
   st?: string | undefined;
   /** Fixture: the viewer's grants (`MANAGER_GRANTS` for Hannah Leclerc). */
   grants?: readonly string[];
   data?: ConfirmationsData | undefined;
+  /** The firm and the client the footer note names; no note without both. */
+  note?: { firm: string; client: string } | undefined;
 }): JSX.Element {
   const scenario: Aud14Scenario = (AUD14_SCENARIOS as readonly string[]).includes(st ?? "")
     ? (st as Aud14Scenario)
@@ -319,12 +322,14 @@ export function ConfirmationsWorkspace({
           }}
           onBook={data?.onBook}
         />
-        <footer
-          data-aud14="client-note"
-          className="flex h-[36px] items-center bg-nested px-[12px] text-[12px] text-ink-3 hairline-t"
-        >
-          {C.clientNote}
-        </footer>
+        {note !== undefined && (
+          <footer
+            data-aud14="client-note"
+            className="flex h-[36px] items-center bg-nested px-[12px] text-[12px] text-ink-3 hairline-t"
+          >
+            {C.clientNote(note.firm, note.client)}
+          </footer>
+        )}
       </section>
       {(data === undefined ? scenario !== "d" : detail !== undefined) && detail !== undefined && (
         <ConfirmationDrawer

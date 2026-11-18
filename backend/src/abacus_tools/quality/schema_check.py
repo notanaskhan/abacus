@@ -71,6 +71,8 @@ NON_TENANT_TABLES = frozenset(
     | {"email_templates", "email_template_versions"}  # 0092 (P-01-T05): definers only
     # 0101 (P-01-T09, ADR-165): staff sessions span firms; definers only.
     | {"auth_login_states", "auth_sessions", "auth_session_cookies"}
+    # 0969 (G-04-T14, DEC-5532): platform staff console sessions; no tenant, definers only.
+    | {"platform_staff_sessions", "platform_staff_session_cookies"}
     # 0116 (P-08-T10, ADR-168): portal sign-in comes before any tenant; definers only.
     | {"sign_in_challenges", "sign_in_locks"}
     # 0133 (P-08-T17): a person's second step and the firm's trusted devices; definers only.
@@ -355,6 +357,7 @@ GLOBAL_TABLES = frozenset(
     | {"retention_floors", "retention_policy_defaults"}  # 0112 (Q-02-T23)
     | {"email_templates", "email_template_versions"}  # 0092 (P-01-T05)
     | {"auth_login_states", "auth_sessions", "auth_session_cookies"}  # 0101 (P-01-T09)
+    | {"platform_staff_sessions", "platform_staff_session_cookies"}  # 0969 (G-04-T14)
     | {"sign_in_challenges", "sign_in_locks"}  # 0116 (P-08-T10)
     | {"mfa_factors", "mfa_backup_codes", "trusted_devices"}  # 0133 (P-08-T17)
     | {"incident_propagations"}  # 0143 (Q-02-T33)
@@ -427,6 +430,10 @@ DEFINER_FUNCTIONS = frozenset(
     # 0101 (P-01-T09, ADR-165): the staff session BFF's sign-in state and sessions.
     | {"auth_state_put", "auth_state_take", "auth_session_start", "auth_session_rotate"}
     | {"auth_session_set_refresh", "auth_session_revoke", "auth_session_end"}
+    # 0969 (G-04-T14, DEC-5532): the console BFF's platform staff sessions.
+    | {"platform_staff_session_start", "platform_staff_session_rotate"}
+    | {"platform_staff_session_set_refresh", "platform_staff_session_revoke"}
+    | {"platform_staff_session_end"}
     # 0220 (G-02-T14): the BFF's per-firm limits and sign-outs, ADM-06's sessions and sign-in
     # facts in the session's firm only, and the one-year purge.
     | {"security_sessions", "security_session_member", "security_sign_in_methods"}
