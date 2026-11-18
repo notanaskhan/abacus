@@ -24,7 +24,10 @@ import {
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
+import { closeReadFrame } from "../../domain/closes";
 import { COPY as C } from "./copy";
+import { useNavigate } from "@tanstack/react-router";
+import { to } from "../../routes/to";
 
 export interface CLS04Props {
   closeId: string;
@@ -447,11 +450,24 @@ function ArrangementDrawer({
 export function CLS04({
   closeId,
   initial = {},
-  onReconciliation,
+  onReconciliation: reconciliationProp,
   onCite,
   onRecategorize,
-  onIssue,
+  onIssue: issueProp,
 }: CLS04Props): JSX.Element {
+  // C-01-T43: the designed links (a bank account to CLS-05, a review issue to CLS-06) are the
+  // screen's own; a caller may still pass its own handler (tests, the board).
+  const navigate = useNavigate();
+  const onReconciliation =
+    reconciliationProp ??
+    ((accountRef: string): void => {
+      void navigate(to.CLS05({ closeId, accountRef }));
+    });
+  const onIssue =
+    issueProp ??
+    ((): void => {
+      void navigate(to.CLS06({ closeId }));
+    });
   const [selected, setSelected] = useState(initial.account ?? "prepaid-insurance");
   const [view, setView] = useState<"detail" | "workpaper">(initial.view ?? "workpaper");
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
@@ -477,6 +493,9 @@ export function CLS04({
     }
     return undefined;
   })(tree.data?.nodes ?? []);
+  // C-01-T43: a refused or failed account-tree read is the C-20 frame, with no account data.
+  const frame = closeReadFrame("CLS-04", tree);
+  if (frame !== null) return frame;
   return (
     <div
       data-screen="CLS-04"
@@ -512,7 +531,7 @@ export function CLS04({
               selected={selected}
               onSelect={(ref) => {
                 setSelected(ref);
-                if (banks.has(ref)) onReconciliation?.(ref);
+                if (banks.has(ref)) onReconciliation(ref);
               }}
               collapsed={collapsed}
               onToggle={(id) => {
@@ -560,7 +579,13 @@ export function CLS04({
             className="flex items-center gap-[8px] px-[14px] py-[12px] text-[12.5px] text-ink-2"
           >
             {C.bankNote}
-            <Button variant="secondary" size="sm" onClick={() => onReconciliation?.(selected)}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                onReconciliation(selected);
+              }}
+            >
               {C.openReconciliation}
             </Button>
           </p>

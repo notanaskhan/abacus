@@ -161,14 +161,8 @@ function CloseTabPage({ tab, screen }: { tab: Tab; screen: string }): JSX.Elemen
         }}
       >
         {screen === "CLS-02" ? (
-          <Overview
-            closeId={closeId}
-            onOpen={(target) => {
-              if (target === "CLS-03") go(closeId, "intake");
-              else if (target === "CLS-04") go(closeId, "accounts");
-              else if (target === "CLS-06") go(closeId, "review");
-            }}
-          />
+          // C-01-T43: CLS-02, CLS-04 and CLS-10 open their designed links themselves (to.<ID>).
+          <Overview closeId={closeId} />
         ) : screen === "CLS-03" ? (
           <Intake closeId={closeId} />
         ) : screen === "CLS-06" ? (
@@ -188,25 +182,9 @@ function CloseTabPage({ tab, screen }: { tab: Tab; screen: string }): JSX.Elemen
             }}
           />
         ) : screen === "CLS-04" ? (
-          <Accounts
-            closeId={closeId}
-            onReconciliation={(accountRef) => {
-              void navigate({
-                to: "/closes/$closeId/accounts/$accountRef",
-                params: { closeId, accountRef },
-              });
-            }}
-            onIssue={() => {
-              go(closeId, "review");
-            }}
-          />
+          <Accounts closeId={closeId} />
         ) : screen === "CLS-10" ? (
-          <Flux
-            closeId={closeId}
-            onOpen={(target) => {
-              if (target === "CLS-06") go(closeId, "review");
-            }}
-          />
+          <Flux closeId={closeId} />
         ) : undefined}
       </Shell>
     </div>

@@ -19,17 +19,17 @@ export const clsScreens = {
   },
   "CLS-04": {
     name: "Close › Accounts · Prepaid Insurance workpaper",
-    status: "planned",
+    status: "live", // C-01-T43
     path: "/closes/$closeId/accounts",
   },
   "CLS-05": {
     name: "Close › Reconciliation · Operating Checking (Front Range Bank) ••4410, Aug 31, 2026",
-    status: "planned",
+    status: "live", // C-01-T43
     path: "/closes/$closeId/accounts/$accountRef",
   },
   "CLS-06": {
     name: "Close › Review · Copperleaf August 2026",
-    status: "planned",
+    status: "live", // C-01-T43
     path: "/closes/$closeId/review",
   },
   "CLS-07": {
@@ -50,7 +50,7 @@ export const clsScreens = {
   },
   "CLS-10": {
     name: "Flux analysis · Copperleaf August vs July 2026",
-    status: "fixture", // C-01-T40: a–e on the figure book's fixtures
+    status: "live", // C-01-T40 fixtures; live from C-01-T43
     path: "/closes/$closeId/flux",
   },
   "CLS-11": {

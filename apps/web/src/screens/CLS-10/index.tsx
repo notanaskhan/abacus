@@ -32,8 +32,11 @@ import {
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, type JSX, useState } from "react";
+import { closeReadFrame } from "../../domain/closes";
 import { useCan } from "../../app-core/can";
 import { COPY, fill } from "./copy";
+import { useNavigate } from "@tanstack/react-router";
+import { to } from "../../routes/to";
 
 export type Basis = "mom" | "yoy";
 
@@ -136,7 +139,13 @@ function Explanation({ line, tracing }: { line: FluxLineOut; tracing: boolean })
   );
 }
 
-export function CLS10({ closeId, initial = {}, onOpen }: CLS10Props): JSX.Element {
+export function CLS10({ closeId, initial = {}, onOpen: openProp }: CLS10Props): JSX.Element {
+  // C-01-T43: "Issue ›" opens CLS-06 itself; CLS-07 and KNW-04 stay with the caller (planned).
+  const navigate = useNavigate();
+  const onOpen = (target: "CLS-06" | "CLS-07" | "KNW-04", ref?: string): void => {
+    if (openProp !== undefined) openProp(target, ref);
+    else if (target === "CLS-06") void navigate(to.CLS06({ closeId }));
+  };
   const queryClient = useQueryClient();
   const [basis, setBasis] = useState<Basis>(initial.basis ?? "mom");
   const options = { path: { close_id: closeId }, query: { basis } };
@@ -155,6 +164,9 @@ export function CLS10({ closeId, initial = {}, onOpen }: CLS10Props): JSX.Elemen
     ? explain.variables.path.line_id
     : (flux.data?.lines.find((l) => l.line_key === initial.explaining)?.line_id ?? null);
 
+  // C-01-T43: a refused or failed flux read is the C-20 frame, with no line data.
+  const frame = closeReadFrame("CLS-10", flux);
+  if (frame !== null) return frame;
   if (flux.isPending || flux.data === undefined) {
     return (
       <div data-screen-body="CLS-10" className="flex flex-col gap-[8px] p-[12px]">
@@ -183,8 +195,8 @@ export function CLS10({ closeId, initial = {}, onOpen }: CLS10Props): JSX.Elemen
             { label: COPY.segments.flux, count: t.over },
           ]}
           onChange={(label) => {
-            if (label === COPY.segments.issues) onOpen?.("CLS-06");
-            else if (label === COPY.segments.adjustments) onOpen?.("CLS-07");
+            if (label === COPY.segments.issues) onOpen("CLS-06");
+            else if (label === COPY.segments.adjustments) onOpen("CLS-07");
           }}
         />
         <span className="absolute left-1/2 -translate-x-1/2 text-[14.5px] font-medium">
@@ -193,7 +205,7 @@ export function CLS10({ closeId, initial = {}, onOpen }: CLS10Props): JSX.Elemen
         <button
           type="button"
           onClick={() => {
-            onOpen?.("KNW-04");
+            onOpen("KNW-04");
           }}
           className="ml-auto flex h-[29px] items-center gap-[4px] rounded-pill bg-card px-[12px] text-[12.5px] shadow-e1"
         >
@@ -325,7 +337,7 @@ export function CLS10({ closeId, initial = {}, onOpen }: CLS10Props): JSX.Elemen
                         <StatusCell
                           line={line}
                           onIssue={() => {
-                            onOpen?.("CLS-06", line.line_key);
+                            onOpen("CLS-06", line.line_key);
                           }}
                         />
                       </td>
