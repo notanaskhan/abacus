@@ -1,12 +1,30 @@
-# CLS-08 · Close deliverables · Copperleaf August 2026 statements
+# CLS-08 · Close package · Copperleaf August 2026
 
 | Field | Value |
 |---|---|
-| Route and params | None yet: fixture mode only. Route `/closes/$closeId/deliverables`. |
+| Route and params | `/closes/$closeId/package` (C-02 §5.1); artboards `/components/screens/CLS-08?st=…` |
+| Template and host frame | T6 WorkbookLayout (paper) |
 | Surface | firm |
-| Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/CLS-08 Close - Deliverables - Copperleaf August 2026 statements/` (README.md, spec.md, screenshots) |
-| Epic and tasks | C-02 · contract stub C-02-T07 (closes-delivery); design deltas C-02-T10; screen and live swap per `docs/plan/epics/C-02.tasks.csv` |
-| Manifest status | planned (this file holds the C-02-T10 design deltas until the screen task writes the full contract) |
+| Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/CLS-08 Close - Deliverables - Copperleaf August 2026 statements/` |
+| Epic and tasks | C-02 · SPEC-700, SPEC-701; screen contracts and scenarios C-02-T15 (TASK-8624); screen and live swap per `docs/plan/epics/C-02.tasks.csv` |
+| Manifest status | planned |
+
+Parity tier target: C (C-02 §5.5). Copy keys live in `apps/web/src/screens/CLS-08/copy.ts` when the screen task builds it; words from the handoff and the status vocabulary only. Fixtures come from the Python scenario through `make fixtures` (F-04-T31), never hand-written.
+
+## States
+| Letter | Artboard | Scenario | Persona | Clock (CT) | Build | Owner |
+|---|---|---|---|---|---|---|
+| a | Draft ready to release | ``fixtures/scenarios/CLS-08.ts` state` | Priya Raman | Mon Sep 14, 4:10 PM | planned | AY |
+| a2 | Release · confirm | ``fixtures/scenarios/CLS-08.ts` state` | Priya Raman | Mon 14 Sep 2026, 4:10 PM | planned | AY |
+| b | Drafting | ``fixtures/scenarios/CLS-08.ts` state` | Priya Raman | Mon 14 Sep 2026, 4:10 PM | planned | AY |
+| c | Blocked · 9:24 AM | ``fixtures/scenarios/CLS-08.ts` state` | Priya Raman | Mon 14 Sep 2026, 4:10 PM | planned | AY |
+| d | Released | ``fixtures/scenarios/CLS-08.ts` state` | Priya Raman | Mon 14 Sep 2026, 4:25 PM | planned | AY |
+| e | Approved by client | ``fixtures/scenarios/CLS-08.ts` state` | Priya Raman | Mon 14 Sep 2026, 8:42 AM | planned | AY |
+| f | SSARS 27 route · illustrative December 2026 close | ``fixtures/scenarios/CLS-08.ts` state` | Priya Raman | Mon 14 Sep 2026, 4:10 PM | planned | AY |
+| g | “No” answer | ``fixtures/scenarios/CLS-08.ts` state` | Priya Raman | Mon 14 Sep 2026, 4:10 PM | planned | AY |
+
+## Deviations
+- Personas and clocks per state are in the scenario file (CLS-07 c, c2, d are Priya Raman's; the README's viewer column names Raj).
 
 ## Design deltas (C-02-T10, DEC-5509)
 Each row is the frame it amends (an annotated handoff screenshot) and the build answer; none needs a backend change outside the C-02 backlog.
