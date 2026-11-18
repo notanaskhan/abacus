@@ -1,15 +1,16 @@
 // CLS-07 fixture scenarios (C-02-T15, DEC-5624; handoff CLS-07): Copperleaf August 2026 adjustments and thresholds; Raj Malhotra approves within threshold, Priya Raman approves held entries and posts.
-// Each artboard's persona and clock (CDT until Sun Nov 1, 2026; CST after). Data handlers join
-// with the screen task (fixtures from the Python scenario through `make fixtures`, never hand
-// written); until then every state serves the E0 seed and the closes and posting flags on.
+// Each artboard's persona and clock (CDT until Sun Nov 1, 2026; CST after). C-02-T17 (DEC-5637):
+// the close's entries come from the Python scenario's export (`seed/cls07.ts` over
+// `scenario.cls07-entries.json`), on the E0 seed with the closes and posting flags on.
 import { type Scenario, defineScenarios, json } from "../../app-core/fixture-mode";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
+import { type Cls07Fixture, closeEntries, entries } from "../seed/cls07";
 import { capabilitiesFor } from "../seed/shell";
 
 const E0 = seedScenario();
 
-function at(state: string, persona: string, clock: string): Scenario {
+function at(state: Cls07Fixture, persona: string, clock: string): Scenario {
   return {
     state,
     persona,
@@ -17,6 +18,9 @@ function at(state: string, persona: string, clock: string): Scenario {
     get handlers() {
       return {
         ...E0.handlers,
+        "GET /v1/work-items/{work_item_id}/proposed-entries:close": () => json(closeEntries(state)),
+        "GET /v1/work-items/{work_item_id}/proposed-entries": () =>
+          json({ items: entries(state), next_cursor: null }),
         "GET /v1/me/capabilities": ({ persona: who }: { persona?: string | undefined }) => {
           const base = capabilitiesFor(getSeed(), who ?? persona);
           return json({

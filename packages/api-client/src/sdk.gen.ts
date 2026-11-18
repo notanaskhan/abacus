@@ -16141,7 +16141,8 @@ export const portalSubmit = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Portal Answer Question Route
  *
- * The client's answer, sealed; an attachment fulfils the linked request (C-01-T27).
+ * The client's answer, sealed; an attachment fulfils the linked request (C-01-T27). The
+ * attachment's upload links its evidence version through the portal upload route first.
  */
 export const portalAnswerQuestion = <ThrowOnError extends boolean = false>(options: Options<PortalAnswerQuestionData, ThrowOnError>): RequestResult<PortalAnswerQuestionResponses, PortalAnswerQuestionErrors, ThrowOnError> => (options.client ?? client).post<PortalAnswerQuestionResponses, PortalAnswerQuestionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

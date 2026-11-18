@@ -26750,7 +26750,8 @@ export const portalSubmitMutation = (options?: Partial<Options<PortalSubmitData>
 /**
  * Portal Answer Question Route
  *
- * The client's answer, sealed; an attachment fulfils the linked request (C-01-T27).
+ * The client's answer, sealed; an attachment fulfils the linked request (C-01-T27). The
+ * attachment's upload links its evidence version through the portal upload route first.
  */
 export const portalAnswerQuestionMutation = (options?: Partial<Options<PortalAnswerQuestionData>>): UseMutationOptions<PortalAnswerQuestionResponse, PortalAnswerQuestionError, Options<PortalAnswerQuestionData>> => {
     const mutationOptions: UseMutationOptions<PortalAnswerQuestionResponse, PortalAnswerQuestionError, Options<PortalAnswerQuestionData>> = {

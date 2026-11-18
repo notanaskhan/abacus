@@ -666,12 +666,24 @@ def export(snapshot: str, out: Path) -> list[Path]:
 
 def scenario_files() -> dict[str, str]:
     """Fixtures computed from the scenario's own data, with no database: N-02-T36's SIG-01 hub
-    (`scenario.signatures-hub.json`), which the TypeScript scenarios are held to
-    (`seed/signatures.export.test.ts`)."""
+    (`scenario.signatures-hub.json`) and C-02-T17's CLS-07 entries, which the TypeScript scenarios
+    are held to (`seed/signatures.export.test.ts`, `seed/cls07.export.test.ts`)."""
+    from abacus_tools.synthetic.scenarios.brightwater_hale.cas_delivery_slice import cls07_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import hub_rows
 
     body = {"scenario": SCENARIO_VERSION, "slice": "signatures", "snapshot": "E0", **hub_rows()}
-    return {"scenario.signatures-hub.json": json.dumps(body, indent=2, ensure_ascii=False) + "\n"}
+    cls07 = {
+        "scenario": SCENARIO_VERSION,
+        "slice": "cas_delivery",
+        "snapshot": "E0",
+        **cls07_rows(),
+    }
+    return {
+        "scenario.signatures-hub.json": json.dumps(body, indent=2, ensure_ascii=False) + "\n",
+        # C-02-T17 (DEC-5637): CLS-07's Copperleaf August entries, which the TypeScript CLS-07
+        # scenarios are held to (`seed/cls07.export.test.ts`).
+        "scenario.cls07-entries.json": json.dumps(cls07, indent=2, ensure_ascii=False) + "\n",
+    }
 
 
 def write_scenario_files(out: Path) -> list[Path]:
