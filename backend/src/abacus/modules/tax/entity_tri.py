@@ -39,6 +39,14 @@ TRI_RECORDS: Final[tuple[tuple[str, str, str], ...]] = (
     ("k1_handoffs", "final_values", "the package's return is an entity return"),
     ("allocation_results", "amount", "always"),
     ("ownership_periods", "profit_pct", "always"),
+    # T-08-T06 (0961, DEC-5605): explanations, amendment Part II, AAR figures, planning savings.
+    ("variance_explanation_versions", "text", "always"),
+    ("amendment_explanation_versions", "text", "always"),
+    ("aar_adjustments", "description", "always"),
+    ("aar_adjustments", "amount", "always"),
+    ("aar_elections", "imputed_underpayment", "always"),
+    ("planning_opportunities", "est_savings", "always"),
+    ("standards_check_results", "difference", "always"),
 )
 
 

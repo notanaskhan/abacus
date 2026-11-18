@@ -1440,3 +1440,231 @@ UPDATE_COLUMNS["nexus_facts"] = frozenset(
         "owner_user_id",
     }
 )
+
+# T-08-T06 (0961, DEC-5605).
+T08T06_TABLES: frozenset[str] = frozenset(
+    {
+        "aar_adjustments",
+        "aar_elections",
+        "amendment_explanation_versions",
+        "amendments",
+        "planning_opportunity_events",
+        "planning_screens",
+        "return_supersessions",
+        "standards_check_confirmations",
+        "standards_check_results",
+        "standards_run_items",
+        "standards_runs",
+        "variance_explanation_acceptances",
+        "variance_explanation_versions",
+    }
+)
+TABLES = TABLES | T08T06_TABLES
+INSERT_ONLY = INSERT_ONLY | frozenset(
+    {
+        "aar_elections",
+        "amendment_explanation_versions",
+        "planning_opportunity_events",
+        "planning_screens",
+        "return_supersessions",
+        "standards_check_confirmations",
+        "standards_check_results",
+        "variance_explanation_acceptances",
+        "variance_explanation_versions",
+    }
+)
+INSERT_COLUMNS["variance_explanation_versions"] = frozenset(
+    {
+        "author_kind",
+        "citations",
+        "created_by",
+        "engagement_id",
+        "line_key",
+        "suggestion_id",
+        "tenant_id",
+        "text",
+        "version_no",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["variance_explanation_acceptances"] = frozenset(
+    {
+        "accepted_by",
+        "tenant_id",
+        "threshold_source",
+        "values_hash",
+        "version_id",
+    }
+)
+INSERT_COLUMNS["standards_runs"] = frozenset(
+    {
+        "form",
+        "standard_version_id",
+        "started_by",
+        "tenant_id",
+    }
+)
+UPDATE_COLUMNS["standards_runs"] = frozenset(
+    {
+        "completed_at",
+        "status",
+    }
+)
+INSERT_COLUMNS["standards_run_items"] = frozenset(
+    {
+        "checks_total",
+        "engagement_id",
+        "run_id",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["standards_run_items"] = frozenset(
+    {
+        "checks_passed",
+        "checks_total",
+        "completed_at",
+        "status",
+    }
+)
+INSERT_COLUMNS["standards_check_results"] = frozenset(
+    {
+        "anchor",
+        "check_key",
+        "created_issue_id",
+        "difference",
+        "linked_issue_id",
+        "outcome",
+        "run_item_id",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["standards_check_confirmations"] = frozenset(
+    {
+        "confirmed_by",
+        "note",
+        "outcome",
+        "result_id",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["planning_screens"] = frozenset(
+    {
+        "agent_run_id",
+        "partner_user_id",
+        "rules_version",
+        "tenant_id",
+        "trigger",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["planning_opportunity_events"] = frozenset(
+    {
+        "actor_id",
+        "event",
+        "from_status",
+        "note",
+        "opportunity_id",
+        "reason",
+        "tenant_id",
+        "to_status",
+    }
+)
+INSERT_COLUMNS["amendments"] = frozenset(
+    {
+        "baseline_checkpoint_id",
+        "created_by",
+        "engagement_id",
+        "jurisdictions",
+        "kind",
+        "original_work_item_id",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["amendments"] = frozenset(
+    {
+        "baseline_checkpoint_id",
+        "row_version",
+    }
+)
+INSERT_COLUMNS["amendment_explanation_versions"] = frozenset(
+    {
+        "amendment_id",
+        "author_kind",
+        "created_by",
+        "edit_dif",
+        "suggestion_id",
+        "tenant_id",
+        "text",
+        "version_no",
+    }
+)
+INSERT_COLUMNS["return_supersessions"] = frozenset(
+    {
+        "ack_id",
+        "original_work_item_id",
+        "superseded_by_work_item_id",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["aar_adjustments"] = frozenset(
+    {
+        "amendment_id",
+        "amount",
+        "description",
+        "position",
+        "reviewed_year",
+        "tenant_id",
+    }
+)
+UPDATE_COLUMNS["aar_adjustments"] = frozenset(
+    {
+        "amount",
+        "description",
+    }
+)
+INSERT_COLUMNS["aar_elections"] = frozenset(
+    {
+        "amendment_id",
+        "decided_by",
+        "decision_id",
+        "imputed_underpayment",
+        "iu_source",
+        "route",
+        "tenant_id",
+    }
+)
+# T-08-T06 (0961): T-05's planning_opportunities (0830) widened for rule rows and six statuses.
+INSERT_COLUMNS["planning_opportunities"] = INSERT_COLUMNS["planning_opportunities"] | frozenset(
+    {
+        "category",
+        "client_draft_suggestion_id",
+        "client_id",
+        "consent_basis",
+        "consent_id",
+        "est_savings",
+        "owner_user_id",
+        "product_kind",
+        "rationale_suggestion_id",
+        "rule_key",
+        "savings_basis",
+        "screen_id",
+        "talking_points_suggestion_id",
+    }
+)
+UPDATE_COLUMNS["planning_opportunities"] = UPDATE_COLUMNS["planning_opportunities"] | frozenset(
+    {
+        "client_draft_suggestion_id",
+        "est_savings",
+        "owner_user_id",
+        "previous_status",
+        "project_engagement_id",
+        "raised_message_id",
+        "rationale_suggestion_id",
+        "row_version",
+        "savings_basis",
+        "status",
+        "talking_points_suggestion_id",
+    }
+)
