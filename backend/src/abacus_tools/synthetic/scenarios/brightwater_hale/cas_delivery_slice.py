@@ -101,6 +101,37 @@ ENTRIES: Final = (
           )),
 )  # fmt: skip
 FIRST_FIVE: Final = ENTRIES[:5]
+
+
+def cls07_rows() -> dict[str, object]:
+    """CLS-07's entries as plain JSON (C-02-T17; DEC-5637): `make fixtures` writes them to
+    `apps/web/src/fixtures/seed/scenario.cls07-entries.json` with no database. Amounts are strings
+    with cents; the class limit is the K-02 policy's; lines only where the handoff names them."""
+    return {
+        "client": COPPERLEAF,
+        "period": "2026-08",
+        "policy": POLICY,
+        "entries": [
+            {
+                "ref": e.ref,
+                "title": e.title,
+                "account_class": e.account_class,
+                "class_limit": None if e.class_limit is None else str(e.class_limit),
+                "line_count": e.line_count,
+                "amount": str(e.amount),
+                "initial": e.initial,
+                "reverses_on": None if e.reverses_on is None else e.reverses_on.isoformat(),
+                "qbo_id": e.qbo_id,
+                "lines": [
+                    {"account": ln.account, "debit": str(ln.debit), "credit": str(ln.credit)}
+                    for ln in e.lines
+                ],
+            }
+            for e in ENTRIES
+        ],
+    }
+
+
 # CLS-07e and CLS-11's July failure: the account the fake QBO reports inactive.
 INACTIVE_ACCOUNT: Final = "Accumulated Depreciation"
 

@@ -322202,7 +322202,7 @@
     },
     "/v1/portal/questions/{question_id}/answer": {
       "post": {
-        "description": "The client's answer, sealed; an attachment fulfils the linked request (C-01-T27).",
+        "description": "The client's answer, sealed; an attachment fulfils the linked request (C-01-T27). The\nattachment's upload links its evidence version through the portal upload route first.",
         "operationId": "portal_answer_question",
         "parameters": [
           {

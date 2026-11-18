@@ -1,0 +1,114 @@
+{
+  "scenario": "bh-2026.10.3",
+  "slice": "cas_delivery",
+  "snapshot": "E0",
+  "client": "Copperleaf Coffee Roasters, Inc.",
+  "period": "2026-08",
+  "policy": "BH AJE thresholds v2",
+  "entries": [
+    {
+      "ref": "AJE-01",
+      "title": "Payroll accrual",
+      "account_class": "payroll_accruals",
+      "class_limit": "15000.00",
+      "line_count": 3,
+      "amount": "11860.00",
+      "initial": "within_threshold",
+      "reverses_on": "2026-09-01",
+      "qbo_id": "48213",
+      "lines": []
+    },
+    {
+      "ref": "AJE-02",
+      "title": "Prepaid insurance",
+      "account_class": "prepaids",
+      "class_limit": "10000.00",
+      "line_count": 2,
+      "amount": "700.00",
+      "initial": "within_threshold",
+      "reverses_on": null,
+      "qbo_id": "48214",
+      "lines": []
+    },
+    {
+      "ref": "AJE-03",
+      "title": "Depreciation",
+      "account_class": "depreciation",
+      "class_limit": "10000.00",
+      "line_count": 2,
+      "amount": "2140.00",
+      "initial": "within_threshold",
+      "reverses_on": null,
+      "qbo_id": "48215",
+      "lines": []
+    },
+    {
+      "ref": "AJE-04",
+      "title": "Deferred revenue (subscriptions)",
+      "account_class": "deferred_revenue",
+      "class_limit": "10000.00",
+      "line_count": 2,
+      "amount": "5320.00",
+      "initial": "within_threshold",
+      "reverses_on": null,
+      "qbo_id": "48216",
+      "lines": []
+    },
+    {
+      "ref": "AJE-05",
+      "title": "Accrued expenses",
+      "account_class": "other_accruals",
+      "class_limit": "10000.00",
+      "line_count": 4,
+      "amount": "14900.00",
+      "initial": "review_required",
+      "reverses_on": "2026-09-01",
+      "qbo_id": "48217",
+      "lines": [
+        {
+          "account": "Inventory — Green Coffee",
+          "debit": "12600.00",
+          "credit": "0.00"
+        },
+        {
+          "account": "Utilities & Facilities",
+          "debit": "1480.00",
+          "credit": "0.00"
+        },
+        {
+          "account": "Legal & Professional Fees",
+          "debit": "820.00",
+          "credit": "0.00"
+        },
+        {
+          "account": "Accrued Expenses",
+          "debit": "0.00",
+          "credit": "14900.00"
+        }
+      ]
+    },
+    {
+      "ref": "AJE-06",
+      "title": "Vendor refund — Rocky Ridge Dairy Co.",
+      "account_class": null,
+      "class_limit": null,
+      "line_count": 2,
+      "amount": "380.00",
+      "initial": "review_required",
+      "reverses_on": null,
+      "qbo_id": "48218",
+      "lines": [
+        {
+          "account": "Operating Checking",
+          "debit": "380.00",
+          "credit": "0.00"
+        },
+        {
+          "account": "Cost of Goods Sold — Dairy",
+          "debit": "0.00",
+          "credit": "380.00"
+        }
+      ]
+    }
+  ]
+}
