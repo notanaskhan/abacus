@@ -11,12 +11,14 @@ import {
 } from "@abacus/api-client/query";
 import { Button, DEFAULT_TZ, Skeleton, StatusDisc, date, time } from "@abacus/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { type JSX, useState } from "react";
+import { type JSX, type ReactNode, Suspense, lazy, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { useBinders } from "../../domain/portal";
-import { POR03 } from "../POR-03";
 import { COPY as C } from "./copy";
 import { QuestionSheet } from "./QuestionSheet";
+
+// Lazy, so the request kit stays in POR-03's own chunk (the route budgets, F-05-T17).
+const POR03 = lazy(async () => ({ default: (await import("../POR-03")).POR03 }));
 
 export interface POR11Props {
   /** `YYYY-MM` from `/documents?period=`. */
@@ -25,6 +27,8 @@ export interface POR11Props {
   /** Open this question's sheet on arrival (POR-11 b; POR-04 `?question=`). */
   questionId?: string;
   onNavigate?: (area: string) => void;
+  /** The documents area the slot falls back to (rendered only where POR-11 is not built in). */
+  children?: ReactNode;
 }
 
 function receipt(at: string, now: Date): string {
@@ -135,11 +139,13 @@ export function POR11({
           <QuestionsCard closeId={binder.close_id} mobile={mobile} questionId={questionId} />
         </div>
       ) : null}
-      <POR03
-        {...(binder ? { binderId: binder.id } : {})}
-        mobile={mobile}
-        {...(onNavigate ? { onNavigate } : {})}
-      />
+      <Suspense fallback={<Skeleton aria-label={C.loading} className="h-[604px] w-full" />}>
+        <POR03
+          {...(binder ? { binderId: binder.id } : {})}
+          mobile={mobile}
+          {...(onNavigate ? { onNavigate } : {})}
+        />
+      </Suspense>
     </div>
   );
 }
