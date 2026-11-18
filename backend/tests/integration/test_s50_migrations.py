@@ -71,6 +71,11 @@ TRIGGERS = (
     ("destruction_batches", "destruction_batches_forward"),
     ("destruction_approvals", "destruction_approvals_two"),
     ("tax_handoffs", "tax_handoffs_supersede"),
+    # 0968 (S50 follow-up, DEC-5641): the permitted write in the UPDATE trigger's WHEN.
+    ("evidence_versions", "evidence_versions_no_update"),
+    ("evidence_versions", "evidence_versions_no_delete"),
+    ("tax_handoffs", "tax_handoffs_no_update"),
+    ("filing_deadline_alerts", "filing_deadline_alerts_no_truncate"),
 )
 
 
@@ -148,7 +153,40 @@ def test_the_head_reaches_0966(private_db: sc.Database) -> None:
         Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
     )
     head = str(_value(private_db, "SELECT version_num FROM alembic_version"))
-    assert head == scripts.get_current_head() == "0966"
+    # Single head; 0966 stays on the line as later migrations land (0968, S50 follow-up).
+    assert head == scripts.get_current_head()
     assert {"0960", "0961", "0962", "0963", "0964", "0965", "0966"} <= {
         r.revision for r in scripts.walk_revisions("base", head)
     }
+
+
+@pytest.mark.parametrize(
+    ("table", "trigger", "allowed"),
+    [
+        ("evidence_versions", "evidence_versions_no_update", "destruction_tombstone"),
+        ("tax_handoffs", "tax_handoffs_no_update", "app.tax_handoff_supersede"),
+    ],
+)
+def test_0968_the_one_permitted_write_lives_in_the_when(
+    private_db: sc.Database, table: str, trigger: str, allowed: str
+) -> None:
+    definition = str(
+        _value(
+            private_db,
+            "SELECT pg_get_triggerdef(oid) FROM pg_trigger "
+            "WHERE tgrelid = $1::regclass AND tgname = $2",
+            table,
+            trigger,
+        )
+    )
+    assert "WHEN ((NOT (" in definition and allowed in definition, definition
+    body = str(
+        _value(
+            private_db,
+            "SELECT p.prosrc FROM pg_trigger t JOIN pg_proc p ON p.oid = t.tgfoid "
+            "WHERE t.tgrelid = $1::regclass AND t.tgname = $2",
+            table,
+            trigger,
+        )
+    )
+    assert "RAISE EXCEPTION" in body and "RETURN" not in body.upper(), body
