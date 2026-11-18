@@ -32,6 +32,7 @@ from abacus.kernel._statuses import (
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
+from abacus.modules.adjustments import close_approvals as _approvals
 from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -337,6 +338,66 @@ posting_router = AbacusRouter(prefix="/v1", tags=["adjustments"])
 _WI = "/work-items/{work_item_id}"
 
 
+def _decided(d: _approvals.Decided) -> PostingDecisionOut:
+    return PostingDecisionOut(
+        decision_id=d.decision_id,
+        entry_id=d.entry_id,
+        status=ProposedEntryStatus(d.status),
+        approval_label=d.approval_label,
+        undo_until=d.undo_until,
+    )
+
+
+def _close_out(
+    ctx: AuthContext, view: _approvals.CloseEntries, posting_enabled: bool
+) -> PostingCloseEntriesOut:
+    items = [
+        PostingCloseEntryRowOut(
+            entry_id=e.entry_id,
+            ref=e.ref,
+            description=e.description,
+            amount=e.amount,
+            status=ProposedEntryStatus(e.status),
+            class_limit=_limit(e),
+            approval_label=e.approval_label,
+            version=e.version,
+        )
+        for e in view.entries
+    ]
+    return PostingCloseEntriesOut(
+        items=items,
+        total=len(items),
+        tallies=PostingTalliesOut(
+            proposed=PostingTallyOut(count=view.proposed.count, amount=view.proposed.amount),
+            within_threshold=PostingTallyOut(
+                count=view.within_threshold.count, amount=view.within_threshold.amount
+            ),
+            review_required=PostingTallyOut(
+                count=view.review_required.count, amount=view.review_required.amount
+            ),
+            approved=view.approved,
+            of=view.proposed.count,
+        ),
+        approver=PostingApproverContextOut(
+            user_id=ctx.user_id,
+            display_name=view.display_name,
+            role_label=_approvals.role_label(view.role),
+            policy_label=view.policy_label or "",
+            policy_version_id=view.policy_version_id or ctx.user_id,
+            may_batch_within_threshold=view.may_batch_within_threshold,
+        ),
+        posting_enabled=posting_enabled,
+        is_attest_client=view.attest,
+    )
+
+
+def _limit(e: _approvals.ClosedEntry) -> PostingClassLimitOut | None:
+    limit = None if e.classification is None else e.limit
+    if limit is None or e.account_class is None:
+        return None
+    return PostingClassLimitOut(account_class=e.account_class, limit=limit)
+
+
 async def _posting_on(ctx: AuthContext) -> None:
     """A client principal never reaches a posting route; the flag off answers 404."""
     if ctx.client or not await flag_enabled(ctx.tenant, ADJUSTMENTS_POSTING):
@@ -359,7 +420,8 @@ async def _human(ctx: AuthContext, action: str) -> None:
 async def close_entries_route(work_item_id: UUID, ctx: Ctx) -> PostingCloseEntriesOut:
     """CLS-07 list with tallies, class limits and the approver's context (C-02-T12)."""
     await _posting_on(ctx)
-    raise NotImplementedYet
+    view = await _approvals.close_entries(ctx, work_item_id)
+    return _close_out(ctx, view, await _approvals.posting_enabled(ctx, work_item_id))
 
 
 @posting_router.post(
@@ -374,7 +436,7 @@ async def approve_entry_route(
     """A held or review-required entry; 409 `over_approval_limit` or `snapshot_changed`; the
     10-second Undo (C-02-T12)."""
     await _human(ctx, "proposed_entry.approve")
-    raise NotImplementedYet
+    return _decided(await _approvals.approve_held(ctx, entry_id, body.seen_version))
 
 
 @posting_router.post(
@@ -388,7 +450,7 @@ async def posting_request_approval_route(
 ) -> PostingDecisionOut:
     """HOME-02 gate `proposed_entry_approval` and the bell `entry_approval_requested`."""
     await _human(ctx, "proposed_entry.request_approval")
-    raise NotImplementedYet
+    return _decided(await _approvals.request_approval(ctx, entry_id, body.user_id))
 
 
 @posting_router.post(
@@ -400,7 +462,7 @@ async def posting_request_approval_route(
 async def undo_approval_route(decision_id: UUID, ctx: Ctx) -> PostingDecisionOut:
     """`approval_undone`, inside 10 seconds and before any effect started."""
     await _human(ctx, "proposed_entry.undo_approval")
-    raise NotImplementedYet
+    return _decided(await _approvals.undo(ctx, decision_id))
 
 
 @posting_router.post(
@@ -414,7 +476,7 @@ async def withdraw_approval_route(
 ) -> PostingDecisionOut:
     """`approval_withdrawn` on an approved, unposted entry; it returns to its threshold result."""
     await _human(ctx, "proposed_entry.withdraw_approval")
-    raise NotImplementedYet
+    return _decided(await _approvals.withdraw(ctx, entry_id, body.reason_code, body.note))
 
 
 @posting_router.post(
@@ -428,7 +490,7 @@ async def reject_close_entry_route(
 ) -> PostingDecisionOut:
     """Rejected with a reason, and a CLS-06 issue on the close (DF-23)."""
     await _human(ctx, "proposed_entry.reject_close")
-    raise NotImplementedYet
+    return _decided(await _approvals.reject(ctx, entry_id, body.reason_code, body.note))
 
 
 @posting_router.post(
