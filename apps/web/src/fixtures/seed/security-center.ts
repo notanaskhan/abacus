@@ -108,6 +108,7 @@ export const ACTIONS: Readonly<Record<string, readonly string[]>> = {
     "staff.unlock",
     "support_session.read",
     "support_session.manage",
+    "support_session.decline",
     "incident.read",
     "incident.manage",
     "incident.decide",
@@ -424,9 +425,8 @@ export const WISP_PACK: WispPackOut = {
 
 /** Aug 17, 2026 · 10:12–11:40 AM · Jordan Pryce (Accrued Support) · integration settings only.
  * `state` picks the card's state: closed (the seed), requested ("Awaiting firm approval"),
- * active ("Granted until 11:40 AM") or revoked. "Declined" is stored from G-02-T14 (DEC-72) and
- * its fixture lands with it. */
-export type SupportState = "closed" | "requested" | "active" | "revoked";
+ * active ("Granted until 11:40 AM"), revoked or declined (SPEC-681 AC-19, G-04-T18). */
+export type SupportState = "closed" | "requested" | "active" | "revoked" | "declined";
 export function supportSession(state: SupportState): SupportSessionOut {
   const on = LAST_SUPPORT_SESSION.on;
   const start = `${on}T15:12:00Z`;
@@ -437,24 +437,26 @@ export function supportSession(state: SupportState): SupportSessionOut {
     staff_id: stableId("staff:jordan-pryce"),
     staff_subject: "Jordan Pryce",
     reason: "Integration settings only",
-    scope: "metadata",
+    scope: "integration_settings",
     duration_minutes: 88,
     emergency: false,
     status,
-    approved_by_kind: state === "requested" ? null : "firm_admin",
-    starts_at: state === "requested" ? null : start,
-    expires_at: state === "requested" ? null : end,
+    approved_by_kind: state === "requested" || state === "declined" ? null : "firm_admin",
+    starts_at: state === "requested" || state === "declined" ? null : start,
+    expires_at: state === "requested" || state === "declined" ? null : end,
     // A revocation's time is not in the handoff.
     ended_at: state === "closed" ? end : null,
     acknowledged: false,
     created_at: start,
-    // G-04-T05 (SPEC-681): a pre-v2 metadata session names no object and no thread.
+    // G-04-T05 (SPEC-681): the handoff's "integration settings only" session names no object
+    // and no thread (G-04-T18: the label is the server's scope-kind label).
     scope_ref_kind: null,
     scope_ref_id: null,
-    scope_label: "Metadata only",
+    scope_label: "Integration settings only",
     conversation_id: null,
+    // Who declined is not in the handoff: the card reads only "Declined".
     declined_by: null,
-    declined_at: null,
+    declined_at: state === "declined" ? start : null,
     staff_us_located: false,
     requests: 1,
   };

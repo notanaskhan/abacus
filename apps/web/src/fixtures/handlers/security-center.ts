@@ -142,6 +142,12 @@ export function securityCenterHandlers(
       );
       return json(supportSessions[0]);
     },
+    "POST /v1/support-sessions/{session_id}/decline": (request) => {
+      supportSessions = supportSessions.map((s) =>
+        s.id === request.params.session_id ? supportSession("declined") : s,
+      );
+      return json(supportSessions[0]);
+    },
     "POST /v1/support-sessions/{session_id}/revoke": (request) => {
       supportSessions = supportSessions.map((s) =>
         s.id === request.params.session_id ? supportSession("revoked") : s,

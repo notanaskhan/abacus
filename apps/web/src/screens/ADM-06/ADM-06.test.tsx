@@ -261,4 +261,30 @@ describe("ADM-06 Security center", () => {
       within(support).getByRole("switch", { name: "Allow support session requests" }),
     ).toBeTruthy();
   });
+
+  // G-04-T18 (SPEC-681 AC-19, AC-20): the scope is the server's label, Decline sits beside
+  // Approve on a request, and a running session names the approver's role.
+  it("a: the last session reads its scope from the server's label", async () => {
+    show("a");
+    const support = await card("Support access");
+    await waitFor(() => {
+      expect(support.textContent).toContain(
+        "· Jordan Pryce (Accrued Support) · integration settings only",
+      );
+    });
+  });
+
+  it("support_requested: Decline answers the request and the card reads Declined", async () => {
+    show("support_requested");
+    const support = await card("Support access");
+    fireEvent.click(await within(support).findByRole("button", { name: "Decline" }));
+    await within(support).findByText("Declined");
+    expect(within(support).queryByRole("button", { name: "Approve" })).toBeNull();
+  });
+
+  it("support_granted: the running session names the approver's role", async () => {
+    show("support_granted");
+    const support = await card("Support access");
+    await within(support).findByText("Granted by Firm Admin");
+  });
 });
