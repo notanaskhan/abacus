@@ -256,6 +256,12 @@ class TargetFacts:
     source_released: bool | None = None
     same_client: bool | None = None
     owner_contact: bool | None = None
+    # Q-05-T02 (SPEC-711): the actor is the consultee; a destruction approval differs in person
+    # and role; the actor may read the quality system. The owning service reads them; unknown
+    # denies.
+    consulted: bool | None = None
+    distinct_approver: bool | None = None
+    monitoring_reader: bool | None = None
 
 
 @dataclass(frozen=True)
@@ -788,6 +794,10 @@ def has_conditions(rule: Rule) -> bool:
         or rule.tb_handoff_source_released
         or rule.same_client
         or rule.decision_owner_contact
+        # Q-05-T02 (SPEC-711): resource conditions, listed here or they would fail open.
+        or rule.consulted_person
+        or rule.distinct_approver_role
+        or rule.monitoring_reviewer
     )
 
 
@@ -879,6 +889,9 @@ async def _condition_facts(
         source_released=None if target is None else target.source_released,
         same_client=None if target is None else target.same_client,
         owner_contact=None if target is None else target.owner_contact,
+        consulted=None if target is None else target.consulted,
+        distinct_approver=None if target is None else target.distinct_approver,
+        monitoring_reader=None if target is None else target.monitoring_reader,
     )
 
 

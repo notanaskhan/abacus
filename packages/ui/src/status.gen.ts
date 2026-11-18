@@ -7160,6 +7160,125 @@ export const STATUS_REGISTRY = {
       "terminal": true,
       "derived": true
     }
+  },
+  "post_issuance_case": {
+    "under_evaluation": {
+      "label": "Under evaluation",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "concluded_no_action": {
+      "label": "Concluded · no action",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "reissue_in_progress": {
+      "label": "Reissue in progress",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "concluded": {
+      "label": "Concluded",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "inspection": {
+    "planned": {
+      "label": "Planned",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "in_progress": {
+      "label": "In progress",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "concluded": {
+      "label": "Concluded",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "qm_finding": {
+    "open": {
+      "label": "Open",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "in_progress": {
+      "label": "In progress",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "remediated": {
+      "label": "Remediated",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "annual_evaluation": {
+    "not_started": {
+      "label": "Not started",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
+    },
+    "concluded": {
+      "label": "Concluded",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": true,
+      "contextLabels": {
+        "by": "Concluded {date} · {name}"
+      }
+    }
+  },
+  "destruction_batch": {
+    "awaiting_approval": {
+      "label": "Awaiting approval",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "destroying": {
+      "label": "Destroying",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "spinner"
+    },
+    "destroyed": {
+      "label": "Destroyed",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "history": "Completed"
+      }
+    },
+    "cancelled": {
+      "label": "Cancelled",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
   }
 } as const;
 

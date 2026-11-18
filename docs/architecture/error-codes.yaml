@@ -306,6 +306,11 @@ codes:
     raised_by:
     - abacus.modules.sampling.expansions.ApproverRequired
     - abacus.modules.sampling.fieldwork_contract.ApproverRequired
+  approver_role_taken:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.destruction_errors.ApproverRoleTaken
+    summary: The batch already carries an approval in this role (AC-22).
   archive_locked:
     status: 409
     raised_by:
@@ -377,6 +382,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.assurance.completion_projector.BasisRequired
+  batch_phrase_mismatch:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.destruction_errors.BatchPhraseMismatch
+    summary: The typed confirmation is not `DESTROY ‹ref›` (AC-23).
   before_date_as_of:
     status: 409
     raised_by:
@@ -583,6 +593,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.governance_comms.KindExists
+  comparison_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.quality_log_errors.ComparisonUnavailable
+    summary: 'The case has no as-certified and as-corrected figures yet: analysis waits (DV-9).'
   completeness_tie_required:
     status: 409
     raised_by:
@@ -748,6 +763,11 @@ codes:
     raised_by:
     - abacus.modules.ledger.consolidation.ConsolidationNotDraft
     summary: Only a draft consolidation changes.
+  consultee_not_eligible:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.quality_log_errors.ConsulteeNotEligible
+    summary: A consultee is a partner or specialist with a human membership, not walled.
   contact_bound:
     status: 409
     raised_by:
@@ -946,6 +966,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.workpapers.fieldwork_tests.DeviationInvalid
+  difference_unresolved:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.quality_log_errors.DifferenceUnresolved
+    summary: 'A difference of opinion on this engagement is unresolved: release waits (OQ-8).'
   disclosure_invalid:
     status: 422
     raised_by:
@@ -1609,6 +1634,11 @@ codes:
     raised_by:
     - abacus.modules.communications.intake_contract.HasFlags
     summary: 'A flagged attachment cannot be bulk-filed: review it in File… (INB-01 e).'
+  held:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.destruction_errors.Held
+    summary: 'A legal hold covers the record: it is excluded, never destroyed (AC-24).'
   hold_not_active:
     status: 409
     raised_by:
@@ -1799,6 +1829,16 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.ssars.NoInquiryProgram
+  inspections_open:
+    status: 409
+    raised_by:
+    - abacus.modules.practice.quality_errors.InspectionsOpen
+    summary: 'The cycle still has planned or in-progress inspections: the evaluation waits.'
+  inspector_not_objective:
+    status: 409
+    raised_by:
+    - abacus.modules.practice.quality_errors.InspectorNotObjective
+    summary: The inspector is the EP, the EQR or a member of the inspected engagement (AC-7).
   instructions_already_sent:
     status: 409
     raised_by:
@@ -3312,6 +3352,11 @@ codes:
     - abacus.modules.signatures.imports.RetentionFloorMissing
     summary: 'No retention floor or firm policy covers signature evidence yet: nothing is imported, because
       COMPLIANCE storage needs a retain-until date (N-02 §3.13).'
+  retention_not_expired:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.destruction_errors.RetentionNotExpired
+    summary: The record's retention or storage lock has not expired (OQ-2).
   retention_not_extended:
     status: 409
     raised_by:
@@ -3452,6 +3497,11 @@ codes:
     raised_by:
     - abacus.modules.platform.safeguards.SafeguardsPersonInvalid
     summary: A person the record names is not one of the firm's active staff.
+  same_approver:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.destruction_errors.SameApprover
+    summary: The second approval is by the person who gave the first (AC-22).
   same_variant:
     status: 409
     raised_by:

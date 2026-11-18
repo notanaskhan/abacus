@@ -136,6 +136,8 @@ def expected(rule: Rule, role: str) -> str:
         return "deny"  # A-08-T03: no approver or link facts in the harness (fail closed)
     if rule.tb_handoff_source_released or rule.same_client or rule.decision_owner_contact:
         return "deny"  # T-06-T03: no hand-off or contact facts in the harness (fail closed)
+    if rule.consulted_person or rule.distinct_approver_role or rule.monitoring_reviewer:
+        return "deny"  # Q-05-T02: no consultee, approver or monitoring facts (fail closed)
     return "allow"
 
 

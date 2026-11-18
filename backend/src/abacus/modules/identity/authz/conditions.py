@@ -39,6 +39,9 @@ are not registered, or not known for this resource, denies (fail closed).
 The three target conditions are a person's: an agent or a system run never meets them, whatever its
 initiator could do, and a support session never does either (its facts are not resolved).
 
+- `consulted_person`, `distinct_approver_role`, `monitoring_reviewer` (Q-05-T02, SPEC-711): the
+  actor is the consultee; a destruction approval differs in person and role from the other; the
+  actor may read the quality system (QM owner, practice leader in scope, Monitoring reviewers).
 - `tb_handoff_source_released`, `same_client`, `decision_owner_contact` (T-06-T03, SPEC-702):
   the hand-off's source is released, its target is the same client's, and a decision request's
   contact holds the client-owner grant; resource facts, failing closed while unknown.
@@ -89,6 +92,11 @@ class ConditionFacts:
     source_released: bool | None = None
     same_client: bool | None = None
     owner_contact: bool | None = None
+    # Q-05-T02: the consulted person; distinct approver and role; a monitoring reader (None:
+    # unknown, fails closed).
+    consulted: bool | None = None
+    distinct_approver: bool | None = None
+    monitoring_reader: bool | None = None
 
 
 def conditions_hold(rule: Rule, facts: ConditionFacts, *, person: bool) -> bool:
@@ -115,6 +123,13 @@ def conditions_hold(rule: Rule, facts: ConditionFacts, *, person: bool) -> bool:
     if rule.same_client and facts.same_client is not True:
         return False
     if rule.decision_owner_contact and facts.owner_contact is not True:
+        return False
+    # Q-05-T02 (SPEC-711): resource conditions; they bind every actor and fail closed.
+    if rule.consulted_person and facts.consulted is not True:
+        return False
+    if rule.distinct_approver_role and facts.distinct_approver is not True:
+        return False
+    if rule.monitoring_reviewer and facts.monitoring_reader is not True:
         return False
     if person:
         if rule.is_named_approver and facts.named_approver is not True:

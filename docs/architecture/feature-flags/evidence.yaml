@@ -100,3 +100,12 @@ flags:
     kind: variant
     values: ['off', notices, notices_tax_forms, all]
     default: 'off'
+  # --- Q-05-T02 (SPEC-711; DEC-5609): Q-05 rollout flags, default off.
+  - name: records.governance
+    description: 'Q-05 records governance (FIL-02 writes, policy versions, hold scope fields, destruction assemble, approve and execute). Off: 404 and destruction never assembles. Q-05-T02, DEC-5609.'
+    owner: notanaskhan
+    created: 2026-11-18
+    expires: 2027-05-17
+    override: DEC-137
+    kind: boolean
+    default: false

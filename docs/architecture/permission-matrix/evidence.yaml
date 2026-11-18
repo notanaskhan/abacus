@@ -125,3 +125,10 @@ actions:
   # T-02-T03 (DEC-1162): a client channel's duplicate upload, kept or discarded by a person
   # (unaccepted versions only, in the service).
   evidence.resolve_duplicate: {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}
+  # --- Q-05-T02 records governance (SPEC-711; DEC-5609). Two approvals in distinct roles and
+  # persons (`distinct_approver_role`, fail closed until Q-05-T13), typed confirmation and fresh
+  # MFA; the agent never destroys, approves or places a hold. Behind records.governance.
+  retention.read:                     {firm_admin: allow, security_admin: allow, firm_partner: allow, firm_manager: allow, quality_partner: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, link_principal: deny, agent: deny, system: deny}   # FIL-02 summary, policies, batches, certificates (Samuel Ito read-only)
+  retention_policy.manage:            {firm_admin: allow, security_admin: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, link_principal: deny, agent: deny, system: deny, mfa_recent: required}   # versions and service-line overrides at or above the legal minimum
+  destruction.export_list:            {firm_admin: allow, security_admin: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, link_principal: deny, agent: deny, system: deny, mfa_recent: required}   # documents.csv; export.create semantics (DEC-60)
+  destruction.approve:                {firm_admin: allow, security_admin: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, link_principal: deny, agent: deny, system: deny, mfa_recent: required, distinct_approver_role: required}   # first or second approval; cancel before execution

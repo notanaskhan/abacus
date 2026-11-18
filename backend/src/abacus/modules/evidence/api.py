@@ -872,6 +872,8 @@ register_file_store(screen_for_store, read_staged)
 
 # S29 leftovers (TASK-6012): what the replay recorders and the OCR suite runner read (BOUND-001).
 # P-02-T07 (DEC-4613): the C15 v1 search projection this module owns, registered at import.
+# Q-05-T02 (DEC-5609): records-governance error codes declared before their services.
+from abacus.modules.evidence import destruction_errors as destruction_errors  # noqa: E402
 from abacus.modules.evidence import (  # noqa: E402
     search as _search,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
 )

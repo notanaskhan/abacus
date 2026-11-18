@@ -980,3 +980,5 @@ from abacus.modules.assurance.group_contract import (  # noqa: E402
     TbAttachIn,
 )
 from abacus.modules.assurance.group_pull import ConsolidationPullAll, PullAllInput  # noqa: E402
+# Q-05-T02 (DEC-5609): consultations v2 and post-issuance error codes, before their services.
+from abacus.modules.assurance import quality_log_errors as quality_log_errors  # noqa: E402

@@ -44,7 +44,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     home_router,
     due_dates_router,  # C21 part A (K-02-T07)
     today_router,  # I-02-T03: the Today brief (stubs behind today_brief.enabled)
-    filing_deadlines_router,  # T-08-T04: FD-1 filing deadlines (stubs behind practice.filing_deadlines)
+    filing_deadlines_router,  # T-08-T04: FD-1 filing deadlines (stubs; dark)
 )
 
 __all__ = [
@@ -71,3 +71,6 @@ __all__ = [
     "question_context",
     "rebuild_home_activity",
 ]
+
+# Q-05-T02 (DEC-5609): quality management error codes declared before their services.
+from abacus.modules.practice import quality_errors as quality_errors  # noqa: E402

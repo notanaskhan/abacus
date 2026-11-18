@@ -19,3 +19,12 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  # --- Q-05-T02 (SPEC-711; DEC-5609): Q-05 rollout flags, default off.
+  - name: quality.management
+    description: 'Q-05 quality management (ADM-11, ADM-12, /v1/quality*, AgentMonitoringWorkflow findings, inspection grants). Off: 404 and the settings sections are hidden. Q-05-T02, DEC-5609.'
+    owner: ayushkbhatia
+    created: 2026-11-18
+    expires: 2027-05-17
+    override: DEC-137
+    kind: boolean
+    default: false

@@ -2061,6 +2061,44 @@ objects:
       approved: {label: "Approved", variant: green-tint, terminal: false, derived: true}
       filed:    {label: "Filed · accepted", variant: green-tint, terminal: true, derived: true}
 
+  # --- Q-05-T02 (SPEC-711; DF-31; DEC-5609): post-issuance, inspections, QM findings, evaluation, destruction.
+  post_issuance_case:   # post_issuance_events.status (AUD-30 a to d)
+    source: "Q-05 §4.2, §4.10; AUD-30 a, b, c, d"
+    codes:
+      under_evaluation:    {label: "Under evaluation", variant: amber, terminal: false, derived: false}
+      concluded_no_action: {label: "Concluded · no action", variant: green-tint, terminal: true, derived: false}
+      reissue_in_progress: {label: "Reissue in progress", variant: red-tint, terminal: false, derived: false}
+      concluded:           {label: "Concluded", variant: green-tint, terminal: true, derived: false}
+
+  inspection:   # inspections.status (ADM-12 a, tiles)
+    source: "Q-05 §4.2; ADM-12 a, b"
+    codes:
+      planned:     {label: "Planned", variant: neutral, terminal: false, derived: false}
+      in_progress: {label: "In progress", variant: state, terminal: false, derived: false}
+      concluded:   {label: "Concluded", variant: green-tint, terminal: true, derived: false}
+
+  qm_finding:   # qm_findings.status (ADM-12 a, c, g)
+    source: "Q-05 §4.2; ADM-12 a, c, g"
+    codes:
+      open:        {label: "Open", variant: amber, terminal: false, derived: false}
+      in_progress: {label: "In progress", variant: state, terminal: false, derived: false}
+      remediated:  {label: "Remediated", variant: green-tint, terminal: true, derived: false}
+
+  annual_evaluation:   # derived from the qm_annual_evaluation decision (ADM-12 d, f)
+    source: "Q-05 §4.2; ADM-12 d, f"
+    codes:
+      not_started: {label: "Not started", variant: neutral, terminal: false, derived: true}
+      concluded:   {label: "Concluded", variant: green-tint, terminal: true, derived: true, context_labels: {by: "Concluded {date} · {name}"}}
+
+  destruction_batch:   # destruction_batches.status (FIL-02 c, i; history reads "Completed")
+    source: "Q-05 §4.2; FIL-02 c, d, i"
+    codes:
+      awaiting_approval: {label: "Awaiting approval", variant: amber, terminal: false, derived: false}
+      approved:          {label: "Approved", variant: state, terminal: false, derived: false}
+      destroying:        {label: "Destroying", variant: null, disc: spinner, terminal: false, derived: false}
+      destroyed:         {label: "Destroyed", variant: muted, terminal: true, derived: false, context_labels: {history: "Completed"}}
+      cancelled:         {label: "Cancelled", variant: muted, terminal: true, derived: false}
+
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---
   "request_item.open":             {replacement: ["request.draft", "request.requested"], note: "draft while firm-only; requested once sent to the client"}

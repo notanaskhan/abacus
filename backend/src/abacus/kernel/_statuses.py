@@ -1697,6 +1697,38 @@ class AmendmentStatus(StrEnum):
     # derived, never stored: draft, approved, filed
 
 
+class PostIssuanceCaseStatus(StrEnum):
+    UNDER_EVALUATION = "under_evaluation"
+    CONCLUDED_NO_ACTION = "concluded_no_action"
+    REISSUE_IN_PROGRESS = "reissue_in_progress"
+    CONCLUDED = "concluded"
+
+
+class InspectionStatus(StrEnum):
+    PLANNED = "planned"
+    IN_PROGRESS = "in_progress"
+    CONCLUDED = "concluded"
+
+
+class QmFindingStatus(StrEnum):
+    OPEN = "open"
+    IN_PROGRESS = "in_progress"
+    REMEDIATED = "remediated"
+
+
+class AnnualEvaluationStatus(StrEnum):
+    pass
+    # derived, never stored: not_started, concluded
+
+
+class DestructionBatchStatus(StrEnum):
+    AWAITING_APPROVAL = "awaiting_approval"
+    APPROVED = "approved"
+    DESTROYING = "destroying"
+    DESTROYED = "destroyed"
+    CANCELLED = "cancelled"
+
+
 # Each object's stored codes, and their SQL CHECK list.
 STORED: dict[str, tuple[str, ...]] = {
     "engagement": (
@@ -3069,6 +3101,31 @@ STORED: dict[str, tuple[str, ...]] = {
         "dismissed",
     ),
     "amendment": (
+    ),
+    "post_issuance_case": (
+        "under_evaluation",
+        "concluded_no_action",
+        "reissue_in_progress",
+        "concluded",
+    ),
+    "inspection": (
+        "planned",
+        "in_progress",
+        "concluded",
+    ),
+    "qm_finding": (
+        "open",
+        "in_progress",
+        "remediated",
+    ),
+    "annual_evaluation": (
+    ),
+    "destruction_batch": (
+        "awaiting_approval",
+        "approved",
+        "destroying",
+        "destroyed",
+        "cancelled",
     ),
 }
 CHECKS: dict[str, str] = {
