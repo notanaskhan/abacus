@@ -73,6 +73,9 @@ export const audScreens = {
     status: "live",
     path: "/audits/$auditId/je-tests/$jeTestId",
   },
+  // A-08-T28: a to e on fixtures. A-08-T32 (TASK-8546, DEC-5531): the live host is routed at
+  // /audits/$auditId/analytics/$analyticsSetId; the entry stays planned until the cockpit rail's
+  // designed links (SHL-10 accept, AUD-11, AUD-12) have targets the set names.
   "AUD-13": {
     name: "Analytics · preliminary · substantive · final",
     status: "planned",

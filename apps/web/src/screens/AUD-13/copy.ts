@@ -23,6 +23,8 @@ export const AUD13_COPY = {
     unexplained: "Unexplained",
     threshold: "Threshold",
     thresholdValue: "10% and $116,250",
+    /** A-08-T32: the live set's dual threshold, in thresholdValue's words. */
+    thresholdOf: (pct: string, amount: string) => `${pct}% and ${amount}`,
     thresholdTip:
       "Performance materiality on proposed materiality v1 $155,000 × 75% — provisional until Margaret Okonkwo decides",
     balanced: "TB balanced",
