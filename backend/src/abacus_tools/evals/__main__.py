@@ -94,6 +94,14 @@ def main(argv: list[str]) -> int:
         from abacus_tools.evals.runtime_conformance import main as conformance_main
 
         return conformance_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
+    if args.agent == "group_audit" and args.route != "fake":  # A-09-T41: real routes
+        from abacus_tools.evals.group_audit_real import real_main as group_real
+
+        return group_real(
+            cast(str, args.route),
+            cast(Path, args.out),
+            "fast" if args.subset == "fast" else "full",
+        )
     if args.agent == "tax_return" and args.route != "fake":  # T-04-T43: real routes
         from abacus_tools.evals.tax_return_real import real_main as tax_real
 
