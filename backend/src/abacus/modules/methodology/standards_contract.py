@@ -623,6 +623,9 @@ class EntryClassification:
     approver_level: ApproverLevel
     batch: bool
     policy: PolicyRef
+    # C-02-T12 (DEC-5621): the class's limit in whole dollars when the class is listed, so
+    # CLS-07 can show "> $10,000 other accruals"; None for an unlisted class or an attest client.
+    limit_usd: int | None = None
 
 
 @dataclass(frozen=True)
@@ -748,11 +751,21 @@ def classify_entry(
     if listed is not None and listed.limit_usd is not None:
         if amount <= listed.limit_usd:
             return EntryClassification(
-                "within_threshold", None, listed.approver_level, listed.batch, policy
+                "within_threshold",
+                None,
+                listed.approver_level,
+                listed.batch,
+                policy,
+                listed.limit_usd,
             )
         other = _row_for(payload.rows, lambda r: r.rule == "review_required", "review_required")
         return EntryClassification(
-            "review_required", "over_limit", other.approver_level, other.batch, policy
+            "review_required",
+            "over_limit",
+            other.approver_level,
+            other.batch,
+            policy,
+            listed.limit_usd,
         )
     other = _row_for(payload.rows, lambda r: r.rule == "review_required", "review_required")
     return EntryClassification(
