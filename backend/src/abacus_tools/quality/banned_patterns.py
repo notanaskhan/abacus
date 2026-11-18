@@ -3279,6 +3279,9 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/integrations/adapters.py",
             "src/abacus/modules/integrations/writers/*",
         ),
+        # C-02-T13 (ADR-344 = P-16 W1; DEC-5623): the one declared W1 writer writes by design;
+        # POST-001 confines its callers to adjustments/posting.py and TJE-001 still covers it.
+        exclude=("src/abacus/modules/integrations/writers/quickbooks_online.py",),
     ),
     Rule(
         id="WF-001",
