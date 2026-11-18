@@ -38,6 +38,7 @@ CONTROLS: Final = (
     *("ai_pause", "model_route_block", "email_pause", "read_only", "portal_sign_in"),
     "confirmation_links",  # A-08-T03 (0887): the public confirmation family and link issuance
     "integration_pause",  # W-01-T07 rest (0948): one integration, by its catalogue key
+    "destruction_execute",  # Q-05-T06 (0964): stops destruction execution between items
 )
 _FIRM_ONLY: Final = frozenset({"portal_sign_in"})
 _PLATFORM_ONLY: Final = frozenset({"model_route_block"})
