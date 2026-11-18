@@ -22,3 +22,4 @@ Spec section: docs/plan/epics/T-06.md §3 F8, §4.3. Create, update and end with
 
 ## Progress log
 - `2026-11-18` — Built in the S50 sequential stack (DEC-5632). Partial: the graph and list projection and the C-03 routes in relationships_contract.py wire up with CLI-03's screen task (T-06-T41, after the CLI-03 board, T-06-T02 blocked); per-user layouts with it. The caller authorises the client (walls 404) before calling. Gates and tests run once at the S50 end pass (build first, test last).
+- `2026-11-18` — Graph projection built (S50 completion round): `graph(tenant, client_id, as_of)` reads the client's entities, external parties and live edges, lays on registered annotators' node facts, and `project()` keeps only edges in force that day with both ends inside the client (DEC-43). Unit test pins it. Still with T-06-T41 (CLI-03 screen, blocked on T-06-T02's board): the C-03 routes and per-user layouts.

@@ -311,3 +311,89 @@ async def add_external_party(
             scope=Scope(client_id=client_id),
         )
     return UUID(str(party))
+
+
+# --- T-06-T21 completion (DEC-5632): the client's relationship graph, as of a day ---------------
+
+
+@dataclass(frozen=True)
+class GraphNode:
+    id: UUID
+    kind: NodeKind
+    label: str
+    facts: Mapping[str, str]
+
+
+@dataclass(frozen=True)
+class GraphEdge:
+    id: UUID
+    from_id: UUID
+    to_id: UUID
+    kind: str
+    percent: Decimal | None
+    effective_from: date
+    effective_to: date | None
+
+
+@dataclass(frozen=True)
+class Graph:
+    as_of: date
+    nodes: tuple[GraphNode, ...]
+    edges: tuple[GraphEdge, ...]
+
+
+def in_force(edge: GraphEdge, as_of: date) -> bool:
+    return edge.effective_from <= as_of and (
+        edge.effective_to is None or edge.effective_to >= as_of
+    )
+
+
+def project(nodes: Sequence[GraphNode], edges: Sequence[GraphEdge], as_of: date) -> Graph:
+    """The graph a person sees on `as_of`: edges in force that day whose two ends are both this
+    client's nodes (an edge to a node outside the client never shows; DEC-43), nodes sorted by
+    label, edges by kind then start."""
+    ids = {n.id for n in nodes}
+    shown = sorted(
+        (e for e in edges if in_force(e, as_of) and e.from_id in ids and e.to_id in ids),
+        key=lambda e: (e.kind, e.effective_from, str(e.id)),
+    )
+    return Graph(as_of, tuple(sorted(nodes, key=lambda n: (n.label, str(n.id)))), tuple(shown))
+
+
+async def graph(tenant: TenantContext, client_id: UUID, as_of: date) -> Graph:
+    """Reads one client's entities, external parties and live edges (the caller has authorised
+    the client), then lays on each registered annotator's node facts."""
+    async with uow(tenant) as tx:
+        entity_rows = (
+            await tx.session.execute(
+                text("SELECT id, name FROM client_entities WHERE client_id = :c"), {"c": client_id}
+            )
+        ).all()
+        party_rows = (
+            await tx.session.execute(
+                text("SELECT id, display_name FROM external_parties WHERE client_id = :c"),
+                {"c": client_id},
+            )
+        ).all()
+        ids = [r[0] for r in entity_rows] + [r[0] for r in party_rows]
+        edge_rows = (
+            await tx.session.execute(
+                text(
+                    "SELECT id, COALESCE(from_entity_id, from_external_party_id), "
+                    "COALESCE(to_entity_id, to_external_party_id), kind, percent, effective_from, "
+                    "effective_to FROM entity_relationships WHERE ended_at IS NULL AND "
+                    "(COALESCE(from_entity_id, from_external_party_id) = ANY(:ids) OR "
+                    "COALESCE(to_entity_id, to_external_party_id) = ANY(:ids))"
+                ),
+                {"ids": ids},
+            )
+        ).all()
+    facts: dict[UUID, dict[str, str]] = {}
+    for key in relationship_annotators():
+        for node_id, extra in (await _ANNOTATORS[key](tenant, client_id)).items():
+            facts.setdefault(node_id, {}).update(extra)
+    nodes = [GraphNode(r[0], "entity", str(r[1]), facts.get(r[0], {})) for r in entity_rows] + [
+        GraphNode(r[0], "external_party", str(r[1]), facts.get(r[0], {})) for r in party_rows
+    ]
+    edges = [GraphEdge(r[0], r[1], r[2], str(r[3]), r[4], r[5], r[6]) for r in edge_rows]
+    return project(nodes, edges, as_of)
