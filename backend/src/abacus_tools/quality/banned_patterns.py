@@ -739,6 +739,11 @@ PUBLIC_ROUTE_EXCEPTIONS = frozenset(
     # `LINK_PRINCIPAL`, exactly the five paths the amendment enumerates.
     | {"/v1/confirm/{token}", "/v1/confirm/{token}/code", "/v1/confirm/{token}/code/verify"}
     | {"/v1/confirm/{token}/attachments", "/v1/confirm/{token}/response"}
+    # G-04-T14 (DEC-5532; ADR-165's shape): the console's staff sign-in BFF, under `PRE_SESSION`;
+    # refresh and sign-out need the `__Host-abacus-console` cookie, `X-Abacus-CSRF` and the
+    # console's own Origin.
+    | {"/v1/platform/auth/sign-in", "/v1/platform/auth/callback"}
+    | {"/v1/platform/auth/refresh", "/v1/platform/auth/sign-out"}
 )
 _PUBLIC_ROUTES_FILE = "src/abacus/api/public_routes.py"
 _APP_FILE = "src/abacus/api/app.py"

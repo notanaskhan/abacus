@@ -88,6 +88,7 @@ from abacus.modules.identity.client_access import (
     scope_facts,
     shell_of,
 )
+from abacus.modules.identity.console_auth_routes import console_auth_router
 from abacus.modules.identity.contact_access import (
     ChangedGrants,
     ContactGrant,
@@ -487,6 +488,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     invitation_router,
     signup_router,
     auth_router,
+    console_auth_router,  # G-04-T14 (DEC-5532): the console BFF on the staff issuer
     portal_auth_router,  # P-08-T10 (ADR-168): the portal's sign-in by emailed code
     settings_router,  # firm-settings family v1 (G-01-T02 stub)
     walls_v2_router,

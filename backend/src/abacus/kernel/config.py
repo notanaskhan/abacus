@@ -228,6 +228,12 @@ class Settings(BaseSettings):
     identity_authorize_url: Annotated[str | None, classified("internal")] = None
     identity_exchange_url: Annotated[str | None, classified("internal")] = None
     web_origin: Annotated[str | None, classified("internal")] = None
+    # G-04-T14 (DEC-5532): the console BFF, a public OIDC client on the staff issuer. It redirects
+    # to `<console_origin>/v1/platform/auth/callback` and accepts cookie refreshes only from there.
+    platform_staff_client_id: Annotated[str | None, classified("internal")] = None
+    platform_staff_authorize_url: Annotated[str | None, classified("internal")] = None
+    platform_staff_token_url: Annotated[str | None, classified("internal")] = None
+    console_origin: Annotated[str | None, classified("internal")] = None
     # SPEC-012 (Q4): platform staff sign in with a separate issuer (never a firm membership).
     # Unset means no staff can authenticate (break-glass is unavailable).
     staff_issuer: Annotated[str | None, classified("internal")] = None

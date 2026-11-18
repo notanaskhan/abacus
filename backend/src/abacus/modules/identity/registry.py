@@ -33,6 +33,8 @@ _TABLES: frozenset[str] = frozenset(
         "auth_login_states",  # P-01-T09 (ADR-165): global, definers only
         "auth_sessions",
         "auth_session_cookies",
+        "platform_staff_sessions",  # G-04-T14 (0969, DEC-5532): global, definers only
+        "platform_staff_session_cookies",
         "sign_in_challenges",  # P-08-T10 (ADR-168): global, definers only
         "sign_in_locks",
         "mfa_factors",  # P-08-T17 (0133): global, definers only

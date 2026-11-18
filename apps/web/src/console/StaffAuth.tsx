@@ -3,7 +3,8 @@
 // navigation to the console BFF (`GET /v1/platform/auth/sign-in?return_to=`), the same shape as the
 // firm's (ADR-165): the BFF holds the session in a `__Host-` cookie, so the page keeps no token in
 // web storage and the CSP's `connect-src 'self'` holds. The BFF itself is the follow-up red identity
-// task recorded with DEC-5528; until it lands the gate shows the sign-in frame and nothing else.
+// task (DEC-5532, TASK-8548, console/auth.ts): the gate shows the sign-in frame until a session
+// stands behind the cookie, with the BFF's refusal when sign-in was refused.
 // In fixture mode the PLT-01 persona (Rowan Achebe) is signed in.
 import { Button } from "@abacus/ui";
 import type { JSX, ReactNode } from "react";
@@ -20,12 +21,15 @@ export function staffSignInUrl(returnTo: string): string {
 export function StaffAuth({
   signedIn,
   children,
+  refusal = null,
   navigate = (url) => {
     window.location.assign(url);
   },
 }: {
   signedIn: boolean;
   children: ReactNode;
+  /** The BFF's refusal code from `/signin/callback?error=` (DEC-5532). */
+  refusal?: string | null;
   navigate?: (url: string) => void;
 }): JSX.Element {
   if (signedIn) return <>{children}</>;
@@ -35,6 +39,15 @@ export function StaffAuth({
       className="flex min-h-screen flex-col items-center justify-center gap-[12px] bg-shell"
     >
       <h1 className="text-pane font-medium text-ink">{C.signIn.title}</h1>
+      {refusal !== null && (
+        <p
+          role="alert"
+          data-console="refusal"
+          className="max-w-[420px] text-center text-para text-ink-2"
+        >
+          {C.refusals[refusal] ?? C.refusals.sign_in_failed}
+        </p>
+      )}
       <Button
         variant="primary"
         onClick={() => {

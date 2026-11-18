@@ -27,6 +27,7 @@ const NETWORK_GLOBALS = [
 const LEGACY_CLOCK = [
   "src/app-core/auth/session.ts", // access-token lifetime against the device's clock, not business time
   "src/app-core/auth/bff.ts", // the portal's access-token lifetime (P-08-T11), as session.ts
+  "src/console/auth.ts", // the console's staff access-token lifetime (G-04-T14, DEC-5532), as session.ts
   "src/legacy/CheckResults.tsx", // elapsed time of a polling window after an upload
   "src/testing/support.tsx", // test helper: backdates a sign-in
 ];

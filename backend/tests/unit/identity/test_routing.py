@@ -274,6 +274,11 @@ def test_adr165_pre_session_is_used_only_on_the_three_sign_in_routes() -> None:
         "/v1/portal/links/renew",
         # A-02-T33 (DEC-3902): the connect host's hand-off; the OAuth state authenticates it.
         "/v1/connections/handoff",
+        # G-04-T14 (DEC-5532): the console BFF on the staff issuer.
+        "/v1/platform/auth/sign-in",
+        "/v1/platform/auth/callback",
+        "/v1/platform/auth/refresh",
+        "/v1/platform/auth/sign-out",
     }
 
 

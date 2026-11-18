@@ -29,6 +29,7 @@ import "./kit-a08";
 import { TestingWorkspace } from "./AUD-12"; // A-08-T27: the artboards on the A-08 kit
 import { AnalyticsWorkspace } from "./AUD-13"; // A-08-T28: preliminary, substantive, final
 import { ConfirmationsWorkspace } from "./AUD-14"; // A-08-T29: the confirmation log
+import { AUD14_FIXTURE_NOTE } from "./AUD-14/fixture-note";
 import { SsarsWorkspace } from "./AUD-26"; // A-08-T31: review, compilation, preparation
 import { TenantConsole } from "./PLT-01"; // G-04-T14: the Accrued tenant console
 import { GroupScoping } from "./AUD-34"; // A-09-T31: the group scoping artboards
@@ -2705,7 +2706,9 @@ registerScreen("AUD-13", {
 });
 registerScreen("AUD-14", {
   title: "Confirmations — Granite Peak FY2026",
-  Component: ({ params }: { params: FixtureParams }) => <ConfirmationsWorkspace st={params.st} />,
+  Component: ({ params }: { params: FixtureParams }) => (
+    <ConfirmationsWorkspace st={params.st} note={AUD14_FIXTURE_NOTE} />
+  ),
 });
 registerScreen("AUD-26", {
   title: "Review, compilation & preparation workspace",
