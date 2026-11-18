@@ -196,13 +196,25 @@ export const COPY = {
   supportAccess: "Support access",
   supportBody: "Accrued support sees no client content without a session you approve.",
   lastSession: "Last session",
-  supportSessionValue: (on: string, from: string, to: string, who: string) =>
-    `${on} · ${from}–${to} · ${who} (Accrued Support) · integration settings only`,
+  // The scope is the server's `scope_label` (G-04-T18, SPEC-681): a scope kind reads in the
+  // sentence as the handoff writes it ("integration settings only"); one object keeps its name.
+  supportSessionValue: (on: string, from: string, to: string, who: string, scope: string) =>
+    `${on} · ${from}–${to} · ${who} (Accrued Support) · ${scope}`,
   awaitingApproval: "Awaiting firm approval",
   grantedUntil: (at: string) => `Granted until ${at}`,
   revoked: "Revoked",
+  declined: "Declined",
+  expired: "Expired",
   approve: "Approve",
+  decline: "Decline",
   revoke: "Revoke",
+  // The approver's role (SPEC-681 AC-20); the role names SHL-05 uses ("Waiting for Firm Admin or
+  // IT/Security").
+  grantedBy: (role: string) => `Granted by ${role}`,
+  approverRoles: {
+    firm_admin: "Firm Admin",
+    security_admin: "IT/Security",
+  } as Readonly<Record<string, string>>,
   allowRequests: "Allow support session requests",
 
   posture: "Posture",

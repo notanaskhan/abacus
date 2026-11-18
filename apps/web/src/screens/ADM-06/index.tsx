@@ -8,6 +8,7 @@ import type {
 import {
   approveFirmExportMutation,
   approveSupportSessionMutation,
+  declineSupportSessionMutation,
   firmExportScheduleOptions,
   listFirmExportsOptions,
   listSecurityIncidentsOptions,
@@ -471,11 +472,17 @@ function SessionsDrawer({
 function supportLine(session: SupportSessionOut, now: Date): string {
   const start = session.starts_at ?? session.created_at;
   const end = session.ended_at ?? session.expires_at ?? start;
+  // A scope kind ("Integration settings only") reads mid-sentence in lower case; one object's
+  // name ("2025 Form 1040 · Jonah & Claire Feld") is the firm's and stays as written.
+  const label = session.scope_label;
+  const scope =
+    session.scope_ref_id === null ? label.charAt(0).toLowerCase() + label.slice(1) : label;
   return COPY.supportSessionValue(
     fmtDate(start, now),
     fmtTime(start),
     fmtTime(end),
     session.staff_subject,
+    scope,
   );
 }
 
@@ -494,10 +501,19 @@ function SupportPill({ session }: { session: SupportSessionOut }): JSX.Element {
       </Pill>
     );
   }
-  if (session.status === "revoked") {
+  if (
+    session.status === "revoked" ||
+    session.status === "declined" ||
+    session.status === "expired"
+  ) {
+    const words = {
+      revoked: COPY.revoked,
+      declined: COPY.declined,
+      expired: COPY.expired,
+    }[session.status];
     return (
       <Pill variant="muted" size="sm">
-        {COPY.revoked}
+        {words}
       </Pill>
     );
   }
@@ -549,6 +565,7 @@ export function ADM06({
   const setSupport = useMutation(putSupportAccessMutation());
   const approveSupport = useMutation(approveSupportSessionMutation());
   const revokeSupport = useMutation(revokeSupportSessionMutation());
+  const declineSupport = useMutation(declineSupportSessionMutation());
   const requestExport = useMutation(requestFirmExportMutation());
   const approveExport = useMutation(approveFirmExportMutation());
   const wispPack = useMutation(wispPackMutation());
@@ -638,6 +655,10 @@ export function ADM06({
   const allowSupport =
     support.data?.allow_support_requests ?? o?.support.allow_support_requests ?? true;
   const canSupport = actions.has("support_session.manage");
+  const canDecline = actions.has("support_session.decline");
+  const refreshSupport = (): void => {
+    void queryClient.invalidateQueries({ queryKey: listSupportSessionsOptions().queryKey });
+  };
   const history = (exports.data?.items ?? []).filter((e) => e.origin === "scheduled");
   const incidentRows = incidents.data?.items ?? [];
   const openIncident =
@@ -762,6 +783,14 @@ export function ADM06({
         <div className="flex flex-col gap-[6px] px-[12px] py-[8px] text-dense">
           <span className="text-ink-2">{COPY.lastSession}</span>
           <span>{supportLine(lastSupport, now)}</span>
+          {/* While a session runs, who granted it (the closed seed row in ADM-06 a names none). */}
+          {lastSupport.status === "active" &&
+            lastSupport.approved_by_kind !== null &&
+            COPY.approverRoles[lastSupport.approved_by_kind] !== undefined && (
+              <span data-adm06="support-approver" className="text-meta text-ink-3">
+                {COPY.grantedBy(COPY.approverRoles[lastSupport.approved_by_kind] ?? "")}
+              </span>
+            )}
           <span className="flex items-center gap-[8px]">
             <SupportPill session={lastSupport} />
             {canSupport && lastSupport.status === "requested" && (
@@ -782,6 +811,20 @@ export function ADM06({
                 }}
               >
                 {COPY.approve}
+              </Button>
+            )}
+            {canDecline && lastSupport.status === "requested" && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  declineSupport.mutate(
+                    { path: { session_id: lastSupport.id } },
+                    { onSuccess: refreshSupport, onError: fail },
+                  );
+                }}
+              >
+                {COPY.decline}
               </Button>
             )}
             {canSupport &&

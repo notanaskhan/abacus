@@ -85,6 +85,7 @@ SECURITY_ACTIONS: Final = (
     "staff.unlock",
     "support_session.read",
     "support_session.manage",
+    "support_session.decline",  # SPEC-681 AC-19 (G-04-T18: ADM-06 shows Decline)
     "incident.read",
     "incident.manage",
     "incident.decide",
