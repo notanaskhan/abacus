@@ -1,4 +1,4 @@
-import type { ConfirmationDetailOut } from "@abacus/api-client";
+import type { ConfirmationCoverageOut, ConfirmationDetailOut } from "@abacus/api-client";
 import {
   Amount,
   Button,
@@ -95,10 +95,13 @@ function LogTable({
   rows,
   selected,
   onSelect,
+  onBook,
 }: {
   rows: readonly ConfirmationLogRow[];
   selected: string | null;
   onSelect: (number: string) => void;
+  /** Book amount → SHL-09, where the balance comes from (the live host's; fixture: none). */
+  onBook?: ((number: string) => void) | undefined;
 }): JSX.Element {
   return (
     <table className="w-full border-collapse" data-aud14="log">
@@ -144,7 +147,22 @@ function LogTable({
                 )}
               </td>
               <td className={cn(TD, "text-right")}>
-                {r.lines === undefined && <Money value={r.book} />}
+                {r.lines === undefined &&
+                  (onBook === undefined ? (
+                    <Money value={r.book} />
+                  ) : (
+                    <button
+                      type="button"
+                      data-aud14="book"
+                      className="hover:underline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onBook(r.number);
+                      }}
+                    >
+                      <Money value={r.book} />
+                    </button>
+                  ))}
               </td>
               <td className={cn(TD, "text-right")}>
                 {r.lines === undefined && <Money value={r.confirmed} />}
@@ -201,23 +219,42 @@ function LogTable({
 
 export { MANAGER_GRANTS };
 
+/** A-08-T32 (DEC-5530): the live host's reads (live.tsx), in place of the fixture's seed rows. */
+export interface ConfirmationsData {
+  rows: readonly ConfirmationLogRow[];
+  coverage: ConfirmationCoverageOut | null;
+  /** The open row's drawer detail, once read; `selected` names the row. */
+  detail: ConfirmationDetailOut | undefined;
+  selected: string | null;
+  onSelect: (number: string | null) => void;
+  onBook?: ((number: string) => void) | undefined;
+}
+
 export function ConfirmationsWorkspace({
   st,
   grants = [],
+  data,
 }: {
   st?: string | undefined;
   /** Fixture: the viewer's grants (`MANAGER_GRANTS` for Hannah Leclerc). */
   grants?: readonly string[];
+  data?: ConfirmationsData | undefined;
 }): JSX.Element {
   const scenario: Aud14Scenario = (AUD14_SCENARIOS as readonly string[]).includes(st ?? "")
     ? (st as Aud14Scenario)
     : "a";
-  const rows = rowsFor(scenario);
+  const rows = data?.rows ?? rowsFor(scenario);
   const [filter, setFilter] = useState<Status | null>(null);
-  const [drawer, setDrawer] = useState(scenario === "a");
-  const [sheet, setSheet] = useState(scenario === "e");
+  const [fixtureDrawer, setFixtureDrawer] = useState(data === undefined && scenario === "a");
+  const [sheet, setSheet] = useState(data === undefined && scenario === "e");
   const shown = filter === null ? rows : rows.filter((r) => r.status === filter);
-  const v = GRANITE_PEAK_COVERAGE;
+  const v = data === undefined ? GRANITE_PEAK_COVERAGE : data.coverage;
+  const drawer = data === undefined ? fixtureDrawer : data.selected !== null;
+  const setDrawer = (open: boolean): void => {
+    if (data === undefined) setFixtureDrawer(open);
+    else if (!open) data.onSelect(null);
+  };
+  const detail = data === undefined ? detailFor(grants) : data.detail;
   const money = (s: string): string => amount(s, "money").text;
   return (
     <div
@@ -245,16 +282,18 @@ export function ConfirmationsWorkspace({
             }}
           />
         ))}
-        <p data-aud14="coverage" className="ml-[8px] text-[12.5px] text-ink-3">
-          {C.coverage(
-            money(v.sent_total),
-            money(v.population_total),
-            v.sent_pct,
-            money(v.confirmed_total),
-            money(v.differences_total),
-            amount(v.clearly_trivial, "dollars").text,
-          )}
-        </p>
+        {v !== null && (
+          <p data-aud14="coverage" className="ml-[8px] text-[12.5px] text-ink-3">
+            {C.coverage(
+              money(v.sent_total),
+              money(v.population_total),
+              v.sent_pct,
+              money(v.confirmed_total),
+              money(v.differences_total),
+              amount(v.clearly_trivial, "dollars").text,
+            )}
+          </p>
+        )}
       </div>
       <section aria-label={C.title} className="rounded-pane bg-card shadow-e1">
         <header className="flex h-[46px] items-center justify-between px-[12px]">
@@ -273,10 +312,12 @@ export function ConfirmationsWorkspace({
         </header>
         <LogTable
           rows={shown}
-          selected={drawer ? "C3" : null}
+          selected={data === undefined ? (drawer ? "C3" : null) : data.selected}
           onSelect={(n) => {
-            if (n === "C3") setDrawer(true);
+            if (data !== undefined) data.onSelect(n);
+            else if (n === "C3") setDrawer(true);
           }}
+          onBook={data?.onBook}
         />
         <footer
           data-aud14="client-note"
@@ -285,13 +326,13 @@ export function ConfirmationsWorkspace({
           {C.clientNote}
         </footer>
       </section>
-      {scenario !== "d" && (
+      {(data === undefined ? scenario !== "d" : detail !== undefined) && detail !== undefined && (
         <ConfirmationDrawer
           open={drawer}
           onOpenChange={setDrawer}
-          detail={detailFor(grants)}
-          why={ALPINE_RIDGE_WHY}
-          held={scenario === "a"}
+          detail={detail}
+          why={data === undefined ? ALPINE_RIDGE_WHY : undefined}
+          held={data === undefined && scenario === "a"}
         />
       )}
       <NewConfirmationSheet

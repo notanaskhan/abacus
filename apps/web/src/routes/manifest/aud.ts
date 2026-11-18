@@ -78,7 +78,12 @@ export const audScreens = {
     status: "planned",
     path: null,
   },
-  "AUD-14": { name: "Confirmations manager", status: "planned", path: null },
+  // A-08-T29: a to e on fixtures; A-08-T32 (TASK-8545): live on the confirmations reads.
+  "AUD-14": {
+    name: "Confirmations manager",
+    status: "live",
+    path: "/audits/$auditId/confirmations",
+  },
   "AUD-15": {
     name: "Findings register (issues & deficiencies)",
     status: "planned",

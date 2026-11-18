@@ -16,6 +16,10 @@ const AuditsIndex = lazyScreen(
   async () => (await import("../../screens/AUD-01")).AuditsSearchPage,
 );
 const Cockpit = lazyScreen(async () => (await import("../../screens/AUD-02")).AUD02);
+// A-08-T32 (TASK-8545): AUD-14 live on the confirmations reads.
+const ConfirmationsLive = lazyScreen(
+  async () => (await import("../../screens/AUD-14/live")).AUD14Live,
+);
 const JeTesting = lazyScreen(
   async () => (await import("../../screens/AUD-12/route")).JeTestingPage,
 );
@@ -448,6 +452,15 @@ export const jeTestRoute = createRoute({
   },
 });
 
+// A-08-T32 (TASK-8545): AUD-14 `/audits/$auditId/confirmations`, the confirmations log live.
+export const confirmationsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/audits/$auditId/confirmations",
+  component: function ConfirmationsPage(): JSX.Element {
+    return gated(<ConfirmationsLive workItemId={useParam("auditId")} />);
+  },
+});
+
 export const findingsRoute = evaluationRoute("findings");
 export const misstatementsRoute = evaluationRoute("misstatements");
 export const reviewNotesRoute = evaluationRoute("review-notes");
@@ -461,6 +474,7 @@ export const auditRoutes = [
   risksRoute,
   controlsRoute,
   jeTestRoute,
+  confirmationsRoute,
   narrativeRoute,
   programRoute,
   findingsRoute,
