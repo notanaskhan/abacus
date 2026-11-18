@@ -5049,7 +5049,6 @@ ACTIONS: dict[str, dict[str, str]] = {
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
-        "staff": "deny",
         "client_admin": "deny",
         "client_contributor": "deny",
         "third_party": "deny",

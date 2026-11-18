@@ -92,6 +92,20 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
     assert set(built.handlers) == set(catalogue) | set(projector) | set(search) | {
         # P-10-T27 (DEC-3117): the real-time invalidations of `/v1/events`.
         "notification.created",
+        # S47-S49: analytics and close real-time topics, the consolidation structure applier
+        # (A-09-T13, DEC-5340), component deliverables, plan requests and held support replies.
+        "analytic_line.accepted",
+        "analytic_line.explained",
+        "analytic_set.computed",
+        "analytics.computed",
+        "analytics.explanation_accepted",
+        "component_deliverable.changed",
+        "consolidation.structure_adopted",
+        "plan_request.changed",
+        "reconciliation.computed",
+        "reconciling_item.resolved",
+        "support.reply_held",
+        "transaction_question.answered",
         "request_item.status_changed",
         "agent_run.plan_decided",  # P-10-T49 (DEC-4401): the plan's C13 gate closes
         "proposal.created",  # P-10-T49: a v2 run's proposal opens its C13 gate

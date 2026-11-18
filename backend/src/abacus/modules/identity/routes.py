@@ -463,7 +463,7 @@ class SupportSessionIn(BaseModel):
     ]
     # SPEC-681 AC-22: at most 120 minutes; no emergency field (OQ-1, the staff approval is gone).
     duration_minutes: Annotated[int, Field(ge=1, le=120), classified("internal")]
-    scope_ref: ScopeRefIn | None = None
+    scope_ref: Annotated[ScopeRefIn | None, classified("internal")] = None
     conversation_id: Annotated[UUID | None, classified("internal")] = None
 
 

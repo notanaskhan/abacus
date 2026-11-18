@@ -15345,7 +15345,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "rules": {
             "cls": "internal",
@@ -15376,7 +15377,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "version": {
             "cls": "internal",
@@ -31440,7 +31442,8 @@
         "description": "GET /v1/support/conversation: the caller's one thread (OWN).",
         "properties": {
           "availability": {
-            "$ref": "#/components/schemas/AvailabilityOut"
+            "$ref": "#/components/schemas/AvailabilityOut",
+            "cls": "internal"
           },
           "id": {
             "anyOf": [
@@ -54844,7 +54847,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "included_agent_minutes": {
             "cls": "internal",
@@ -54904,7 +54908,8 @@
             "type": "string"
           },
           "seats": {
-            "$ref": "#/components/schemas/SeatsOut"
+            "$ref": "#/components/schemas/SeatsOut",
+            "cls": "internal"
           },
           "term_end": {
             "cls": "internal",
@@ -87891,7 +87896,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "decided_at": {
             "anyOf": [
@@ -87914,7 +87920,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "effective_from": {
             "anyOf": [
@@ -87988,7 +87995,8 @@
             "type": "string"
           },
           "requested_by": {
-            "$ref": "#/components/schemas/PersonRef"
+            "$ref": "#/components/schemas/PersonRef",
+            "cls": "internal"
           },
           "status": {
             "cls": "internal",
@@ -89301,7 +89309,8 @@
             "type": "string"
           },
           "history": {
-            "$ref": "#/components/schemas/SessionHistoryOut"
+            "$ref": "#/components/schemas/SessionHistoryOut",
+            "cls": "internal"
           },
           "tenant_code": {
             "cls": "internal",
@@ -98325,7 +98334,8 @@
       "QueueConversationDetailOut": {
         "properties": {
           "conversation": {
-            "$ref": "#/components/schemas/QueueConversationOut"
+            "$ref": "#/components/schemas/QueueConversationOut",
+            "cls": "internal"
           },
           "messages": {
             "cls": "internal",
@@ -126885,7 +126895,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           }
         },
         "required": [
@@ -134250,7 +134261,8 @@
             "type": "string"
           },
           "row": {
-            "$ref": "#/components/schemas/TenantRowOut"
+            "$ref": "#/components/schemas/TenantRowOut",
+            "cls": "internal"
           },
           "seats_total": {
             "cls": "internal",
@@ -134369,7 +134381,8 @@
             "title": "Sandbox Of"
           },
           "seats": {
-            "$ref": "#/components/schemas/SeatCountOut"
+            "$ref": "#/components/schemas/SeatCountOut",
+            "cls": "internal"
           },
           "since": {
             "cls": "internal",
@@ -134495,7 +134508,8 @@
       "TenantsOut": {
         "properties": {
           "counts": {
-            "$ref": "#/components/schemas/TenantTilesOut"
+            "$ref": "#/components/schemas/TenantTilesOut",
+            "cls": "internal"
           },
           "items": {
             "cls": "internal",
@@ -190760,7 +190774,7 @@
     "/v1/closes/{close_id}/package/release": {
       "post": {
         "description": "Partner only, live, fresh MFA; 409 `release_preconditions_unmet` (C-02-T23).",
-        "operationId": "release",
+        "operationId": "close_package_release",
         "parameters": [
           {
             "in": "path",
@@ -190898,7 +190912,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Release Route",
+        "summary": "Close Package Release Route",
         "tags": [
           "closes"
         ],
@@ -315297,7 +315311,7 @@
     "/v1/proposed-entries/{entry_id}/request-approval": {
       "post": {
         "description": "HOME-02 gate `proposed_entry_approval` and the bell `entry_approval_requested`.",
-        "operationId": "request_approval",
+        "operationId": "posting_request_approval",
         "parameters": [
           {
             "in": "path",
@@ -315424,7 +315438,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Request Approval Route",
+        "summary": "Posting Request Approval Route",
         "tags": [
           "adjustments"
         ],

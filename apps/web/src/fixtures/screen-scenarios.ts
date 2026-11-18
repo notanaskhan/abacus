@@ -92,6 +92,7 @@ import { scenarios as txp06 } from "./scenarios/TXP-06";
 import { scenarios as txp07 } from "./scenarios/TXP-07";
 import { scenarios as txp10 } from "./scenarios/TXP-10";
 import { scenarios as txp11 } from "./scenarios/TXP-11";
+import { wb10Scenarios as wb10, wb11Scenarios as wb11 } from "./scenarios/connect";
 import { RIDGELINE_RETURN_ID } from "./seed/tax-entity";
 import { loadSheet } from "./seed/tax-entity-sheets";
 import { taxEntityHandlers } from "./handlers/tax-entity";
@@ -261,6 +262,13 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
       n: `?ov=run-trace:${WB09.b.runId}`,
     },
   },
+  // W-01-T19 (j01 4, j14 3 to 3d): Connect's catalogue states and the integration drawer. WB-10's
+  // searches are its scenarios' views; WB-11's walks name the drawer in their own path.
+  "WB-10": {
+    scenarios: wb10,
+    opens: { b: "?category=erp", c: "?status=connected", g: "?q=Karbon", i: "?category=grc" },
+  },
+  "WB-11": { scenarios: wb11, opens: {} },
   // A-05-T50: the EBP canvases are sections of AUD-02, on Northwind's audit.
   "EBP-01": { scenarios: ebp01, opens: {}, ids: northwind(ebp01) },
   "EBP-03": { scenarios: ebp03, opens: {}, ids: northwind(ebp03) },

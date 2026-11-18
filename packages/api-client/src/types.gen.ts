@@ -88890,7 +88890,7 @@ export type PageResponses = {
 
 export type PageResponse = PageResponses[keyof PageResponses];
 
-export type ReleaseData = {
+export type ClosePackageReleaseData = {
     body: DeliveryReleaseIn;
     headers: {
         /**
@@ -88916,7 +88916,7 @@ export type ReleaseData = {
     url: '/v1/closes/{close_id}/package/release';
 };
 
-export type ReleaseErrors = {
+export type ClosePackageReleaseErrors = {
     /**
      * Not authenticated
      */
@@ -88943,16 +88943,16 @@ export type ReleaseErrors = {
     501: ErrorOut;
 };
 
-export type ReleaseError = ReleaseErrors[keyof ReleaseErrors];
+export type ClosePackageReleaseError = ClosePackageReleaseErrors[keyof ClosePackageReleaseErrors];
 
-export type ReleaseResponses = {
+export type ClosePackageReleaseResponses = {
     /**
      * Successful Response
      */
     202: DeliveryPackageOut;
 };
 
-export type ReleaseResponse = ReleaseResponses[keyof ReleaseResponses];
+export type ClosePackageReleaseResponse = ClosePackageReleaseResponses[keyof ClosePackageReleaseResponses];
 
 export type CloseQuestionnaireData = {
     body?: never;
@@ -109708,7 +109708,7 @@ export type AssignResponses = {
 
 export type AssignResponse = AssignResponses[keyof AssignResponses];
 
-export type Release2Data = {
+export type ReleaseData = {
     body?: never;
     headers?: {
         /**
@@ -109734,7 +109734,7 @@ export type Release2Data = {
     url: '/v1/engagements/{engagement_id}/review-queue/{version_id}/release';
 };
 
-export type Release2Errors = {
+export type ReleaseErrors = {
     /**
      * Not authenticated
      */
@@ -109757,16 +109757,16 @@ export type Release2Errors = {
     422: ValidationErrorOut;
 };
 
-export type Release2Error = Release2Errors[keyof Release2Errors];
+export type ReleaseError = ReleaseErrors[keyof ReleaseErrors];
 
-export type Release2Responses = {
+export type ReleaseResponses = {
     /**
      * Successful Response
      */
     200: TakenOut;
 };
 
-export type Release2Response = Release2Responses[keyof Release2Responses];
+export type ReleaseResponse = ReleaseResponses[keyof ReleaseResponses];
 
 export type TakeData = {
     body?: never;
@@ -145563,7 +145563,7 @@ export type RejectCloseEntryResponses = {
 
 export type RejectCloseEntryResponse = RejectCloseEntryResponses[keyof RejectCloseEntryResponses];
 
-export type RequestApproval2Data = {
+export type PostingRequestApprovalData = {
     body: PostingRequestApprovalIn;
     headers?: {
         /**
@@ -145585,7 +145585,7 @@ export type RequestApproval2Data = {
     url: '/v1/proposed-entries/{entry_id}/request-approval';
 };
 
-export type RequestApproval2Errors = {
+export type PostingRequestApprovalErrors = {
     /**
      * Not authenticated
      */
@@ -145612,16 +145612,16 @@ export type RequestApproval2Errors = {
     501: ErrorOut;
 };
 
-export type RequestApproval2Error = RequestApproval2Errors[keyof RequestApproval2Errors];
+export type PostingRequestApprovalError = PostingRequestApprovalErrors[keyof PostingRequestApprovalErrors];
 
-export type RequestApproval2Responses = {
+export type PostingRequestApprovalResponses = {
     /**
      * Successful Response
      */
     200: PostingDecisionOut;
 };
 
-export type RequestApproval2Response = RequestApproval2Responses[keyof RequestApproval2Responses];
+export type PostingRequestApprovalResponse = PostingRequestApprovalResponses[keyof PostingRequestApprovalResponses];
 
 export type WithdrawApprovalData = {
     body: PostingReasonIn;

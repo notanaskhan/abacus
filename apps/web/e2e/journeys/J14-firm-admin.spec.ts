@@ -332,9 +332,9 @@ test.describe("J14 integration admin (W-01)", () => {
           const dialog = page.getByRole("dialog", { name: "Disconnect CCH Axcess Tax?" });
           await expect(dialog).toBeVisible();
           const confirm = dialog.getByRole("button", { name: "Disconnect", exact: true });
-          await expect(confirm).toHaveAttribute("aria-disabled", "true");
+          await expect(confirm).toBeDisabled();
           await dialog.getByLabel("Type CCH Axcess Tax").fill("CCH Axcess Tax");
-          await expect(confirm).not.toHaveAttribute("aria-disabled", "true");
+          await expect(confirm).toBeEnabled();
         },
       );
     },

@@ -151,7 +151,12 @@ function Loaded({
     actions.has("integration.connect_firm") &&
     (data.status === "needs_reauth" || data.status === "needs_attention");
   const canDisconnect = actions.has("integration.disconnect_firm") && data.status !== "available";
-  const firmManaged = !actions.has("integration.connect_firm") && data.managed_by;
+  // Someone else's firm connection: the viewer may neither connect nor disconnect it (W-01-T19
+  // end pass: a firm admin holding only `disconnect_firm` keeps the Disconnect control).
+  const firmManaged =
+    !actions.has("integration.connect_firm") &&
+    !actions.has("integration.disconnect_firm") &&
+    data.managed_by;
   const footer = firmManaged ? (
     <p className="text-[11.5px] text-ink-3">{COPY.manages(data.managed_by ?? "")}</p>
   ) : canReconnect || canDisconnect ? (

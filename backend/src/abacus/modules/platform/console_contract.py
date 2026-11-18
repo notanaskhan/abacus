@@ -85,7 +85,7 @@ class TenantRowOut(BaseModel):
     tenant_code: TenantCode
     display_name: Annotated[str, Internal]  # the firm's display name; never a client's
     region: Annotated[RegionCode, Internal]
-    seats: SeatCountOut
+    seats: Annotated[SeatCountOut, Internal]
     modules: Annotated[list[ModuleKey], Internal]
     health: Annotated[Health, Internal]
     health_reason_code: Annotated[str | None, Internal]
@@ -115,7 +115,7 @@ class TenantsOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     items: Annotated[list[TenantRowOut], Internal]
-    counts: TenantTilesOut
+    counts: Annotated[TenantTilesOut, Internal]
     next_cursor: Annotated[str | None, Internal] = None
 
 
@@ -137,7 +137,7 @@ class SessionHistoryOut(BaseModel):
 class TenantDetailOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    row: TenantRowOut
+    row: Annotated[TenantRowOut, Internal]
     renewal_on: Annotated[date, Internal]
     seats_total: Annotated[int, Field(ge=1), Internal]
     included_agent_minutes: Annotated[int, Field(ge=0), Internal]
@@ -222,7 +222,7 @@ class PlatformSessionOut(BaseModel):
 
     tenant_code: TenantCode
     firm_display_name: Annotated[str, Internal]
-    history: SessionHistoryOut
+    history: Annotated[SessionHistoryOut, Internal]
 
 
 class PlatformSessionsOut(BaseModel):
@@ -301,7 +301,7 @@ class QueueMessageOut(BaseModel):
 class QueueConversationDetailOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    conversation: QueueConversationOut
+    conversation: Annotated[QueueConversationOut, Internal]
     messages: Annotated[list[QueueMessageOut], Internal]
 
 

@@ -523,6 +523,29 @@ NOT_CREATING = {
     "/v1/mapping-sets/group-confirm",
     # S48 rest (A-09-T33): linking a drop to its deliverable acts on existing rows, so 200.
     "/v1/portal/component-rooms/{room_id}/drops/{evidence_version_id}/deliverable",
+    # S49 (C-02, T-06 stubs): actions on an existing record (lock, reopen, approve, undo,
+    # reveal, redate, enable), 200.
+    "/v1/closes/{close_id}/lock",
+    "/v1/closes/{close_id}/reopen",
+    "/v1/closing-date-conflicts/{conflict_id}/ask-client",
+    "/v1/closing-date-conflicts/{conflict_id}/redate",
+    "/v1/decision-cards/{card_id}/send-to-client",
+    "/v1/information-return-batches/{batch_id}/acknowledgement",
+    "/v1/information-return-batches/{batch_id}/filed",
+    "/v1/posting-batches/{batch_id}/undo",
+    "/v1/proposed-entries/{entry_id}/approve",
+    "/v1/proposed-entries/{entry_id}/record-external",
+    "/v1/proposed-entries/{entry_id}/reject-close",
+    "/v1/proposed-entries/{entry_id}/request-approval",
+    "/v1/proposed-entries/{entry_id}/withdraw-approval",
+    "/v1/proposed-entry-decisions/{decision_id}/undo",
+    "/v1/relationships/{rel_id}/end",
+    "/v1/tax-returns/{return_id}/form-pages:download-draft",
+    "/v1/tax-returns/{return_id}/states/sourcing/undo",
+    "/v1/vendors/{vendor_id}/tin:reveal",
+    "/v1/work-items/{work_item_id}/posting-batches:dry-run",
+    "/v1/write-capabilities/ledger_post_journal_entries:disable",
+    "/v1/write-capabilities/ledger_post_journal_entries:enable",
 }
 
 
@@ -644,6 +667,15 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/mapping-sets/{mapping_set_id}/suggestions",
         "/v1/platform/tenants",
         "/v1/platform/tenants/{tenant_code}/sandbox",
+        # S49 (C-02, T-06 stubs): a package, a hand-off, a batch, a retry, an allocation run or an
+        # explanation starts work, so 202.
+        "/v1/closes/{close_id}/package/generate",
+        "/v1/closes/{close_id}/package/release",
+        "/v1/closes/{close_id}/tax-handoff",
+        "/v1/posting-batches/{batch_id}/entries/{entry_id}/retry",
+        "/v1/tax-returns/{return_id}/functional-expenses/allocation-runs",
+        "/v1/tax-returns/{return_id}/provision/items/{item_id}/explain",
+        "/v1/work-items/{work_item_id}/posting-batches",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
@@ -1059,6 +1091,19 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/support/conversation/messages",
         "/v1/platform/support/conversations/{conversation_id}/messages",
         "/v1/platform/status/incidents",
+        # S49 (C-02, T-06 stubs): each inserts a new row, 201.
+        "/v1/client-entities/{client_entity_id}/w9-requests",
+        "/v1/clients/{client_id}/external-parties",
+        "/v1/clients/{client_id}/relationships",
+        "/v1/engagements/{engagement_id}/tax-handoffs",
+        "/v1/information-return-batches",
+        "/v1/portal/connections/{connection_id}/write-grants",
+        "/v1/tax-returns/{return_id}/decision-cards",
+        "/v1/tax-returns/{return_id}/fixed-assets",
+        "/v1/tax-returns/{return_id}/fixed-assets/{asset_id}/changes",
+        "/v1/tax-returns/{return_id}/states/sourcing:propose",
+        "/v1/vendors/{vendor_id}/backup-withholding",
+        "/v1/vendors/{vendor_id}/tin-match-results",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING
