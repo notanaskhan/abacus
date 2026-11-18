@@ -57,7 +57,10 @@ any input. Nothing is written; the token is never logged.
 `confirmations_contract_models.py`. Every field carries a classification (checked by the contract
 test). Money and respondent text are `confidential`; the email code is `restricted`; account
 numbers are last four only. Firm: `ConfirmationLogOut` (rows with `allowed_actions`,
-`links_paused`), `ConfirmationSummaryOut` (tiles summing to the log, `CoverageOut`),
+`links_paused`; v1.1, A-08-T32 / DEC-5530: each row also carries `address_check` — the newest
+verification's method, verifier and date, the log's Address column — and `confirmed_total` and
+code's `difference`, empty until a response is recorded; all three default to null, so v1 readers
+are unaffected), `ConfirmationSummaryOut` (tiles summing to the log, `CoverageOut`),
 `ConfirmationDetailOut` (lines, address verifications, response, `ReconciliationOut` with code's
 `unreconciled`, classification and Below CT), inputs `ConfirmationCreateIn`,
 `AddressVerificationIn` (≥ 1 source and citation), `AuthorizationIn`, `RecordedResponseIn`,

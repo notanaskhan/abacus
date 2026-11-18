@@ -26485,6 +26485,17 @@
       "ConfirmationRowOut": {
         "description": "One AUD-14 log row: C1\u2026C4, its status and sub-line facts.",
         "properties": {
+          "address_check": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RowAddressCheckOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
           "address_independent": {
             "cls": "internal",
             "title": "Address Independent",
@@ -26529,6 +26540,34 @@
             ],
             "title": "Channel",
             "type": "string"
+          },
+          "confirmed_total": {
+            "anyOf": [
+              {
+                "cls": "confidential",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Confirmed Total"
+          },
+          "difference": {
+            "anyOf": [
+              {
+                "cls": "confidential",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Difference"
           },
           "id": {
             "cls": "internal",
@@ -113042,6 +113081,37 @@
           "routed_ref"
         ],
         "title": "RoutedOut",
+        "type": "object"
+      },
+      "RowAddressCheckOut": {
+        "description": "A-08-T32 (DEC-5530): the log's Address column, the newest verification of the address.",
+        "properties": {
+          "method": {
+            "cls": "confidential",
+            "maxLength": 300,
+            "title": "Method",
+            "type": "string"
+          },
+          "verified_by_name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Verified By Name",
+            "type": "string"
+          },
+          "verified_on": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Verified On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "method",
+          "verified_by_name",
+          "verified_on"
+        ],
+        "title": "RowAddressCheckOut",
         "type": "object"
       },
       "RowDecisionIn": {

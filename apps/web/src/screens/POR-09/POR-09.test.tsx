@@ -11,14 +11,10 @@ import {
   type Scenario,
   installFixtureMode,
 } from "../../app-core/fixture-mode";
-import { BRIGHTWATER_BRANDING } from "../../fixtures/seed/portal-home";
 import { newQueryClient } from "../../testing/support";
 import { POR09 } from ".";
 import { COPY } from "./copy";
 import { FLAG_OFF, OPENING, type Por09State, scenarios } from "./scenarios";
-
-// The firm in the copy is the branding's (the portal name the fixtures serve).
-const FIRM = BRIGHTWATER_BRANDING.portal_name ?? "";
 
 beforeAll(() => {
   client.setConfig({ baseUrl: window.location.origin, throwOnError: true });
@@ -115,7 +111,7 @@ describe("POR-09 deliverables", () => {
 
   it("b: approved by you, the watermark stays until release", async () => {
     at("b");
-    expect(await screen.findByText(COPY.approvedNote(FIRM))).toBeTruthy();
+    expect(await screen.findByText(COPY.approvedNote)).toBeTruthy();
     expect(document.querySelector("[data-watermark='draft']")).not.toBeNull();
     expect(screen.queryByRole("button", { name: COPY.approve })).toBeNull();
   });
@@ -139,14 +135,14 @@ describe("POR-09 deliverables", () => {
 
   it("e: Copperleaf's package carries the AR-C 70 legend (fixture only)", async () => {
     at("e");
-    expect(await screen.findByText(COPY.legend(FIRM))).toBeTruthy();
+    expect(await screen.findByText(COPY.legend)).toBeTruthy();
     expect(screen.getByText("Waiting for approval")).toBeTruthy();
   });
 
   it("f: nothing delivered yet", async () => {
     at("f");
     expect(await screen.findByText(COPY.empty)).toBeTruthy();
-    expect(screen.getByText(COPY.emptyBody(FIRM))).toBeTruthy();
+    expect(screen.getByText(COPY.emptyBody)).toBeTruthy();
   });
 
   it("flag off: the designed state, never a 404 page", async () => {

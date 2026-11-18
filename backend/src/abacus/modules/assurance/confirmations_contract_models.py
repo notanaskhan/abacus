@@ -56,6 +56,16 @@ class ConfirmationLineOut(BaseModel):
     difference: Annotated[Money | None, classified("confidential")]  # code's, from the response
 
 
+class RowAddressCheckOut(BaseModel):
+    """A-08-T32 (DEC-5530): the log's Address column, the newest verification of the address."""
+
+    model_config = ConfigDict(frozen=True)
+
+    method: Annotated[str, Field(max_length=300), classified("confidential")]
+    verified_by_name: Name
+    verified_on: Annotated[date, classified("internal")]
+
+
 class ConfirmationRowOut(BaseModel):
     """One AUD-14 log row: C1…C4, its status and sub-line facts."""
 
@@ -76,6 +86,11 @@ class ConfirmationRowOut(BaseModel):
     responded_at: Annotated[datetime | None, classified("internal")]
     sample_item_ref: Annotated[str | None, classified("internal")]
     allowed_actions: Annotated[list[ConfirmationAction], classified("public")]
+    # A-08-T32 (DEC-5530): the log's Address, Confirmed and Difference columns. The difference is
+    # code's (book total less the confirmed total); both are empty until a response is recorded.
+    address_check: Annotated[RowAddressCheckOut | None, classified("internal")] = None
+    confirmed_total: Annotated[Money | None, classified("confidential")] = None
+    difference: Annotated[Money | None, classified("confidential")] = None
 
 
 class ConfirmationLogOut(BaseModel):
