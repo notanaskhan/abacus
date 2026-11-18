@@ -464,6 +464,9 @@ function Viewer({
   initialPage: number;
   confirming: boolean;
 }): JSX.Element {
+  // The firm in the client's words comes from its branding, never from copy (portal-dist-check).
+  const brandData = useBranding().data;
+  const firm = brandData?.portal_name ?? brandData?.firm_name ?? "";
   const now = useNow();
   const queryClient = useQueryClient();
   const latest = deliverable.versions[deliverable.versions.length - 1];
@@ -483,7 +486,8 @@ function Viewer({
       void queryClient.invalidateQueries();
     },
   });
-  if (latest === undefined) return <EmptyState title={COPY.empty}>{COPY.emptyBody}</EmptyState>;
+  if (latest === undefined)
+    return <EmptyState title={COPY.empty}>{COPY.emptyBody(firm)}</EmptyState>;
   const draft = latest.is_draft;
   const pages = latest.page_count;
   const canApprove = latest.allowed_actions.includes("approve");
@@ -599,7 +603,7 @@ function Viewer({
     <section aria-label={deliverable.title} className="flex min-h-0 flex-1 flex-col">
       {header}
       {approved && (
-        <p className="px-[12px] py-[6px] text-[12.5px] text-ink-3">{COPY.approvedNote}</p>
+        <p className="px-[12px] py-[6px] text-[12.5px] text-ink-3">{COPY.approvedNote(firm)}</p>
       )}
       <div className="flex min-h-0 flex-1">
         <div
@@ -636,7 +640,7 @@ function Viewer({
                 data-legend="ar_c_70"
                 className="bg-card px-[36px] pb-[12px] text-[10.5px] text-ink-3"
               >
-                {COPY.legend}
+                {COPY.legend(firm)}
               </p>
             )}
           </div>
@@ -746,6 +750,9 @@ function K1Summary({ packageId }: { packageId: string }): JSX.Element | null {
 }
 
 function Deliverables(props: Por09Props): JSX.Element {
+  // The firm in the client's words comes from its branding, never from copy (portal-dist-check).
+  const brandData = useBranding().data;
+  const firm = brandData?.portal_name ?? brandData?.firm_name ?? "";
   const bar = usePortalToolbar(null);
   const listed = useQuery({
     ...listDeliverablesOptions(
@@ -777,7 +784,7 @@ function Deliverables(props: Por09Props): JSX.Element {
   } else if (empty) {
     main = (
       <EmptyState title={COPY.empty} icon="file-text">
-        {COPY.emptyBody}
+        {COPY.emptyBody(firm)}
       </EmptyState>
     );
   } else if (current?.kind === "k1") {
