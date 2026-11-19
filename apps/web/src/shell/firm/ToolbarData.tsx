@@ -13,6 +13,11 @@ import {
 import { useGoChords } from "./hotkeys";
 import { InterimSupport } from "./InterimSupport";
 
+// G-04-T19: SHL-05 replaces the interim frame behind `support.panel_v2` (its own chunk).
+const SupportPanel = lazy(async () => ({
+  default: (await import("../../screens/SHL-05")).SupportPanel,
+}));
+
 // Go… is its own chunk, loaded the first time it opens, then kept mounted (F-05-T17, TASK-1368).
 const InterimGo = lazy(async () => ({ default: (await import("./InterimGo")).InterimGo }));
 // P-02-T10 (DEC-4615): SHL-02 replaces the interim frame while `search.palette` is on.
@@ -77,6 +82,7 @@ export function useFirmToolbar({
   const [goLoaded, setGoLoaded] = useState(false);
   if (go && !goLoaded) setGoLoaded(true);
   const [support, setSupport] = useState(false);
+  const supportV2 = useFlag("support.panel_v2") === true;
 
   const goTo = useCallback(
     (area: Area) => {
@@ -141,7 +147,23 @@ export function useFirmToolbar({
           )}
         </Suspense>
       )}
-      <InterimSupport open={support} onOpenChange={setSupport} />
+      {supportV2 ? (
+        support && (
+          <Suspense fallback={null}>
+            <SupportPanel
+              open={support}
+              onOpenChange={setSupport}
+              context={at.pathname ?? null}
+              onReview={() => {
+                setSupport(false);
+                navigate("/settings/security#support-access");
+              }}
+            />
+          </Suspense>
+        )
+      ) : (
+        <InterimSupport open={support} onOpenChange={setSupport} />
+      )}
     </>
   );
   return { toolbar, overlay, openGo };
