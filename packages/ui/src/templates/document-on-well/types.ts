@@ -59,7 +59,14 @@ export interface VariableVM {
 
 export type StructureVM =
   | { kind: "kv"; sheets: readonly KvSheetVM[] }
-  | { kind: "clauses"; clauses: readonly ClauseVM[]; variables: readonly VariableVM[] };
+  | {
+      kind: "clauses";
+      clauses: readonly ClauseVM[];
+      variables: readonly VariableVM[];
+      /** C-02-T23 (CLS-08): KV sheets drawn under the toggles (the SSARS basis, preconditions and
+       * release of a package). Additive; omitted draws nothing. */
+      after?: readonly KvSheetVM[];
+    };
 
 /** The approval control: a HumanAction (INV-1) that only calls `onApprove`; SHL-12 is P-04's. */
 export interface ApproveVM {

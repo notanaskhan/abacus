@@ -91,6 +91,8 @@ class DeliveryStatementLineOut(BaseModel):
     label: Annotated[str, Field(max_length=200), Confidential]
     amount: Money
     account_refs: Annotated[list[str], Internal] = []
+    # C-02-T23: the income statement's prior month (CLS-08a "August vs July 2026").
+    prior: Annotated[Decimal | None, Field(max_digits=20, decimal_places=2), Confidential] = None
 
 
 class DeliveryPackageOut(BaseModel):

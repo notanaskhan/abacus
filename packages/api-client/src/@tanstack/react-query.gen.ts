@@ -6267,7 +6267,7 @@ export const packageQueryKey = (options: Options<PackageData>) => createQueryKey
 /**
  * Package Route
  *
- * Structure, preconditions and route (C-02-T21).
+ * Structure, preconditions and route (C-02-T21, DEC-5703): figures from the posted TB.
  */
 export const packageOptions = (options: Options<PackageData>) => queryOptions<PackageResponse, PackageError, PackageResponse, ReturnType<typeof packageQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -6284,6 +6284,8 @@ export const packageOptions = (options: Options<PackageData>) => queryOptions<Pa
 
 /**
  * Package Edit Route
+ *
+ * Section toggles and the CAS answer: a new version at the version seen (C-02-T21).
  */
 export const packageEditMutation = (options?: Partial<Options<PackageEditData>>): UseMutationOptions<PackageEditResponse, PackageEditError, Options<PackageEditData>> => {
     const mutationOptions: UseMutationOptions<PackageEditResponse, PackageEditError, Options<PackageEditData>> = {

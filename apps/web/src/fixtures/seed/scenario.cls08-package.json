@@ -1,0 +1,458 @@
+{
+  "scenario": "bh-2026.10.3",
+  "slice": "cas_delivery",
+  "snapshot": "E0",
+  "ar_aging": [
+    [
+      "current",
+      "12960.00"
+    ],
+    [
+      "1_30",
+      "4180.00"
+    ],
+    [
+      "31_60",
+      "1280.00"
+    ]
+  ],
+  "ap_aging": [
+    [
+      "current",
+      "17240.45"
+    ],
+    [
+      "1_30",
+      "3620.00"
+    ],
+    [
+      "31_60",
+      "520.00"
+    ]
+  ],
+  "route": "ar_c_70_preparation",
+  "legend": "No assurance is provided.",
+  "released_at": "2026-09-14T16:25:00-05:00",
+  "client_approved_at": "2026-09-15T08:42:00-05:00",
+  "balance_sheet": [
+    {
+      "key": "cash",
+      "label": "Cash",
+      "amount": "256990.50",
+      "account_refs": [
+        "cash"
+      ]
+    },
+    {
+      "key": "merchant_clearing__square__shopify",
+      "label": "Merchant clearing (Square, Shopify)",
+      "amount": "3464.95",
+      "account_refs": [
+        "merchant_clearing__square__shopify"
+      ]
+    },
+    {
+      "key": "accounts_receivable",
+      "label": "Accounts receivable",
+      "amount": "18420.00",
+      "account_refs": [
+        "accounts_receivable"
+      ]
+    },
+    {
+      "key": "inventory",
+      "label": "Inventory",
+      "amount": "55460.00",
+      "account_refs": [
+        "inventory"
+      ]
+    },
+    {
+      "key": "prepaid_insurance",
+      "label": "Prepaid insurance",
+      "amount": "2800.00",
+      "account_refs": [
+        "prepaid_insurance"
+      ]
+    },
+    {
+      "key": "total_current_assets",
+      "label": "Total current assets",
+      "amount": "337135.45",
+      "account_refs": []
+    },
+    {
+      "key": "roasting_equipment",
+      "label": "Roasting equipment",
+      "amount": "156000.00",
+      "account_refs": [
+        "roasting_equipment"
+      ]
+    },
+    {
+      "key": "furniture_and_fixtures",
+      "label": "Furniture and fixtures",
+      "amount": "25200.00",
+      "account_refs": [
+        "furniture_and_fixtures"
+      ]
+    },
+    {
+      "key": "leasehold_improvements",
+      "label": "Leasehold improvements",
+      "amount": "97200.00",
+      "account_refs": [
+        "leasehold_improvements"
+      ]
+    },
+    {
+      "key": "less_accumulated_depreciation",
+      "label": "Less accumulated depreciation",
+      "amount": "-66340.00",
+      "account_refs": [
+        "less_accumulated_depreciation"
+      ]
+    },
+    {
+      "key": "total_property_and_equipment",
+      "label": "Net property and equipment",
+      "amount": "212060.00",
+      "account_refs": []
+    },
+    {
+      "key": "total_assets",
+      "label": "Total assets",
+      "amount": "549195.45",
+      "account_refs": []
+    },
+    {
+      "key": "accounts_payable",
+      "label": "Accounts payable",
+      "amount": "21380.45",
+      "account_refs": [
+        "accounts_payable"
+      ]
+    },
+    {
+      "key": "credit_card_payable",
+      "label": "Credit card payable",
+      "amount": "9846.12",
+      "account_refs": [
+        "credit_card_payable"
+      ]
+    },
+    {
+      "key": "accrued_payroll",
+      "label": "Accrued payroll",
+      "amount": "11860.00",
+      "account_refs": [
+        "accrued_payroll"
+      ]
+    },
+    {
+      "key": "accrued_expenses",
+      "label": "Accrued expenses",
+      "amount": "14900.00",
+      "account_refs": [
+        "accrued_expenses"
+      ]
+    },
+    {
+      "key": "deferred_revenue___subscriptions",
+      "label": "Deferred revenue — subscriptions",
+      "amount": "26600.00",
+      "account_refs": [
+        "deferred_revenue___subscriptions"
+      ]
+    },
+    {
+      "key": "sales_tax_payable",
+      "label": "Sales tax payable",
+      "amount": "7284.10",
+      "account_refs": [
+        "sales_tax_payable"
+      ]
+    },
+    {
+      "key": "payroll_liabilities",
+      "label": "Payroll liabilities",
+      "amount": "4612.38",
+      "account_refs": [
+        "payroll_liabilities"
+      ]
+    },
+    {
+      "key": "current_portion_of_equipment_loan",
+      "label": "Current portion of equipment loan",
+      "amount": "18000.00",
+      "account_refs": [
+        "current_portion_of_equipment_loan"
+      ]
+    },
+    {
+      "key": "total_current_liabilities",
+      "label": "Total current liabilities",
+      "amount": "114483.05",
+      "account_refs": []
+    },
+    {
+      "key": "equipment_loan__less_current_portion",
+      "label": "Equipment loan, less current portion",
+      "amount": "70500.00",
+      "account_refs": [
+        "equipment_loan__less_current_portion"
+      ]
+    },
+    {
+      "key": "total_long_term_liabilities",
+      "label": "Total long-term liabilities",
+      "amount": "70500.00",
+      "account_refs": []
+    },
+    {
+      "key": "total_liabilities",
+      "label": "Total liabilities",
+      "amount": "184983.05",
+      "account_refs": []
+    },
+    {
+      "key": "common_stock",
+      "label": "Common stock",
+      "amount": "10000.00",
+      "account_refs": [
+        "common_stock"
+      ]
+    },
+    {
+      "key": "retained_earnings__jan_1__2026",
+      "label": "Retained earnings, Jan 1, 2026",
+      "amount": "263792.40",
+      "account_refs": [
+        "retained_earnings__jan_1__2026"
+      ]
+    },
+    {
+      "key": "net_income__jan_aug_2026",
+      "label": "Net income, Jan–Aug 2026",
+      "amount": "186420.00",
+      "account_refs": [
+        "net_income__jan_aug_2026"
+      ]
+    },
+    {
+      "key": "distributions",
+      "label": "Distributions",
+      "amount": "-96000.00",
+      "account_refs": [
+        "distributions"
+      ]
+    },
+    {
+      "key": "total_equity",
+      "label": "Total stockholders' equity",
+      "amount": "364212.40",
+      "account_refs": []
+    },
+    {
+      "key": "total_liabilities_and_equity",
+      "label": "Total liabilities and equity",
+      "amount": "549195.45",
+      "account_refs": []
+    }
+  ],
+  "income_statement": [
+    {
+      "key": "café_sales",
+      "label": "Café sales",
+      "amount": "96400.00",
+      "prior": "92100.00",
+      "account_refs": [
+        "café_sales"
+      ]
+    },
+    {
+      "key": "online_sales",
+      "label": "Online sales",
+      "amount": "41880.00",
+      "prior": "39600.00",
+      "account_refs": [
+        "online_sales"
+      ]
+    },
+    {
+      "key": "wholesale",
+      "label": "Wholesale",
+      "amount": "61000.00",
+      "prior": "58300.00",
+      "account_refs": [
+        "wholesale"
+      ]
+    },
+    {
+      "key": "subscription_revenue",
+      "label": "Subscription revenue",
+      "amount": "15320.00",
+      "prior": "15300.00",
+      "account_refs": [
+        "subscription_revenue"
+      ]
+    },
+    {
+      "key": "total_revenue",
+      "label": "Total revenue",
+      "amount": "214600.00",
+      "prior": "205300.00",
+      "account_refs": []
+    },
+    {
+      "key": "cost_of_goods_sold",
+      "label": "Cost of goods sold",
+      "amount": "84860.00",
+      "prior": "81170.00",
+      "account_refs": [
+        "cost_of_goods_sold"
+      ]
+    },
+    {
+      "key": "total_cost_of_goods_sold",
+      "label": "Total cost of goods sold",
+      "amount": "84860.00",
+      "prior": "81170.00",
+      "account_refs": []
+    },
+    {
+      "key": "gross_profit",
+      "label": "Gross profit",
+      "amount": "129740.00",
+      "prior": "124130.00",
+      "account_refs": []
+    },
+    {
+      "key": "payroll",
+      "label": "Payroll",
+      "amount": "68910.00",
+      "prior": "61240.00",
+      "account_refs": [
+        "payroll"
+      ]
+    },
+    {
+      "key": "rent",
+      "label": "Rent",
+      "amount": "9800.00",
+      "prior": "9800.00",
+      "account_refs": [
+        "rent"
+      ]
+    },
+    {
+      "key": "merchant_fees",
+      "label": "Merchant fees",
+      "amount": "4980.00",
+      "prior": "4710.00",
+      "account_refs": [
+        "merchant_fees"
+      ]
+    },
+    {
+      "key": "legal___professional_fees",
+      "label": "Legal & professional fees",
+      "amount": "4840.00",
+      "prior": "4800.00",
+      "account_refs": [
+        "legal___professional_fees"
+      ]
+    },
+    {
+      "key": "repairs___maintenance",
+      "label": "Repairs & maintenance",
+      "amount": "3200.00",
+      "prior": "640.00",
+      "account_refs": [
+        "repairs___maintenance"
+      ]
+    },
+    {
+      "key": "utilities___facilities",
+      "label": "Utilities & facilities",
+      "amount": "3140.00",
+      "prior": "2960.00",
+      "account_refs": [
+        "utilities___facilities"
+      ]
+    },
+    {
+      "key": "marketing",
+      "label": "Marketing",
+      "amount": "2450.00",
+      "prior": "3980.00",
+      "account_refs": [
+        "marketing"
+      ]
+    },
+    {
+      "key": "depreciation",
+      "label": "Depreciation",
+      "amount": "2140.00",
+      "prior": "2140.00",
+      "account_refs": [
+        "depreciation"
+      ]
+    },
+    {
+      "key": "software___subscriptions",
+      "label": "Software & subscriptions",
+      "amount": "1265.00",
+      "prior": "1180.00",
+      "account_refs": [
+        "software___subscriptions"
+      ]
+    },
+    {
+      "key": "insurance",
+      "label": "Insurance",
+      "amount": "700.00",
+      "prior": "700.00",
+      "account_refs": [
+        "insurance"
+      ]
+    },
+    {
+      "key": "total_operating_expenses",
+      "label": "Total operating expenses",
+      "amount": "101425.00",
+      "prior": "92150.00",
+      "account_refs": []
+    },
+    {
+      "key": "operating_income",
+      "label": "Operating income",
+      "amount": "28315.00",
+      "prior": "31980.00",
+      "account_refs": []
+    },
+    {
+      "key": "interest_expense",
+      "label": "Interest expense",
+      "amount": "520.00",
+      "prior": "525.00",
+      "account_refs": [
+        "interest_expense"
+      ]
+    },
+    {
+      "key": "total_interest_expense",
+      "label": "Total interest expense",
+      "amount": "520.00",
+      "prior": "525.00",
+      "account_refs": []
+    },
+    {
+      "key": "net_income",
+      "label": "Net income",
+      "amount": "27795.00",
+      "prior": "31455.00",
+      "account_refs": []
+    }
+  ]
+}

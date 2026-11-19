@@ -668,7 +668,10 @@ def scenario_files() -> dict[str, str]:
     """Fixtures computed from the scenario's own data, with no database: N-02-T36's SIG-01 hub
     (`scenario.signatures-hub.json`) and C-02-T17's CLS-07 entries, which the TypeScript scenarios
     are held to (`seed/signatures.export.test.ts`, `screens/CLS-07`, `screens/ADM-14`)."""
-    from abacus_tools.synthetic.scenarios.brightwater_hale.cas_delivery_slice import cls07_rows
+    from abacus_tools.synthetic.scenarios.brightwater_hale.cas_delivery_slice import (
+        cls07_rows,
+        cls08_package,
+    )
     from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import hub_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.usage_slice import adm14_rows
 
@@ -690,6 +693,18 @@ def scenario_files() -> dict[str, str]:
         # C-02-T17 (DEC-5637): CLS-07's Copperleaf August entries, which the TypeScript CLS-07
         # scenarios are held to (`screens/CLS-07/CLS-07.test.tsx`).
         "scenario.cls07-entries.json": json.dumps(cls07, indent=2, ensure_ascii=False) + "\n",
+        # C-02-T23 (DEC-5707): CLS-08's August statements, held by `screens/CLS-08`.
+        "scenario.cls08-package.json": json.dumps(
+            {
+                "scenario": SCENARIO_VERSION,
+                "slice": "cas_delivery",
+                "snapshot": "E0",
+                **cls08_package(),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
         # G-04-T18 (DEC-5639): ADM-14's plan, usage, alerts, rates and budgets.
         "scenario.adm14.json": json.dumps(adm14, indent=2, ensure_ascii=False) + "\n",
     }

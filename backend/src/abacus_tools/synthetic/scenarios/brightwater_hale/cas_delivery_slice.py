@@ -329,3 +329,102 @@ def reportable(vendor: Vendor) -> bool:
     if vendor.treatment == "exempt_corporation":
         return False
     return vendor.amount >= THRESHOLD_2026
+
+
+# --- C-02-T23: CLS-08's package rows (statement lines with subtotals, computed here by code) ----
+
+_BS_TOTALS: Final = {
+    "current_assets": "Total current assets",
+    "property_and_equipment": "Net property and equipment",
+    "current_liabilities": "Total current liabilities",
+    "long_term_liabilities": "Total long-term liabilities",
+    "equity": "Total stockholders' equity",
+}
+_IS_TOTALS: Final = {
+    "revenue": "Total revenue",
+    "cost_of_goods_sold": "Total cost of goods sold",
+    "operating_expenses": "Total operating expenses",
+    "interest_expense": "Total interest expense",
+}
+
+
+def _slug(label: str) -> str:
+    return "".join(ch if ch.isalnum() else "_" for ch in label.lower()).strip("_")
+
+
+def _money(x: Decimal) -> str:
+    return f"{x.quantize(D('0.01'))}"
+
+
+def cls08_package() -> dict[str, object]:
+    """CLS-08 a's statements as the package read returns them (`DeliveryPackageOut` lines), with
+    the section subtotals and grand totals computed here (ADR-050): total assets 549,195.45,
+    total liabilities and equity the same, August net income 27,795.00 against July 31,455.00."""
+    bs: list[dict[str, object]] = []
+    for section, rows in BALANCE_SHEET.items():
+        for label, amount in rows:
+            bs.append({"key": _slug(label), "label": label, "amount": _money(amount),
+                       "account_refs": [_slug(label)]})  # fmt: skip
+        total = sum((a for _, a in rows), _ZERO)
+        bs.append({"key": f"total_{section}", "label": _BS_TOTALS[section],
+                   "amount": _money(total), "account_refs": []})  # fmt: skip
+    assets = sum((a for s in ("current_assets", "property_and_equipment")
+                  for _, a in BALANCE_SHEET[s]), _ZERO)  # fmt: skip
+    liabilities_equity = sum(
+        (a for s in ("current_liabilities", "long_term_liabilities", "equity")
+         for _, a in BALANCE_SHEET[s]), _ZERO)  # fmt: skip
+    bs.insert(
+        next(i for i, ln in enumerate(bs) if ln["key"] == "total_property_and_equipment") + 1,
+        {"key": "total_assets", "label": "Total assets", "amount": _money(assets),
+         "account_refs": []},
+    )  # fmt: skip
+    liabilities = sum((a for s in ("current_liabilities", "long_term_liabilities")
+                       for _, a in BALANCE_SHEET[s]), _ZERO)  # fmt: skip
+    bs.insert(
+        next(i for i, ln in enumerate(bs) if ln["key"] == "total_long_term_liabilities") + 1,
+        {"key": "total_liabilities", "label": "Total liabilities", "amount": _money(liabilities),
+         "account_refs": []},
+    )  # fmt: skip
+    bs.append({"key": "total_liabilities_and_equity", "label": "Total liabilities and equity",
+               "amount": _money(liabilities_equity), "account_refs": []})  # fmt: skip
+    inc: list[dict[str, object]] = []
+    for section, rows3 in INCOME_STATEMENT.items():
+        for label, aug, jul in rows3:
+            inc.append({"key": _slug(label), "label": label, "amount": _money(aug),
+                        "prior": _money(jul), "account_refs": [_slug(label)]})  # fmt: skip
+        inc.append({"key": f"total_{section}", "label": _IS_TOTALS[section],
+                    "amount": _money(sum((a for _, a, _ in rows3), _ZERO)),
+                    "prior": _money(sum((p for _, _, p in rows3), _ZERO)),
+                    "account_refs": []})  # fmt: skip
+
+    def ni(i: int) -> Decimal:
+        rev = sum((r[i] for r in INCOME_STATEMENT["revenue"]), _ZERO)
+        out = sum((r[i] for s in ("cost_of_goods_sold", "operating_expenses", "interest_expense")
+                   for r in INCOME_STATEMENT[s]), _ZERO)  # fmt: skip
+        return rev - out
+
+    def subtotal(after: str, key: str, label: str, sections: tuple[str, ...]) -> None:
+        def at(i: int) -> Decimal:
+            rev = sum((r[i] for r in INCOME_STATEMENT["revenue"]), _ZERO)
+            return rev - sum((r[i] for sec in sections for r in INCOME_STATEMENT[sec]), _ZERO)
+
+        idx = next(i for i, ln in enumerate(inc) if ln["key"] == after) + 1
+        inc.insert(idx, {"key": key, "label": label, "amount": _money(at(1)),
+                         "prior": _money(at(2)), "account_refs": []})  # fmt: skip
+
+    subtotal("total_cost_of_goods_sold", "gross_profit", "Gross profit", ("cost_of_goods_sold",))
+    subtotal("total_operating_expenses", "operating_income", "Operating income",
+             ("cost_of_goods_sold", "operating_expenses"))  # fmt: skip
+    inc.append({"key": "net_income", "label": "Net income", "amount": _money(ni(1)),
+                "prior": _money(ni(2)), "account_refs": []})  # fmt: skip
+    return {
+        # CLS-08's outline note: the two agings by bucket (they foot to the control accounts).
+        "ar_aging": [["current", "12960.00"], ["1_30", "4180.00"], ["31_60", "1280.00"]],
+        "ap_aging": [["current", "17240.45"], ["1_30", "3620.00"], ["31_60", "520.00"]],
+        "route": PACKAGE_ROUTE,
+        "legend": PACKAGE_LEGEND,
+        "released_at": RELEASED_AT.isoformat(),
+        "client_approved_at": CLIENT_APPROVED_AT.isoformat(),
+        "balance_sheet": bs,
+        "income_statement": inc,
+    }

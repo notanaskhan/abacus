@@ -35266,6 +35266,19 @@
             "maxLength": 200,
             "title": "Label",
             "type": "string"
+          },
+          "prior": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Prior"
           }
         },
         "required": [
@@ -197571,7 +197584,7 @@
     },
     "/v1/closes/{close_id}/package": {
       "get": {
-        "description": "Structure, preconditions and route (C-02-T21).",
+        "description": "Structure, preconditions and route (C-02-T21, DEC-5703): figures from the posted TB.",
         "operationId": "package",
         "parameters": [
           {
@@ -197686,6 +197699,7 @@
         "x-abacus-action": "close_package.read"
       },
       "patch": {
+        "description": "Section toggles and the CAS answer: a new version at the version seen (C-02-T21).",
         "operationId": "package_edit",
         "parameters": [
           {
