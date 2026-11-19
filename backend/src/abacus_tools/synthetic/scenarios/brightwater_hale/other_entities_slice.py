@@ -15,8 +15,8 @@ from datetime import date
 from decimal import Decimal
 from typing import Final
 
-from abacus.modules.tax.compute import provision as e11
-from abacus.modules.tax.compute import s_corp as e10
+from abacus.modules.tax.api import provision_engine as e11
+from abacus.modules.tax.api import s_corp_engine as e10
 
 D = Decimal
 BLUESTEM: Final = "Bluestem Analytics, LLC"

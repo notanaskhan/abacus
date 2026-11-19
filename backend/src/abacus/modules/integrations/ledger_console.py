@@ -25,6 +25,7 @@ from uuid import UUID
 from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.safe_xlsx import safe_text
 from abacus.modules.identity.api import AuthContext, names_of
 
 REAUTH_REASONS: Final = frozenset({"token_expired", "invalid_grant", "firm_app_disabled"})
@@ -175,9 +176,15 @@ def posting_log_csv(rows: Sequence[LogRow]) -> bytes:
     writer = csv.writer(out, lineterminator="\n")
     writer.writerow(CSV_COLUMNS)
     for r in rows:
-        writer.writerow([cast(object, getattr(r, c)) if getattr(r, c) is not None else ""
-                         for c in CSV_COLUMNS])  # fmt: skip
+        writer.writerow([_cell(cast(object, getattr(r, c))) for c in CSV_COLUMNS])
     return out.getvalue().encode()
+
+
+def _cell(value: object) -> object:
+    """A provider's reference is client-system text (ADR-052): never a spreadsheet formula."""
+    if value is None:
+        return ""
+    return safe_text(value) if isinstance(value, str) else value
 
 
 @dataclass(frozen=True)
@@ -221,9 +228,9 @@ async def ledger_activity(
 
 __all__ = [
     "LEDGER_LABEL",
-    "LedgerEvent",
     "ClosingDate",
     "Console",
+    "LedgerEvent",
     "LogRow",
     "PostingFacts",
     "health_of",

@@ -398,6 +398,7 @@ __all__ = [
     "patch_installment",
     "patch_schedule",
     "prepare_extensions",
+    "provision_engine",
     "reader_workflow_id",
     "recompute_unfiled",
     "record_sync_state",
@@ -409,6 +410,7 @@ __all__ = [
     "request_estimate_confirmation",
     "rule_texts",
     "run_draft",
+    "s_corp_engine",
     "save_allocation_draft",
     "send_confirmation",
     "set_extended",
@@ -641,5 +643,9 @@ from abacus.modules.tax.allocation_structure import (  # noqa: E402
     save_draft as save_allocation_draft,
 )
 from abacus.modules.tax.allocation_structure import versions as allocation_versions  # noqa: E402
+
+# T-06-T28 (DEC-5717): the E10 and E11 engines, for the seed's other-entity slice.
+from abacus.modules.tax.compute import provision as provision_engine  # noqa: E402
+from abacus.modules.tax.compute import s_corp as s_corp_engine  # noqa: E402
 from abacus.modules.tax.entity_run_plan import DEPTH as ENTITY_RUN_DEPTH  # noqa: E402
 from abacus.modules.tax.entity_run_plan import STEPS as ENTITY_RUN_STEPS  # noqa: E402

@@ -137,12 +137,12 @@ def test_ac_only_posted_or_recorded_entries_reach_the_tb() -> None:
 def _framework(end: date, early: bool = False) -> str:
     policy = PolicyRef("bh_ssars_cas", uuid4(), 1, "BH SSARS/CAS settings")
     payload = SsarsCasSettingsPayload(kind="ssars_cas_settings", early_adopt_ssars27=early)
-    return ssars_framework_for(payload, policy, period_end=end).framework  # type: ignore[attr-defined]  # a test literal
+    return ssars_framework_for(payload, policy, period_end=end).framework
 
 
 def test_ac_aug_31_2026_routes_to_ar_c_70_with_the_legend() -> None:
     aug = pkg.route(_framework(date(2026, 8, 31)), cas_answer=True)
-    assert aug == pkg.PackageRoute(s.PACKAGE_ROUTE, pkg.NO_ASSURANCE)  # type: ignore[arg-type]  # a test literal
+    assert aug == pkg.PackageRoute(s.PACKAGE_ROUTE, pkg.NO_ASSURANCE)
     dec = pkg.route(_framework(date(2026, 12, 31)), cas_answer=True)
     assert dec == pkg.PackageRoute("cas_by_product", None)
     assert pkg.route(_framework(date(2026, 12, 31)), cas_answer=False).route == "standalone_letter"

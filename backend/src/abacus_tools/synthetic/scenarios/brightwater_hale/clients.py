@@ -18,7 +18,7 @@ ClientKind = Literal[
     "individual", "household", "business", "partnership", "exempt_org", "trust", "estate", "plan"
 ]
 Portal = Literal["active", "invited", "not_invited"]
-ServiceLine = Literal["tax", "audit", "cas", "advisory"]
+ServiceLine = Literal["audit", "tax", "cas", "advisory"]
 ClientOrigin = Literal["named", "roster", "filler"]
 
 

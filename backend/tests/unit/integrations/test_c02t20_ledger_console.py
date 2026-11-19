@@ -31,7 +31,7 @@ def test_ac_tiles_read_7_posted_1_proposed_and_jul_31() -> None:
         1,
         lc.ClosingDate(date(2026, 7, 31), None, CT),
     )
-    tiles = lc._tiles(facts)
+    tiles = lc._tiles(facts)  # pyright: ignore[reportPrivateUsage] -- the rule under test
     assert tiles == {
         "posted": 7,
         "proposed": 1,
@@ -49,3 +49,11 @@ def test_ac_the_csv_is_deterministic_and_carries_no_ids() -> None:
     assert lines[0] == ",".join(lc.CSV_COLUMNS)
     assert lines[1].startswith("2026-07-A,2026-07,posted,6,6,47901,47906,1")
     assert all(str(r.batch_id) not in once.decode() for r in rows)
+
+
+def test_ac_a_provider_reference_never_reaches_the_csv_as_a_formula() -> None:
+    hostile = lc.LogRow(
+        uuid4(), "2026-07-B", "2026-07", "posted", 1, 1, "=HYPERLINK(1)", "@SUM(1)", 0, 0, CT, None
+    )
+    line = lc.posting_log_csv([hostile]).decode().splitlines()[1]
+    assert ",'=HYPERLINK(1),'@SUM(1)," in line

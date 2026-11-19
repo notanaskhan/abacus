@@ -4999,6 +4999,8 @@ export const destinations = <ThrowOnError extends boolean = false>(options: Opti
 
 /**
  * Destruction Batches Route
+ *
+ * Newest first (Q-05-T11); the approvals join with Q-05-T12's approval task.
  */
 export const destructionBatches = <ThrowOnError extends boolean = false>(options?: Options<DestructionBatchesData, ThrowOnError>): RequestResult<DestructionBatchesResponses, DestructionBatchesErrors, ThrowOnError> => (options?.client ?? client).get<DestructionBatchesResponses, DestructionBatchesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -16597,6 +16599,8 @@ export const qualityAccuracy = <ThrowOnError extends boolean = false>(options?: 
 
 /**
  * Quality Overrides Route
+ *
+ * ADM-11 c: overrides by agent from the projection (Q-05-T07, DEC-96).
  */
 export const qualityOverrides = <ThrowOnError extends boolean = false>(options?: Options<QualityOverridesData, ThrowOnError>): RequestResult<QualityOverridesResponses, QualityOverridesErrors, ThrowOnError> => (options?.client ?? client).get<QualityOverridesResponses, QualityOverridesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -16606,6 +16610,8 @@ export const qualityOverrides = <ThrowOnError extends boolean = false>(options?:
 
 /**
  * Quality Override Reasons Route
+ *
+ * One agent's override reasons, most frequent first (Q-05-T07).
  */
 export const qualityOverrideReasons = <ThrowOnError extends boolean = false>(options: Options<QualityOverrideReasonsData, ThrowOnError>): RequestResult<QualityOverrideReasonsResponses, QualityOverrideReasonsErrors, ThrowOnError> => (options.client ?? client).get<QualityOverrideReasonsResponses, QualityOverrideReasonsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -16624,6 +16630,8 @@ export const qualityCycles = <ThrowOnError extends boolean = false>(options?: Op
 
 /**
  * Quality Dashboard Route
+ *
+ * ADM-11 a (Q-05-T08): tiles and component health; an office narrows the rate only.
  */
 export const qualityDashboard = <ThrowOnError extends boolean = false>(options?: Options<QualityDashboardData, ThrowOnError>): RequestResult<QualityDashboardResponses, QualityDashboardErrors, ThrowOnError> => (options?.client ?? client).get<QualityDashboardResponses, QualityDashboardErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -17325,6 +17333,8 @@ export const retentionPolicyVersions = <ThrowOnError extends boolean = false>(op
 
 /**
  * Retention Summary Route
+ *
+ * FIL-02 tiles (Q-05-T11).
  */
 export const retentionSummary = <ThrowOnError extends boolean = false>(options?: Options<RetentionSummaryData, ThrowOnError>): RequestResult<RetentionSummaryResponses, RetentionSummaryErrors, ThrowOnError> => (options?.client ?? client).get<RetentionSummaryResponses, RetentionSummaryErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

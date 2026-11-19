@@ -50,7 +50,7 @@ SourceKind = Literal[
     "form_5500",
     "consent",
 ]
-ServiceLine = Literal["tax", "audit", "cas", "advisory"]
+ServiceLine = Literal["audit", "tax", "cas", "advisory"]
 ExportFormat = Literal["xlsx", "ics"]
 
 

@@ -8278,6 +8278,8 @@ export const destructionBatchesQueryKey = (options?: Options<DestructionBatchesD
 
 /**
  * Destruction Batches Route
+ *
+ * Newest first (Q-05-T11); the approvals join with Q-05-T12's approval task.
  */
 export const destructionBatchesOptions = (options?: Options<DestructionBatchesData>) => queryOptions<DestructionBatchesResponse, DestructionBatchesError, DestructionBatchesResponse, ReturnType<typeof destructionBatchesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -8296,6 +8298,8 @@ export const destructionBatchesInfiniteQueryKey = (options?: Options<Destruction
 
 /**
  * Destruction Batches Route
+ *
+ * Newest first (Q-05-T11); the approvals join with Q-05-T12's approval task.
  */
 export const destructionBatchesInfiniteOptions = (options?: Options<DestructionBatchesData>) => {
     const opts = infiniteQueryOptions<DestructionBatchesResponse, DestructionBatchesError, InfiniteData<DestructionBatchesResponse>, QueryKey<Options<DestructionBatchesData>>, string | null | Pick<QueryKey<Options<DestructionBatchesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -27411,6 +27415,8 @@ export const qualityOverridesQueryKey = (options?: Options<QualityOverridesData>
 
 /**
  * Quality Overrides Route
+ *
+ * ADM-11 c: overrides by agent from the projection (Q-05-T07, DEC-96).
  */
 export const qualityOverridesOptions = (options?: Options<QualityOverridesData>) => queryOptions<QualityOverridesResponse, QualityOverridesError, QualityOverridesResponse, ReturnType<typeof qualityOverridesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -27429,6 +27435,8 @@ export const qualityOverrideReasonsQueryKey = (options: Options<QualityOverrideR
 
 /**
  * Quality Override Reasons Route
+ *
+ * One agent's override reasons, most frequent first (Q-05-T07).
  */
 export const qualityOverrideReasonsOptions = (options: Options<QualityOverrideReasonsData>) => queryOptions<QualityOverrideReasonsResponse, QualityOverrideReasonsError, QualityOverrideReasonsResponse, ReturnType<typeof qualityOverrideReasonsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -27465,6 +27473,8 @@ export const qualityDashboardQueryKey = (options?: Options<QualityDashboardData>
 
 /**
  * Quality Dashboard Route
+ *
+ * ADM-11 a (Q-05-T08): tiles and component health; an office narrows the rate only.
  */
 export const qualityDashboardOptions = (options?: Options<QualityDashboardData>) => queryOptions<QualityDashboardResponse, QualityDashboardError, QualityDashboardResponse, ReturnType<typeof qualityDashboardQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -28578,6 +28588,8 @@ export const retentionSummaryQueryKey = (options?: Options<RetentionSummaryData>
 
 /**
  * Retention Summary Route
+ *
+ * FIL-02 tiles (Q-05-T11).
  */
 export const retentionSummaryOptions = (options?: Options<RetentionSummaryData>) => queryOptions<RetentionSummaryResponse, RetentionSummaryError, RetentionSummaryResponse, ReturnType<typeof retentionSummaryQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

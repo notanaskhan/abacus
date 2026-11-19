@@ -89669,7 +89669,7 @@ export type ListClientsData = {
         /**
          * Service Line
          */
-        service_line?: 'tax' | 'audit' | 'cas' | 'advisory' | null;
+        service_line?: 'audit' | 'tax' | 'cas' | 'advisory' | null;
         /**
          * Status
          */
@@ -99196,7 +99196,7 @@ export type EngagementIndexData = {
         /**
          * Service Line
          */
-        service_line?: 'tax' | 'audit' | 'cas' | 'advisory' | null;
+        service_line?: 'audit' | 'tax' | 'cas' | 'advisory' | null;
         /**
          * Status
          */
@@ -122352,7 +122352,7 @@ export type FilingDeadlinesData = {
         /**
          * Service
          */
-        service?: 'tax' | 'audit' | 'cas' | 'advisory' | null;
+        service?: 'audit' | 'tax' | 'cas' | 'advisory' | null;
         /**
          * Person Id
          */

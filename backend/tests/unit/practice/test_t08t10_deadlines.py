@@ -1,5 +1,5 @@
-"""T-08-T10 (TASK-8727; DEC-5721): risk tiers are computed on read in the firm's zone (9:24 AM CT on
-Sep 14 is Sep 14 there), a postponement moves the effective date, and a day's items count by
+"""T-08-T10 (TASK-8727; DEC-5721): risk tiers are computed on read in the firm's zone (9:24 AM CT
+on Sep 14 is Sep 14 there), a postponement moves the effective date, and a day's items count by
 their effective date."""
 
 from __future__ import annotations

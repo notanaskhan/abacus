@@ -2,7 +2,15 @@
 // open and resolved incidents with their updates, a post sheet and an update-or-resolve sheet. The
 // public note is what SHL-05's Status tab shows firms; nothing here names a firm or a client.
 import type { StatusIncidentIn, StatusIncidentOut, StatusIncidentsOut } from "@abacus/api-client";
-import { Button, EmptyState, Pill, type PillVariant, Segmented, SheetModal } from "@abacus/ui";
+import {
+  Button,
+  EmptyState,
+  Picker,
+  Pill,
+  type PillVariant,
+  Segmented,
+  SheetModal,
+} from "@abacus/ui";
 import { type JSX, useState } from "react";
 import { SECTIONS_COPY } from "./copy";
 
@@ -100,22 +108,12 @@ function PostSheet({
       }
     >
       <div className="flex flex-col gap-[12px]">
-        <label className="flex flex-col gap-[4px] text-[12.5px] text-ink-2">
-          {C.sheet.component}
-          <select
-            className="h-[30px] bg-card px-[8px] text-[13px] text-ink hairline"
-            value={component}
-            onChange={(e) => {
-              setComponent(e.target.value);
-            }}
-          >
-            {components.map((k) => (
-              <option key={k} value={k}>
-                {k}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Picker
+          label={C.sheet.component}
+          options={components.map((k) => ({ value: k, label: k }))}
+          value={component}
+          onChange={setComponent}
+        />
         <Segmented
           label={C.sheet.severity}
           size="small"

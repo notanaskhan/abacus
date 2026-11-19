@@ -14,7 +14,7 @@ up or called.
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from typing import Any, Final, Literal, cast
 from uuid import UUID
@@ -379,3 +379,21 @@ async def execute_write[T](
         raise W1Refused(facts={"reason": refusal})
     await authorise_write(ctx, capability, client_id)
     raise AssertionError("authorise_write always refuses")
+
+
+AUDIT_ENTITY_KINDS: Final = frozenset({"ledger_write_operation"})
+_OPERATION_ENTITIES = text(
+    "SELECT id, client_entity_id FROM ledger_write_operations WHERE id = ANY(:i)"
+)
+
+
+async def audit_entities(
+    tenant: TenantContext, kind: str, ids: Sequence[UUID]
+) -> dict[UUID, UUID]:
+    """For W1 write operations named by an audit event: their id -> the client entity written to,
+    so the trail applies that client's walls (C-02-T19)."""
+    if kind not in AUDIT_ENTITY_KINDS or not ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(_OPERATION_ENTITIES, {"i": list(ids)})
+        return {cast(UUID, r[0]): cast(UUID, r[1]) for r in rows}

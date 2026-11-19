@@ -93,6 +93,7 @@ FIRM_LEVEL: Final = frozenset(
         "consent_export",  # T-01-T16: a person's export of the consent registry (a filter)
         "envelope_policy",  # N-02: the firm's envelope fallback policy (the firm is its id)
         "methodology_step",  # K-01-T18: a step of a firm methodology version (no engagement)
+        "destruction_batch",  # Q-05-T11: a quarter's batch spans former clients (counts only)
     }
 )
 # Kinds whose rows may belong to no engagement (a notification about the firm): then firm-level.

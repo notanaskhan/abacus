@@ -1,7 +1,8 @@
 """C-01-T44 (TASK-8700; DEC-5700) on the loaded Brightwater Hale tenant: the `cas` slice loads the
 August portfolio through the closes services, so CLS-01's tiles read 3 + 11 + 5 + 3 with the
 initials pairs of the fixture book, Copperleaf's "2026 Close" has twelve closes, its plan reads
-v2 and v3 published with v4 a draft (seven client requests), and the seven exceptions are open;
+v1 (empty), v2 and v3 published with v4 a draft (seven client requests), and the seven
+exceptions are open;
 with `--holdout copperleaf` none of Copperleaf's rows load, so J02 can create the client."""
 
 from __future__ import annotations
@@ -73,6 +74,7 @@ async def test_ac_the_august_portfolio_loads_through_the_services(
         "WHERE r.version_id = v.id) AS n FROM close_plan_versions v ORDER BY v.version"
     )
     assert [(r["version"], r["status"], r["n"]) for r in versions] == [
+        (1, "published", 0),
         (2, "published", 22),
         (3, "published", 23),
         (4, "draft", 23),

@@ -30,6 +30,8 @@ import {
   Skeleton,
   StatusDisc,
   type ThreadItem,
+  DEFAULT_TZ,
+  time,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
@@ -37,14 +39,9 @@ import { COPY as C } from "./copy";
 
 export type SupportTab = "chat" | "help" | "status";
 const TABS: readonly SupportTab[] = ["chat", "help", "status"];
-const TZ = "America/Chicago";
 
 function clock(at: string): string {
-  return new Date(at).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: TZ,
-  });
+  return time(at, { tz: DEFAULT_TZ });
 }
 
 function items(c: ConversationOut): ThreadItem[] {
@@ -61,6 +58,10 @@ function items(c: ConversationOut): ThreadItem[] {
     actor_kind: "human",
     actor_name: m.author_display_name,
   }));
+}
+
+function str(v: unknown): string {
+  return typeof v === "string" ? v : "";
 }
 
 function SupportLine({
@@ -80,11 +81,11 @@ function SupportLine({
         >
           a
         </span>
-        {C.staffSender(String(item.payload.author ?? ""))}
-        <span>{clock(String(item.payload.at ?? ""))}</span>
+        {C.staffSender(str(item.payload.author))}
+        <span>{clock(str(item.payload.at))}</span>
       </span>
       <p className="rounded-[14px] bg-card px-[12px] py-[8px] text-[13px] leading-[1.45] text-ink hairline">
-        {String(item.payload.body ?? "")}
+        {str(item.payload.body)}
       </p>
       {article === null ? null : <ArticleLink slug={article} onArticle={onArticle} />}
     </div>
@@ -164,7 +165,13 @@ function SessionCard({
       </div>
       {card.status === "requested" && card.can_decide ? (
         <div className="flex justify-end gap-[8px] py-[6px]">
-          <Button variant="secondary" size="sm" onClick={() => onDecline(card.session_id)}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              onDecline(card.session_id);
+            }}
+          >
             {C.card.decline}
           </Button>
           <Button size="sm" onClick={onReview}>
@@ -178,7 +185,9 @@ function SessionCard({
             variant="ghost"
             size="sm"
             className="text-red"
-            onClick={() => onRevoke(card.session_id)}
+            onClick={() => {
+              onRevoke(card.session_id);
+            }}
           >
             {C.card.revoke}
           </Button>

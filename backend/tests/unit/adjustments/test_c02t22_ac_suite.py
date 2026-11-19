@@ -5,8 +5,9 @@ written from the row and C-02 §3, not from the diff. Row acceptance: "the agent
 principals are denied every approval, posting, release, hand-off and filing action at matrix
 level". Covered:
 
-- I-AGENT-NEVER, generated: every C-02 human action in adjustments.yaml, closes.yaml and
-  integrations.yaml and connections.yaml denies `agent` and `system` (and the policy principal holds none);
+- I-AGENT-NEVER, generated: every C-02 human action in adjustments.yaml, closes.yaml,
+  integrations.yaml and connections.yaml denies `agent` and `system` (the policy principal holds
+  none);
 - a batch within policy needs an approver level the engagement role meets (unknown roles never);
 - every posting and approval route refuses a non-person at its first gate (INV-1);
 - a posting batch for an attest client is refused before anything is written (ADR-344 §4), and the

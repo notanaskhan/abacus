@@ -2811,8 +2811,8 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.closes.delivery_errors.PackageReleased
-    summary: C-02-T21 a released (or client-approved) package's structure is not edited; reopen the
-      close first.
+    summary: 'C-02-T21: a released (or client-approved) package''s structure is not edited; reopen the
+      close first.'
   packet_approved:
     status: 409
     raised_by:

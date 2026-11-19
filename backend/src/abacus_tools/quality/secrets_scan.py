@@ -139,6 +139,12 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         " credential (S35 follow-up, TASK-6741)",
     ),
     (
+        "apps/web/src/fixtures/seed/scenario.cls08-package.json",
+        "SECRET-003",
+        "a statement line's `key` names the line (retained_earnings__jan_1__2026), never a"
+        " credential (C-02-T23, TASK-8711)",
+    ),
+    (
         "apps/web/src/fixtures/seed/2026-09-24t1020.*-items.json",
         "SECRET-003",
         "a sample item's `record_key` names its population record (census row NWC-0215, GL line"

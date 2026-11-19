@@ -197,7 +197,7 @@ export function CLS08({
   if (pkg.data === undefined)
     return <Skeleton aria-label={C.drafting} className="h-[700px] w-full" />;
   const data = pkg.data;
-  const on: ReadonlySet<Section> = local ?? new Set(data.sections as Section[]);
+  const on: ReadonlySet<Section> = local ?? new Set(data.sections);
   const released = data.status === "released" || data.status === "approved_by_client";
   const drafting = data.status === "drafting";
   const pages = (["balance_sheet", "income_statement"] as const).filter((s) => on.has(s));

@@ -128,6 +128,7 @@ from abacus.modules.integrations.writes import (
     W1Refused,
     W1Scope,
     WriteCapabilityRefused,
+    WriteStatus,
     authorise_write,
     execute_write,
     register_w1_kill_switch,
@@ -187,6 +188,7 @@ __all__ = [
     "WritePreview",
     "WriteReceipt",
     "WriteRequest",
+    "WriteStatus",
     "Writer",
     "assert_egress_declared",
     "authorise_write",
@@ -237,6 +239,11 @@ __all__ = [
 
 # A-02-T26 (DEC-709): the QuickBooks Online adapter, only where the app registration exists.
 register_if_configured(qbo_app() is not None)
+
+from abacus.kernel.audit_owners import register_entity_owners  # noqa: E402
+from abacus.modules.integrations.writes import AUDIT_ENTITY_KINDS, audit_entities  # noqa: E402
+
+register_entity_owners(AUDIT_ENTITY_KINDS, audit_entities)  # C-02-T19: a W1 write's client
 
 # W-01-T08 (AC-13): a deactivated person's personal installs are disconnected and their secrets
 # deleted. The worker reads these three (no workflow or activity of the module's own yet).

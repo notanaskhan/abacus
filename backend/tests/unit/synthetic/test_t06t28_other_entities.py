@@ -17,7 +17,7 @@ def test_ac_bluestem_aaa_ends_at_1_488_200_with_distributions_within_aaa() -> No
 
 def test_ac_the_shareholder_rows_are_the_engine_split() -> None:
     for column in range(4):
-        total = sum(row[column] for row in s.ALLOCATION_ROWS.values())
+        total = sum((row[column] for row in s.ALLOCATION_ROWS.values()), Decimal(0))
         split = s.bluestem_split(total)
         assert {k: v[column] for k, v in s.ALLOCATION_ROWS.items()} == split
 
