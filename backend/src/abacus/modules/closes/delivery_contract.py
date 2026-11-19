@@ -373,9 +373,11 @@ def _not_built[M: BaseModel](model: type[M]) -> M:
     _PKG, action="close_package.read", response_model=DeliveryPackageOut, errors=(501,)
 )
 async def package_route(close_id: UUID, ctx: Ctx) -> DeliveryPackageOut:
-    """Structure, preconditions and route (C-02-T21)."""
+    """Structure, preconditions and route (C-02-T21, DEC-5703): figures from the posted TB."""
+    from abacus.modules.closes.package_service import get_package
+
     await _on(ctx, CLOSES_DELIVERY)
-    raise NotImplementedYet
+    return await get_package(ctx, close_id)
 
 
 @delivery_router.patch(
@@ -384,8 +386,11 @@ async def package_route(close_id: UUID, ctx: Ctx) -> DeliveryPackageOut:
 async def package_edit_route(
     close_id: UUID, body: DeliveryPackageEditIn, ctx: Ctx
 ) -> DeliveryPackageOut:
+    """Section toggles and the CAS answer: a new version at the version seen (C-02-T21)."""
+    from abacus.modules.closes.package_service import edit_package
+
     await _human(ctx, CLOSES_DELIVERY, "close_package.edit")
-    raise NotImplementedYet
+    return await edit_package(ctx, close_id, body)
 
 
 @delivery_router.patch(
