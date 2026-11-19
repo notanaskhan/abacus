@@ -14,7 +14,8 @@ Values are words for AUD-24's rows ("5 of 5"); the facts are identifiers and cou
 
 from __future__ import annotations
 
-from typing import Final
+from collections.abc import Sequence
+from typing import Final, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -80,8 +81,30 @@ async def governance_260(
     return AlsoRequired("governance_260", met, None if status is None else str(status))
 
 
+_UNLOCKED = text(
+    "SELECT DISTINCT w.engagement_id FROM report_releases r JOIN work_items w "
+    "ON w.id = r.work_item_id WHERE w.engagement_id = ANY(:e) AND NOT EXISTS "
+    "(SELECT 1 FROM archives a WHERE a.engagement_id = w.engagement_id)"
+)
+
+
+async def unlocked_archives(
+    tenant: TenantContext, engagement_ids: Sequence[UUID]
+) -> frozenset[UUID]:
+    """Q-05-T11 (S51 partials): engagements released but not yet locked; their documentation is
+    still being assembled, so nothing in them is eligible for destruction."""
+    if not engagement_ids:
+        return frozenset()
+    async with tenant_session(tenant) as session:
+        found = await session.scalars(_UNLOCKED, {"e": list(engagement_ids)})
+        return frozenset(cast(UUID, e) for e in found)
+
+
 def register() -> None:
     """At import (assurance/api.py)."""
+    from abacus.modules.evidence.api import register_unlocked_archives
+
+    register_unlocked_archives(unlocked_archives)
     register_also_required("fs_approved", fs_approved)
     register_also_required("independence", independence)
     register_also_required("final_materiality", final_materiality)

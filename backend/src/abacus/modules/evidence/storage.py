@@ -36,7 +36,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 from uuid import UUID
 
 from abacus.kernel.clock import system_now
@@ -207,6 +207,24 @@ async def _retained_until(target: _Target, key: str, version_id: str) -> datetim
         target.client.get_object_retention, Bucket=target.bucket, Key=key, VersionId=version_id
     )
     return current.get("Retention", {}).get("RetainUntilDate")
+
+
+async def observed_retain_until(key: str, version_id: str) -> datetime | None:
+    """Q-05-T11 (S51 partials): the Object Lock retain-until S3 holds for a version, as observed
+    now (the later of it and the policy's expiry is when the version may go). A version S3 does
+    not know, or one without a lock, reads None; eligibility then waits on the policy alone."""
+    try:
+        return await _retained_until(_storage(), key, version_id)
+    except Exception as exc:
+        if error_code(exc) in _NOT_LOCKED:
+            return None
+        raise  # any other failure fails the firm's assembly (retried next run), never "unlocked"
+
+
+_NOT_LOCKED: Final = frozenset(
+    {"NoSuchObjectLockConfiguration", "ObjectLockConfigurationNotFoundError", "NoSuchKey",
+     "NoSuchVersion", "InvalidRequest"}
+)  # fmt: skip
 
 
 async def _extend_retention(
