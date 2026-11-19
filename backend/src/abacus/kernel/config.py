@@ -232,7 +232,7 @@ class Settings(BaseSettings):
     # to `<console_origin>/v1/platform/auth/callback` and accepts cookie refreshes only from there.
     platform_staff_client_id: Annotated[str | None, classified("internal")] = None
     platform_staff_authorize_url: Annotated[str | None, classified("internal")] = None
-    platform_staff_token_url: Annotated[str | None, classified("internal")] = None
+    platform_staff_exchange_url: Annotated[str | None, classified("internal")] = None
     console_origin: Annotated[str | None, classified("internal")] = None
     # SPEC-012 (Q4): platform staff sign in with a separate issuer (never a firm membership).
     # Unset means no staff can authenticate (break-glass is unavailable).

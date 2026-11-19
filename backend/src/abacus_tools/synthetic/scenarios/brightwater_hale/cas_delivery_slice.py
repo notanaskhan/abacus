@@ -23,7 +23,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Final, Literal
+from typing import Final, Literal, cast
 
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import CT
 
@@ -398,15 +398,16 @@ def cls08_package() -> dict[str, object]:
                     "account_refs": []})  # fmt: skip
 
     def ni(i: int) -> Decimal:
-        rev = sum((r[i] for r in INCOME_STATEMENT["revenue"]), _ZERO)
-        out = sum((r[i] for s in ("cost_of_goods_sold", "operating_expenses", "interest_expense")
-                   for r in INCOME_STATEMENT[s]), _ZERO)  # fmt: skip
+        rev = sum((cast(Decimal, r[i]) for r in INCOME_STATEMENT["revenue"]), _ZERO)
+        out = sum((cast(Decimal, r[i]) for s in ("cost_of_goods_sold", "operating_expenses",
+                   "interest_expense") for r in INCOME_STATEMENT[s]), _ZERO)  # fmt: skip
         return rev - out
 
     def subtotal(after: str, key: str, label: str, sections: tuple[str, ...]) -> None:
         def at(i: int) -> Decimal:
-            rev = sum((r[i] for r in INCOME_STATEMENT["revenue"]), _ZERO)
-            return rev - sum((r[i] for sec in sections for r in INCOME_STATEMENT[sec]), _ZERO)
+            rev = sum((cast(Decimal, r[i]) for r in INCOME_STATEMENT["revenue"]), _ZERO)
+            spent = (cast(Decimal, r[i]) for sec in sections for r in INCOME_STATEMENT[sec])
+            return rev - sum(spent, _ZERO)
 
         idx = next(i for i, ln in enumerate(inc) if ln["key"] == after) + 1
         inc.insert(idx, {"key": key, "label": label, "amount": _money(at(1)),

@@ -46,7 +46,7 @@ def per_agent(rows: Iterable[OutcomeRow], tolerance_pct: Decimal) -> list[AgentR
     for r in rows:
         n, o = counts.get(r.agent_key, (0, 0))
         counts[r.agent_key] = (n + 1, o + int(r.outcome != "adopted"))
-    out = []
+    out: list[AgentRate] = []
     for key in sorted(counts):
         n, o = counts[key]
         rated = n >= SAMPLE_N

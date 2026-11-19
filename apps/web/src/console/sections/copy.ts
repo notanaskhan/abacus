@@ -1,6 +1,8 @@
 // The console's undesigned sections (G-04-T17; G-04 §5.1; DEC-32 pattern, DEC-5701): composed from
 // the kits with the words of their nearest designed screens. Status words are the blueprint's
 // (01 §3.3.1); the support session words are SHL-05's and ADM-06's; nothing names a firm client.
+import { amount } from "@abacus/ui";
+
 export const SECTIONS_COPY = {
   nav: {
     sessions: "Support sessions",
@@ -86,8 +88,8 @@ export const SECTIONS_COPY = {
       string
     >,
     change: (from: number | null, to: number | null): string =>
-      `${from === null ? "—" : from.toLocaleString("en-US")} → ${
-        to === null ? "—" : to.toLocaleString("en-US")
+      `${from === null ? "—" : amount(String(from), "whole").text} → ${
+        to === null ? "—" : amount(String(to), "whole").text
       }`,
     approvedBy: (name: string): string => `Approved by ${name}`,
     markApplied: "Mark applied",

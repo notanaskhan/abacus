@@ -63,7 +63,9 @@ def test_golden_e12_lakeshore_part_ix() -> None:
     st.lists(st.integers(min_value=0, max_value=5_000_000), min_size=4, max_size=4),
 )
 def test_property_a_distribution_foots_across_its_columns(amount: int, cols: list[int]) -> None:
-    balances = dict(zip(("aaa", "pti", "ep", "oaa"), map(D, cols), strict=True))
+    balances: dict[str, Decimal] = dict(
+        zip(("aaa", "pti", "ep", "oaa"), map(D, cols), strict=True)
+    )
     out = e10.distribute(D(amount), balances)
     assert sum(out.values()) == D(amount)
     assert all(out[c] <= balances[c] for c in balances)

@@ -112,7 +112,12 @@ async def _figures(
     for g_order, g in enumerate(view.groupings):
         for l_order, line in enumerate(g.lines):
             fs[line.id] = pkg.FsLine(
-                line.key, line.label, g.key, g.label, g.class_, g_order * 1000 + l_order
+                line.key,
+                line.label,
+                g.key,
+                g.label,
+                cast(pkg.GroupingClass, g.class_),
+                g_order * 1000 + l_order,
             )
     mapping = {
         a.account_code: fs[a.fs_line_id]

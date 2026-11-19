@@ -3,7 +3,7 @@
 // the firm-side approver and its role, start and minutes. Metadata only: a row never opens firm
 // content (the console sees tenant metadata, G-04 §3).
 import type { PlatformSessionsOut } from "@abacus/api-client";
-import { EmptyState, Pill, type PillVariant, StatusTile } from "@abacus/ui";
+import { DEFAULT_TZ, EmptyState, Pill, type PillVariant, StatusTile, dateTime } from "@abacus/ui";
 import type { JSX } from "react";
 import { SECTIONS_COPY } from "./copy";
 
@@ -19,13 +19,7 @@ const PILL: Record<string, PillVariant> = {
 
 function when(at: string | null): string {
   if (at === null) return "—";
-  return new Date(at).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "America/Chicago",
-  });
+  return dateTime(at, { tz: DEFAULT_TZ });
 }
 
 export function SupportSessions({ data }: { data: PlatformSessionsOut }): JSX.Element {

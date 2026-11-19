@@ -43,9 +43,9 @@ async def test_ac_an_unreadable_switch_counts_as_on(monkeypatch: pytest.MonkeyPa
 
 
 def test_ac_each_outcome_files_under_its_status() -> None:
-    verified = posting._posted_evidence(Posted("48213", True))
-    mismatch = posting._posted_evidence(Posted("48214", False))
-    failed = posting._posted_evidence(Posted("", False, "inactive_account"))
+    verified = posting._posted_evidence(Posted("48213", True))  # pyright: ignore[reportPrivateUsage] -- the rule under test
+    mismatch = posting._posted_evidence(Posted("48214", False))  # pyright: ignore[reportPrivateUsage] -- the rule under test
+    failed = posting._posted_evidence(Posted("", False, "inactive_account"))  # pyright: ignore[reportPrivateUsage] -- the rule under test
     assert (verified.status, verified.external_ref) == ("verified", "48213")
     assert mismatch.status == "verify_mismatch"
     assert (failed.status, failed.external_ref) == ("failed", None)

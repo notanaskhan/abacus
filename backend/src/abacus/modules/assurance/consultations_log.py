@@ -15,15 +15,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Final, Literal, cast
+from typing import Any, Final, Literal, cast
 from uuid import UUID
 
-from sqlalchemy import Select, column, func, select, table, text
+from sqlalchemy import column, func, select, table, text
 
 from abacus.kernel.crypto import seal
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, uow
+from abacus.modules.engagements.api import engagement_resource_of
 from abacus.modules.identity.api import AuthContext, Resource, authorise, visible
 
 TARGET: Final = "consultation"
@@ -67,20 +68,20 @@ class ConsultationList:
 
 def _filtered(
     ctx: AuthContext,
-    query: Select[tuple[object, ...]],
+    query: Any,  # noqa: ANN401 # Any: a Select over the lightweight consultations table
     *,
     engagement_id: UUID | None,
     consultee: UUID | None,
     year: int | None,
-) -> Select[tuple[object, ...]]:
-    query = query.where(visible(ctx, "consultation.read", cast(object, _C.c.engagement_id)))  # type: ignore[arg-type]  # a lightweight column
+) -> Any:  # noqa: ANN401 # Any: the same Select, filtered
+    out = query.where(visible(ctx, "consultation.read", cast(object, _C.c.engagement_id)))  # type: ignore[arg-type]  # a lightweight column
     if engagement_id is not None:
-        query = query.where(_C.c.engagement_id == engagement_id)
+        out = out.where(_C.c.engagement_id == engagement_id)
     if consultee is not None:
-        query = query.where(_C.c.consulted_with_user_id == consultee)
+        out = out.where(_C.c.consulted_with_user_id == consultee)
     if year is not None:
-        query = query.where(func.extract("year", _C.c.created_at) == year)
-    return query
+        out = out.where(func.extract("year", _C.c.created_at) == year)
+    return out
 
 
 async def firm_log(
@@ -107,10 +108,23 @@ async def firm_log(
         engagement_id=engagement_id, consultee=consultee, year=year,
     )  # fmt: skip
     async with tenant_session(ctx.tenant) as session:
-        rows = (await session.execute(rows_q.order_by(_C.c.created_at, _C.c.ref))).all()
-        counts = {str(s): int(n) for s, n in (await session.execute(counts_q)).all()}
+        found = await session.execute(rows_q.order_by(_C.c.created_at, _C.c.ref))
+        rows = [tuple(r) for r in found.all()]
+        counted = [tuple(r) for r in (await session.execute(counts_q)).all()]
+        counts = {str(r[0]): int(cast(int, r[1])) for r in counted}
     return ConsultationList(
-        tuple(ConsultationRow(r[0], str(r[1]), r[2], str(r[3]), r[4], r[5], r[6]) for r in rows),
+        tuple(
+            ConsultationRow(
+                cast(UUID, r[0]),
+                str(r[1]),
+                cast(UUID | None, r[2]),
+                str(r[3]),
+                cast(UUID, r[4]),
+                cast(UUID, r[5]),
+                cast(datetime, r[6]),
+            )
+            for r in rows
+        ),
         {"open": counts.get("open", 0), "concluded": counts.get("concluded", 0)},
     )
 
@@ -130,7 +144,7 @@ async def _consultation(tenant: TenantContext, consultation_id: UUID) -> tuple[U
 async def _authorised(ctx: AuthContext, action: str, consultation_id: UUID) -> str:
     engagement_id, status = await _consultation(ctx.tenant, consultation_id)
     resource = (
-        Resource.engagement(ctx.tenant_id, engagement_id)
+        await engagement_resource_of(ctx.tenant, engagement_id)
         if engagement_id is not None
         else Resource.firm(ctx.tenant_id)
     )

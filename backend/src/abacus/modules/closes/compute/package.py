@@ -27,7 +27,7 @@ import json
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 from decimal import Decimal
-from typing import Final, Literal
+from typing import Any, Final, Literal, cast
 
 GroupingClass = Literal["assets", "liabilities", "equity", "revenue", "expenses"]
 Route = Literal["ar_c_70_preparation", "cas_by_product", "standalone_letter"]
@@ -164,7 +164,7 @@ class PackageRoute:
 class Lineage:
     """Which accounts made each figure, by FS line key (CLS-08's per-figure lineage)."""
 
-    by_line: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
+    by_line: Mapping[str, tuple[str, ...]] = field(default_factory=dict[str, tuple[str, ...]])
 
 
 def _q(x: Decimal) -> Decimal:
@@ -415,6 +415,7 @@ def commentary(template: str, accepted: Sequence[AcceptedFlux]) -> str:
     line per accepted explanation, in the order given; a template without the slot is kept as
     written. Draft explanations never appear (the caller passes accepted ones only)."""
     lines = []
+    lines: list[str] = []
     for f in accepted:
         pct = "" if f.pct is None else f" ({f.pct.quantize(Decimal('0.1'))}%)"
         lines.append(f"- {f.label}: {_money(f.change)}{pct}. {f.explanation}")
@@ -428,11 +429,12 @@ def content_hash(*parts: object) -> str:
         if isinstance(x, Decimal):
             return str(x)
         if hasattr(x, "__dataclass_fields__"):
-            return plain(asdict(x))  # type: ignore[call-overload]  # a dataclass instance, checked above
+            return plain(asdict(cast(Any, x)))  # Any: a dataclass instance, checked above
         if isinstance(x, Mapping):
-            return {str(k): plain(v) for k, v in sorted(x.items(), key=lambda kv: str(kv[0]))}
+            m = cast(Mapping[object, object], x)
+            return {str(k): plain(m[k]) for k in sorted(m, key=str)}
         if isinstance(x, (list, tuple)):
-            return [plain(v) for v in x]
+            return [plain(v) for v in cast(Sequence[object], x)]
         return x
 
     body = json.dumps([plain(p) for p in parts], separators=(",", ":"), sort_keys=True)

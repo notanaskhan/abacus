@@ -6,6 +6,7 @@ from __future__ import annotations
 import re
 from collections import Counter
 from pathlib import Path
+from typing import cast
 
 from abacus_tools.synthetic.scenarios.brightwater_hale import cas_slice as cas
 from abacus_tools.synthetic.scenarios.brightwater_hale import close_slice as close
@@ -41,8 +42,8 @@ def test_ac_the_copperleaf_holdout_leaves_j02_free_to_create_copperleaf() -> Non
     full = _cas_events()
     held = _cas_events(("copperleaf",))
     assert all(getattr(e, "client", None) != close.COPPERLEAF for e in held)
-    # 3 plan versions + the year + 7 exceptions leave with Copperleaf; the template stays.
-    assert len(full) - len(held) == 3 + 1 + len(close.ISSUES)
+    # 4 plan versions + the year + 7 exceptions leave with Copperleaf; the template stays.
+    assert len(full) - len(held) == len(cas.PLAN_VERSIONS) + 1 + len(close.ISSUES) == 12
     assert any(getattr(e, "kind", "") == "closes.template_imported" for e in held)
 
 
@@ -71,7 +72,7 @@ def test_ac_plan_versions_count_23_22_and_seven_requests() -> None:
 def test_ac_seven_open_exceptions_two_medium_five_low() -> None:
     assert Counter(i.severity for i in close.ISSUES) == {"medium": 2, "low": 5}
     seeded = [e for e in cas.events() if e.kind == "closes.exception_seeded"]
-    assert sorted(int(e.data["index"]) for e in seeded) == list(range(7))
+    assert sorted(int(cast(int, e.data["index"])) for e in seeded) == list(range(7))
 
 
 def test_ac_fixture_equals_seed_for_the_cls01_portfolio() -> None:

@@ -1171,5 +1171,25 @@ REVIEWED_FALLBACK: Final = frozenset(
         "relationship.ended",
         "tb_handoff.created",
         "proposed_entry.approval_requested",
+        # reviewed 2026-11-19 (S51 end pass, TASK-8728): W1 posting and its evidence show on
+        # CLS-08 / the ledger console's posting log (C-02-T18..T20), the package edit on CLS-08's
+        # version line, the consultations log v2 actions on the consultation's own history
+        # (Q-05-T09) and a destruction batch on the retention screen (Q-05-T11); none needs a
+        # sentence in the firm's activity feed.
+        "close_package.edited",
+        "consultation.difference_resolved",
+        "consultation.linked",
+        "consultation.position_recorded",
+        "consultation.reopened",
+        "destruction_batch.assembled",
+        "destruction_batch.exported",
+        "ledger_connection.exported",
+        "ledger_write.sent",
+        "ledger_write.verified",
+        "posting_batch.created",
+        "posting_batch.posting",
+        "posting_batch.undone",
+        "proposed_entry.post_failed",
+        "proposed_entry.posted",
     }
 )

@@ -31,7 +31,7 @@ function items(detail: QueueConversationDetailOut): ThreadItem[] {
   return detail.messages.map((m, seq) => ({
     id: m.id,
     seq,
-    kind: m.author_kind === "staff" ? "user_message" : "firm_message",
+    kind: m.author_kind.startsWith("staff") ? "user_message" : "firm_message",
     payload: { body: m.body, author: m.author_display_name },
     actor_kind: "human",
     actor_name: m.author_display_name,
@@ -41,9 +41,11 @@ function items(detail: QueueConversationDetailOut): ThreadItem[] {
 function FirmBubble({ item }: { item: ThreadItem }): JSX.Element {
   return (
     <div className="flex max-w-[82%] flex-col gap-[2px]" data-row="firm_message">
-      <span className="text-[11.5px] text-ink-3">{String(item.payload.author ?? "")}</span>
+      <span className="text-[11.5px] text-ink-3">
+        {typeof item.payload.author === "string" ? item.payload.author : ""}
+      </span>
       <p className="rounded-[14px] bg-card px-[12px] py-[8px] text-[13px] text-ink hairline">
-        {String(item.payload.body ?? "")}
+        {typeof item.payload.body === "string" ? item.payload.body : ""}
       </p>
     </div>
   );

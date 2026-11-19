@@ -82,13 +82,13 @@ def platform_staff_idp() -> StaffIdp:
     if (
         s.platform_staff_client_id is None
         or s.platform_staff_authorize_url is None
-        or s.platform_staff_token_url is None
+        or s.platform_staff_exchange_url is None
     ):
         raise ServiceUnavailable("console sign-in is not configured")
     return OidcStaffIdp(
         client_id=s.platform_staff_client_id,
         authorize_url=s.platform_staff_authorize_url,
-        token_url=s.platform_staff_token_url,
+        token_url=s.platform_staff_exchange_url,
     )
 
 

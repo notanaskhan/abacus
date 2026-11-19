@@ -8291,10 +8291,10 @@ def _cas_row(row: _close.PlanRow) -> ClosePlanRowIn:
     return ClosePlanRowIn(
         account_name=row.account,
         account_class=row.account_class,
-        procedure=cast(Any, row.procedure),
+        procedure=cast(Any, row.procedure),  # Any: ProcedureKind's words
         method=row.method,
         evidence_required=row.evidence,
-        source=cast(Any, row.source),
+        source=cast(Any, row.source),  # Any: the slice's words are the PlanSource literals
         review_level=row.review,
     )
 
@@ -8342,6 +8342,8 @@ async def _cas_plan_version_seeded(conn: asyncpg.Connection, _: Scenario, event:
                 drafter, client, version, _cas_request(title), str(seen)
             )
             seen += 1
+    elif version == 1:
+        pass  # the first version starts empty (`cas_slice.PLAN_VERSIONS`)
     elif version == 3:
         added = next(r for r in _close.PLAN_V3 if r.account == _cas.SUBSCRIPTIONS)
         await add_close_plan_row(drafter, client, version, _cas_row(added), str(seen))

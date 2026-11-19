@@ -43,7 +43,7 @@ def compare(
     line_map: Sequence[tuple[str, str]],
     threshold: Threshold,
 ) -> list[ComparisonLine]:
-    out = []
+    out: list[ComparisonLine] = []
     for code, label in line_map:
         cy, py = current.get(code, ZERO), prior.get(code, ZERO)
         delta = cy - py

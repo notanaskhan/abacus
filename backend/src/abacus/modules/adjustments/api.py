@@ -43,6 +43,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (router, posting_router)  # posting: C8 v2 (
 # The worker serves a module with SUBSCRIPTIONS (A-06-T10's send): no workflows or activities.
 # C-02-T18 (DEC-5704): PostingBatchWorkflow, time sensitive (the client waits on the post).
 from abacus.modules.adjustments.posting import ACTIVITIES as _POSTING_ACTIVITIES  # noqa: E402
+from abacus.modules.adjustments.posting_types import RUN as POSTING_RUN  # noqa: E402
+from abacus.modules.adjustments.posting_types import PostingInput  # noqa: E402
 from abacus.modules.adjustments.posting_workflow import PostingBatchWorkflow  # noqa: E402
 
 WORKFLOWS: dict[type, WorkClass] = {PostingBatchWorkflow: "time_sensitive"}
@@ -66,6 +68,7 @@ from abacus.modules.adjustments.entries import propose as propose_entry  # noqa:
 
 __all__ = [
     "ACTIVITIES",
+    "POSTING_RUN",
     "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
@@ -73,6 +76,8 @@ __all__ = [
     "Entry",
     "NewEntry",
     "NewLine",
+    "PostingBatchWorkflow",
+    "PostingInput",
     "eliminations",
     "entries_of",
     "propose_entry",

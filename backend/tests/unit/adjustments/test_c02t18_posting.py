@@ -5,7 +5,7 @@ every switch is on, and refuses (audited) while the registry keeps W1 dark."""
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import date
 from decimal import Decimal
@@ -30,7 +30,7 @@ D = Decimal
 
 
 def _entry(n: int, amount: str = "100.00") -> Any:  # noqa: ANN401 # Any: posting's entry
-    return posting._Entry(
+    return posting._Entry(  # pyright: ignore[reportPrivateUsage] -- the row under test
         uuid4(),
         f"AJE-{n:02d}",
         "approved",
@@ -78,8 +78,8 @@ async def test_ac_six_entries_post_once_as_48213_to_48218_however_often_retried(
 
 
 @asynccontextmanager
-async def _no_db(_: object) -> AsyncIterator[Any]:  # Any: a stand-in unit of work
-    yield SimpleNamespace(record=lambda *a, **k: None)
+async def _no_db(_: object) -> AsyncGenerator[Any]:  # Any: a stand-in unit of work
+    yield SimpleNamespace(record=lambda *a, **k: None)  # pyright: ignore[reportUnknownLambdaType] -- a no-op recorder
 
 
 def _ctx() -> Any:  # noqa: ANN401 # Any: a stand-in actor (tenant only)

@@ -391,6 +391,9 @@ NOT_CREATING = {
     "/v1/portal/auth/verify",
     "/v1/portal/auth/refresh",
     "/v1/portal/auth/sign-out",
+    # G-04-T14 (DEC-5532): the console BFF's cookie refresh rotates it; sign-out ends it.
+    "/v1/platform/auth/refresh",
+    "/v1/platform/auth/sign-out",
     # P-08-T17: the second step and its setup return a session or a key; nothing is created
     # the caller can address.
     "/v1/portal/auth/mfa",

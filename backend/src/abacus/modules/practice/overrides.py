@@ -33,7 +33,8 @@ SOURCE_KINDS: Final = {
     "proposal.decided": "proposal",
     "checkpoint.approved": "checkpoint",
     "checkpoint.rejected": "checkpoint",
-    "proposed_entry.decided": "proposed_entry",
+    # a held proposed entry's decision has no outcome event yet (`proposed_entry.rejected` and
+    # `.approval_decided` carry no agent key): S51 end pass, TASK-8728, carried to S52.
 }
 OUTCOMES: Final = frozenset({"adopted", "changed", "rejected"})
 DEFAULT_TOLERANCE: Final = Decimal(8)  # the AI policy's default until a firm publishes one

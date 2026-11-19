@@ -223,7 +223,7 @@ def _posted_evidence(p: Posted) -> W1Evidence:
         json.dumps({"external_ref": p.external_ref, "error": p.error}, sort_keys=True).encode(),
         json.dumps({"verified": p.verified}, sort_keys=True).encode(),
         p.external_ref or None,
-        status,  # type: ignore[arg-type]  # the three words are WriteStatus's
+        status,
     )
 
 
@@ -291,7 +291,7 @@ async def dry_run(ctx: AuthContext, work_item_id: UUID, entry_ids: Sequence[UUID
     scope = await _scope(ctx, work_item_id)
     entries = await _entries(ctx.tenant, work_item_id, entry_ids)
     writer = QuickBooksOnlineWriter(await transport_for(ctx.tenant, scope.connection_id))
-    results = []
+    results: list[DryRunResult] = []
     for e in entries:
         check = await writer.preflight(_journal(e, scope.period_end))
         results.append(
@@ -308,7 +308,10 @@ async def dry_run(ctx: AuthContext, work_item_id: UUID, entry_ids: Sequence[UUID
 
 # --- the batch -----------------------------------------------------------------------------------
 
-_BATCH_BY_KEY = text("SELECT id FROM posting_batches WHERE idempotency_key = :k")
+_BATCH_BY_KEY = text(
+    "SELECT id FROM posting_batches WHERE idempotency_key = :k AND posted_by_user_id = :u "
+    "AND work_item_id = :w"
+)
 _CODES = text(
     "SELECT batch_code FROM posting_batches WHERE client_entity_id = :ce AND period = :p"
 )
@@ -350,7 +353,9 @@ async def create_batch(
 ) -> Created:
     """The batch and its grant; the caller starts the workflow after commit (`workflow_id`)."""
     async with tenant_session(ctx.tenant) as session:
-        again = await session.scalar(_BATCH_BY_KEY, {"k": idempotency_key})
+        again = await session.scalar(
+            _BATCH_BY_KEY, {"k": idempotency_key, "u": ctx.user_id, "w": work_item_id}
+        )
     if again is not None:
         return Created(cast(UUID, again), None, False)
     scope = await _scope(ctx, work_item_id)

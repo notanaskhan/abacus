@@ -192118,8 +192118,8 @@
               "anyOf": [
                 {
                   "enum": [
-                    "tax",
                     "audit",
+                    "tax",
                     "cas",
                     "advisory"
                   ],
@@ -210969,6 +210969,7 @@
     },
     "/v1/destruction-batches": {
       "get": {
+        "description": "Newest first (Q-05-T11); the approvals join with Q-05-T12's approval task.",
         "operationId": "destruction_batches",
         "parameters": [
           {
@@ -213324,8 +213325,8 @@
               "anyOf": [
                 {
                   "enum": [
-                    "tax",
                     "audit",
+                    "tax",
                     "cas",
                     "advisory"
                   ],
@@ -264075,8 +264076,8 @@
               "anyOf": [
                 {
                   "enum": [
-                    "tax",
                     "audit",
+                    "tax",
                     "cas",
                     "advisory"
                   ],
@@ -326859,6 +326860,7 @@
     },
     "/v1/quality/agent-overrides": {
       "get": {
+        "description": "ADM-11 c: overrides by agent from the projection (Q-05-T07, DEC-96).",
         "operationId": "quality_overrides",
         "parameters": [
           {
@@ -326997,6 +326999,7 @@
     },
     "/v1/quality/agent-overrides/{agent_key}/reasons": {
       "get": {
+        "description": "One agent's override reasons, most frequent first (Q-05-T07).",
         "operationId": "quality_override_reasons",
         "parameters": [
           {
@@ -327218,6 +327221,7 @@
     },
     "/v1/quality/dashboard": {
       "get": {
+        "description": "ADM-11 a (Q-05-T08): tiles and component health; an office narrows the rate only.",
         "operationId": "quality_dashboard",
         "parameters": [
           {
@@ -334804,6 +334808,7 @@
     },
     "/v1/retention/summary": {
       "get": {
+        "description": "FIL-02 tiles (Q-05-T11).",
         "operationId": "retention_summary",
         "parameters": [
           {
