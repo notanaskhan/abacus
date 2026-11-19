@@ -28,3 +28,25 @@ class HomeActivityPruneWorkflow:
             start_to_close_timeout=_PRUNE_TIMEOUT,
             retry_policy=_PRUNE_RETRY,
         )
+
+
+AGENT_MONITORING_ID = "agent_monitoring:platform"
+_MONITOR_TIMEOUT = timedelta(minutes=20)
+_MONITOR_HEARTBEAT = timedelta(minutes=5)
+
+
+@workflow.defn(name="AgentMonitoringWorkflow")
+class AgentMonitoringWorkflow:
+    """Q-05-T08 (S51 partials; DEC-5727): the nightly QM monitoring run, started only by its
+    Schedule `agent_monitoring:platform` (overlap SKIP). v1, recorded in
+    `agent-monitoring-v1-swept.json`; a change goes behind `workflow.patched`."""
+
+    @workflow.run
+    async def run(self) -> int:
+        return await workflow.execute_activity(
+            "practice.agent_monitoring_sweep",
+            result_type=int,
+            start_to_close_timeout=_MONITOR_TIMEOUT,
+            heartbeat_timeout=_MONITOR_HEARTBEAT,
+            retry_policy=_PRUNE_RETRY,
+        )

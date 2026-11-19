@@ -387,6 +387,12 @@ async def detail(ctx: AuthContext, consultation_id: UUID) -> ConsultationDetail:
     )
 
 
+async def open_count(ctx: AuthContext) -> int:
+    """Q-05-T08's signal (ADM-11 tile): the open consultations the viewer may read, counted the
+    way the log counts them (walled rows never count; DEC-43)."""
+    return (await firm_log(ctx, status="open")).counts["open"]
+
+
 _UNRESOLVED = text(
     "SELECT c.ref FROM consultations c WHERE c.work_item_id = :w AND EXISTS ("
     "SELECT 1 FROM consultation_positions p WHERE p.consultation_id = c.id AND NOT p.agrees) "
@@ -409,6 +415,7 @@ __all__ = [
     "attach",
     "detail",
     "firm_log",
+    "open_count",
     "record_position",
     "reopen",
     "resolve_difference",

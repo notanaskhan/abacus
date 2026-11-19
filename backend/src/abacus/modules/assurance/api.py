@@ -129,6 +129,7 @@ from abacus.modules.assurance.confirmations_follow_up import SCHEDULES as FOLLOW
 from abacus.modules.assurance.confirmations_follow_up import WORKFLOWS as FOLLOW_UP_WORKFLOWS
 
 # The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.assurance.consultations_log import open_count as consultations_open_count
 from abacus.modules.assurance.consultations_log_contract import consultations_log_router
 from abacus.modules.assurance.draft_mappings import gap_inputs, risk_inputs, risk_narrative_inputs
 from abacus.modules.assurance.ebp_contract import ResultIn as EbpResultIn  # TASK-7815: the seed
@@ -661,6 +662,7 @@ __all__ = [
     "archive_state",  # A-07-T41: the archive slice
     "completion_errors",
     "completion_router",
+    "consultations_open_count",
     "control_exceptions",
     "create_archive_addition",  # A-07-T41: the archive slice
     "create_ebp_test",  # TASK-7815

@@ -17,6 +17,7 @@ from uuid import UUID
 from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.modules.identity.api import AuthContext
 from abacus.modules.practice import overrides
 from abacus.modules.practice.compute.quality_dashboard import (
     FindingFacts,
@@ -26,7 +27,8 @@ from abacus.modules.practice.compute.quality_dashboard import (
     days_to,
 )
 
-Signal = Callable[[TenantContext], Awaitable[int]]
+# The viewer reads the count (walls apply: no hidden counts, DEC-43).
+Signal = Callable[[AuthContext], Awaitable[int]]
 _signals: dict[str, Signal] = {}
 SIGNALS: Final = ("independence_gap", "consultations_open")
 
@@ -63,9 +65,8 @@ async def accuracy(tenant: TenantContext, cycle: int) -> dict[str, object]:
     return {"returns_filed": filed, "fields": fields, "changed": changed, "accuracy": rate}
 
 
-async def dashboard(
-    tenant: TenantContext, now: datetime, office: UUID | None
-) -> dict[str, object]:
+async def dashboard(ctx: AuthContext, now: datetime, office: UUID | None) -> dict[str, object]:
+    tenant = ctx.tenant
     async with tenant_session(tenant) as session:
         objectives = [
             ObjectiveFacts(str(r[0]), r[1] == "at_risk")
@@ -78,7 +79,7 @@ async def dashboard(
         month_day = await session.scalar(_SETTINGS) or "12-15"
     rates = await overrides.overrides(tenant, now, "30d", office)
     over = sum(1 for r in cast(list[dict[str, object]], rates["rows"]) if r["above_tolerance"])
-    signals = {name: await reader(tenant) for name, reader in _signals.items()}
+    signals = {name: await reader(ctx) for name, reader in _signals.items()}
     signals["agent_over_tolerance"] = over
     today = now.date()
     health = components(objectives, findings, signals, today)
@@ -110,3 +111,21 @@ async def dashboard(
 
 
 __all__ = ["SIGNALS", "dashboard", "register_quality_signal"]
+
+
+# S51 partials (Q-05-T08): the two signals, read from their owners (practice is an edge module).
+async def _independence_gap(ctx: AuthContext) -> int:
+    from abacus.kernel.clock import now as clock_now
+    from abacus.modules.identity.api import annual_independence_gaps
+
+    return await annual_independence_gaps(ctx.tenant, (await clock_now(ctx.tenant)).year)
+
+
+async def _consultations_open(ctx: AuthContext) -> int:
+    from abacus.modules.assurance.api import consultations_open_count
+
+    return await consultations_open_count(ctx)
+
+
+register_quality_signal("independence_gap", _independence_gap)
+register_quality_signal("consultations_open", _consultations_open)

@@ -9,6 +9,7 @@ from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_cl
 from abacus.kernel.uow.relay import register_grant_consumer
 from abacus.modules.identity.access_end import sweep_access_ends_activity
 from abacus.modules.identity.agent_tools import AGENT_TOOLS  # W-02-T19: identity.list_offices
+from abacus.modules.identity.annual_independence import annual_gaps as annual_independence_gaps
 from abacus.modules.identity.annual_independence import has_current_annual_confirmation
 from abacus.modules.identity.audit_facts import (
     AuditFact,
@@ -695,6 +696,7 @@ __all__ = [
     "agents_paused",
     "ai_client_data_opted_in",
     "allowed_actions",
+    "annual_independence_gaps",
     "assert_assignable",
     "audit_hidden_walls",
     "authorise",
