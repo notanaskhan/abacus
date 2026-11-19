@@ -16,6 +16,13 @@ class ReleasePreconditionsUnmet(DomainConflict):
     code = "release_preconditions_unmet"
 
 
+class PackageReleased(DomainConflict):
+    """C-02-T21: a released (or client-approved) package's structure is not edited; reopen the
+    close first."""
+
+    code = "package_released"
+
+
 class ClientApprovalRequired(DomainConflict):
     """The close locks only after the client approves its package."""
 

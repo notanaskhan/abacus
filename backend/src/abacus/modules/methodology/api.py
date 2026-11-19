@@ -201,6 +201,7 @@ from abacus.modules.methodology.standards_contract import (
     ReviewLevelsPayload,
     RmmFor,
     RmmMatrixPayload,
+    SsarsCasSettingsPayload,
     SsarsFramework,
     StandardDraftPatchIn,
     StandardKind,
@@ -336,6 +337,7 @@ __all__ = [
     "SourceEncrypted",
     "SourceMalformed",
     "SourceTooLong",
+    "SsarsCasSettingsPayload",  # C-02-T21: the package route reads the settings payload
     "SsarsFramework",
     "StandardDraftPatchIn",
     "StandardKind",
