@@ -220,3 +220,24 @@ test.describe("J02 signatures (N-02-T40)", () => {
     });
   });
 });
+
+// C-01-T51 (TASK-8701; C-01 §10.1): j02 7 on the new client's close plan. The fixture project walks
+// CLS-09 c (the Close Planner drafting v1, outlined ticks); the publish half and the full stack
+// (`--holdout copperleaf`) wait on the planner run's seed and a discard path for a superseded draft
+// (C-01-T44 partials, DEC-5700).
+test.describe("J02 · close plan", () => {
+  test("j02 7: Close Planner drafts v1 and a manager publishes it", async ({ journey }) => {
+    test.fixme(
+      journey.project !== "fixture",
+      "C-01-T44 partials: the planner run and v1 in the CAS slice",
+    );
+    await journey.as("raj-malhotra", "/close-plans/_clientId_", {
+      scenario: "CLS-09:c",
+      flags: ["closes.engine"],
+    });
+    await journey.step("j02 7: the Close Planner drafts v1 (CLS-09 c)", async (page) => {
+      await expect(page.getByText(/Draft v1 · Close Planner/).first()).toBeVisible();
+      await expect(page.getByRole("button", { name: /^Publish/ })).toHaveCount(0);
+    });
+  });
+});

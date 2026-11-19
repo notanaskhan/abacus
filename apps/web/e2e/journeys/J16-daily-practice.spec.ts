@@ -220,3 +220,23 @@ test.describe("J16 · P-02 search", () => {
     });
   });
 });
+
+// C-01-T51 (TASK-8701; C-01 §10.1): j16 8, Priya opens Closes and reaches Copperleaf's close (CLS-01
+// a's row opens CLS-02 on its live route). Fixture project until the CAS slice's runs load.
+test.describe("J16 · closes", () => {
+  test("j16 8: Priya opens Closes and reaches Copperleaf's run", async ({ journey }) => {
+    test.fixme(journey.project !== "fixture", "C-01-T44 partials: Run 1/Run 2 in the CAS slice");
+    await journey.as("priya-raman", "/closes", { scenario: "CLS-01:a", flags: ["closes.engine"] });
+    await journey.step(
+      "j16 8: Copperleaf's row opens its close (CLS-01 → CLS-02)",
+      async (page) => {
+        await page
+          .getByRole("row", { name: /Copperleaf Coffee Roasters/ })
+          .getByRole("link")
+          .first()
+          .click();
+        await expect(page).toHaveURL(/\/closes\/[^/?]+/);
+      },
+    );
+  });
+});
