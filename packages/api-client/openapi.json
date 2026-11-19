@@ -94705,6 +94705,49 @@
             "title": "Comparison",
             "type": "array"
           },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided At"
+          },
+          "decided_by_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided By User Id"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "enum": [
+                  "no_action",
+                  "revise_and_reissue",
+                  "notify_users"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decision"
+          },
           "decision_card_id": {
             "anyOf": [
               {
@@ -94724,6 +94767,18 @@
             "title": "Description",
             "type": "string"
           },
+          "disclosure_affected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Disclosure Affected"
+          },
           "evaluation": {
             "anyOf": [
               {
@@ -94734,17 +94789,61 @@
               }
             ]
           },
+          "options": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "enum": [
+                "no_action",
+                "revise_and_reissue",
+                "notify_users"
+              ],
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
           "received_at": {
             "cls": "internal",
             "format": "date-time",
             "title": "Received At",
             "type": "string"
           },
+          "recommended_option": {
+            "anyOf": [
+              {
+                "enum": [
+                  "no_action",
+                  "revise_and_reissue",
+                  "notify_users"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Recommended Option"
+          },
           "ref": {
             "cls": "internal",
             "maxLength": 10,
             "title": "Ref",
             "type": "string"
+          },
+          "source_evidence_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Source Evidence Version Id"
           },
           "source_kind": {
             "cls": "internal",
@@ -94804,6 +94903,43 @@
           "status"
         ],
         "title": "PostIssuanceCaseOut",
+        "type": "object"
+      },
+      "PostIssuanceComparisonIn": {
+        "additionalProperties": false,
+        "description": "DV-9: the corrected figures by certified line key (the parser's output, or attached when it\ncannot match); the code compares and evaluates.",
+        "properties": {
+          "corrected": {
+            "maxProperties": 200,
+            "minProperties": 1,
+            "patternProperties": {
+              "^[a-z0-9_.-]{1,80}$": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                    "type": "string"
+                  }
+                ],
+                "cls": "confidential"
+              }
+            },
+            "title": "Corrected",
+            "type": "object"
+          },
+          "disclosure_affected": {
+            "cls": "internal",
+            "default": false,
+            "title": "Disclosure Affected",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "corrected"
+        ],
+        "title": "PostIssuanceComparisonIn",
         "type": "object"
       },
       "PostIssuanceComparisonLineOut": {
@@ -94874,6 +95010,34 @@
           "difference"
         ],
         "title": "PostIssuanceComparisonLineOut",
+        "type": "object"
+      },
+      "PostIssuanceDecisionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "cls": "internal",
+            "enum": [
+              "no_action",
+              "revise_and_reissue",
+              "notify_users"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "rationale": {
+            "cls": "confidential",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision",
+          "rationale"
+        ],
+        "title": "PostIssuanceDecisionIn",
         "type": "object"
       },
       "PostIssuanceEvaluationOut": {
@@ -179506,7 +179670,7 @@
         "x-abacus-action": "post_issuance.read"
       },
       "post": {
-        "description": "Only on an archived audit; the locked documentation is never edited (AC-17).",
+        "description": "Only on an archived audit (409 `not_archived`); the locked documentation is never edited\n(AC-17).",
         "operationId": "post_issuance_case_create",
         "parameters": [
           {
@@ -179780,7 +179944,7 @@
     },
     "/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/analysis": {
       "post": {
-        "description": "409 `comparison_unavailable` (DV-9); the analysis ends with the not-decided sentence.",
+        "description": "409 `comparison_unavailable` (DV-9); the analysis ends with the not-decided sentence. The\nagent's analysis prompt lands with its capability task (ADR-079: after its eval suite,\nQ-05-T10): until then a compared case answers 501.",
         "operationId": "post_issuance_analysis",
         "parameters": [
           {
@@ -179924,6 +180088,302 @@
           "assurance"
         ],
         "x-abacus-action": "post_issuance.analyse"
+      }
+    },
+    "/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/comparison": {
+      "post": {
+        "description": "AC-15: the code compares the corrected figures with A-05's certified lines and evaluates\nthe difference against the materiality in force at release (409 `comparison_unavailable`\nwhen no line matches).",
+        "operationId": "post_issuance_comparison",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostIssuanceComparisonIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostIssuanceCaseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Post Issuance Comparison Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "post_issuance.analyse"
+      }
+    },
+    "/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/decision": {
+      "post": {
+        "description": "The engagement partner, fresh MFA, among the code's options, with a rationale (DEC-5724).",
+        "operationId": "post_issuance_decision",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostIssuanceDecisionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostIssuanceCaseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Post Issuance Decision Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "post_issuance.decide"
       }
     },
     "/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/reopen-for-reissue": {

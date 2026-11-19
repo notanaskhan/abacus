@@ -589,6 +589,7 @@ export const ACTIONS = [
   "portal_settings.read",
   "post_issuance.analyse",
   "post_issuance.create",
+  "post_issuance.decide",
   "post_issuance.read",
   "post_issuance.reissue",
   "posting_batch.dry_run",

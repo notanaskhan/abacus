@@ -1654,6 +1654,13 @@ INSERT_COLUMNS["post_issuance_events"] = frozenset(
      "received_at", "description_sealed", "created_by"}
 )  # fmt: skip
 UPDATE_COLUMNS["post_issuance_events"] = frozenset({"status"})
+# S51 partials (0986, DEC-5724): the source evidence and the EP's decision on the case row.
+INSERT_COLUMNS["post_issuance_events"] = INSERT_COLUMNS["post_issuance_events"] | frozenset(
+    {"source_evidence_version_id"}
+)
+UPDATE_COLUMNS["post_issuance_events"] = UPDATE_COLUMNS["post_issuance_events"] | frozenset(
+    {"decision", "decided_by", "decided_at", "rationale_sealed", "decided_actor_kind"}
+)
 INSERT_COLUMNS["post_issuance_comparisons"] = frozenset(
     {"tenant_id", "event_id", "line_key", "as_certified", "as_corrected", "difference"}
 )

@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header
@@ -37,6 +37,7 @@ Money = Annotated[Decimal, Field(max_digits=20, decimal_places=2), Confidential]
 
 CaseType = Literal["subsequently_discovered_facts", "omitted_procedure", "reissuance_request"]
 CaseStatus = Literal["under_evaluation", "concluded_no_action", "reissue_in_progress", "concluded"]
+DecisionOption = Literal["no_action", "revise_and_reissue", "notify_users"]
 Source = Literal["inbox_evidence", "inspection_finding", "other"]
 
 
@@ -85,6 +86,15 @@ class PostIssuanceCaseOut(BaseModel):
     analysis_run_id: Annotated[UUID | None, Internal] = None
     decision_card_id: Annotated[UUID | None, Internal] = None
     allowed_actions: Annotated[list[str], Internal] = []
+    # S51 partials (DEC-5724): the EP decides on the case row; the options are code's and the
+    # agent recommendation is a tag on one of them, never a decision.
+    source_evidence_version_id: Annotated[UUID | None, Internal] = None
+    disclosure_affected: Annotated[bool | None, Internal] = None
+    options: Annotated[list[DecisionOption], Internal] = []
+    recommended_option: Annotated[DecisionOption | None, Internal] = None
+    decision: Annotated[DecisionOption | None, Internal] = None
+    decided_by_user_id: Annotated[UUID | None, Internal] = None
+    decided_at: Annotated[datetime | None, Internal] = None
 
 
 class PostIssuanceCaseListOut(BaseModel):
@@ -103,6 +113,26 @@ class PostIssuanceCaseIn(BaseModel):
     source_kind: Annotated[Source, Internal]
     source_evidence_version_id: Annotated[UUID | None, Internal] = None
     description: Annotated[str, Field(min_length=1, max_length=2000), Confidential]
+
+
+class PostIssuanceComparisonIn(BaseModel):
+    """DV-9: the corrected figures by certified line key (the parser's output, or attached when it
+    cannot match); the code compares and evaluates."""
+
+    model_config = _cfg()
+
+    corrected: Annotated[
+        dict[Annotated[str, Field(pattern=r"^[a-z0-9_.-]{1,80}$")], Money],
+        Field(min_length=1, max_length=200),
+    ]
+    disclosure_affected: Annotated[bool, Internal] = False
+
+
+class PostIssuanceDecisionIn(BaseModel):
+    model_config = _cfg()
+
+    decision: Annotated[DecisionOption, Internal]
+    rationale: Annotated[str, Field(min_length=1, max_length=4000), Confidential]
 
 
 class PostIssuanceRunOut(BaseModel):
@@ -137,12 +167,100 @@ async def _human(ctx: AuthContext, action: str) -> None:
         raise Forbidden(action, "role")
 
 
+_TYPE_OUT: dict[str, CaseType] = {
+    "subsequent_fact": "subsequently_discovered_facts",
+    "omitted_procedure": "omitted_procedure",
+    "reissuance_request": "reissuance_request",
+}
+_TYPE_IN: dict[str, str] = {v: k for k, v in _TYPE_OUT.items()}
+
+
+def _status(found: object) -> CaseStatus:
+    """The table's lifecycle in AUD-30's words: decided cases by their decision."""
+    from abacus.modules.assurance.post_issuance import Case
+
+    c = cast(Case, found)
+    if c.status != "decided":
+        return "under_evaluation"
+    return {"no_action": "concluded_no_action", "revise_and_reissue": "reissue_in_progress"}.get(
+        c.decision or "", "concluded"
+    )  # type: ignore[return-value]  # the three literal words
+
+
+def _case_out(found: object, actions: list[str]) -> PostIssuanceCaseOut:
+    from abacus.modules.assurance.post_issuance import Case
+
+    c = cast(Case, found)
+    ev = c.evaluation
+    return PostIssuanceCaseOut(
+        case_id=c.case_id,
+        ref=c.ref,
+        type=_TYPE_OUT[c.type],
+        standard=cast(Literal["au_c_560", "au_c_585"] | None, c.standard),
+        source_kind=cast(Source, c.source_kind),
+        received_at=c.received_at,
+        description=c.description,
+        status=_status(c),
+        comparison=[
+            PostIssuanceComparisonLineOut(
+                line_key=ln.line_key,
+                label=ln.label,
+                as_certified=ln.as_certified,
+                as_corrected=ln.as_corrected,
+                difference=ln.difference,
+            )
+            for ln in c.comparison
+        ],
+        evaluation=None
+        if ev is None
+        else PostIssuanceEvaluationOut(
+            total_difference=ev.total_difference,
+            clearly_trivial=ev.clearly_trivial,
+            overall_materiality=ev.overall_materiality,
+            share_pct=ev.share_pct,
+            materiality_version_id=ev.materiality_version_id,
+            below_clearly_trivial=ev.below_clearly_trivial,
+        ),
+        allowed_actions=actions,
+        source_evidence_version_id=c.source_evidence_version_id,
+        disclosure_affected=None if ev is None else ev.disclosure_affected,
+        options=[cast(DecisionOption, o) for o in c.options],
+        recommended_option=cast(DecisionOption | None, c.recommended),
+        decision=cast(DecisionOption | None, c.decision),
+        decided_by_user_id=c.decided_by,
+        decided_at=c.decided_at,
+    )
+
+
+async def _actions(ctx: AuthContext, work_item_id: UUID) -> list[str]:
+    from abacus.modules.engagements.api import get_ref, work_item_engagement
+    from abacus.modules.identity.api import allowed_actions
+
+    engagement_id = await work_item_engagement(ctx.tenant, work_item_id)
+    if engagement_id is None or ctx.tenant.actor_kind != "human":
+        return []
+    ref = await get_ref(ctx, engagement_id)
+    wanted = ("post_issuance.analyse", "post_issuance.decide", "post_issuance.reissue")
+    return sorted(await allowed_actions(ctx, ref.resource(), wanted))
+
+
 @post_issuance_router.get(
     _C, action="post_issuance.read", response_model=PostIssuanceCaseListOut, errors=(501,)
 )
 async def post_issuance_cases_route(work_item_id: UUID, ctx: Ctx) -> PostIssuanceCaseListOut:
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.assurance import post_issuance as pi
+    from abacus.modules.engagements.api import work_item_engagement
+
+    found = await pi.cases(ctx, work_item_id)
+    actions = await _actions(ctx, work_item_id)
+    engagement_id = await work_item_engagement(ctx.tenant, work_item_id)
+    locked = (
+        None if engagement_id is None else await pi.archive_locked_at(ctx.tenant, engagement_id)
+    )
+    return PostIssuanceCaseListOut(
+        items=[_case_out(c, actions) for c in found], archive_locked_at=locked
+    )
 
 
 @post_issuance_router.get(
@@ -155,7 +273,10 @@ async def post_issuance_case_route(
     work_item_id: UUID, case_id: UUID, ctx: Ctx
 ) -> PostIssuanceCaseOut:
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.assurance import post_issuance as pi
+
+    found = await pi.case(ctx, work_item_id, case_id)
+    return _case_out(found, await _actions(ctx, work_item_id))
 
 
 @post_issuance_router.post(
@@ -168,9 +289,20 @@ async def post_issuance_case_route(
 async def post_issuance_case_create_route(
     work_item_id: UUID, body: PostIssuanceCaseIn, ctx: Ctx, key: IdempotencyKey
 ) -> PostIssuanceCaseOut:
-    """Only on an archived audit; the locked documentation is never edited (AC-17)."""
+    """Only on an archived audit (409 `not_archived`); the locked documentation is never edited
+    (AC-17)."""
     await _human(ctx, "post_issuance.create")
-    raise NotImplementedYet
+    from abacus.modules.assurance import post_issuance as pi
+
+    found = await pi.open_case(
+        ctx,
+        work_item_id,
+        type=cast(pi.CaseType, _TYPE_IN[body.type]),
+        source_kind=body.source_kind,
+        description=body.description,
+        source_evidence_version_id=body.source_evidence_version_id,
+    )
+    return _case_out(found, await _actions(ctx, work_item_id))
 
 
 @post_issuance_router.post(
@@ -183,9 +315,66 @@ async def post_issuance_case_create_route(
 async def post_issuance_analysis_route(
     work_item_id: UUID, case_id: UUID, ctx: Ctx, key: IdempotencyKey
 ) -> PostIssuanceRunOut:
-    """409 `comparison_unavailable` (DV-9); the analysis ends with the not-decided sentence."""
+    """409 `comparison_unavailable` (DV-9); the analysis ends with the not-decided sentence. The
+    agent's analysis prompt lands with its capability task (ADR-079: after its eval suite,
+    Q-05-T10): until then a compared case answers 501."""
     await _human(ctx, "post_issuance.analyse")
+    from abacus.modules.assurance import post_issuance as pi
+
+    await pi.require_comparison(ctx, work_item_id, case_id)
     raise NotImplementedYet
+
+
+@post_issuance_router.post(
+    f"{_C}/{{case_id}}/comparison",
+    action="post_issuance.analyse",
+    response_model=PostIssuanceCaseOut,
+    errors=(409,),
+)
+async def post_issuance_comparison_route(
+    work_item_id: UUID,
+    case_id: UUID,
+    body: PostIssuanceComparisonIn,
+    ctx: Ctx,
+    key: IdempotencyKey,
+) -> PostIssuanceCaseOut:
+    """AC-15: the code compares the corrected figures with A-05's certified lines and evaluates
+    the difference against the materiality in force at release (409 `comparison_unavailable`
+    when no line matches)."""
+    await _human(ctx, "post_issuance.analyse")
+    from abacus.modules.assurance import post_issuance as pi
+
+    found = await pi.compare_case(
+        ctx,
+        work_item_id,
+        case_id,
+        body.corrected,
+        disclosure_affected=body.disclosure_affected,
+    )
+    return _case_out(found, await _actions(ctx, work_item_id))
+
+
+@post_issuance_router.post(
+    f"{_C}/{{case_id}}/decision",
+    action="post_issuance.decide",
+    response_model=PostIssuanceCaseOut,
+    errors=(409,),
+)
+async def post_issuance_decision_route(
+    work_item_id: UUID,
+    case_id: UUID,
+    body: PostIssuanceDecisionIn,
+    ctx: Ctx,
+    key: IdempotencyKey,
+) -> PostIssuanceCaseOut:
+    """The engagement partner, fresh MFA, among the code's options, with a rationale (DEC-5724)."""
+    await _human(ctx, "post_issuance.decide")
+    from abacus.modules.assurance import post_issuance as pi
+
+    found = await pi.decide(
+        ctx, work_item_id, case_id, decision=body.decision, rationale=body.rationale
+    )
+    return _case_out(found, await _actions(ctx, work_item_id))
 
 
 @post_issuance_router.post(
