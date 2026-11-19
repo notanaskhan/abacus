@@ -487,8 +487,13 @@ async def quality_risk_review_route(
 async def quality_overrides_route(
     ctx: Ctx, window: Literal["30d", "90d", "cycle"] = "30d", office_id: UUID | None = None
 ) -> QualityOverridesOut:
+    """ADM-11 c: overrides by agent from the projection (Q-05-T07, DEC-96)."""
+    from abacus.kernel.clock import now
+    from abacus.modules.practice import overrides
+
     await _on(ctx)
-    raise NotImplementedYet
+    found = await overrides.overrides(ctx.tenant, await now(ctx.tenant), window, office_id)
+    return QualityOverridesOut.model_validate(found)
 
 
 @quality_router.get(
@@ -498,8 +503,15 @@ async def quality_overrides_route(
     errors=(501,),
 )
 async def quality_override_reasons_route(agent_key: str, ctx: Ctx) -> QualityReasonsOut:
+    """One agent's override reasons, most frequent first (Q-05-T07)."""
+    from abacus.kernel.clock import now
+    from abacus.modules.practice import overrides
+
     await _on(ctx)
-    raise NotImplementedYet
+    found = await overrides.override_reasons(ctx.tenant, await now(ctx.tenant), agent_key)
+    return QualityReasonsOut.model_validate(
+        {"agent_key": agent_key, "items": [{"reason_code": c, "count": n} for c, n in found]}
+    )
 
 
 @quality_router.get(

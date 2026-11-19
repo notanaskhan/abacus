@@ -9,6 +9,8 @@ from temporalio import activity
 from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_classes
 from abacus.kernel.uow import Handler
 from abacus.modules.practice.activity import SOURCES, on_event, prune_once
+from abacus.modules.practice.overrides import SOURCE_KINDS as OVERRIDE_SOURCES
+from abacus.modules.practice.overrides import record_outcome
 from abacus.modules.practice.workflows import HOME_ACTIVITY_PRUNE_ID, HomeActivityPruneWorkflow
 
 
@@ -18,7 +20,11 @@ async def prune_home_activity_activity() -> int:
 
 
 # The `HomeActivityProjector`: every allowlisted event type (I-01 §4.4).
-SUBSCRIPTIONS: dict[str, Handler] = dict.fromkeys(SOURCES, on_event)
+SUBSCRIPTIONS: dict[str, Handler] = {
+    **dict.fromkeys(SOURCES, on_event),
+    # Q-05-T07 (DEC-5710): the override-rate projection (idempotent by event id).
+    **dict.fromkeys(OVERRIDE_SOURCES, record_outcome),
+}
 WORKFLOWS: dict[type, WorkClass] = {HomeActivityPruneWorkflow: "background"}
 register_work_classes(WORKFLOWS)
 ACTIVITIES: tuple[object, ...] = (prune_home_activity_activity,)
