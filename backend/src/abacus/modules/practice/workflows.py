@@ -50,3 +50,22 @@ class AgentMonitoringWorkflow:
             heartbeat_timeout=_MONITOR_HEARTBEAT,
             retry_policy=_PRUNE_RETRY,
         )
+
+
+FILING_DEADLINES_ID = "filing_deadlines_recompute:platform"
+
+
+@workflow.defn(name="FilingDeadlineRecomputeWorkflow")
+class FilingDeadlineRecomputeWorkflow:
+    """T-08-T10 (S51 partials; DEC-5732): the nightly filing-deadline recompute, started only by
+    its Schedule (overlap SKIP). v1, recorded in `filing-deadlines-v1-recomputed.json`."""
+
+    @workflow.run
+    async def run(self) -> int:
+        return await workflow.execute_activity(
+            "practice.filing_deadlines_recompute",
+            result_type=int,
+            start_to_close_timeout=_MONITOR_TIMEOUT,
+            heartbeat_timeout=_MONITOR_HEARTBEAT,
+            retry_policy=_PRUNE_RETRY,
+        )

@@ -35,6 +35,7 @@ from abacus.modules.practice.today.routes import today_router
 from abacus.modules.practice.workflows import (
     HOME_ACTIVITY_PRUNE_ID,
     AgentMonitoringWorkflow,
+    FilingDeadlineRecomputeWorkflow,
     HomeActivityPruneWorkflow,
 )
 from abacus.modules.tax.api import register_due_dates_source, register_extension_dates_source
@@ -64,6 +65,7 @@ __all__ = [
     "ClockDue",
     "ClockKind",
     "DueDates",
+    "FilingDeadlineRecomputeWorkflow",
     "HomeActivityPruneWorkflow",
     "InstallmentDue",
     "InstallmentDueDates",
