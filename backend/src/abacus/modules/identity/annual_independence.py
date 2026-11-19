@@ -186,6 +186,20 @@ async def annual(ctx: AuthContext, year: int) -> AnnualView:
     return AnnualView(year, rows, counts)
 
 
+_ACTIVE_STAFF = text("SELECT user_id FROM memberships WHERE kind = 'staff' AND status = 'active'")
+
+
+async def annual_gaps(tenant: TenantContext, year: int) -> int:
+    """Q-05-T08 (S51 partials): ADM-11's independence signal, the active staff members without a
+    current confirmation for the year (not yet, declined, or confirmed against an older
+    statement). A count only; who is the annual view's, behind its own read."""
+    async with tenant_session(tenant) as session:
+        people = [cast(UUID, m) for m in (await session.execute(_ACTIVE_STAFF)).scalars()]
+        latest = await _latest(session, year)
+        current = await _current_version(session)
+    return sum(1 for user in people if _status(latest.get(user), current) != "confirmed")
+
+
 async def _own_member(ctx: AuthContext) -> None:
     """A signed-in staff member of this firm reading their own status (`OWN`)."""
     if ctx.tenant.actor_kind != "human" or ctx.client or ctx.is_support:

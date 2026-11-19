@@ -355,7 +355,12 @@ modules = [
 # Today brief; none of them may import practice back, so the module graph stays acyclic.
 name = "Nothing practice reads imports practice (I-02)"
 type = "forbidden"
-source_modules = ["abacus.modules.review", "abacus.modules.agents", "abacus.modules.requests"]
+source_modules = [
+    "abacus.modules.review",
+    "abacus.modules.agents",
+    "abacus.modules.requests",
+    "abacus.modules.assurance",  # S51 partials (Q-05-T08): ADM-11's consultations signal
+]
 forbidden_modules = ["abacus.modules.practice"]
 
 [[tool.importlinter.contracts]]

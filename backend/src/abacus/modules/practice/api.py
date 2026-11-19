@@ -32,7 +32,11 @@ from abacus.modules.practice.jobs import ACTIVITIES, SCHEDULES, SUBSCRIPTIONS, W
 from abacus.modules.practice.quality_contract import quality_router
 from abacus.modules.practice.today.assembly import QuestionContext, question_context  # I-02-T14
 from abacus.modules.practice.today.routes import today_router
-from abacus.modules.practice.workflows import HOME_ACTIVITY_PRUNE_ID, HomeActivityPruneWorkflow
+from abacus.modules.practice.workflows import (
+    HOME_ACTIVITY_PRUNE_ID,
+    AgentMonitoringWorkflow,
+    HomeActivityPruneWorkflow,
+)
 from abacus.modules.tax.api import register_due_dates_source, register_extension_dates_source
 
 # T-02-T10: the return's due dates come from these rules; tax never imports practice (T08).
@@ -56,6 +60,7 @@ __all__ = [
     "SCHEDULES",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "AgentMonitoringWorkflow",
     "ClockDue",
     "ClockKind",
     "DueDates",

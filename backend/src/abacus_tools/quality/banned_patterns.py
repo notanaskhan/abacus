@@ -1745,7 +1745,10 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     # I-02-T04 (DEC-4610): the Today read model reads gates through review, briefings through
     # agents and request counts through requests; nothing imports practice.
     "practice": _BASE
-    | {"organisations", "engagements", "integrations", "tax", "review", "agents", "requests"},
+    | {"organisations", "engagements", "integrations", "tax", "review", "agents", "requests"}
+    # S51 partials (Q-05-T08): ADM-11's open-consultations signal (assurance never imports
+    # practice, an edge module).
+    | {"assurance"},
     # A-02-T23 (DEC-517, DEC-611): the home's reconnect to-do reads connections.
     "portal": _BASE
     | {"organisations", "engagements", "requests", "evidence", "signatures", "communications"}

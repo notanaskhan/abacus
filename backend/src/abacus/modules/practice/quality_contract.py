@@ -415,7 +415,7 @@ async def quality_dashboard_route(
 
     await _on(ctx)
     del cycle
-    found = await dashboard(ctx.tenant, await now(ctx.tenant), office_id)
+    found = await dashboard(ctx, await now(ctx.tenant), office_id)
     return QualityDashboardOut.model_validate(found)
 
 
