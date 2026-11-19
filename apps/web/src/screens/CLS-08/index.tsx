@@ -6,13 +6,15 @@
 // edit goes to the server as a new version. Release is a Partner's, through its own dialog (C-02's
 // release task); this screen never writes a figure.
 import type { DeliveryPackageOut, DeliveryStatementLineOut } from "@abacus/api-client";
-import { packageEditMutation, packageOptions } from "@abacus/api-client/query";
+import { commentaryMutation, packageEditMutation, packageOptions } from "@abacus/api-client/query";
 import {
+  Button,
   type ClauseVM,
   DocumentOnWell,
   type KvSheetVM,
   Pill,
   Skeleton,
+  ValueRow,
   amount,
   cn,
 } from "@abacus/ui";
@@ -194,13 +196,24 @@ export function CLS08({
     onSuccess: () => qc.invalidateQueries({ queryKey: packageOptions({ path }).queryKey }),
   });
   const [local, setLocal] = useState<ReadonlySet<Section> | null>(null);
+  const [draft, setDraft] = useState<string | null>(null);
+  const comment = useMutation({
+    ...commentaryMutation(),
+    onSuccess: () => {
+      setDraft(null);
+      return qc.invalidateQueries({ queryKey: packageOptions({ path }).queryKey });
+    },
+  });
   if (pkg.data === undefined)
     return <Skeleton aria-label={C.drafting} className="h-[700px] w-full" />;
   const data = pkg.data;
   const on: ReadonlySet<Section> = local ?? new Set(data.sections);
   const released = data.status === "released" || data.status === "approved_by_client";
   const drafting = data.status === "drafting";
-  const pages = (["balance_sheet", "income_statement"] as const).filter((s) => on.has(s));
+  // Pages in package order; the commentary page shows once the server has commentary for it.
+  const pages = (["balance_sheet", "income_statement", "commentary"] as const).filter(
+    (s) => on.has(s) && (s !== "commentary" || typeof data.commentary === "string"),
+  );
   const { clauses, after } = structure(data, on, periodEnd);
   return (
     <div data-screen="CLS-08" className="flex flex-col gap-[8px]">
@@ -228,6 +241,10 @@ export function CLS08({
           title: C.title,
           watermark: !released,
           actions: { edit: !released, regenerate: !released },
+        }}
+        onEdit={() => {
+          // Commentary only: figures stay locked to the ledger (handoff CLS-08 Interactions).
+          if (!released) setDraft(data.commentary ?? "");
         }}
         onToggleSection={(id, value) => {
           const next = new Set(on);
@@ -274,7 +291,7 @@ export function CLS08({
                     <Statement lines={data.balance_sheet ?? []} prior={false} />
                   </>
                 </Page>
-              ) : (
+              ) : s === "income_statement" ? (
                 <Page key={s} n={i + 1} of={pages.length} legend={data.legend}>
                   <>
                     <Heading
@@ -282,6 +299,57 @@ export function CLS08({
                       sub={C.statements.incomePeriod}
                     />
                     <Statement lines={data.income_statement ?? []} prior />
+                  </>
+                </Page>
+              ) : (
+                <Page key={s} n={i + 1} of={pages.length} legend={data.legend}>
+                  <>
+                    <Heading title={C.statements.commentary} sub={C.statements.commentarySub} />
+                    {draft === null ? (
+                      <div data-commentary className="flex flex-col gap-[6px] text-[12px]">
+                        {(data.commentary ?? "")
+                          .split("\n")
+                          .filter((p) => p.trim() !== "")
+                          .map((p, k) => (
+                            <p key={k}>{p}</p>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-[8px]">
+                        <ValueRow
+                          kind="paragraph"
+                          label={C.commentaryEdit.label}
+                          value={draft}
+                          rows={6}
+                          onChange={setDraft}
+                        />
+                        <span className="text-[11.5px] text-ink-3">{C.commentaryEdit.locked}</span>
+                        <div className="flex justify-end gap-[8px]">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setDraft(null);
+                            }}
+                          >
+                            {C.commentaryEdit.cancel}
+                          </Button>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            disabled={comment.isPending}
+                            onClick={() => {
+                              comment.mutate({
+                                path,
+                                body: { doc: draft, expected_version: data.version },
+                              });
+                            }}
+                          >
+                            {C.commentaryEdit.save}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </>
                 </Page>
               ),

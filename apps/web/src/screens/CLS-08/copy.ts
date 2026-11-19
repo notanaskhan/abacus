@@ -56,5 +56,13 @@ export const COPY = {
     august: "August 2026",
     july: "July 2026",
     page: (n: number, of: number): string => `Page ${String(n)} of ${String(of)}`,
+    commentary: "Management commentary",
+    commentarySub: "For the month ended August 31, 2026",
+  },
+  commentaryEdit: {
+    label: "Commentary",
+    save: "Save commentary",
+    cancel: "Cancel",
+    locked: "Figures stay linked to the posted ledger.",
   },
 } as const;
