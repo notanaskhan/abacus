@@ -44,6 +44,9 @@ ControlName = Literal[
     # Q-05-T06 (0964; DEC-5612): stops DestructionExecuteWorkflow between items, per firm or for
     # everyone (AC-27).
     "destruction_execute",
+    # C-02-T19 (0981; DEC-5705): ADR-344's per-firm W1 kill switch; read uncached by the W1 gate
+    # (`integrations.writes`), so a flip refuses the next write.
+    "ledger_write_pause",
 ]
 # The controls a row names with a key (`route`): a model route, or an integration's catalogue key.
 _KEYED: Final = frozenset({"model_route_block", "integration_pause"})
@@ -115,6 +118,22 @@ async def control_state(
         if scope == "platform" or (tenant_id is not None and tenant == tenant_id):
             return "on"
     return "off"
+
+
+async def control_active_now(control: ControlName, tenant_id: UUID | None = None) -> bool:
+    """`control_active` read fresh (no cache): for a switch that must stop the very next call
+    (C-02-T19's W1 kill switch). Unreadable state counts as on (fail closed)."""
+    try:
+        rows = await _read()
+    except Exception as exc:
+        _log.warning("platform_control.read_failed", error=type(exc).__name__, control=control)
+        return True
+    _state[:] = [(_clock(), rows)]
+    return any(
+        name == control
+        and (scope == "platform" or (tenant_id is not None and tenant == tenant_id))
+        for name, scope, tenant, _ in rows
+    )
 
 
 async def control_active(

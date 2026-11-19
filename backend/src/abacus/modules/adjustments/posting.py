@@ -61,6 +61,8 @@ from abacus.modules.integrations.api import (
     Posted,
     QboTransport,
     QuickBooksOnlineWriter,
+    W1Evidence,
+    W1Operation,
     W1Refused,
     W1Scope,
     WriteError,
@@ -195,6 +197,33 @@ async def _scope(ctx: AuthContext, work_item_id: UUID) -> _Scope:
 
 def _journal(e: _Entry, period_end: date) -> JournalEntry:
     return JournalEntry(e.ref, e.txn_date if e.txn_date != date.min else period_end, e.lines)
+
+
+def _body(entry: JournalEntry) -> bytes:
+    """A W1 request as stored write-once (the entry, its lines and date; no names)."""
+    return json.dumps(
+        {
+            "doc_number": entry.doc_number,
+            "txn_date": entry.txn_date.isoformat(),
+            "lines": [[ln.account_ref, ln.posting_type, str(ln.amount)] for ln in entry.lines],
+        },
+        sort_keys=True,
+    ).encode()
+
+
+def _posted_evidence(p: Posted) -> W1Evidence:
+    status = "failed" if p.error is not None else ("verified" if p.verified else "verify_mismatch")
+    return W1Evidence(
+        json.dumps({"external_ref": p.external_ref, "error": p.error}, sort_keys=True).encode(),
+        json.dumps({"verified": p.verified}, sort_keys=True).encode(),
+        p.external_ref or None,
+        status,  # type: ignore[arg-type]
+    )
+
+
+def _closing_evidence(error: WriteError | None) -> W1Evidence:
+    body = json.dumps({"error": error}, sort_keys=True).encode()
+    return W1Evidence(body, body, None, "failed" if error is not None else "verified")
 
 
 def payload_digest(
@@ -507,7 +536,12 @@ async def run_batch(tenant_id: UUID, batch_id: UUID) -> str:
             idempotency_key=key,
             w1=scope,
             perform=post,
-        )
+            operation=W1Operation(
+                "proposed_entry", e.id, "create_journal_entry", approver,
+                _body(_journal(e, period_end)),
+            ),
+            evidence_of=_posted_evidence,
+        )  # fmt: skip
         ok = posted.error is None and posted.verified
         async with uow(acting) as tx:
             attempt = int(await tx.session.scalar(_ATTEMPTS, {"b": batch_id, "e": e.id}) or 0) + 1
@@ -551,7 +585,12 @@ async def run_batch(tenant_id: UUID, batch_id: UUID) -> str:
             idempotency_key=f"{batch_id}:closing",
             w1=scope,
             perform=close_books,
-        )
+            operation=W1Operation(
+                SUBJECT, batch_id, "set_closing_date", approver,
+                json.dumps({"closing_date": str(row.closing_date_target)}).encode(),
+            ),
+            evidence_of=_closing_evidence,
+        )  # fmt: skip
         closed = error is None
     status = "posted" if failed == 0 else "failed_post"
     async with uow(acting) as tx:
