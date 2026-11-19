@@ -238,3 +238,14 @@ class ConsultationDifferenceRecorded(DomainEvent):
     consultation_id: Annotated[UUID, classified("internal")]
     by_user: Annotated[UUID, classified("internal")]
     recipient_user_ids: Annotated[list[UUID], classified("internal")]
+
+
+class PostIssuanceCaseOpened(DomainEvent):
+    """Q-05-T12 (AUD-30 f): the engagement partners are told a case was opened on the audit."""
+
+    event_type: ClassVar[str] = "post_issuance.case_opened"
+
+    case_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]
+    recipient_user_ids: Annotated[list[UUID], classified("internal")]

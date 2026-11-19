@@ -44536,6 +44536,18 @@ export type PostIssuanceCaseOut = {
      */
     comparison?: Array<PostIssuanceComparisonLineOut>;
     /**
+     * Decided At
+     */
+    decided_at?: string | null;
+    /**
+     * Decided By User Id
+     */
+    decided_by_user_id?: string | null;
+    /**
+     * Decision
+     */
+    decision?: 'no_action' | 'revise_and_reissue' | 'notify_users' | null;
+    /**
      * Decision Card Id
      */
     decision_card_id?: string | null;
@@ -44543,15 +44555,31 @@ export type PostIssuanceCaseOut = {
      * Description
      */
     description: string;
+    /**
+     * Disclosure Affected
+     */
+    disclosure_affected?: boolean | null;
     evaluation?: PostIssuanceEvaluationOut | null;
+    /**
+     * Options
+     */
+    options?: Array<'no_action' | 'revise_and_reissue' | 'notify_users'>;
     /**
      * Received At
      */
     received_at: string;
     /**
+     * Recommended Option
+     */
+    recommended_option?: 'no_action' | 'revise_and_reissue' | 'notify_users' | null;
+    /**
      * Ref
      */
     ref: string;
+    /**
+     * Source Evidence Version Id
+     */
+    source_evidence_version_id?: string | null;
     /**
      * Source Kind
      */
@@ -44568,6 +44596,25 @@ export type PostIssuanceCaseOut = {
      * Type
      */
     type: 'subsequently_discovered_facts' | 'omitted_procedure' | 'reissuance_request';
+};
+
+/**
+ * PostIssuanceComparisonIn
+ *
+ * DV-9: the corrected figures by certified line key (the parser's output, or attached when it
+ * cannot match); the code compares and evaluates.
+ */
+export type PostIssuanceComparisonIn = {
+    /**
+     * Corrected
+     */
+    corrected: {
+        [key: string]: unknown | number | string;
+    };
+    /**
+     * Disclosure Affected
+     */
+    disclosure_affected?: boolean;
 };
 
 /**
@@ -44602,6 +44649,20 @@ export type PostIssuanceComparisonLineOut = {
      * Line Key
      */
     line_key: string;
+};
+
+/**
+ * PostIssuanceDecisionIn
+ */
+export type PostIssuanceDecisionIn = {
+    /**
+     * Decision
+     */
+    decision: 'no_action' | 'revise_and_reissue' | 'notify_users';
+    /**
+     * Rationale
+     */
+    rationale: string;
 };
 
 /**
@@ -84231,6 +84292,134 @@ export type PostIssuanceAnalysisResponses = {
 };
 
 export type PostIssuanceAnalysisResponse = PostIssuanceAnalysisResponses[keyof PostIssuanceAnalysisResponses];
+
+export type PostIssuanceComparisonData = {
+    body: PostIssuanceComparisonIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Case Id
+         */
+        case_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/comparison';
+};
+
+export type PostIssuanceComparisonErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PostIssuanceComparisonError = PostIssuanceComparisonErrors[keyof PostIssuanceComparisonErrors];
+
+export type PostIssuanceComparisonResponses = {
+    /**
+     * Successful Response
+     */
+    200: PostIssuanceCaseOut;
+};
+
+export type PostIssuanceComparisonResponse = PostIssuanceComparisonResponses[keyof PostIssuanceComparisonResponses];
+
+export type PostIssuanceDecisionData = {
+    body: PostIssuanceDecisionIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Case Id
+         */
+        case_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/decision';
+};
+
+export type PostIssuanceDecisionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PostIssuanceDecisionError = PostIssuanceDecisionErrors[keyof PostIssuanceDecisionErrors];
+
+export type PostIssuanceDecisionResponses = {
+    /**
+     * Successful Response
+     */
+    200: PostIssuanceCaseOut;
+};
+
+export type PostIssuanceDecisionResponse = PostIssuanceDecisionResponses[keyof PostIssuanceDecisionResponses];
 
 export type PostIssuanceReissueData = {
     body?: never;

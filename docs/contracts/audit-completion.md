@@ -189,7 +189,10 @@ Owner `assurance` (`assurance/post_issuance.py`, a red path beside `release.py`)
 |---|---|---|
 | `GET /v1/audits/{work_item_id}/post-issuance/cases` · `GET …/cases/{id}` | `post_issuance.read` | comparison, evaluation, analysis, card, timeline |
 | `POST /v1/audits/{work_item_id}/post-issuance/cases` | `post_issuance.create` | type, source, description |
-| `POST …/cases/{id}/analysis` | `post_issuance.analyse` | the analysis run; 409 `comparison_unavailable` |
+| `POST /v1/audits/{work_item_id}/post-issuance/cases` · status codes | | 409 `not_archived` before lock (S51 partials, DEC-5724); case type `reissuance_request` accepted (0986) |
+| `POST …/cases/{id}/comparison` | `post_issuance.analyse` | the corrected figures by certified line key; the code compares with A-05's lines and evaluates against the materiality in force at release; 409 `comparison_unavailable` when no line matches (DV-9); insert-only |
+| `POST …/cases/{id}/analysis` | `post_issuance.analyse` | the analysis run; 409 `comparison_unavailable`; 501 once compared until the capability prompt lands (ADR-079) |
+| `POST …/cases/{id}/decision` | `post_issuance.decide` | the EP, fresh MFA, human-only, among the code's options (`no_action` tagged as the agent recommendation only below clearly trivial with no disclosure affected); recorded on the case row, the table the `post_issuance` kind reaches (DEC-5724); 409 `post_issuance_case_decided` |
 | `POST …/cases/{id}/reopen-for-reissue` | `post_issuance.reissue` | EP, fresh MFA; opens AUD-23 g through A-07's release path |
 
 The EP decides on a P-04 decision card (No action · Reissue · Notify users); No action adds an EP-approved archive addition with its own hash. **Example:** PI-01 (12,250) below clearly trivial 12,610; 12,250 ÷ 252,200 = 4.9%.
