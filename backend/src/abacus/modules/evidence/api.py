@@ -71,6 +71,9 @@ from abacus.modules.evidence.deliverable_serving import (
 from abacus.modules.evidence.deliverable_serving import (
     open_deliverable_download as open_deliverable_download,
 )
+from abacus.modules.evidence.destruction_jobs import ACTIVITIES as DESTRUCTION_ACTIVITIES
+from abacus.modules.evidence.destruction_jobs import SCHEDULES as DESTRUCTION_SCHEDULES
+from abacus.modules.evidence.destruction_jobs import WORKFLOWS as DESTRUCTION_WORKFLOWS
 from abacus.modules.evidence.drops import drop_batch
 from abacus.modules.evidence.drops_contract import drops_router, void_router
 from abacus.modules.evidence.duplicates import PendingDuplicate, pending_duplicates
@@ -477,6 +480,7 @@ WORKFLOWS: dict[type, str] = {
     **EXPIRY_WORKFLOWS,  # A-01-T22: the daily export expiry sweep
     **SCHEDULE_WORKFLOWS,  # G-02-T19: the firm export's monthly run, on the firm's Schedule
     **FIRM_EXPORT_WORKFLOWS,  # Q-02-T43: the firm export, started by `firm_export.approved`
+    **DESTRUCTION_WORKFLOWS,  # Q-05-T11: the quarter's destruction batch (dark)
 }
 ACTIVITIES: tuple[object, ...] = (
     *UPLOAD_ACTIVITIES,
@@ -487,6 +491,7 @@ ACTIVITIES: tuple[object, ...] = (
     *EXPIRY_ACTIVITIES,  # A-01-T22
     *SCHEDULE_ACTIVITIES,  # G-02-T19
     *FIRM_EXPORT_ACTIVITIES,  # Q-02-T43
+    *DESTRUCTION_ACTIVITIES,  # Q-05-T11
 )
 
 
@@ -531,7 +536,7 @@ SUBSCRIPTIONS = {
         in_turn(_SUBSCRIPTIONS[EvidenceVersionWithdrawn.event_type], on_version_withdrawn),
     ),
 }
-SCHEDULES = (*ANCHOR_SCHEDULES, *EXPIRY_SCHEDULES)
+SCHEDULES = (*ANCHOR_SCHEDULES, *EXPIRY_SCHEDULES, *DESTRUCTION_SCHEDULES)
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
@@ -571,6 +576,7 @@ __all__ = [
     "CREDIT_COLUMN",
     "DAILY_PAGE_CAP",
     "DEBIT_COLUMN",
+    "DESTRUCTION_ASSEMBLE_ACTIVITY",
     "EXPORT_EXPIRY_ID",
     "EXPORT_FORMAT_VERSION",
     "EXPORT_SCHEMA_FILE",
@@ -606,6 +612,7 @@ __all__ = [
     "CloseWorkpaperSheet",
     "ComponentUpload",  # S48 rest: POR-23 links a drop to its deliverable
     "ContentTooLarge",
+    "DestructionAssembleWorkflow",
     "DocumentDownload",  # G-02-T20: the WISP pack's documents",
     "EffectivePolicy",
     "EngagementArchived",
@@ -810,6 +817,7 @@ __all__ = [
     "register_match_picks",
     "register_proposal_source",
     "register_region_source",
+    "register_unlocked_archives",
     "render_close_workpaper",
     "render_general_ledger",
     "render_journal_listing",
@@ -889,6 +897,14 @@ from abacus.modules.evidence import (  # noqa: E402
 
 # A-09-T34 (DEC-5522): an evidence version's masked cells as an agent reads them.
 from abacus.modules.evidence.agent_sheets import sheet_rows_for as sheet_rows_for  # noqa: E402
+
+# S51 partials (Q-05-T11): assurance registers its open-but-unlocked archives; the replay
+# recorder reaches the assembly workflow here (BOUND-001).
+from abacus.modules.evidence.destruction import register_unlocked_archives  # noqa: E402
+from abacus.modules.evidence.destruction_workflow import (  # noqa: E402
+    ACTIVITY as DESTRUCTION_ASSEMBLE_ACTIVITY,
+)
+from abacus.modules.evidence.destruction_workflow import DestructionAssembleWorkflow  # noqa: E402
 from abacus.modules.evidence.form_extraction import Extracted as ExtractedField  # noqa: E402
 from abacus.modules.evidence.form_extraction import extract as extract_form  # noqa: E402
 from abacus.modules.evidence.form_extraction import identify as identify_form  # noqa: E402
