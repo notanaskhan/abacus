@@ -199011,7 +199011,7 @@
     },
     "/v1/closes/{close_id}/package/commentary": {
       "patch": {
-        "description": "Only commentary is editable; figures are locked to the ledger.",
+        "description": "Only commentary is editable; figures are locked to the ledger (C-02-T21, S51 partials).",
         "operationId": "commentary",
         "parameters": [
           {

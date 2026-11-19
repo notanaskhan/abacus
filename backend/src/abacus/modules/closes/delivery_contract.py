@@ -404,9 +404,11 @@ async def package_edit_route(
 async def commentary_route(
     close_id: UUID, body: DeliveryCommentaryIn, ctx: Ctx
 ) -> DeliveryPackageOut:
-    """Only commentary is editable; figures are locked to the ledger."""
+    """Only commentary is editable; figures are locked to the ledger (C-02-T21, S51 partials)."""
     await _human(ctx, CLOSES_DELIVERY, "close_package.edit")
-    raise NotImplementedYet
+    from abacus.modules.closes.package_service import edit_commentary
+
+    return await edit_commentary(ctx, close_id, body.doc, body.expected_version)
 
 
 @delivery_router.post(

@@ -670,9 +670,40 @@ async def workbook_of(ctx: AuthContext, close_id: UUID, basis: Basis) -> bytes:
     return workbook([Sheet("Flux", rows), Sheet("About", about)])
 
 
+_ACCEPTED: Final = text(
+    "SELECT l.caption, l.change, l.change_pct, e.text_sealed FROM analytic_lines l "
+    "JOIN LATERAL (SELECT text_sealed, accepted_by FROM analytic_explanations x "
+    "WHERE x.close_id = :c AND x.line_key = l.line_key ORDER BY x.version DESC LIMIT 1) e "
+    "ON e.accepted_by IS NOT NULL WHERE l.set_id = :s ORDER BY l.position"
+)
+
+
+async def accepted_flux(
+    tenant: TenantContext, close_id: UUID, basis: Basis = "mom"
+) -> list[tuple[str, Decimal, Decimal | None, str]]:
+    """C-02-T21 (S51 partials): the close's accepted explanations on its newest set, in line
+    order (caption, change, change %, explanation), for the package commentary. A line whose
+    newest explanation is a draft never appears (drafts never reach the client)."""
+    async with tenant_session(tenant) as session:
+        latest = (await session.execute(_LATEST, {"c": close_id, "b": basis})).first()
+        if latest is None:
+            return []
+        rows = [
+            tuple(r) for r in await session.execute(_ACCEPTED, {"c": close_id, "s": latest[0]})
+        ]
+    out: list[tuple[str, Decimal, Decimal | None, str]] = []
+    for caption, change, pct, sealed in rows:
+        text_ = (await open_sealed(tenant.tenant_id, cast(bytes, sealed), FINGERPRINT)).decode()
+        out.append(
+            (str(caption), cast(Decimal, change or Decimal(0)), cast(Decimal | None, pct), text_)
+        )
+    return out
+
+
 __all__ = [
     "AnalyticLineAccepted",
     "accept",
+    "accepted_flux",
     "adjusted",
     "compute",
     "explain",

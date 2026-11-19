@@ -1177,6 +1177,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         # (Q-05-T09) and a destruction batch on the retention screen (Q-05-T11); none needs a
         # sentence in the firm's activity feed.
         "close_package.edited",
+        "close_package.commentary_edited",
         "consultation.difference_resolved",
         "consultation.linked",
         "consultation.position_recorded",
