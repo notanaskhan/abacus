@@ -10,12 +10,15 @@ from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_cl
 from abacus.kernel.uow import Handler
 from abacus.modules.practice.activity import SOURCES, on_event, prune_once
 from abacus.modules.practice.agent_monitoring import agent_monitoring_activity
+from abacus.modules.practice.deadlines_service import recompute_activity
 from abacus.modules.practice.overrides import SOURCE_KINDS as OVERRIDE_SOURCES
 from abacus.modules.practice.overrides import record_outcome
 from abacus.modules.practice.workflows import (
     AGENT_MONITORING_ID,
+    FILING_DEADLINES_ID,
     HOME_ACTIVITY_PRUNE_ID,
     AgentMonitoringWorkflow,
+    FilingDeadlineRecomputeWorkflow,
     HomeActivityPruneWorkflow,
 )
 
@@ -34,9 +37,14 @@ SUBSCRIPTIONS: dict[str, Handler] = {
 WORKFLOWS: dict[type, WorkClass] = {
     HomeActivityPruneWorkflow: "background",
     AgentMonitoringWorkflow: "batch",  # Q-05-T08: nightly QM monitoring (dark)
+    FilingDeadlineRecomputeWorkflow: "batch",  # T-08-T10: nightly deadline recompute (dark)
 }
 register_work_classes(WORKFLOWS)
-ACTIVITIES: tuple[object, ...] = (prune_home_activity_activity, agent_monitoring_activity)
+ACTIVITIES: tuple[object, ...] = (
+    prune_home_activity_activity,
+    agent_monitoring_activity,
+    recompute_activity,
+)
 SCHEDULES: tuple[PlatformSchedule, ...] = (
     PlatformSchedule(
         id=HOME_ACTIVITY_PRUNE_ID,
@@ -49,5 +57,11 @@ SCHEDULES: tuple[PlatformSchedule, ...] = (
         workflow=AgentMonitoringWorkflow,
         every=timedelta(days=1),
         note="Q-05-T08: QM findings for agents above tolerance; due and evaluation notices",
+    ),
+    PlatformSchedule(
+        id=FILING_DEADLINES_ID,
+        workflow=FilingDeadlineRecomputeWorkflow,
+        every=timedelta(days=1),
+        note="T-08-T10: filing deadlines from the returns' due dates, nightly",
     ),
 )

@@ -367,6 +367,7 @@ __all__ = [
     "ProposedPayment",
     "ReaderRunInput",
     "ReaderRunOutcome",
+    "ReturnDeadline",
     "ReturnDrafterWorkflow",
     "SeedField",
     "SeedSection",
@@ -409,6 +410,7 @@ __all__ = [
     "register_final_approval_blocker",
     "register_return_tab",
     "request_estimate_confirmation",
+    "return_deadlines",
     "rule_texts",
     "run_draft",
     "s_corp_engine",
@@ -492,10 +494,12 @@ from abacus.modules.tax.season_candidates import candidates as _season_candidate
 
 register_season_candidates(_season_candidates)
 
+# T-08-T10 (S51 partials): practice's filing-deadline recompute reads the returns' dates.
 # Q-05-T07 (S51 partials): ADM-11's accuracy reads the filed returns' worksheets.
 # T-04-T31 (DEC-3413): a return's issues are fixed and explained by the tax agents, through P-04's
 # fail-closed slots (keyed by the issue's record type).
 from abacus.modules.review.api import register_explainer, register_fix_runner  # noqa: E402
+from abacus.modules.tax.deadline_facts import ReturnDeadline, return_deadlines  # noqa: E402
 from abacus.modules.tax.worksheet_review import filed_return_worksheets  # noqa: E402
 
 register_fix_runner(_fix_runner.RECORD_TYPE, _fix_runner.start_fix)

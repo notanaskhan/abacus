@@ -17,7 +17,7 @@ The provider protocol (`platform.register_filing_deadline_source`, T-08-T07) is 
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -168,6 +168,57 @@ async def _human(ctx: AuthContext, action: str) -> None:
         raise Forbidden(action, "role")
 
 
+_RISK_LABEL: dict[str, str] = {
+    "overdue": "Overdue", "due_7": "Due within 7 days", "due_30": "Due within 30 days",
+    "later": "Later", "done": "Done",
+}  # fmt: skip
+
+
+async def _items(ctx: AuthContext, found: list[object]) -> list[FilingDeadlineItemOut]:
+    from abacus.modules.identity.api import names_of
+    from abacus.modules.organisations.api import firm_names
+    from abacus.modules.practice.compute import deadlines as calc
+    from abacus.modules.practice.deadlines_service import Row, firm_today
+
+    rows = [cast(Row, r) for r in found]
+    today = await firm_today(ctx)
+    clients = {n.client_id: n.name for n in await firm_names(ctx.tenant) if n.id == n.client_id}
+    people = {u for r in rows for u in (*r.owner_user_ids, r.signer_user_id) if u is not None}
+    names = await names_of(sorted(people, key=str)) if people else {}
+
+    def who(u: UUID) -> FilingDeadlineOwnerOut:
+        name = names.get(u, "")
+        return FilingDeadlineOwnerOut(
+            user_id=u, initials=("".join(p[0] for p in name.split()[:2]).upper() or "?")[:4]
+        )
+
+    out: list[FilingDeadlineItemOut] = []
+    for r in rows:
+        tier = calc.risk(r.deadline(), today)
+        out.append(
+            FilingDeadlineItemOut(
+                filing_deadline_id=r.deadline_id,
+                source_kind=cast(SourceKind, r.source_kind),
+                client_id=r.client_id,
+                client_name=(clients.get(r.client_id, "") if r.client_id else "")[:200],
+                filing_label=r.filing_label,
+                due_on=r.due_on,
+                original_due_on=r.original_due_on,
+                postponed_from=r.postponed_from,
+                extension_form=r.extension_form,
+                stage_code=r.stage_code,
+                stage_label=r.stage_code.replace("_", " ").capitalize()[:80],
+                risk=tier,
+                days_left=calc.days_left(r.deadline(), today),
+                risk_label=_RISK_LABEL[tier],
+                owners=[who(u) for u in r.owner_user_ids],
+                signer=None if r.signer_user_id is None else who(r.signer_user_id),
+                work_item_id=r.work_item_id,
+            )
+        )
+    return out
+
+
 @filing_deadlines_router.get(
     "/filing-deadlines",
     action="filing_deadline.read",
@@ -187,7 +238,31 @@ async def filing_deadlines_route(
 ) -> FilingDeadlineCalendarOut:
     """Walled clients contribute no row, day count or "+n more" (AC-14)."""
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.practice.deadlines_service import firm_today, rows
+
+    found = await rows(
+        ctx, window_from, window_to, office=office_id, service=service, person=person_id
+    )
+    items = [i for i in await _items(ctx, list(found)) if risk is None or i.risk == risk]
+    days: list[FilingDeadlineDayOut] = []
+    if view == "month":
+        by_day: dict[date, list[FilingDeadlineItemOut]] = {}
+        for i in items:
+            by_day.setdefault(i.due_on, []).append(i)
+        days = [
+            FilingDeadlineDayOut(on=d, total=len(v), shown=[i.filing_deadline_id for i in v[:3]])
+            for d, v in sorted(by_day.items())
+        ]
+    return FilingDeadlineCalendarOut(
+        view=view,
+        window_from=window_from,
+        window_to=window_to,
+        today=await firm_today(ctx),
+        firm_zone="America/Chicago",
+        items=items,
+        days=days,
+        remaining=sum(max(d.total - len(d.shown), 0) for d in days),
+    )
 
 
 @filing_deadlines_router.get(
@@ -204,7 +279,9 @@ async def filing_deadlines_export_route(
 ) -> bytes:
     """A one-off xlsx or RFC 5545 ics with fresh MFA; no TIN, no amount, no feed (AC-16)."""
     await _human(ctx, "export.create")
-    raise NotImplementedYet
+    from abacus.modules.practice.deadlines_service import export
+
+    return await export(ctx, fmt, window_from, window_to)
 
 
 @filing_deadlines_router.get(
@@ -215,7 +292,18 @@ async def filing_deadlines_export_route(
 )
 async def filing_deadline_route(filing_deadline_id: UUID, ctx: Ctx) -> FilingDeadlineDetailOut:
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.practice.deadlines_service import detail
+
+    r = await detail(ctx, filing_deadline_id)
+    item = (await _items(ctx, [r]))[0]
+    return FilingDeadlineDetailOut(
+        item=item,
+        original_due_on=r.original_due_on,
+        extended_due_on=r.extended_due_on,
+        internal_target_on=None,
+        reference_set_version_ids=list(r.reference_set_version_ids),
+        computed_at=r.computed_at,
+    )
 
 
 @filing_deadlines_router.post(
