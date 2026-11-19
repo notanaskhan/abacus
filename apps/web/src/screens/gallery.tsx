@@ -302,6 +302,12 @@ import {
   scenarios as por08Scenarios,
 } from "./POR-08/scenarios";
 import { POR11 } from "./POR-11";
+import { SHL05 } from "./SHL-05";
+import {
+  OPENING as SHL05_OPENING,
+  SHL05_STATES,
+  scenarios as shl05Scenarios,
+} from "./SHL-05/scenarios";
 import { POR23 } from "./POR-23";
 import { STATES as POR23_STATES, scenarios as por23Scenarios } from "./POR-23/scenarios";
 import { scenarios as por11Scenarios } from "./POR-11/scenarios";
@@ -703,6 +709,32 @@ function Shl04Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-04", { title: "Notifications panel", Component: Shl04Artboard });
+
+// G-04-T19 (TASK-8704): SHL-05 a-f and d' (`d2`), each on its tab or article.
+function Shl05Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state = SHL05_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl05Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  const opening = SHL05_OPENING[state];
+  return (
+    <div data-artboard={state}>
+      <SHL05 tab={opening.tab} article={opening.article ?? null} />
+    </div>
+  );
+}
+
+registerScreen("SHL-05", { title: "Support panel", Component: Shl05Artboard });
 
 function Bnd01Frame({ state }: { state: Bnd01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";

@@ -20,7 +20,7 @@ export const shlScreens = {
   // "Notification settings" link (SHL-04 → SHL-03, link-contract rule 1) and the inline approval
   // land: neither overlay has a path, so the link cannot be wired with a builder yet.
   "SHL-04": { name: "Notifications panel", status: "planned", path: null, entry: true },
-  "SHL-05": { name: "Support panel", status: "planned", path: null, entry: true },
+  "SHL-05": { name: "Support panel", status: "fixture", path: null, entry: true }, // G-04-T19 (?ov=support, behind support.panel_v2)
   // P-01-T11: g and the sign-in error state at /signin/callback, the BFF's landing (a route outside
   // the area tree, reached only by redirect); a–f are the hosted provider's pages.
   "SHL-06": { name: "Firm sign-in", status: "live", path: null, entry: true },
