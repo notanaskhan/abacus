@@ -11,6 +11,16 @@ this command refuses bad input before it connects.
         --severity degraded --title "QuickBooks Online sync delayed" --note "…" --operator rowan
     python -m abacus_tools.platform_console article-publish --id <uuid> --operator jordan \
         --reason "Reviewed against SHL-05 copy"
+
+G-04-T20 (DEC-5702): `content-import --dir <folder>` loads a reviewed content folder kept outside
+the repository (no content row is committed): `status_components.json` and `regions.json` (lists of
+rows), `support_hours.json` (`{"value": {...}, "expected_version": n}`) and `articles/*.json` (one
+help article each, drafted for a second platform admin to publish). `--dry-run` checks the folder
+and prints what it would write without connecting. Email templates for new notification kinds go
+through `POST /v1/platform/email-templates/import` (R-01's import), not this command.
+
+    python -m abacus_tools.platform_console content-import --dir ~/content/2026-10 \
+        --operator rowan --reason "Production content v1, reviewed Oct 2"
 """
 
 from __future__ import annotations
@@ -82,6 +92,11 @@ def _parser() -> argparse.ArgumentParser:
     draft.add_argument("--file", required=True, type=Path, help="a JSON article (schema v1)")
     draft.add_argument("--operator", required=True)
     draft.add_argument("--reason", required=True)
+    content = sub.add_parser("content-import")
+    content.add_argument("--dir", required=True, type=Path, help="the reviewed content folder")
+    content.add_argument("--operator", required=True)
+    content.add_argument("--reason", required=True)
+    content.add_argument("--dry-run", action="store_true")
     for name in ("article-publish", "article-withdraw"):
         decide = sub.add_parser(name)
         decide.add_argument("--id", required=True, type=UUID)
@@ -98,6 +113,80 @@ def _article(path: Path) -> dict[str, object]:
     if not isinstance(found.get("body"), list):
         raise Refused("the article's body is a list of schema v1 blocks")
     return found
+
+
+_KINDS: Final = ("core", "integration")
+_REGIONS: Final = ("us", "eu", "uk")
+
+
+def _rows(path: Path) -> list[dict[str, object]]:
+    if not path.exists():
+        return []
+    found = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(found, list):
+        raise Refused(f"{path.name} is a list of rows")
+    return cast("list[dict[str, object]]", found)
+
+
+def content_plan(folder: Path) -> list[tuple[str, tuple[object, ...]]]:
+    """The writes a content folder asks for, checked before anything connects: (SQL, args)."""
+    if not folder.is_dir():
+        raise Refused("--dir is a content folder")
+    plan: list[tuple[str, tuple[object, ...]]] = []
+    for i, row in enumerate(_rows(folder / "status_components.json")):
+        key, kind = str(row.get("key", "")), str(row.get("kind", ""))
+        integration = row.get("integration_key")
+        if not _COMPONENT.fullmatch(key) or kind not in _KINDS:
+            raise Refused(f"status component {i}: key a-z0-9_ and kind core or integration")
+        if (kind == "integration") != (integration is not None):
+            raise Refused(f"status component {key}: an integration row names its integration")
+        plan.append((
+            "SELECT status_component_upsert($1, $2, $3, $4, $5::smallint, $6, $7, $8)",
+            (key, str(row.get("label", "")), kind, integration,
+             int(cast(int, row.get("display_order", 100))), bool(row.get("active", True))),
+        ))  # fmt: skip
+    for row in _rows(folder / "regions.json"):
+        code = str(row.get("code", ""))
+        if code not in _REGIONS or row.get("status") not in ("live", "planned"):
+            raise Refused(f"region {code!r}: code us, eu or uk and status live or planned")
+        plan.append((
+            "SELECT platform_region_upsert($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+            (code, str(row.get("label", "")), row["status"], row.get("planned_label"),
+             row.get("storage_label"), row.get("backup_label"), row.get("inference_label")),
+        ))  # fmt: skip
+    hours = folder / "support_hours.json"
+    if hours.exists():
+        found = cast("dict[str, object]", json.loads(hours.read_text(encoding="utf-8")))
+        if not isinstance(found.get("value"), dict):
+            raise Refused("support_hours.json holds a value object and expected_version")
+        plan.append((
+            "SELECT platform_setting_put($1, $2::jsonb, $3, $4, $5)",
+            ("support_hours", json.dumps(found["value"]),
+             int(cast(int, found.get("expected_version", 0)))),
+        ))  # fmt: skip
+    for path in sorted((folder / "articles").glob("*.json")):
+        a = _article(path)
+        plan.append((
+            "SELECT help_article_draft($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9)",
+            (a["slug"], a.get("title"), a.get("summary"), a.get("group_key"),
+             a.get("context_screen_ids") or [], a.get("read_minutes"), json.dumps(a["body"])),
+        ))  # fmt: skip
+    if not plan:
+        raise Refused("the folder holds no content files")
+    return plan
+
+
+async def _import(ops_dsn: str, plan: list[tuple[str, tuple[object, ...]]], operator: str,
+                  reason: str) -> int:  # fmt: skip
+    """Every write in one transaction: the folder loads whole or not at all."""
+    connection = await connect_db(_dsn(ops_dsn))
+    try:
+        async with connection.transaction():
+            for sql, args in plan:
+                await connection.fetchval(sql, *args, operator, reason)
+    finally:
+        await connection.close()
+    return len(plan)
 
 
 async def run(ops_dsn: str, args: argparse.Namespace) -> object:
@@ -123,6 +212,11 @@ async def run(ops_dsn: str, args: argparse.Namespace) -> object:
     reason = str(args.reason).strip()
     if not 10 <= len(reason) <= 500:
         raise Refused("--reason is 10 to 500 characters")
+    if args.command == "content-import":
+        plan = content_plan(args.dir)
+        if args.dry_run:
+            return f"{len(plan)} writes (dry run)"
+        return await _import(ops_dsn, plan, operator, reason)
     if args.command == "article-draft":
         a = _article(args.file)
         return await _call(
@@ -140,9 +234,12 @@ def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     s = settings()
     try:
-        if s.ops_database_url is None:
-            raise Refused("ops_database_url (the abacus_ops role) is not set")
-        result = asyncio.run(run(s.ops_database_url.get_secret_value(), args))
+        if getattr(args, "dry_run", False):
+            result = asyncio.run(run("", args))
+        else:
+            if s.ops_database_url is None:
+                raise Refused("ops_database_url (the abacus_ops role) is not set")
+            result = asyncio.run(run(s.ops_database_url.get_secret_value(), args))
     except Refused as exc:
         print(f"refused: {exc}", file=sys.stderr)
         return 2

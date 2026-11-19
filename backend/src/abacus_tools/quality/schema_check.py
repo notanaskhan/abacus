@@ -517,6 +517,8 @@ DEFINER_FUNCTIONS = frozenset(
     | {"platform_directory_upsert", "help_article_draft", "help_article_publish"}
     | {"help_article_withdraw", "status_incident_post", "status_incident_update"}
     | {"status_incident_resolve"}
+    # 0980 (G-04-T20, DEC-5702): the operator's content-catalogue writers (abacus_ops only).
+    | {"status_component_upsert", "platform_region_upsert", "platform_setting_put"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).
@@ -542,6 +544,8 @@ OPS_ONLY_FUNCTIONS = frozenset(
     | {"integration_catalog_load"}  # 0194 (A-02-T12): the reviewed catalogue document
     | {"integration_catalog_import", "integration_catalog_import_log"}  # 0901 (W-01-T07)
     | {"set_client_mail"}  # 0340 (R-01-T27): the M10 flip, two people named
+    # 0980 (G-04-T20): the status catalogue, region rows and support hours from the content folder.
+    | {"status_component_upsert", "platform_region_upsert", "platform_setting_put"}
 )
 _DEFINER_SEARCH_PATH = "search_path=pg_catalog, public, pg_temp"
 _DEFINERS = """
