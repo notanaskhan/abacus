@@ -340201,7 +340201,7 @@
     },
     "/v1/season-cohorts/{cohort_id}/approve": {
       "post": {
-        "description": "Human-only; issues a single-use approval grant (ADR-161). 409 `manifest_superseded` when\nthe version moved.",
+        "description": "Human-only; issues a single-use approval grant (ADR-161) pinning the rows hash and manifest\nversion seen (409 `stale_version` when either moved; `rows_hidden` when the approver is\nwalled from a row; `cohort_approved` when not a draft), then starts the execution.",
         "operationId": "season_cohort_approve",
         "parameters": [
           {
@@ -340672,7 +340672,7 @@
     },
     "/v1/season-cohorts/{cohort_id}/withdraw-approval": {
       "post": {
-        "description": "409 `execution_started` after the first step ran.",
+        "description": "409 `execution_started` after the first step ran; the grant is voided.",
         "operationId": "season_cohort_withdraw",
         "parameters": [
           {

@@ -547,10 +547,23 @@ async def season_ask_answer_route(
 async def season_cohort_approve_route(
     cohort_id: UUID, body: SeasonCohortApproveIn, ctx: Ctx, key: IdempotencyKey
 ) -> SeasonApprovalOut:
-    """Human-only; issues a single-use approval grant (ADR-161). 409 `manifest_superseded` when
-    the version moved."""
+    """Human-only; issues a single-use approval grant (ADR-161) pinning the rows hash and manifest
+    version seen (409 `stale_version` when either moved; `rows_hidden` when the approver is
+    walled from a row; `cohort_approved` when not a draft), then starts the execution."""
     await _human(ctx, "season_setup.approve_cohort")
-    raise NotImplementedYet
+    from abacus.modules.engagements.season_execution_service import approve_cohort
+
+    made = await approve_cohort(
+        ctx, cohort_id, rows_hash=body.rows_hash, manifest_version=body.manifest_version
+    )
+    people = await _people({made.approved_by})
+    return SeasonApprovalOut(
+        approval_id=made.approval_id,
+        cohort_id=made.cohort_id,
+        approval_grant_id=made.grant_id,
+        approved_by=people[made.approved_by],
+        approved_at=cast(datetime, made.approved_at),
+    )
 
 
 @season_router.post(
@@ -562,9 +575,13 @@ async def season_cohort_approve_route(
 async def season_cohort_withdraw_route(
     cohort_id: UUID, body: SeasonCohortWithdrawIn, ctx: Ctx, key: IdempotencyKey
 ) -> SeasonCohortOut:
-    """409 `execution_started` after the first step ran."""
+    """409 `execution_started` after the first step ran; the grant is voided."""
     await _human(ctx, "season_setup.approve_cohort")
-    raise NotImplementedYet
+    from abacus.modules.engagements.season_execution_service import withdraw_cohort
+    from abacus.modules.engagements.season_service import cohort
+
+    await withdraw_cohort(ctx, cohort_id, body.reason)
+    return _cohort_out(await cohort(ctx, cohort_id), {})
 
 
 @season_router.get(

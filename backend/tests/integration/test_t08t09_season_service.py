@@ -42,11 +42,11 @@ async def engines(
     forget_flags()
 
 
-def _as_admin(who: Person) -> AuthContext:
+def as_admin(who: Person) -> AuthContext:
     return replace(who.context(), firm_role="firm_admin")
 
 
-async def _admin(seed: Seeder, tenant: uuid.UUID) -> Person:
+async def admin_of(seed: Seeder, tenant: uuid.UUID) -> Person:
     who = await seed.person(tenant)
     await seed.run(
         "UPDATE memberships SET firm_role = 'firm_admin' WHERE tenant_id = $1 AND user_id = $2",
@@ -56,7 +56,7 @@ async def _admin(seed: Seeder, tenant: uuid.UUID) -> Person:
     return who
 
 
-async def _client(
+async def client_with_return(
     seed: Seeder, tenant: uuid.UUID, partner: Person, name: str, office: uuid.UUID, form: str
 ) -> uuid.UUID:
     client = cast(
@@ -123,14 +123,16 @@ async def test_ac_the_season_builds_reads_and_guards_its_rows(
     }
     partner = await seed.person(tenant)
     assert tax_api.register_season_candidates is not None  # tax's import registers the source
-    admin = await _admin(seed, tenant)
-    abbott = await _client(seed, tenant, partner, "Abbott", offices["Chicago"], "1040")
-    baker = await _client(seed, tenant, partner, "Baker Logistics", offices["Denver"], "1065")
+    admin = await admin_of(seed, tenant)
+    abbott = await client_with_return(seed, tenant, partner, "Abbott", offices["Chicago"], "1040")
+    baker = await client_with_return(
+        seed, tenant, partner, "Baker Logistics", offices["Denver"], "1065"
+    )
 
-    made = await svc.build_manifest(_as_admin(admin), 2026)
-    again = await svc.build_manifest(_as_admin(admin), 2026)
+    made = await svc.build_manifest(as_admin(admin), 2026)
+    again = await svc.build_manifest(as_admin(admin), 2026)
     assert again == made  # the ready manifest, not a second version
-    view = await svc.manifest(_as_admin(admin), 2026, made)
+    view = await svc.manifest(as_admin(admin), 2026, made)
     assert [(c.office_name, c.segment, c.engagements) for c in view.cohorts] == [
         ("Chicago", "individuals_trusts", 1),
         ("Denver", "entities_exempt", 1),
@@ -138,7 +140,7 @@ async def test_ac_the_season_builds_reads_and_guards_its_rows(
     rows = {r.client_id: r for c in view.cohorts for r in c.rows}
     assert rows[abbott].signer_user_id == partner.user_id and rows[abbott].display == "ready"
 
-    walled = await _admin(seed, tenant)
+    walled = await admin_of(seed, tenant)
     await seed.run(
         "INSERT INTO ethical_walls (tenant_id, user_id, client_id, created_by) "
         "VALUES ($1, $2, $3, $4)",
@@ -147,16 +149,16 @@ async def test_ac_the_season_builds_reads_and_guards_its_rows(
         baker,
         partner.user_id,
     )
-    theirs = await svc.manifest(_as_admin(walled), 2026, made)
+    theirs = await svc.manifest(as_admin(walled), 2026, made)
     assert sum(c.engagements for c in theirs.cohorts) == 1  # no row, no count
     with pytest.raises(svc.AssigneeNotEligible):
         await svc.reassign(
-            _as_admin(admin), rows[baker].row_id, rows[baker].row_version, preparer=walled.user_id
+            as_admin(admin), rows[baker].row_id, rows[baker].row_version, preparer=walled.user_id
         )
 
-    excluded = await svc.exclude(_as_admin(admin), [rows[abbott].row_id], "not_continuing")
+    excluded = await svc.exclude(as_admin(admin), [rows[abbott].row_id], "not_continuing")
     assert excluded == 1
-    after = await svc.manifest(_as_admin(admin), 2026, made)
+    after = await svc.manifest(as_admin(admin), 2026, made)
     assert sum(c.engagements for c in after.cohorts) == 1
 
     await seed.run(
@@ -164,6 +166,6 @@ async def test_ac_the_season_builds_reads_and_guards_its_rows(
         made,
     )
     with pytest.raises(svc.CohortApproved):
-        await svc.build_manifest(_as_admin(admin), 2026, rebuild=True)
+        await svc.build_manifest(as_admin(admin), 2026, rebuild=True)
     with pytest.raises(svc.CohortApproved):
-        await svc.exclude(_as_admin(admin), [rows[baker].row_id], "duplicate")
+        await svc.exclude(as_admin(admin), [rows[baker].row_id], "duplicate")
