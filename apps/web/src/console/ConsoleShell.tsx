@@ -4,13 +4,17 @@
 // fixture flag to a constant, so the seed-backed PLT-01 screen and the seed are dropped from
 // dist/console (scripts/console-dist-check.mjs holds it). There, the shell asks the console BFF for
 // a session (console/auth.ts): `/signin/callback?to=` finishes a sign-in and lands on its path,
-// `?error=` shows the gate with the refusal; signed in, the console frame shows until PLT-01's live
-// hosts land.
+// `?error=` shows the gate with the refusal; signed in, the console frame shows G-04-T17's sections
+// (Support sessions, Status, Publications, the Support queue and Plan requests) on the live API.
 import { Button, Skeleton } from "@abacus/ui";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type JSX, Suspense, lazy, useEffect, useState } from "react";
 import { refreshConsoleSession, signOutConsole } from "./auth";
 import { CONSOLE_COPY as C } from "./copy";
+import { LiveSections } from "./sections/live";
 import { StaffAuth } from "./StaffAuth";
+
+const queryClient = new QueryClient();
 
 const FIXTURES = import.meta.env.VITE_FIXTURES === "1";
 
@@ -68,6 +72,11 @@ function LiveConsole(): JSX.Element {
             {C.signOut}
           </Button>
         </header>
+        {session === "signed_in" ? (
+          <QueryClientProvider client={queryClient}>
+            <LiveSections />
+          </QueryClientProvider>
+        ) : null}
       </main>
     </StaffAuth>
   );
