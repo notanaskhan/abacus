@@ -8321,6 +8321,38 @@ async def _cas_template_imported(conn: asyncpg.Connection, _: Scenario, event: E
     await import_close_template(await _staff_context(conn, event), body)
 
 
+async def _cas_planner_draft(event: Event, drafter: AuthContext, client: UUID) -> None:
+    """CLS-09 F's v1 (Mar 5): the Close Planner's draft started by Raj, recorded through the
+    agents module's synthetic recorder (never by SQL here), drafted empty with the run's id."""
+    from abacus.modules.agents.api import RecordedRun, RecordedStep, record_synthetic_run
+    from abacus.modules.closes.api import new_agent_draft
+
+    run_id = UUID(stable_id("cas:copperleaf:planner-run:1"))
+    await record_synthetic_run(
+        TenantContext(TENANT, "human", str(drafter.user_id)),
+        RecordedRun(
+            agent_id="close.agent",
+            engagement_id=UUID(COPPERLEAF_CLOSE_ENGAGEMENT),
+            initiator_user_id=drafter.user_id,
+            run_number=1,
+            state="succeeded",
+            plan_decided_at=event.at,
+            steps=[
+                RecordedStep(
+                    key="draft_plan",
+                    level=0,
+                    label="Draft the close plan from ledger history",
+                    state="succeeded",
+                    kind="model",
+                    reached=True,
+                )
+            ],
+            id=run_id,
+        ),
+    )
+    await new_agent_draft(drafter, client, run_id)
+
+
 async def _cas_plan_version_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """Copperleaf's plan v2 and v3 (Raj drafts, Priya publishes) and Raj's draft v4 (CLS-09)."""
     version = int(cast(int, event.data["version"]))
@@ -8331,6 +8363,9 @@ async def _cas_plan_version_seeded(conn: asyncpg.Connection, _: Scenario, event:
         return  # loaded already
     except NotFound:
         pass
+    if version == 1:
+        await _cas_planner_draft(event, drafter, client)
+        return
     plan = await create_close_plan_draft(drafter, client, ClosePlanDraftIn())
     seen = plan.row_version
     if version == 2:
@@ -8342,8 +8377,6 @@ async def _cas_plan_version_seeded(conn: asyncpg.Connection, _: Scenario, event:
                 drafter, client, version, _cas_request(title), str(seen)
             )
             seen += 1
-    elif version == 1:
-        pass  # the first version starts empty (`cas_slice.PLAN_VERSIONS`)
     elif version == 3:
         added = next(r for r in _close.PLAN_V3 if r.account == _cas.SUBSCRIPTIONS)
         await add_close_plan_row(drafter, client, version, _cas_row(added), str(seen))

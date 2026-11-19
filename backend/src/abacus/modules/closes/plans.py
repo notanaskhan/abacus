@@ -398,6 +398,12 @@ _COPY_TEMPLATES = text(
 )
 
 
+_DISCARD = text(
+    "UPDATE close_plan_versions SET status = 'discarded', row_version = row_version + 1 "
+    "WHERE id = :id AND status = 'draft' AND drafted_by_run_id IS NOT NULL"
+)
+
+
 async def create_draft(ctx: AuthContext, client_id: UUID, body: PlanDraftIn) -> PlanVersionOut:
     """Draft v(n+1) from `from_version` (default the newest published; a first plan starts
     empty)."""
@@ -413,8 +419,18 @@ async def create_draft(ctx: AuthContext, client_id: UUID, body: PlanDraftIn) -> 
                 ),
             )
         versions = await _versions(tx.session, plan_id)
-        if any(v.status == "draft" for v in versions):
+        drafts = [v for v in versions if v.status == "draft"]
+        if any(v.drafted_by_run_id is None for v in drafts):
             raise DraftExists(facts={"plan_id": str(plan_id)})
+        for superseded in drafts:
+            # S51 partials (C-01-T44; DEC-5733): a person's draft supersedes the planner's
+            # unpublished draft, which is kept as discarded (CLS-09's history still lists it).
+            await tx.session.execute(_DISCARD, {"id": superseded.id})
+            tx.record(
+                "close_plan.draft_discarded",
+                target=Target("close_plan", plan_id),
+                after=Ref(version=int(superseded.version)),
+            )
         source = None
         if body.from_version is not None:
             source = next((v for v in versions if v.version == body.from_version), None)
