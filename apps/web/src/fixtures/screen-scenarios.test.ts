@@ -55,6 +55,14 @@ describe("screen scenarios on the firm entry", () => {
       "AUD-20", // A-06-T30
       "AUD-09", // A-04-T34
       "BND-01",
+      "CLS-01", // C-01-T51: j10 0-7, j16 8, j02 7
+      "CLS-02",
+      "CLS-03",
+      "CLS-04",
+      "CLS-05",
+      "CLS-06",
+      "CLS-09",
+      "CLS-10",
       "BND-02",
       "CLI-04", // P-07-T53
       "CLI-05", // T-01-T29: j06 A3 and A4

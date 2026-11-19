@@ -24,6 +24,16 @@ import { OPENS as ADM10_OPENS, scenarios as adm10 } from "./scenarios/ADM-10";
 import { OPENS as ADM07_OPENS, scenarios as adm07 } from "./scenarios/ADM-07";
 import { scenarios as adm08 } from "./scenarios/ADM-08";
 import { scenarios as aud01 } from "./scenarios/AUD-01";
+import { scenarios as cls01 } from "./scenarios/CLS-01";
+import { scenarios as cls02 } from "./scenarios/CLS-02";
+import { scenarios as cls03 } from "./scenarios/CLS-03";
+import { scenarios as cls04 } from "./scenarios/CLS-04";
+import { scenarios as cls05 } from "./scenarios/CLS-05";
+import { scenarios as cls06 } from "./scenarios/CLS-06";
+import { scenarios as cls09 } from "./scenarios/CLS-09";
+import { scenarios as cls10 } from "./scenarios/CLS-10";
+import { ACCOUNT_4410 } from "./seed/close-accounts";
+import { CLOSE_IDS, copperleafAugust } from "./seed/closes";
 import { scenarios as ebp01 } from "./scenarios/EBP-01";
 import { scenarios as ebp03 } from "./scenarios/EBP-03";
 import { scenarios as ebp04 } from "./scenarios/EBP-04";
@@ -301,6 +311,46 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
     ids: northwind(aud09),
   },
   "BND-01": { scenarios: bnd01, opens: {} },
+  // C-01-T51 (TASK-8701): the close screens j10 0-7, j16 8 and j02 7 walk on their live routes
+  // (`/closes/_closeId_…`, `/close-plans/_clientId_`); CLS-02 c and CLS-03 f are September's.
+  "CLS-01": { scenarios: cls01, opens: {} },
+  "CLS-02": {
+    scenarios: cls02,
+    opens: {},
+    ids: idsOf(cls02, (s) => ({
+      closeId: s === "overview-c" ? CLOSE_IDS.september : CLOSE_IDS.august,
+    })),
+  },
+  "CLS-03": {
+    scenarios: cls03,
+    opens: {},
+    ids: idsOf(cls03, (s) => ({ closeId: s === "f" ? CLOSE_IDS.september : CLOSE_IDS.august })),
+  },
+  "CLS-04": {
+    scenarios: cls04,
+    opens: {},
+    ids: idsOf(cls04, () => ({ closeId: CLOSE_IDS.august })),
+  },
+  "CLS-05": {
+    scenarios: cls05,
+    opens: {},
+    ids: idsOf(cls05, () => ({ closeId: CLOSE_IDS.august, accountRef: ACCOUNT_4410 })),
+  },
+  "CLS-06": {
+    scenarios: cls06,
+    opens: {},
+    ids: idsOf(cls06, () => ({ closeId: CLOSE_IDS.august })),
+  },
+  "CLS-09": {
+    scenarios: cls09,
+    opens: {},
+    ids: idsOf(cls09, () => ({ clientId: copperleafAugust().client_id })),
+  },
+  "CLS-10": {
+    scenarios: cls10,
+    opens: {},
+    ids: idsOf(cls10, () => ({ closeId: CLOSE_IDS.august })),
+  },
   "BND-02": { scenarios: bnd02, opens: {}, ids: BND02_OPENS },
   // P-07-T53: the gates and access walk opens the live routes on the screens' own states.
   "CLI-04": {

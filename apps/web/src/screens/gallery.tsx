@@ -301,6 +301,9 @@ import {
   STATES as POR08_STATES,
   scenarios as por08Scenarios,
 } from "./POR-08/scenarios";
+import { POR11 } from "./POR-11";
+import { scenarios as por11Scenarios } from "./POR-11/scenarios";
+import { copperleafPortalQuestions } from "../fixtures/seed/close-book";
 import { POR09 } from "./POR-09";
 import {
   OPENING as POR09_OPENING,
@@ -4108,6 +4111,26 @@ registerScreen("POR-08", {
     (st, mobile) => (
       <POR08 frame mobile={mobile} {...(POR08_OPENING[st as keyof typeof POR08_OPENING] ?? {})} />
     ),
+  ),
+});
+// C-01-T51 (TASK-8701): POR-11's three states for the j10 3 and j10 6 portal steps (the portal
+// route mounts POR-11 inside Documents; its own path is still planned). b opens the Sound
+// Electric question's sheet.
+registerScreen("POR-11", {
+  title: "Close requests & transaction questions · Copperleaf August 2026",
+  Component: portalArtboard(
+    ["a", "b", "c"],
+    (st) => por11Scenarios[st as keyof typeof por11Scenarios],
+    (st, mobile) => {
+      const sound = copperleafPortalQuestions().items[2]?.question_id;
+      return (
+        <POR11
+          period="2026-08"
+          mobile={mobile}
+          {...(st === "b" && sound !== undefined ? { questionId: sound } : {})}
+        />
+      );
+    },
   ),
 });
 registerScreen("POR-09", {
