@@ -1638,10 +1638,36 @@ UPDATE_COLUMNS["consultations"] = UPDATE_COLUMNS["consultations"] | frozenset(
     {"implemented", "implemented_reference", "reopened_at"}
 )
 
+# Q-05-T12 (0984, DEC-5714): post-issuance cases; comparisons and evaluations insert-only.
+Q05T12_TABLES: frozenset[str] = frozenset(
+    {"post_issuance_events", "post_issuance_comparisons", "post_issuance_evaluations"}
+)
+Q05T12_INSERT_ONLY: frozenset[str] = frozenset(
+    {"post_issuance_comparisons", "post_issuance_evaluations"}
+)
+INSERT_COLUMNS["post_issuance_events"] = frozenset(
+    {"tenant_id", "engagement_id", "work_item_id", "ref", "type", "standard", "source_kind",
+     "received_at", "description_sealed", "created_by"}
+)  # fmt: skip
+UPDATE_COLUMNS["post_issuance_events"] = frozenset({"status"})
+INSERT_COLUMNS["post_issuance_comparisons"] = frozenset(
+    {"tenant_id", "event_id", "line_key", "as_certified", "as_corrected", "difference"}
+)
+INSERT_COLUMNS["post_issuance_evaluations"] = frozenset(
+    {"tenant_id", "event_id", "total_difference", "clearly_trivial", "overall_materiality",
+     "share_pct", "below_clearly_trivial", "disclosure_affected", "materiality_version_id"}
+)  # fmt: skip
+
 # Every table and insert-only table above, combined once.
 TABLES: frozenset[str] = (
-    _S46_TABLES | A08T21_TABLES | A08T22_TABLES | A08T24_TABLES | A09T27_TABLES | Q05T09_TABLES
+    _S46_TABLES
+    | A08T21_TABLES
+    | A08T22_TABLES
+    | A08T24_TABLES
+    | A09T27_TABLES
+    | Q05T09_TABLES
+    | Q05T12_TABLES
 )
 INSERT_ONLY: frozenset[str] = (
-    _S46_INSERT_ONLY | A08T21_INSERT_ONLY | A08T24_TABLES | Q05T09_TABLES
+    _S46_INSERT_ONLY | A08T21_INSERT_ONLY | A08T24_TABLES | Q05T09_TABLES | Q05T12_INSERT_ONLY
 )
