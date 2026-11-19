@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Final, cast
@@ -251,7 +252,9 @@ def ics(found: list[Row], names: dict[UUID, str]) -> bytes:
     return ("\r\n".join(lines) + "\r\n").encode()
 
 
-async def export(ctx: AuthContext, fmt: str, window_from: date, window_to: date) -> bytes:
+async def export_deadlines(
+    ctx: AuthContext, fmt: str, window_from: date, window_to: date
+) -> bytes:
     found = await rows(ctx, window_from, window_to)
     await authorise(ctx, "export.create", Resource.firm(ctx.tenant_id))
     from abacus.modules.organisations.api import firm_names
@@ -278,10 +281,25 @@ async def export(ctx: AuthContext, fmt: str, window_from: date, window_to: date)
     return workbook([Sheet("Filing deadlines", sheet)])
 
 
+AUDIT_CLIENT_KINDS: Final = frozenset({"filing_deadline"})
+_DEADLINE_CLIENTS = text(
+    "SELECT id, client_id FROM filing_deadlines WHERE id = ANY(:i) AND client_id IS NOT NULL"
+)
+
+
+async def audit_clients(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:
+    """A deadline's audit events belong to its client (walls apply in the trail)."""
+    if kind not in AUDIT_CLIENT_KINDS or not ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(_DEADLINE_CLIENTS, {"i": list(ids)})
+        return {cast(UUID, r[0]): cast(UUID, r[1]) for r in rows}
+
+
 __all__ = [
     "Row",
     "detail",
-    "export",
+    "export_deadlines",
     "firm_today",
     "ics",
     "ics_text",

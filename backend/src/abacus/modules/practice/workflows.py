@@ -58,7 +58,7 @@ FILING_DEADLINES_ID = "filing_deadlines_recompute:platform"
 @workflow.defn(name="FilingDeadlineRecomputeWorkflow")
 class FilingDeadlineRecomputeWorkflow:
     """T-08-T10 (S51 partials; DEC-5732): the nightly filing-deadline recompute, started only by
-    its Schedule (overlap SKIP). v1, recorded in `filing-deadlines-v1-recomputed.json`."""
+    its Schedule (overlap SKIP). v1, recorded in `filing-deadline-recompute-v1-recomputed.json`."""
 
     @workflow.run
     async def run(self) -> int:

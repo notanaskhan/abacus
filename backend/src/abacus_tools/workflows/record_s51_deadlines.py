@@ -4,8 +4,8 @@ ADR-090). See `histories.py` for the fixture rules.
 Run: python -m abacus_tools.workflows.record_s51_deadlines <output-directory>
 
 Records the real workflow against throwaway containers with its activity replaced by a stub
-(replay never runs activities): `filing-deadlines-v1-recomputed.json`, one run of the sweep.
-Synthetic identifiers only. Refuses to overwrite an existing file.
+(replay never runs activities): `filing-deadline-recompute-v1-recomputed.json`, one run of
+the sweep. Synthetic identifiers only. Refuses to overwrite an existing file.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from abacus_tools.workflows.histories import decoded_and_scrubbed
 from abacus_tools.workflows.record_retrieval import refuse_overwrite
 
 _TASK_QUEUE = "abacus-recorder"
-SWEPT = "filing-deadlines-v1-recomputed.json"
+SWEPT = "filing-deadline-recompute-v1-recomputed.json"
 SWEPT_ID = "filing_deadlines_recompute:platform"
 
 

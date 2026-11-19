@@ -4,7 +4,7 @@
 Run: python -m abacus_tools.workflows.record_s51_season <output-directory>
 
 Records the real workflow against throwaway containers with its activity replaced by a stub
-(replay never runs activities): `season-exec-v1-executed.json`, one run of a cohort.
+(replay never runs activities): `season-setup-execution-v1-executed.json`, one run of a cohort.
 Synthetic identifiers only. Refuses to overwrite an existing file.
 """
 
@@ -32,7 +32,7 @@ _INPUT = SeasonExecInput(
     "00000000-0000-4000-8000-0000000000f1",
     "00000000-0000-4000-8000-0000000000f2",
 )
-SEASON = "season-exec-v1-executed.json"
+SEASON = "season-setup-execution-v1-executed.json"
 SEASON_ID = f"season_exec:{_INPUT.tenant_id}:{_INPUT.cohort_id}"
 
 
