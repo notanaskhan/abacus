@@ -122,6 +122,10 @@ def main(argv: list[str]) -> int:
         from abacus_tools.evals.close_agent import main as close_main
 
         return close_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
+    if args.agent == "post_issuance_analysis":  # Q-05-T10 (DEC-5713): frozen before any prompt
+        from abacus_tools.evals.post_issuance_analysis import main as pi_main
+
+        return pi_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
     if args.agent == "workbook_fix":  # T-05-T50 rest (DEC-4927), frozen
         from abacus_tools.evals.workbook_fix import main as workbook_fix_main
 
