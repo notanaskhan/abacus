@@ -102,10 +102,29 @@ from abacus.modules.integrations.synthetic import (
 )
 from abacus.modules.integrations.w1_contract import w1_portal_router, w1_router
 from abacus.modules.integrations.writers import WritePreview, Writer, WriteReceipt, WriteRequest
+
+# C-02-T18 (ADR-344): the W1 writer's port and types, for adjustments/posting.py only (POST-001).
+from abacus.modules.integrations.writers.quickbooks_online import (
+    FakeQboTransport,
+    JournalEntry,
+    JournalLine,
+    Posted,
+    QboTransport,
+    QuickBooksOnlineWriter,
+    WriteError,
+)
 from abacus.modules.integrations.writes import (
+    W1_CAPABILITY,
+    W1Ledger,
+    W1Refusal,
+    W1Refused,
+    W1Scope,
     WriteCapabilityRefused,
     authorise_write,
     execute_write,
+    register_w1_kill_switch,
+    w1_ledger,
+    w1_refusal,
 )
 
 ROUTERS: tuple[AbacusRouter, ...] = (
@@ -120,6 +139,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 __all__ = [
     "ESIGN_CATALOG",
     "ROUTERS",
+    "W1_CAPABILITY",  # C-02-T18 (ADR-344): the W1 path and its switches
     "AdapterRefused",
     "CatalogDocument",
     "CatalogDocumentV2",
@@ -128,18 +148,29 @@ __all__ = [
     "EngineFieldProfile",
     "EsignInstallExists",
     "ExportSettings",
+    "FakeQboTransport",
     "FormatCheck",
     "ImportPlan",
     "IntegrationAdapter",
     "IntegrationCategory",
     "IntegrationHealthWorkflow",  # imported below, for the S45-S48 replay recorder
+    "JournalEntry",
+    "JournalLine",
     "LoadPlan",
+    "Posted",
+    "QboTransport",
+    "QuickBooksOnlineWriter",
     "ReadConnectorEntry",
     "SyntheticInstallRefused",
     "UndeclaredEgress",
+    "W1Ledger",
+    "W1Refusal",
+    "W1Refused",
+    "W1Scope",
     "WriteCapabilityEntry",
     "WriteCapabilityRefused",
     "WriteCapabilityRegistry",
+    "WriteError",
     "WritePreview",
     "WriteReceipt",
     "WriteRequest",
@@ -175,6 +206,7 @@ __all__ = [
     "register_adapter",
     "register_engine_file_check",
     "register_last_engine_sync",
+    "register_w1_kill_switch",
     "registered_adapter",
     "registered_keys",
     "registry",
@@ -184,6 +216,8 @@ __all__ = [
     "store_secret",
     "undeclared_egress",
     "unregister_adapter",
+    "w1_ledger",
+    "w1_refusal",
     "write_capability",
 ]
 
