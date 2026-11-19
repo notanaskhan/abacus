@@ -78,6 +78,7 @@ from abacus.modules.integrations.ledger_console import (
     ClosingDate,
     LogRow,
     PostingFacts,
+    register_batch_entity,
     register_posting_log,
 )
 from abacus.modules.integrations.ports import (
@@ -219,6 +220,7 @@ __all__ = [
     "plan_load",
     "policy_refusal",
     "register_adapter",
+    "register_batch_entity",
     "register_engine_file_check",
     "register_last_engine_sync",
     "register_posting_log",

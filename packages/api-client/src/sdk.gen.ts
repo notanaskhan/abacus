@@ -16402,7 +16402,8 @@ export const suggestRoomRequest = <ThrowOnError extends boolean = false>(options
 /**
  * Posting Batch Route
  *
- * The O2 batch drawer (CLS-11b2); entries with QBO ids come from C8's batch read.
+ * The O2 batch drawer (CLS-11b2); entries with QBO ids come from C8's batch read. Walls and
+ * an unknown batch answer 404 (C-02-T20, S51 partials).
  */
 export const postingBatch = <ThrowOnError extends boolean = false>(options: Options<PostingBatchData, ThrowOnError>): RequestResult<PostingBatchResponses, PostingBatchErrors, ThrowOnError> => (options.client ?? client).get<PostingBatchResponses, PostingBatchErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

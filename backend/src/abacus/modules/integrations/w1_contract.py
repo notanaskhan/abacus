@@ -368,9 +368,12 @@ async def ledger_activity_route(
     errors=(501,),
 )
 async def posting_batch_route(batch_id: UUID, ctx: Ctx) -> W1PostingLogRowOut:
-    """The O2 batch drawer (CLS-11b2); entries with QBO ids come from C8's batch read."""
+    """The O2 batch drawer (CLS-11b2); entries with QBO ids come from C8's batch read. Walls and
+    an unknown batch answer 404 (C-02-T20, S51 partials)."""
+    from abacus.modules.integrations import ledger_console as lc
+
     await _console_on(ctx)
-    raise NotImplementedYet
+    return _log_row(await lc.posting_batch(ctx, batch_id))
 
 
 @w1_router.post(

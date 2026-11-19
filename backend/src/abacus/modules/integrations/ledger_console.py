@@ -25,6 +25,7 @@ from uuid import UUID
 from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.errors import NotFound
 from abacus.kernel.safe_xlsx import safe_text
 from abacus.modules.identity.api import AuthContext, names_of
 
@@ -80,6 +81,16 @@ async def posting_facts(tenant: TenantContext, client_entity_id: UUID) -> Postin
     if not _providers:
         return PostingFacts((), 0, None)
     return await _providers[0](tenant, client_entity_id)
+
+
+BatchEntity = Callable[[TenantContext, UUID], Awaitable[UUID | None]]
+_batch_entities: list[BatchEntity] = []
+
+
+def register_batch_entity(provider: BatchEntity) -> None:
+    """C-02-T20 (S51 partials): a posting batch's client entity, from adjustments (which owns
+    the batches), so the drawer authorises on the entity before reading."""
+    _batch_entities[:] = [provider]
 
 
 def health_of(status: str, reason: str | None) -> str:
@@ -170,6 +181,19 @@ async def posting_log(
     ]  # fmt: skip
 
 
+async def posting_batch(ctx: AuthContext, batch_id: UUID) -> LogRow:
+    """CLS-11 b2: one batch's log row; the same authorisation and walls as the console (an
+    unknown or walled batch answers 404, never a hint it exists)."""
+    entity = await _batch_entities[0](ctx.tenant, batch_id) if _batch_entities else None
+    if entity is None:
+        raise NotFound("posting_batch")
+    rows = await posting_log(ctx, entity, period=None, status=None)
+    found = next((r for r in rows if r.batch_id == batch_id), None)
+    if found is None:
+        raise NotFound("posting_batch")
+    return found
+
+
 def posting_log_csv(rows: Sequence[LogRow]) -> bytes:
     """Deterministic: fixed columns, the log's order, `\\n` line ends, no ids."""
     out = io.StringIO()
@@ -236,8 +260,10 @@ __all__ = [
     "health_of",
     "ledger_activity",
     "ledger_console",
+    "posting_batch",
     "posting_facts",
     "posting_log",
     "posting_log_csv",
+    "register_batch_entity",
     "register_posting_log",
 ]
