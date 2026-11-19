@@ -16703,6 +16703,9 @@ export const undoApproval = <ThrowOnError extends boolean = false>(options: Opti
 
 /**
  * Quality Accuracy Route
+ *
+ * ADM-11 f: draft-vs-final over the cycle's filed returns (firm-wide; an office does not
+ * narrow it yet: returns carry no office).
  */
 export const qualityAccuracy = <ThrowOnError extends boolean = false>(options?: Options<QualityAccuracyData, ThrowOnError>): RequestResult<QualityAccuracyResponses, QualityAccuracyErrors, ThrowOnError> => (options?.client ?? client).get<QualityAccuracyResponses, QualityAccuracyErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

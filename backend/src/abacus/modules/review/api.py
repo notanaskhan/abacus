@@ -55,6 +55,7 @@ from abacus.modules.review.field_values import (
     changed_since,
     changed_since_any,
     current_values,
+    draft_accuracy,
     edited_by_a_person,
     field_timeline,
     latest_citations,
@@ -334,6 +335,7 @@ __all__ = [
     "decided_cards",
     "decision_kind",
     "detect_stale",
+    "draft_accuracy",
     "edit_field",  # TASK-7815: the seed keys EBP-02's provisions (the agent-off path)
     "edited_by_a_person",
     "field_owner",

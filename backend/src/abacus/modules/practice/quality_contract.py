@@ -526,8 +526,14 @@ async def quality_override_reasons_route(agent_key: str, ctx: Ctx) -> QualityRea
 async def quality_accuracy_route(
     ctx: Ctx, cycle: int | None = None, office_id: UUID | None = None
 ) -> QualityAccuracyOut:
+    """ADM-11 f: draft-vs-final over the cycle's filed returns (firm-wide; an office does not
+    narrow it yet: returns carry no office)."""
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.kernel.clock import now
+    from abacus.modules.practice.quality_dashboard import accuracy
+
+    year = cycle if cycle is not None else (await now(ctx.tenant)).year
+    return QualityAccuracyOut.model_validate(await accuracy(ctx.tenant, year))
 
 
 @quality_router.get(

@@ -397,6 +397,24 @@ async def apply_residency_proposal(tenant: TenantContext, proposal_id: UUID) -> 
         await confirm_approved(tenant, proposal_id, approver, UUID(str(target)), str(option))
 
 
+_FILED_WORKSHEETS = text(
+    "SELECT w.id FROM return_worksheets w JOIN tax_returns r ON r.work_item_id = w.work_item_id "
+    "WHERE r.tax_year = :y AND r.status IN ('filed', 'accepted')"
+)
+_FILED_COUNT = text(
+    "SELECT count(*) FROM tax_returns WHERE tax_year = :y AND status IN ('filed', 'accepted')"
+)
+
+
+async def filed_return_worksheets(tenant: TenantContext, tax_year: int) -> tuple[int, list[UUID]]:
+    """Q-05-T07 (S51 partials): the tax year's filed returns, and their worksheets' ids (the
+    targets their field histories are kept under), for ADM-11's draft-vs-final accuracy."""
+    async with tenant_session(tenant) as session:
+        count = int(cast(int, await session.scalar(_FILED_COUNT, {"y": tax_year})))
+        ids = [cast(UUID, i) for i in await session.scalars(_FILED_WORKSHEETS, {"y": tax_year})]
+    return count, ids
+
+
 def register() -> None:
     """At the tax api's import (P-39)."""
     register_reviewable(WORKSHEET, worksheet_reviewables)

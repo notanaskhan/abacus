@@ -121,6 +121,12 @@ class ProposalDecided(DomainEvent):
     decision: Annotated[str, classified("internal")]
     reason_code: Annotated[str | None, classified("internal")] = None
     by_user: Annotated[UUID, classified("internal")]
+    # Q-05-T07 (S51 partials; DEC-96): what the override projection reads, set by the producer.
+    agent_key: Annotated[str | None, classified("internal")] = None
+    outcome: Annotated[str | None, classified("internal")] = None
+    source_id: Annotated[UUID | None, classified("internal")] = None
+    decided_at: Annotated[str | None, classified("internal")] = None
+    decided_by: Annotated[UUID | None, classified("internal")] = None
 
 
 class ProposalUndone(DomainEvent):
