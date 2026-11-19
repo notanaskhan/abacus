@@ -56,6 +56,7 @@ from abacus.modules.closes.plans import (
     create_draft,
     get_plan,
     import_template,
+    new_agent_draft,
     patch_row,
     publish,
 )
@@ -163,6 +164,7 @@ __all__ = [
     "generate_closes",
     "get_plan",
     "import_template",
+    "new_agent_draft",
     "open_exceptions",
     "patch_row",
     "publish",

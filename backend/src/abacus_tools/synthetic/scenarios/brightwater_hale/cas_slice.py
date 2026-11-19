@@ -65,10 +65,9 @@ class PlanVersion:
 
 
 PLAN_VERSIONS: Final = (
-    # v1 is CLS-09 F's first version (Mar 5). The handoff has it drafted by the Close Planner via
-    # Raj; the slice runs no agent, so it loads as an empty version published before v2 (S51 end
-    # pass, TASK-8728: the agent-drafted v1 is carried to S52).
-    PlanVersion(1, "RM", "PR", "2026-02"),
+    # v1 is CLS-09 F's first version (Mar 5): the Close Planner's draft via Raj, recorded as a
+    # synthetic run; Raj's own v2 draft supersedes it (DEC-5733), so v1 reads discarded.
+    PlanVersion(1, "RM", None, None),
     PlanVersion(2, "RM", "PR", "2026-03"),
     PlanVersion(3, "RM", "PR", "2026-06"),
     PlanVersion(4, "RM", None, None),
