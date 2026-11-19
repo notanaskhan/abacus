@@ -1621,8 +1621,27 @@ UPDATE_COLUMNS["component_instruction_sends"] = frozenset(
     {"completed_at", "grant_id", "undone_at"}
 )
 
+# Q-05-T09 (0983, DEC-5712): the consultations log v2 beside A-06's record; all insert-only.
+Q05T09_TABLES: frozenset[str] = frozenset(
+    {"consultation_links", "consultation_positions", "consultation_resolutions"}
+)
+INSERT_COLUMNS["consultation_links"] = frozenset(
+    {"tenant_id", "consultation_id", "target_kind", "target_id", "linked_by"}
+)
+INSERT_COLUMNS["consultation_positions"] = frozenset(
+    {"tenant_id", "consultation_id", "role", "agrees", "position_sealed", "recorded_by"}
+)
+INSERT_COLUMNS["consultation_resolutions"] = frozenset(
+    {"tenant_id", "consultation_id", "resolution_sealed", "resolved_by"}
+)
+UPDATE_COLUMNS["consultations"] = UPDATE_COLUMNS["consultations"] | frozenset(
+    {"implemented", "implemented_reference", "reopened_at"}
+)
+
 # Every table and insert-only table above, combined once.
 TABLES: frozenset[str] = (
-    _S46_TABLES | A08T21_TABLES | A08T22_TABLES | A08T24_TABLES | A09T27_TABLES
+    _S46_TABLES | A08T21_TABLES | A08T22_TABLES | A08T24_TABLES | A09T27_TABLES | Q05T09_TABLES
 )
-INSERT_ONLY: frozenset[str] = _S46_INSERT_ONLY | A08T21_INSERT_ONLY | A08T24_TABLES
+INSERT_ONLY: frozenset[str] = (
+    _S46_INSERT_ONLY | A08T21_INSERT_ONLY | A08T24_TABLES | Q05T09_TABLES
+)
