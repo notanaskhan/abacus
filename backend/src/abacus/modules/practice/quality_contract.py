@@ -409,8 +409,14 @@ async def _human(ctx: AuthContext, action: str) -> None:
 async def quality_dashboard_route(
     ctx: Ctx, office_id: UUID | None = None, cycle: int | None = None
 ) -> QualityDashboardOut:
+    """ADM-11 a (Q-05-T08): tiles and component health; an office narrows the rate only."""
+    from abacus.kernel.clock import now
+    from abacus.modules.practice.quality_dashboard import dashboard
+
     await _on(ctx)
-    raise NotImplementedYet
+    del cycle
+    found = await dashboard(ctx.tenant, await now(ctx.tenant), office_id)
+    return QualityDashboardOut.model_validate(found)
 
 
 @quality_router.get(
