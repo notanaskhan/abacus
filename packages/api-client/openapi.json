@@ -340820,7 +340820,7 @@
     },
     "/v1/season-manifest-rows/{row_id}": {
       "patch": {
-        "description": "409 `cohort_approved`; 422 when the person is not eligible (walled, departed, offshore).",
+        "description": "409 `cohort_approved`; 409 `assignee_not_eligible` when the person is not an active member\nor is walled from the client; If-Match is the row version seen (409 `stale_version`).",
         "operationId": "season_row_patch",
         "parameters": [
           {
@@ -341074,7 +341074,7 @@
     },
     "/v1/seasons/{tax_year}/manifests": {
       "post": {
-        "description": "Code builds the manifest, then the planner step when allowed. 409 `cohort_approved` when\na rebuild would replace an approved cohort.",
+        "description": "Code builds the manifest, then the planner step when allowed. 409 `cohort_approved` when\na rebuild would replace an approved cohort; `no_candidate_source` without a source. The\nplanner step (asks) follows its capability task: `planner_available` reads false.",
         "operationId": "season_manifest_build",
         "parameters": [
           {

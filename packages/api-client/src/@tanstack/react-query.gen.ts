@@ -29461,7 +29461,8 @@ export const seasonCohortWithdrawMutation = (options?: Partial<Options<SeasonCoh
 /**
  * Season Row Patch Route
  *
- * 409 `cohort_approved`; 422 when the person is not eligible (walled, departed, offshore).
+ * 409 `cohort_approved`; 409 `assignee_not_eligible` when the person is not an active member
+ * or is walled from the client; If-Match is the row version seen (409 `stale_version`).
  */
 export const seasonRowPatchMutation = (options?: Partial<Options<SeasonRowPatchData>>): UseMutationOptions<SeasonRowPatchResponse, SeasonRowPatchError, Options<SeasonRowPatchData>> => {
     const mutationOptions: UseMutationOptions<SeasonRowPatchResponse, SeasonRowPatchError, Options<SeasonRowPatchData>> = {
@@ -29499,7 +29500,8 @@ export const seasonsOptions = (options?: Options<SeasonsData>) => queryOptions<S
  * Season Manifest Build Route
  *
  * Code builds the manifest, then the planner step when allowed. 409 `cohort_approved` when
- * a rebuild would replace an approved cohort.
+ * a rebuild would replace an approved cohort; `no_candidate_source` without a source. The
+ * planner step (asks) follows its capability task: `planner_available` reads false.
  */
 export const seasonManifestBuildMutation = (options?: Partial<Options<SeasonManifestBuildData>>): UseMutationOptions<SeasonManifestBuildResponse, SeasonManifestBuildError, Options<SeasonManifestBuildData>> => {
     const mutationOptions: UseMutationOptions<SeasonManifestBuildResponse, SeasonManifestBuildError, Options<SeasonManifestBuildData>> = {

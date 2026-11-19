@@ -17875,7 +17875,8 @@ export const seasonCohortWithdraw = <ThrowOnError extends boolean = false>(optio
 /**
  * Season Row Patch Route
  *
- * 409 `cohort_approved`; 422 when the person is not eligible (walled, departed, offshore).
+ * 409 `cohort_approved`; 409 `assignee_not_eligible` when the person is not an active member
+ * or is walled from the client; If-Match is the row version seen (409 `stale_version`).
  */
 export const seasonRowPatch = <ThrowOnError extends boolean = false>(options: Options<SeasonRowPatchData, ThrowOnError>): RequestResult<SeasonRowPatchResponses, SeasonRowPatchErrors, ThrowOnError> => (options.client ?? client).patch<SeasonRowPatchResponses, SeasonRowPatchErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -17900,7 +17901,8 @@ export const seasons = <ThrowOnError extends boolean = false>(options?: Options<
  * Season Manifest Build Route
  *
  * Code builds the manifest, then the planner step when allowed. 409 `cohort_approved` when
- * a rebuild would replace an approved cohort.
+ * a rebuild would replace an approved cohort; `no_candidate_source` without a source. The
+ * planner step (asks) follows its capability task: `planner_available` reads false.
  */
 export const seasonManifestBuild = <ThrowOnError extends boolean = false>(options: Options<SeasonManifestBuildData, ThrowOnError>): RequestResult<SeasonManifestBuildResponses, SeasonManifestBuildErrors, ThrowOnError> => (options.client ?? client).post<SeasonManifestBuildResponses, SeasonManifestBuildErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

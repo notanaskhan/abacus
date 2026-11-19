@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -294,10 +294,123 @@ async def _human(ctx: AuthContext, action: str) -> None:
         raise Forbidden(action, "role")
 
 
+async def _people(ids: set[UUID]) -> dict[UUID, SeasonPersonOut]:
+    from abacus.modules.identity.api import names_of
+
+    names = await names_of(sorted(ids, key=str)) if ids else {}
+
+    def initials(name: str) -> str:
+        return "".join(p[0] for p in name.split()[:2]).upper() or "?"
+
+    return {
+        u: SeasonPersonOut(user_id=u, initials=initials(n), name=n[:120]) for u, n in names.items()
+    }
+
+
+def _row_out(r: object, people: dict[UUID, SeasonPersonOut]) -> SeasonManifestRowOut:
+    from abacus.modules.engagements.season_service import RowView
+
+    v = cast(RowView, r)
+
+    def who(u: UUID | None) -> SeasonPersonOut | None:
+        return None if u is None else people.get(u)
+
+    binder = f"{v.binders} binder" + ("s" if v.binders != 1 else "")
+    return SeasonManifestRowOut(
+        row_id=v.row_id,
+        cohort_id=v.cohort_id,
+        client_id=v.client_id,
+        client_name=v.client_name[:200],
+        forms=list(v.forms),
+        preparer=who(v.preparer_user_id),
+        reviewer=who(v.reviewer_user_id),
+        signer=who(v.signer_user_id),
+        binder_summary=binder,
+        request_count=v.requests,
+        letter_kind=cast(Literal["renewal", "new", "none"], v.letter_kind),
+        fee_change_pct=v.fee_change_pct,
+        consent_purposes=list(v.consent_purposes),
+        signers=1 if v.signer_user_id is not None else 0,
+        invitees=[],
+        exception_codes=[cast(ExceptionCode, c) for c in v.exception_codes],
+        display=cast(RowDisplay, v.display),
+        row_version=v.row_version,
+    )
+
+
+def _cohort_out(c: object, people: dict[UUID, SeasonPersonOut]) -> SeasonCohortOut:
+    from abacus.modules.engagements.season_service import CohortView
+
+    v = cast(CohortView, c)
+    return SeasonCohortOut(
+        cohort_id=v.cohort_id,
+        position=v.position,
+        office_id=v.office_id,
+        office_name=v.office_name[:80],
+        segment=cast(Segment, v.segment),
+        status=cast(CohortStatus, v.status),
+        display=cast(CohortDisplay, v.display),
+        engagements=v.engagements,
+        returns=v.returns,
+        binders=v.binders,
+        letters=v.letters,
+        invitations=v.invitations,
+        exceptions=v.exceptions,
+        approver=None if v.approver_user_id is None else people.get(v.approver_user_id),
+        created_rows=v.created,
+        rows_hash=v.rows_hash,
+    )
+
+
+async def _manifest_out(ctx: AuthContext, tax_year: int, manifest_id: UUID) -> SeasonManifestOut:
+    from abacus.modules.engagements.season_service import manifest
+
+    m = await manifest(ctx, tax_year, manifest_id)
+    ids = {m.built_by} | {c.approver_user_id for c in m.cohorts if c.approver_user_id}
+    people = await _people(ids)
+    cohorts = [_cohort_out(c, people) for c in m.cohorts]
+    offices: dict[UUID, tuple[str, int]] = {}
+    for c in m.cohorts:
+        name, n = offices.get(c.office_id, (c.office_name, 0))
+        offices[c.office_id] = (name, n + c.returns)
+    return SeasonManifestOut(
+        manifest_id=m.manifest_id,
+        season_id=m.season_id,
+        tax_year=m.tax_year,
+        version=m.version,
+        status=cast(Literal["building", "ready", "superseded"], m.status),
+        built_by=people.get(m.built_by),
+        built_at=m.built_at,
+        inputs_hash=m.inputs_hash,
+        tally=SeasonTallyOut(
+            engagements=sum(c.engagements for c in cohorts),
+            returns=sum(c.returns for c in cohorts),
+            binders=sum(c.binders for c in cohorts),
+            created=sum(c.created_rows for c in cohorts),
+            cohorts_approved=sum(1 for c in cohorts if c.status != "draft"),
+            cohorts=len(cohorts),
+            exceptions=sum(c.exceptions for c in cohorts),
+        ),
+        offices=[
+            SeasonOfficeFootingOut(office_id=o, office_name=name[:80], returns=n)
+            for o, (name, n) in offices.items()
+        ],
+        cohorts=cohorts,
+        planner_available=False,
+    )
+
+
 @season_router.get("/seasons", action="season.read", response_model=SeasonListOut, errors=(501,))
 async def seasons_route(ctx: Ctx) -> SeasonListOut:
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.engagements.season_service import manifests
+
+    return SeasonListOut(
+        items=[
+            SeasonOut(season_id=s, tax_year=y, manifest_id=m, opened_at=at)
+            for s, y, m, at in await manifests(ctx)
+        ]
+    )
 
 
 @season_router.get(
@@ -308,7 +421,7 @@ async def seasons_route(ctx: Ctx) -> SeasonListOut:
 )
 async def season_manifest_route(tax_year: int, manifest_id: UUID, ctx: Ctx) -> SeasonManifestOut:
     await _on(ctx)
-    raise NotImplementedYet
+    return await _manifest_out(ctx, tax_year, manifest_id)
 
 
 @season_router.post(
@@ -322,9 +435,13 @@ async def season_manifest_build_route(
     tax_year: int, body: SeasonManifestBuildIn, ctx: Ctx, key: IdempotencyKey
 ) -> SeasonManifestOut:
     """Code builds the manifest, then the planner step when allowed. 409 `cohort_approved` when
-    a rebuild would replace an approved cohort."""
+    a rebuild would replace an approved cohort; `no_candidate_source` without a source. The
+    planner step (asks) follows its capability task: `planner_available` reads false."""
     await _human(ctx, "season_setup.prepare")
-    raise NotImplementedYet
+    from abacus.modules.engagements.season_service import build_manifest
+
+    made = await build_manifest(ctx, tax_year, rebuild=body.rebuild)
+    return await _manifest_out(ctx, tax_year, made)
 
 
 @season_router.get(
@@ -342,7 +459,17 @@ async def season_cohort_rows_route(
     cursor: str | None = None,
 ) -> SeasonManifestRowListOut:
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.engagements.season_service import cohort
+
+    found = await cohort(ctx, cohort_id)
+    rows = [
+        r for r in found.rows
+        if (not exceptions_only or r.exception_codes)
+        and (q is None or q.lower() in r.client_name.lower())
+    ]  # fmt: skip
+    ids = {u for r in rows for u in (r.preparer_user_id, r.reviewer_user_id, r.signer_user_id)}
+    people = await _people({u for u in ids if u is not None})
+    return SeasonManifestRowListOut(items=[_row_out(r, people) for r in rows], total=len(rows))
 
 
 @season_router.patch(
@@ -354,9 +481,20 @@ async def season_cohort_rows_route(
 async def season_row_patch_route(
     row_id: UUID, body: SeasonRowPatchIn, ctx: Ctx, if_match: IfMatch
 ) -> SeasonManifestRowOut:
-    """409 `cohort_approved`; 422 when the person is not eligible (walled, departed, offshore)."""
+    """409 `cohort_approved`; 409 `assignee_not_eligible` when the person is not an active member
+    or is walled from the client; If-Match is the row version seen (409 `stale_version`)."""
     await _human(ctx, "season_setup.prepare")
-    raise NotImplementedYet
+    from abacus.modules.engagements.season_service import reassign, row
+
+    if not if_match.isdigit():
+        raise NotFound("season_manifest_row")
+    await reassign(
+        ctx, row_id, int(if_match), preparer=body.preparer_user_id,
+        reviewer=body.reviewer_user_id, signer=body.signer_user_id,
+    )  # fmt: skip
+    found = await row(ctx, row_id)
+    ids = {found.preparer_user_id, found.reviewer_user_id, found.signer_user_id}
+    return _row_out(found, await _people({u for u in ids if u is not None}))
 
 
 @season_router.post(
@@ -369,7 +507,20 @@ async def season_rows_exclude_route(
     cohort_id: UUID, body: SeasonRowsExcludeIn, ctx: Ctx, key: IdempotencyKey
 ) -> SeasonManifestRowListOut:
     await _human(ctx, "season_setup.prepare")
-    raise NotImplementedYet
+    from abacus.modules.engagements.season_service import cohort, exclude
+
+    mine = {r.row_id for r in (await cohort(ctx, cohort_id)).rows}
+    if not set(body.row_ids) <= mine:
+        raise NotFound("season_manifest_row")
+    await exclude(ctx, body.row_ids, body.reason)
+    found = await cohort(ctx, cohort_id)
+    ids = {
+        u for r in found.rows for u in (r.preparer_user_id, r.reviewer_user_id, r.signer_user_id)
+    }
+    people = await _people({u for u in ids if u is not None})
+    return SeasonManifestRowListOut(
+        items=[_row_out(r, people) for r in found.rows], total=len(found.rows)
+    )
 
 
 @season_router.post(
@@ -425,4 +576,6 @@ async def season_cohort_withdraw_route(
 async def season_manifest_export_route(tax_year: int, manifest_id: UUID, ctx: Ctx) -> bytes:
     """Byte-stable, formula-escaped (ADR-320); fresh MFA under `export.create` (AC-8)."""
     await _human(ctx, "export.create")
-    raise NotImplementedYet
+    from abacus.modules.engagements.season_service import export_xlsx
+
+    return await export_xlsx(ctx, tax_year, manifest_id)
