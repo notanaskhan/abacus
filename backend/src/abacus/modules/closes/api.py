@@ -24,8 +24,17 @@ from abacus.modules.closes.audit_targets import (
     audit_entities,
     audit_owners,
 )
+
+# C-01-T44 (TASK-8700; DEC-5700): the services the Brightwater Hale CAS slice loads through.
 from abacus.modules.closes.contract import (
+    AssigneesIn,
     CloseFacts,
+    CloseTemplateImportIn,
+    PlanDraftIn,
+    PlanRowIn,
+    PlanRowPatchIn,
+    PublishIn,
+    RequestTemplateIn,
     StatusGuard,
     TransitionNotAvailable,
     close_for,
@@ -41,6 +50,15 @@ from abacus.modules.closes.intake import schedule_publish
 from abacus.modules.closes.intake_destination import register as intake_destination_register
 from abacus.modules.closes.issues import CLOSE_TARGET, add_note, open_exceptions, raise_exception
 from abacus.modules.closes.kind import CloseKind
+from abacus.modules.closes.plans import (
+    add_request_template,
+    add_row,
+    create_draft,
+    get_plan,
+    import_template,
+    patch_row,
+    publish,
+)
 from abacus.modules.closes.reconciliations import SUBSCRIPTIONS as RECONCILIATION_SUBSCRIPTIONS
 from abacus.modules.closes.reconciliations import register as reconciliations_register
 from abacus.modules.closes.registrations import SUBSCRIPTIONS as REGISTRATION_SUBSCRIPTIONS
@@ -61,7 +79,13 @@ from abacus.modules.closes.request_publish_types import (
 from abacus.modules.closes.request_publish_workflow import RequestPublishWorkflow
 from abacus.modules.closes.run_plan import register_treatment_kind
 from abacus.modules.closes.run_steps import register_close_run_steps
-from abacus.modules.closes.service import start_close
+from abacus.modules.closes.seed import seed_synthetic_close_status
+from abacus.modules.closes.service import (
+    close_summary,
+    generate_closes,
+    set_assignees,
+    start_close,
+)
 from abacus.modules.closes.sync_scope import sync_scope
 from abacus.modules.engagements.api import register_work_item_kind
 
@@ -117,18 +141,36 @@ __all__ = [
     "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "AssigneesIn",
     "CloseFacts",
+    "CloseTemplateImportIn",
+    "PlanDraftIn",
+    "PlanRowIn",
+    "PlanRowPatchIn",
+    "PublishIn",
     "PublishInput",
     "PublishResult",
     "RequestPublishWorkflow",
+    "RequestTemplateIn",
     "StatusGuard",
     "TransitionNotAvailable",
     "add_note",
+    "add_request_template",
+    "add_row",
     "close_for",
+    "close_summary",
+    "create_draft",
+    "generate_closes",
+    "get_plan",
+    "import_template",
     "open_exceptions",
+    "patch_row",
+    "publish",
     "raise_exception",
     "register_status_guard",
     "schedule_publish",
+    "seed_synthetic_close_status",
+    "set_assignees",
     "start_close",
     "status_guard",
 ]

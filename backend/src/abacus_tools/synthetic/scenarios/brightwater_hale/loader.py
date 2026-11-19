@@ -72,6 +72,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import dataclasses
 import hashlib
 import json
 import os
@@ -98,7 +99,7 @@ from abacus.kernel.clock import frozen, system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
 from abacus.kernel.dispatch import dispatch
-from abacus.kernel.errors import DomainConflict
+from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.temporal import temporal_client
 from abacus.kernel.uow import Target, uow
 from abacus.modules.adjustments.api import (
@@ -201,6 +202,27 @@ from abacus.modules.assurance.api import (  # A-07-T41 archive, A-09-T39 Harlow 
     update_filing,
     update_profile,
 )
+from abacus.modules.closes.api import AssigneesIn as CloseAssigneesIn
+from abacus.modules.closes.api import (
+    CloseTemplateImportIn,
+    close_summary,
+    seed_synthetic_close_status,
+)
+from abacus.modules.closes.api import PlanDraftIn as ClosePlanDraftIn
+from abacus.modules.closes.api import PlanRowIn as ClosePlanRowIn
+from abacus.modules.closes.api import PlanRowPatchIn as ClosePlanRowPatchIn
+from abacus.modules.closes.api import PublishIn as ClosePublishIn
+from abacus.modules.closes.api import RequestTemplateIn as CloseRequestTemplateIn
+from abacus.modules.closes.api import add_request_template as add_close_request_template
+from abacus.modules.closes.api import add_row as add_close_plan_row
+from abacus.modules.closes.api import create_draft as create_close_plan_draft
+from abacus.modules.closes.api import generate_closes as generate_close_year
+from abacus.modules.closes.api import get_plan as get_close_plan
+from abacus.modules.closes.api import import_template as import_close_template
+from abacus.modules.closes.api import patch_row as patch_close_plan_row
+from abacus.modules.closes.api import publish as publish_close_plan
+from abacus.modules.closes.api import raise_exception as raise_close_exception
+from abacus.modules.closes.api import set_assignees as set_close_assignees
 from abacus.modules.collaboration.api import create_todo, open_thread
 from abacus.modules.communications.api import (
     Inbound,
@@ -235,6 +257,7 @@ from abacus.modules.engagements.api import (
     team_approval,
     update_answers,
 )
+from abacus.modules.engagements.api import WorkItemExists as EngagementWorkItemExists
 from abacus.modules.evidence.api import (
     HoldScope,
     NewItem,
@@ -418,6 +441,8 @@ from abacus_tools.local.db_guard import violations
 from abacus_tools.synthetic.documents import positioned_pdf
 from abacus_tools.synthetic.scenarios.brightwater_hale import agent_runs_slice as _runs
 from abacus_tools.synthetic.scenarios.brightwater_hale import archive_slice as _archive
+from abacus_tools.synthetic.scenarios.brightwater_hale import cas_slice as _cas
+from abacus_tools.synthetic.scenarios.brightwater_hale import close_slice as _close
 from abacus_tools.synthetic.scenarios.brightwater_hale import collaboration_slice as _collab
 from abacus_tools.synthetic.scenarios.brightwater_hale import completion_slice as _completion
 from abacus_tools.synthetic.scenarios.brightwater_hale import (  # noqa: F401  # registers its slice
@@ -2140,6 +2165,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     PLANNING_SLICE: PLANNING_NEEDS,  # A-04-T28: Northwind's planning day; G4 met at 4:40 PM
     _pbc_screening.SLICE: _pbc_screening.NEEDS,  # TASK-7816: Granite's screened PBC upload
     _hp.SLICE: _hp.NEEDS,  # A-09-T39: Harlow & Pike's group audit (stage 1)
+    _cas.SLICE: _cas.NEEDS,  # C-01-T44: the August CAS portfolio (DEC-5700)
 }
 
 
@@ -8253,6 +8279,194 @@ async def _harlow_eliminations_posted(conn: asyncpg.Connection, _: Scenario, eve
         await eliminations.post(ctx, entry)
 
 
+# --- C-01-T44 (`--slice cas`; TASK-8700; DEC-5700): the August CAS portfolio through closes ------
+
+
+async def _cas_seat(conn: asyncpg.Connection, event: Event, initials: str) -> AuthContext:
+    """A CAS seat holder's context for one step of a multi-person event (draft, then publish)."""
+    return await _staff_context(conn, dataclasses.replace(event, actor=initials))
+
+
+def _cas_row(row: _close.PlanRow) -> ClosePlanRowIn:
+    return ClosePlanRowIn(
+        account_name=row.account,
+        account_class=row.account_class,
+        procedure=cast(Any, row.procedure),
+        method=row.method,
+        evidence_required=row.evidence,
+        source=cast(Any, row.source),
+        review_level=row.review,
+    )
+
+
+def _cas_request(title: str) -> CloseRequestTemplateIn:
+    return CloseRequestTemplateIn(title=title, due_business_day=_cas.REQUEST_DUE_BUSINESS_DAY)
+
+
+async def _cas_template_imported(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Grace imports "Café with Square/Shopify" (CLS-09 d): firm content through the import."""
+    key, version = str(event.data["key"]), int(cast(int, event.data["version"]))
+    found = await tenant_value(
+        conn, TENANT, "SELECT 1 FROM close_templates WHERE key = $1 AND version = $2", key, version
+    )
+    if found is not None:
+        return
+    body = CloseTemplateImportIn(
+        key=key,
+        name=str(event.data["name"]),
+        version=version,
+        rows=[_cas_row(r) for r in _close.PLAN_V3],
+        request_templates=[_cas_request(t) for t in _close.REQUEST_TEMPLATES],
+    )
+    await import_close_template(await _staff_context(conn, event), body)
+
+
+async def _cas_plan_version_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Copperleaf's plan v2 and v3 (Raj drafts, Priya publishes) and Raj's draft v4 (CLS-09)."""
+    version = int(cast(int, event.data["version"]))
+    client = await _client_id(conn, COPPERLEAF)
+    drafter = await _cas_seat(conn, event, str(event.data["drafted_by"]))
+    try:
+        await get_close_plan(drafter, client, version)
+        return  # loaded already
+    except NotFound:
+        pass
+    plan = await create_close_plan_draft(drafter, client, ClosePlanDraftIn())
+    seen = plan.row_version
+    if version == 2:
+        for row in _cas.v2_rows():
+            await add_close_plan_row(drafter, client, version, _cas_row(row), str(seen))
+            seen += 1
+        for title in _cas.v2_request_templates():
+            await add_close_request_template(
+                drafter, client, version, _cas_request(title), str(seen)
+            )
+            seen += 1
+    elif version == 3:
+        added = next(r for r in _close.PLAN_V3 if r.account == _cas.SUBSCRIPTIONS)
+        await add_close_plan_row(drafter, client, version, _cas_row(added), str(seen))
+        seen += 1
+        await add_close_request_template(
+            drafter, client, version, _cas_request("Subscription billing report"), str(seen)
+        )
+        seen += 1
+    else:
+        savings = next(r for r in plan.rows if r.account_name == _cas.SAVINGS)
+        await patch_close_plan_row(
+            drafter,
+            client,
+            version,
+            savings.row_id,
+            ClosePlanRowPatchIn(source="bank_feed"),
+            str(seen),
+        )
+        seen += 1
+    publisher = event.data.get("published_by")
+    if publisher is not None:
+        await publish_close_plan(
+            await _cas_seat(conn, event, str(publisher)),
+            client,
+            version,
+            ClosePublishIn(effective_from=str(event.data["effective_from"])),
+            str(seen),
+        )
+
+
+async def _cas_close_staffed(
+    conn: asyncpg.Connection,
+    event: Event,
+    close_id: UUID,
+    found: _close.PortfolioClose,
+) -> None:
+    """The pair on the August close (CLS-01 initials) and its E0 status."""
+    partner = await _cas_seat(conn, event, "PR")
+    summary = await close_summary(partner, close_id)
+    await set_close_assignees(
+        partner,
+        close_id,
+        CloseAssigneesIn(
+            preparer_user_id=user_id_of(_SEATS[found.preparer]),
+            reviewer_user_id=user_id_of(_SEATS[found.reviewer]),
+        ),
+        str(summary.row_version),
+    )
+    if found.status != "not_started":
+        await seed_synthetic_close_status(TENANT, close_id, found.status)
+
+
+async def _cas_year_generated(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Priya generates the rest of Copperleaf's "2026 Close" (twelve closes; August is the
+    binders slice's), then Raj and Priya on August, In progress under Run 2."""
+    engagement = UUID(COPPERLEAF_CLOSE_ENGAGEMENT)
+    try:
+        await generate_close_year(
+            await _staff_context(conn, event), engagement, int(cast(int, event.data["year"]))
+        )
+    except EngagementWorkItemExists:
+        return  # loaded already
+    await _cas_close_staffed(conn, event, UUID(COPPERLEAF_CLOSE_ITEM), _cas.copperleaf_close())
+
+
+async def _cas_exception_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """One of CLS-06's seven open exceptions on Copperleaf's August close (deduplicated by its
+    source, so a second load writes nothing)."""
+    issue = _close.ISSUES[int(cast(int, event.data["index"]))]
+    await raise_close_exception(
+        await _staff_context(conn, event),
+        UUID(COPPERLEAF_CLOSE_ITEM),
+        severity=issue.severity,
+        issue_class=issue.issue_class,
+        title=issue.title,
+        account_ref=f"seed:{event.data['index']}",
+    )
+
+
+def _cas_engagement(ref: str) -> UUID:
+    return UUID(stable_id(f"cas-close:{ref}"))
+
+
+async def _cas_portfolio_close_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """One of CLS-01's other twenty-one closes: the client's "2026 Close", its twelve closes, the
+    August pair and status."""
+    found = next(c for c in _close.PORTFOLIO if c.ref == event.data["ref"])
+    engagement = _cas_engagement(found.ref)
+    client = _CLIENTS[found.client]
+    creator = user_id_of(_SEATS[event.actor])
+
+    async def write() -> tuple[str, str, str]:
+        await _engagement_row(
+            conn,
+            engagement,
+            found.client,
+            client.entities[0],
+            name="2026 Close",
+            type_="cas_monthly_close",
+            period=(date(2026, 1, 1), date(2026, 12, 31)),
+            creator=creator,
+            created=None,
+        )
+        team = dict.fromkeys(("PR", found.reviewer, found.preparer))
+        for initials in team:
+            await conn.execute(
+                "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+                "VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+                TENANT,
+                engagement,
+                user_id_of(_SEATS[initials]),
+                _cas.ENGAGEMENT_ROLE[initials],
+            )
+        return "engagement.created", "engagement", str(engagement)
+
+    await _bootstrap(conn, event, write)
+    try:
+        created = await generate_close_year(
+            await _staff_context(conn, event), engagement, _cas.YEAR
+        )
+    except EngagementWorkItemExists:
+        return  # loaded already
+    await _cas_close_staffed(conn, event, created[_cas.AUGUST - 1], found)
+
+
 HANDLERS: Final[dict[str, Handler]] = {
     # A-09-T39 stage 1: Harlow & Pike
     "harlow.client_created": _harlow_client_created,
@@ -8543,6 +8757,12 @@ HANDLERS: Final[dict[str, Handler]] = {
     "review.ridgeline_issue_resolved": _ridgeline_issue_resolved,
     # W-02-T13 (`--slice workbench`): WB-01's rows.
     "workbench.session_recorded": _workbench_session_recorded,
+    # C-01-T44 (`--slice cas`, after `binders`; DEC-5700): template, plan, closes, portfolio.
+    "closes.template_imported": _cas_template_imported,
+    "closes.plan_version_seeded": _cas_plan_version_seeded,
+    "closes.year_generated": _cas_year_generated,
+    "closes.exception_seeded": _cas_exception_seeded,
+    "closes.portfolio_close_seeded": _cas_portfolio_close_seeded,
 }
 # Within one instant the timeline orders by label; the loader orders by dependency first.
 _ORDER: Final = {kind: n for n, kind in enumerate(HANDLERS)}
