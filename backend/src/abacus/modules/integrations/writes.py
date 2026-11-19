@@ -108,6 +108,7 @@ W1Refusal = Literal[
     "write_capability_disabled",
     "posting_not_enabled",
     "write_grant_missing",
+    "connection_needs_reauth",
 ]
 # Audited as an index (references carry no text): keep the order, append only.
 W1_REFUSALS: Final[tuple[W1Refusal, ...]] = (
@@ -116,6 +117,7 @@ W1_REFUSALS: Final[tuple[W1Refusal, ...]] = (
     "write_capability_disabled",
     "posting_not_enabled",
     "write_grant_missing",
+    "connection_needs_reauth",  # C-02-T20: appended
 )
 
 
@@ -190,6 +192,7 @@ class W1Ledger:
     client_id: UUID
     connection_id: UUID | None
     entity_name: str
+    needs_reauth: bool = False  # C-02-T20: a connection needing reauth refuses posting everywhere
 
 
 async def w1_ledger(ctx: Actor, client_entity_id: UUID) -> W1Ledger:
@@ -202,15 +205,21 @@ async def w1_ledger(ctx: Actor, client_entity_id: UUID) -> W1Ledger:
     if client is None:
         raise W1Refused(facts={"reason": "write_grant_missing"})
     found = await entity_connections(cast(Any, ctx), client_entity_id)  # Any: an AuthContext
+    from abacus.modules.integrations.ledger_console import health_of
+
     qbo = next(
         (
-            c.id
+            c
             for c in found.connections
             if c.provider == "quickbooks_online" and c.status != "revoked"
         ),
         None,
     )
-    return W1Ledger(client, qbo, await entity_name(ctx.tenant, client_entity_id) or "")
+    name = await entity_name(ctx.tenant, client_entity_id) or ""
+    if qbo is None:
+        return W1Ledger(client, None, name)
+    reauth = health_of(qbo.status, qbo.status_reason) == "needs_reauth"
+    return W1Ledger(client, qbo.id, name, reauth)
 
 
 class W1Refused(DomainConflict):

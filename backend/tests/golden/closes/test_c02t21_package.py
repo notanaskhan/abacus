@@ -39,42 +39,46 @@ def _slug(label: str) -> str:
 
 def _fs(section: str, label: str, n: int) -> pkg.FsLine:
     cls, order = SECTIONS[section]
-    return pkg.FsLine(_slug(label), label, section, section, cls, order * 100 + n)  # type: ignore[arg-type]
+    return pkg.FsLine(_slug(label), label, section, section, cls, order * 100 + n)  # type: ignore[arg-type]  # a test literal
 
 
 def _debit_balance(cls: str, amount: Decimal) -> Decimal:
     return -amount if cls in pkg.CREDIT_NORMAL else amount
 
 
-def _book() -> tuple[list[pkg.Account], list[pkg.Account], dict[str, pkg.FsLine]]:
+def _book() -> tuple[list[pkg.LedgerAccount], list[pkg.LedgerAccount], dict[str, pkg.FsLine]]:
     """August and July posted accounts (one per line of the figure book) and the C9 mapping."""
     mapping: dict[str, pkg.FsLine] = {}
-    august: list[pkg.Account] = []
-    july: list[pkg.Account] = []
+    august: list[pkg.LedgerAccount] = []
+    july: list[pkg.LedgerAccount] = []
     for section, rows in s.BALANCE_SHEET.items():
         for n, (label, amount) in enumerate(rows):
             if label == NI_LABEL:
                 continue  # the year's net income comes from the I/S accounts, never an account
             fs = _fs(section, label, n)
             mapping[fs.key] = fs
-            august.append(pkg.Account(fs.key, label, _debit_balance(fs.grouping_class, amount)))
+            august.append(
+                pkg.LedgerAccount(fs.key, label, _debit_balance(fs.grouping_class, amount))
+            )
     for section, rows3 in s.INCOME_STATEMENT.items():
         for n, (label, aug, jul) in enumerate(rows3):
             fs = _fs(section, label, n)
             mapping[fs.key] = fs
-            august.append(pkg.Account(fs.key, label, _debit_balance(fs.grouping_class, aug)))
-            july.append(pkg.Account(fs.key, label, _debit_balance(fs.grouping_class, jul)))
+            august.append(pkg.LedgerAccount(fs.key, label, _debit_balance(fs.grouping_class, aug)))
+            july.append(pkg.LedgerAccount(fs.key, label, _debit_balance(fs.grouping_class, jul)))
     return august, july, mapping
 
 
-def _month(accounts: list[pkg.Account], mapping: dict[str, pkg.FsLine]) -> list[pkg.Account]:
+def _month(
+    accounts: list[pkg.LedgerAccount], mapping: dict[str, pkg.FsLine]
+) -> list[pkg.LedgerAccount]:
     return [a for a in accounts if mapping[a.ref].grouping_class in ("revenue", "expenses")]
 
 
 def test_ac_total_assets_549_195_45_with_lineage() -> None:
     august, _, mapping = _book()
     # The I/S accounts on the Aug 31 TB are year to date: Jan-Aug net income 186,420.00.
-    ytd = [pkg.Account("ytd_income", "Year-to-date income", D("-186420.00"))]
+    ytd = [pkg.LedgerAccount("ytd_income", "Year-to-date income", D("-186420.00"))]
     mapping["ytd_income"] = pkg.FsLine("ytd_income", "Income", "revenue", "Revenue", "revenue", 1)
     bs_accounts = [
         a for a in august if mapping[a.ref].grouping_class not in ("revenue", "expenses")
@@ -121,7 +125,7 @@ def test_ac_agings_tie_to_their_control_accounts() -> None:
 
 
 def test_ac_only_posted_or_recorded_entries_reach_the_tb() -> None:
-    base = [pkg.Account("prepaid", "Prepaid insurance", D("3500.00"))]
+    base = [pkg.LedgerAccount("prepaid", "Prepaid insurance", D("3500.00"))]
     entries = [
         pkg.EntryLine("prepaid", D("0"), D("700.00"), "posted"),
         pkg.EntryLine("prepaid", D("0"), D("14900.00"), "proposed"),
@@ -133,12 +137,12 @@ def test_ac_only_posted_or_recorded_entries_reach_the_tb() -> None:
 def _framework(end: date, early: bool = False) -> str:
     policy = PolicyRef("bh_ssars_cas", uuid4(), 1, "BH SSARS/CAS settings")
     payload = SsarsCasSettingsPayload(kind="ssars_cas_settings", early_adopt_ssars27=early)
-    return ssars_framework_for(payload, policy, period_end=end).framework  # type: ignore[attr-defined]
+    return ssars_framework_for(payload, policy, period_end=end).framework  # type: ignore[attr-defined]  # a test literal
 
 
 def test_ac_aug_31_2026_routes_to_ar_c_70_with_the_legend() -> None:
     aug = pkg.route(_framework(date(2026, 8, 31)), cas_answer=True)
-    assert aug == pkg.PackageRoute(s.PACKAGE_ROUTE, pkg.NO_ASSURANCE)  # type: ignore[arg-type]
+    assert aug == pkg.PackageRoute(s.PACKAGE_ROUTE, pkg.NO_ASSURANCE)  # type: ignore[arg-type]  # a test literal
     dec = pkg.route(_framework(date(2026, 12, 31)), cas_answer=True)
     assert dec == pkg.PackageRoute("cas_by_product", None)
     assert pkg.route(_framework(date(2026, 12, 31)), cas_answer=False).route == "standalone_letter"
@@ -186,20 +190,20 @@ def test_ac_cash_flows_tie_to_the_change_in_cash() -> None:
         "dep": pkg.FsLine("dep", "Depreciation", "operating_expenses", "Opex", "expenses", 6),
     }
     opening = [
-        pkg.Account("cash", "Cash", D("100.00")),
-        pkg.Account("ar", "AR", D("50.00")),
-        pkg.Account("ppe", "PPE", D("300.00")),
-        pkg.Account("acc", "Acc dep", D("0.00")),
-        pkg.Account("loan", "Loan", D("-200.00")),
+        pkg.LedgerAccount("cash", "Cash", D("100.00")),
+        pkg.LedgerAccount("ar", "AR", D("50.00")),
+        pkg.LedgerAccount("ppe", "PPE", D("300.00")),
+        pkg.LedgerAccount("acc", "Acc dep", D("0.00")),
+        pkg.LedgerAccount("loan", "Loan", D("-200.00")),
     ]
     closing = [
-        pkg.Account("cash", "Cash", D("190.00")),
-        pkg.Account("ar", "AR", D("70.00")),
-        pkg.Account("ppe", "PPE", D("300.00")),
-        pkg.Account("acc", "Acc dep", D("-20.00")),
-        pkg.Account("loan", "Loan", D("-190.00")),
-        pkg.Account("rev", "Sales", D("-120.00")),
-        pkg.Account("dep", "Depreciation", D("20.00")),
+        pkg.LedgerAccount("cash", "Cash", D("190.00")),
+        pkg.LedgerAccount("ar", "AR", D("70.00")),
+        pkg.LedgerAccount("ppe", "PPE", D("300.00")),
+        pkg.LedgerAccount("acc", "Acc dep", D("-20.00")),
+        pkg.LedgerAccount("loan", "Loan", D("-190.00")),
+        pkg.LedgerAccount("rev", "Sales", D("-120.00")),
+        pkg.LedgerAccount("dep", "Depreciation", D("20.00")),
     ]
     cf = pkg.cash_flows_ytd(
         opening,

@@ -235,6 +235,23 @@ w1_portal_router = AbacusRouter(prefix="/v1/portal", tags=["connections"])
 _E = "/client-entities/{client_entity_id}"
 
 
+def _log_row(r: object) -> W1PostingLogRowOut:
+    from abacus.modules.integrations.ledger_console import LogRow
+
+    row = cast(LogRow, r)
+    return W1PostingLogRowOut(
+        batch_id=row.batch_id,
+        batch_code=row.batch_code,
+        period=row.period,
+        status=cast(BatchStatus, row.status),
+        entry_count=row.entry_count,
+        approved_count=row.approved_count,
+        first_external_ref=row.first_external_ref,
+        last_external_ref=row.last_external_ref,
+        resolved_failures=row.resolved_failures,
+    )
+
+
 async def _console_on(ctx: AuthContext) -> None:
     if ctx.client or not await flag_enabled(ctx.tenant, CLOSES_GL_CONSOLE):
         raise NotFound(CLOSES_GL_CONSOLE.name)
@@ -262,8 +279,19 @@ async def _portal_on(ctx: AuthContext, action: str) -> None:
 )
 async def ledger_console_route(client_entity_id: UUID, ctx: Ctx) -> W1LedgerConsoleOut:
     """CLS-11 subbar, tiles and connection pane; a walled entity answers 404 (C-02-T20)."""
+    from abacus.modules.integrations import ledger_console as lc
+
     await _console_on(ctx)
-    raise NotImplementedYet
+    found = await lc.ledger_console(ctx, client_entity_id)
+    return W1LedgerConsoleOut(
+        client_entity_id=found.client_entity_id,
+        client_entity_name=found.client_entity_name,
+        ledger_label=lc.LEDGER_LABEL,
+        tiles=W1ConsoleTilesOut.model_validate(found.tiles),
+        connection=None
+        if found.connection is None
+        else W1ConnectionPaneOut.model_validate(found.connection),
+    )
 
 
 @w1_router.get(
@@ -279,8 +307,11 @@ async def posting_log_route(
     status: BatchStatus | None = None,
 ) -> W1PostingLogOut:
     """The posting log, newest first (CLS-11a)."""
+    from abacus.modules.integrations import ledger_console as lc
+
     await _console_on(ctx)
-    raise NotImplementedYet
+    rows = await lc.posting_log(ctx, client_entity_id, period=period, status=status)
+    return W1PostingLogOut(items=[_log_row(r) for r in rows], total=len(rows))
 
 
 @w1_router.get(
@@ -291,8 +322,14 @@ async def posting_log_route(
 )
 async def posting_log_csv_route(client_entity_id: UUID, ctx: Ctx) -> bytes:
     """A deterministic CSV of the posting log (audited)."""
+    from abacus.kernel.uow import Target, uow
+    from abacus.modules.integrations import ledger_console as lc
+
     await _human(ctx, "ledger_connection.export")
-    raise NotImplementedYet
+    rows = await lc.posting_log(ctx, client_entity_id, period=None, status=None)
+    async with uow(ctx.tenant) as tx:
+        tx.record("ledger_connection.exported", target=Target("client_entity", client_entity_id))
+    return lc.posting_log_csv(rows)
 
 
 @w1_router.get(
@@ -305,8 +342,23 @@ async def ledger_activity_route(
     client_entity_id: UUID, ctx: Ctx, kind: ActivityKind | None = None
 ) -> W1ActivityListOut:
     """Sync events (CLS-11a2), newest first."""
+    from abacus.modules.integrations import ledger_console as lc
+
     await _console_on(ctx)
-    raise NotImplementedYet
+    found = await lc.ledger_activity(ctx, client_entity_id, kind=kind)
+    return W1ActivityListOut(
+        items=[
+            W1ActivityOut(
+                at=a.at,
+                kind=cast(ActivityKind, a.kind),
+                batch_code=a.batch_code,
+                count=a.count,
+                actor_name=name,
+            )
+            for a, name in found
+        ],
+        total=len(found),
+    )
 
 
 @w1_router.get(
