@@ -55,10 +55,13 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.integrations.api import (
     W1_CAPABILITY,
+    ClosingDate,
     FakeQboTransport,
     JournalEntry,
     JournalLine,
+    LogRow,
     Posted,
+    PostingFacts,
     QboTransport,
     QuickBooksOnlineWriter,
     W1Evidence,
@@ -67,6 +70,7 @@ from abacus.modules.integrations.api import (
     W1Scope,
     WriteError,
     execute_write,
+    register_posting_log,
     w1_ledger,
     w1_refusal,
 )
@@ -187,6 +191,8 @@ async def _scope(ctx: AuthContext, work_item_id: UUID) -> _Scope:
     ledger = await w1_ledger(ctx, ref.client_entity_id)
     if ledger.connection_id is None:
         raise PostingNotEnabled(facts={"reason": "no_ledger_connection"})
+    if ledger.needs_reauth:  # C-02-T20: a forced 401 refuses posting everywhere
+        raise W1Refused(facts={"reason": "connection_needs_reauth"})
     _, end = await work_item_period(ctx.tenant, work_item_id)
     if end is None:
         raise NotFound("work_item_period")
@@ -217,7 +223,7 @@ def _posted_evidence(p: Posted) -> W1Evidence:
         json.dumps({"external_ref": p.external_ref, "error": p.error}, sort_keys=True).encode(),
         json.dumps({"verified": p.verified}, sort_keys=True).encode(),
         p.external_ref or None,
-        status,  # type: ignore[arg-type]
+        status,  # type: ignore[arg-type]  # the three words are WriteStatus's
     )
 
 
@@ -514,7 +520,10 @@ async def run_batch(tenant_id: UUID, batch_id: UUID) -> str:
     approver_ctx = await member_context(tenant_id, approver)
     if approver_ctx is None:
         raise ApprovalGrantMismatch(facts={"batch_id": str(batch_id)})
-    client_id = (await w1_ledger(approver_ctx, row.client_entity_id)).client_id
+    ledger = await w1_ledger(approver_ctx, row.client_entity_id)
+    if ledger.needs_reauth:
+        raise W1Refused(facts={"reason": "connection_needs_reauth"})
+    client_id = ledger.client_id
     scope = W1Scope(client_id, row.client_entity_id, row.connection_id, row.engagement_id)
     writer = QuickBooksOnlineWriter(await transport_for(acting, row.connection_id))
     refs: list[str] = []
@@ -642,6 +651,49 @@ async def entity_label(ctx: AuthContext, work_item_id: UUID) -> str:
     """The client entity's name for CLS-07 c2's confirm line ("… · Copperleaf Coffee Roasters")."""
     scope_ref = await get_ref(ctx, await engagement_of(ctx.tenant, work_item_id))
     return (await w1_ledger(ctx, scope_ref.client_entity_id)).entity_name
+
+
+# --- the ledger console's provider (C-02-T20) ---------------------------------------------------
+
+_LOG = text(
+    "SELECT b.id, b.batch_code, b.period, b.status, b.entry_count, b.first_external_ref, "
+    "b.last_external_ref, b.failure_count, b.resolved_failure_count, b.posted_at, "
+    "b.posted_by_user_id, (SELECT count(*) FROM proposed_entries e "
+    "WHERE e.posting_batch_id = b.id "
+    "AND e.status IN ('approved', 'client_approved', 'posted')) AS approved "
+    "FROM posting_batches b WHERE b.client_entity_id = :ce "
+    "ORDER BY b.period DESC, b.batch_code DESC"
+)
+_PROPOSED = text(
+    "SELECT count(*) FROM proposed_entries e JOIN posting_batches b ON b.id = e.posting_batch_id "
+    "WHERE b.client_entity_id = :ce AND b.status = 'proposed'"
+)
+_CLOSING = text(
+    "SELECT closing_date, set_by_user_id, at FROM closing_date_events "
+    "WHERE client_entity_id = :ce ORDER BY at DESC, id DESC LIMIT 1"
+)
+
+
+async def posting_facts_for(tenant: TenantContext, client_entity_id: UUID) -> PostingFacts:
+    """CLS-11's tiles, log and closing date for one entity (the caller authorised it)."""
+    async with tenant_session(tenant) as session:
+        rows = list((await session.execute(_LOG, {"ce": client_entity_id})).all())
+        proposed = int(await session.scalar(_PROPOSED, {"ce": client_entity_id}) or 0)
+        closing = (await session.execute(_CLOSING, {"ce": client_entity_id})).first()
+    return PostingFacts(
+        tuple(
+            LogRow(r.id, r.batch_code, r.period, r.status, r.entry_count, int(r.approved),
+                   r.first_external_ref, r.last_external_ref, r.resolved_failure_count,
+                   r.failure_count, r.posted_at, r.posted_by_user_id)
+            for r in rows
+        ),
+        proposed,
+        None if closing is None else ClosingDate(closing.closing_date, closing.set_by_user_id,
+                                                 closing.at),
+    )  # fmt: skip
+
+
+register_posting_log(posting_facts_for)
 
 
 # --- views --------------------------------------------------------------------------------------

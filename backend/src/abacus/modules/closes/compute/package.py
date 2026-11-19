@@ -44,7 +44,7 @@ POSTED: Final = frozenset({"posted", "recorded"})
 
 
 @dataclass(frozen=True, slots=True)
-class Account:
+class LedgerAccount:
     """One account of the posted TB: its net balance, debit positive."""
 
     ref: str
@@ -171,7 +171,9 @@ def _q(x: Decimal) -> Decimal:
     return x.quantize(CENT)
 
 
-def posted_tb(accounts: Iterable[Account], entries: Iterable[EntryLine]) -> list[Account]:
+def posted_tb(
+    accounts: Iterable[LedgerAccount], entries: Iterable[EntryLine]
+) -> list[LedgerAccount]:
     """The adjusted TB with only posted or recorded entries applied (a proposed or held entry
     never reaches a statement)."""
     out = {a.ref: a for a in accounts}
@@ -181,7 +183,7 @@ def posted_tb(accounts: Iterable[Account], entries: Iterable[EntryLine]) -> list
         found = out.get(e.account_ref)
         base = found.balance if found is not None else ZERO
         name = found.name if found is not None else e.account_ref
-        out[e.account_ref] = Account(e.account_ref, name, _q(base + e.debit - e.credit))
+        out[e.account_ref] = LedgerAccount(e.account_ref, name, _q(base + e.debit - e.credit))
     return list(out.values())
 
 
@@ -190,10 +192,10 @@ def _sign(cls: GroupingClass, debit_positive: Decimal) -> Decimal:
 
 
 def statement_lines(
-    accounts: Iterable[Account],
+    accounts: Iterable[LedgerAccount],
     mapping: Mapping[str, FsLine],
     classes: frozenset[GroupingClass],
-    prior: Iterable[Account] | None = None,
+    prior: Iterable[LedgerAccount] | None = None,
 ) -> list[StatementLine]:
     """One line per mapped FS line of the given classes, in catalogue order, with lineage. An
     unmapped account is the mapping's open item (C9), never placed here by guess."""
@@ -237,9 +239,9 @@ def _total(lines: Iterable[StatementLine], cls: GroupingClass) -> Decimal:
 
 
 def income_statement(
-    accounts: Sequence[Account],
+    accounts: Sequence[LedgerAccount],
     mapping: Mapping[str, FsLine],
-    prior: Sequence[Account] | None = None,
+    prior: Sequence[LedgerAccount] | None = None,
 ) -> IncomeStatement:
     """The month's income statement (CLS-08a), against the prior month when given."""
     lines = tuple(statement_lines(accounts, mapping, frozenset({"revenue", "expenses"}), prior))
@@ -254,7 +256,7 @@ def income_statement(
 
 
 def balance_sheet(
-    accounts: Sequence[Account],
+    accounts: Sequence[LedgerAccount],
     mapping: Mapping[str, FsLine],
     *,
     net_income_label: str,
@@ -289,8 +291,8 @@ def balance_sheet(
 
 
 def cash_flows_ytd(
-    opening: Sequence[Account],
-    closing: Sequence[Account],
+    opening: Sequence[LedgerAccount],
+    closing: Sequence[LedgerAccount],
     mapping: Mapping[str, FsLine],
     *,
     cash_groupings: frozenset[str],
@@ -426,7 +428,7 @@ def content_hash(*parts: object) -> str:
         if isinstance(x, Decimal):
             return str(x)
         if hasattr(x, "__dataclass_fields__"):
-            return plain(asdict(x))  # type: ignore[call-overload]
+            return plain(asdict(x))  # type: ignore[call-overload]  # a dataclass instance, checked above
         if isinstance(x, Mapping):
             return {str(k): plain(v) for k, v in sorted(x.items(), key=lambda kv: str(kv[0]))}
         if isinstance(x, (list, tuple)):
@@ -442,7 +444,6 @@ __all__ = [
     "NET_INCOME_KEY",
     "NO_ASSURANCE",
     "AcceptedFlux",
-    "Account",
     "Aging",
     "AgingItem",
     "BalanceSheet",
@@ -450,6 +451,7 @@ __all__ = [
     "EntryLine",
     "FsLine",
     "IncomeStatement",
+    "LedgerAccount",
     "Lineage",
     "PackageRoute",
     "Precondition",

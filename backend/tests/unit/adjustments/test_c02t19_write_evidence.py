@@ -28,9 +28,9 @@ async def test_ac_a_flip_refuses_the_next_write_without_waiting_for_the_cache(
 
     monkeypatch.setattr(controls, "_read", read)
     ctx = SimpleNamespace(tenant_id=tenant)
-    assert not await writes._ledger_write_paused(ctx)  # type: ignore[arg-type]
+    assert not await writes._ledger_write_paused(ctx)  # type: ignore[arg-type]  # a test literal
     rows[0] = frozenset({("ledger_write_pause", "firm", tenant, None)})
-    assert await writes._ledger_write_paused(ctx)  # type: ignore[arg-type]
+    assert await writes._ledger_write_paused(ctx)  # type: ignore[arg-type]  # a test literal
 
 
 @pytest.mark.asyncio

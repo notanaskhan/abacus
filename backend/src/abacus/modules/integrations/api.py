@@ -74,6 +74,12 @@ from abacus.modules.integrations.esign_install import (
     esign_install_state,
     rotate_esign_secret,
 )
+from abacus.modules.integrations.ledger_console import (
+    ClosingDate,
+    LogRow,
+    PostingFacts,
+    register_posting_log,
+)
 from abacus.modules.integrations.ports import (
     IntegrationAdapter,
     IntegrationCategory,
@@ -147,6 +153,7 @@ __all__ = [
     "CatalogDocumentV2",
     "CatalogEntry",
     "CatalogRow",
+    "ClosingDate",  # C-02-T20: the ledger console's posting provider
     "EngineFieldProfile",
     "EsignInstallExists",
     "ExportSettings",
@@ -159,7 +166,9 @@ __all__ = [
     "JournalEntry",
     "JournalLine",
     "LoadPlan",
+    "LogRow",
     "Posted",
+    "PostingFacts",
     "QboTransport",
     "QuickBooksOnlineWriter",
     "ReadConnectorEntry",
@@ -210,6 +219,7 @@ __all__ = [
     "register_adapter",
     "register_engine_file_check",
     "register_last_engine_sync",
+    "register_posting_log",
     "register_w1_kill_switch",
     "registered_adapter",
     "registered_keys",

@@ -120,7 +120,8 @@ async def _figures(
         if a.fs_line_id is not None and a.fs_line_id in fs
     }
     accounts = [
-        pkg.Account(ln.account_code, ln.account_name, Decimal(ln.final or 0)) for ln in final.lines
+        pkg.LedgerAccount(ln.account_code, ln.account_name, Decimal(ln.final or 0))
+        for ln in final.lines
     ]
     month = [a for a in accounts if a.ref in mapping and mapping[a.ref].grouping_class in (
         "revenue", "expenses")]  # fmt: skip
@@ -143,7 +144,7 @@ def _line_out(ln: pkg.StatementLine) -> DeliveryStatementLineOut:
     )
 
 
-async def _row(tenant: TenantContext, close_id: UUID) -> Row[Any] | None:
+async def _row(tenant: TenantContext, close_id: UUID) -> Row[Any] | None:  # Any: a SQL row
     async with tenant_session(tenant) as session:
         return (await session.execute(_DELIVERABLE, {"c": close_id})).first()
 
@@ -173,7 +174,7 @@ async def get_package(ctx: AuthContext, close_id: UUID) -> DeliveryPackageOut:
         version_no=version_no,
         route=routed.route,
         legend=LEGENDS.get(routed.legend_key or ""),
-        sections=sections,  # type: ignore[arg-type]
+        sections=sections,  # type: ignore[arg-type]  # stored as the Section literals
         cas_answer=cas_answer,
         balance_sheet=[_line_out(ln) for ln in bs] if "balance_sheet" in sections else [],
         income_statement=[_line_out(ln) for ln in inc] if "income_statement" in sections else [],
