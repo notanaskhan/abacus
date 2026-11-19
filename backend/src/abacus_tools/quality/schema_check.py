@@ -519,6 +519,9 @@ DEFINER_FUNCTIONS = frozenset(
     | {"status_incident_resolve"}
     # 0980 (G-04-T20, DEC-5702): the operator's content-catalogue writers (abacus_ops only).
     | {"status_component_upsert", "platform_region_upsert", "platform_setting_put"}
+    # 0982 (Q-05-T31, DEC-5708): the retention floor's source switch, its pre-switch check and
+    # the set's rows in effect (readers; the setter stays the operator's).
+    | {"retention_minimums_in_effect", "retention_floor_differences", "retention_floor_source"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).
