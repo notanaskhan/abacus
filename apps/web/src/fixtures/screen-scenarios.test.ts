@@ -86,6 +86,7 @@ describe("screen scenarios on the firm entry", () => {
       "SHL-04",
       "SHL-14",
       "SHL-02", // P-02-T12: the palette spec and J13 4, J16 5 and 9
+      "SHL-23", // A-09-T42: j20 8
       "TAX-02", // P-04-T47: j06 coordination
       "TAX-09", // T-01-T29: j06 D1 and D2
       // T-06-T23 (DEC-5636): the eight T-06 screens, one state per contract artboard.

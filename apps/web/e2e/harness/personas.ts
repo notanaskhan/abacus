@@ -61,6 +61,8 @@ export const PERSONAS = {
   "sam-ortiz": portal("Sam Ortiz", "third_party"),
   // R-02-T23: POR-08's Copperleaf preparer of record and POR-15's committee member.
   "ben-ashby": portal("Ben Ashby"),
+  // A-09-T42: the component auditor (Pruett & Lang LLP) in POR-23, Harlow & Pike Distribution.
+  "renee-pruett": portal("Renee Pruett", "third_party"),
   "victoria-lam": portal("Victoria Lam"),
   // T-02-T32: the two K-1-only people of T-02 §1 (seed/portal-k1s.ts); the member has no name.
   "nora-calloway": portal("Nora Calloway"),
