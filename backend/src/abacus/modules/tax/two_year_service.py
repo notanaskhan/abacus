@@ -18,6 +18,7 @@ Walls and visibility: every call authorises on the return's engagement (404 othe
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
@@ -301,6 +302,23 @@ async def export_xlsx(ctx: AuthContext, return_id: UUID) -> bytes:
             scope=Scope(engagement_id=found.engagement_id, work_item_id=return_id),
         )
     return workbook([Sheet("2-Year Comparison", rows)])
+
+
+AUDIT_ENGAGEMENT_KINDS: Final = frozenset({"variance_explanation_version"})
+_VERSION_ENGAGEMENTS = text(
+    "SELECT id, engagement_id FROM variance_explanation_versions WHERE id = ANY(:i)"
+)
+
+
+async def audit_engagements(
+    tenant: TenantContext, kind: str, ids: Sequence[UUID]
+) -> dict[UUID, UUID]:
+    """An explanation version's audit events belong to its return's engagement (walls apply)."""
+    if kind not in AUDIT_ENGAGEMENT_KINDS or not ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(_VERSION_ENGAGEMENTS, {"i": list(ids)})
+        return {cast(UUID, r[0]): cast(UUID, r[1]) for r in rows}
 
 
 __all__ = [

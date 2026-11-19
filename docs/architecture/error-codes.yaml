@@ -266,6 +266,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.adjustments.posting_errors.ApprovalGrantMismatch
+    - abacus.modules.engagements.season_execution_service.ApprovalGrantMismatch
     summary: 'The batch''s approval grant does not cover this payload: the entries, lines, dates or closing
       date changed after the grant was issued.'
   approval_kind_not_registered:
@@ -602,6 +603,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.quality_log_errors.ComparisonUnavailable
+    - abacus.modules.tax.two_year_service.ComparisonUnavailable
     summary: 'The case has no as-certified and as-corrected figures yet: analysis waits (DV-9).'
   completeness_tie_required:
     status: 409
@@ -1312,6 +1314,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.season_errors.ExecutionStarted
+    - abacus.modules.engagements.season_execution_service.ExecutionStarted
     summary: 'The cohort''s first step ran: the approval can no longer be withdrawn (AC1.5).'
   expansion_exceeds_population:
     status: 422
@@ -1339,6 +1342,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.practice_tools_errors.ExplanationStale
+    - abacus.modules.tax.two_year_service.ExplanationStale
     summary: 'The line''s values changed since the explanation was read: read it again (`values_hash`).'
   explanation_uncited:
     status: 422
@@ -3481,6 +3485,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.roll_forward.RollForwardUnavailable
+  rows_hidden:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.season_execution_service.RowsHidden
+    summary: 'The approver is walled from a row: they cannot approve what they cannot see.'
   rows_not_prepared:
     status: 409
     raised_by:
@@ -4148,6 +4157,10 @@ codes:
     raised_by:
     - abacus.modules.collaboration.errors.ThreadShared
     summary: 'SHL-18f: a shared thread is never converted to an internal review note (P-05-T09).'
+  threshold_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.two_year_service.ThresholdUnavailable
   tie_out_check_invalid:
     status: 422
     raised_by:

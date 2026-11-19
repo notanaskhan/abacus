@@ -1205,5 +1205,21 @@ REVIEWED_FALLBACK: Final = frozenset(
         "season_manifest.exported",
         "season_manifest_row.excluded",
         "season_manifest_row.reassigned",
+        # reviewed 2026-11-19 (S51 partials batch 2, TASK-8743): a cohort's approval, execution
+        # and row steps show on ENG-07; deadline recomputes and exports on HOME-03; two-year
+        # explanations and their export on TAX-10; a planner draft discarded on CLS-09's history.
+        "season_cohort.approved",
+        "season_cohort.executing",
+        "season_cohort.executed",
+        "season_cohort.failed",
+        "season_cohort.withdrawn",
+        "season_row.step_done",
+        "season_row.step_failed",
+        "filing_deadline.recomputed",
+        "filing_deadline.exported",
+        "two_year.exported",
+        "variance_explanation.accepted",
+        "variance_explanation.edited",
+        "close_plan.draft_discarded",
     }
 )

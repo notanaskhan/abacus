@@ -494,6 +494,16 @@ from abacus.modules.tax.season_candidates import candidates as _season_candidate
 
 register_season_candidates(_season_candidates)
 
+# T-08-T11 (S51 partials): an explanation version's events belong to its engagement.
+from abacus.modules.tax.two_year_service import (  # noqa: E402
+    AUDIT_ENGAGEMENT_KINDS as _TWO_YEAR_KINDS,
+)
+from abacus.modules.tax.two_year_service import (  # noqa: E402
+    audit_engagements as _two_year_owners,
+)
+
+register_engagement_owners(_TWO_YEAR_KINDS, _two_year_owners)
+
 # T-08-T10 (S51 partials): practice's filing-deadline recompute reads the returns' dates.
 # Q-05-T07 (S51 partials): ADM-11's accuracy reads the filed returns' worksheets.
 # T-04-T31 (DEC-3413): a return's issues are fixed and explained by the tax agents, through P-04's

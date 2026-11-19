@@ -54,6 +54,17 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     quality_router,  # Q-05-T05: quality management v1 (stubs; dark)
 )
 
+# T-08-T10 (S51 partials): a filing deadline's audit events belong to its client.
+from abacus.kernel.audit_owners import register_client_owners  # noqa: E402
+from abacus.modules.practice.deadlines_service import (  # noqa: E402
+    AUDIT_CLIENT_KINDS as _DEADLINE_KINDS,
+)
+from abacus.modules.practice.deadlines_service import (  # noqa: E402
+    audit_clients as _deadline_clients,
+)
+
+register_client_owners(_DEADLINE_KINDS, _deadline_clients)
+
 __all__ = [
     "ACTIVITIES",
     "HOME_ACTIVITY_PRUNE_ID",
