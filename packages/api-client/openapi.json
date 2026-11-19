@@ -30172,6 +30172,25 @@
             "minLength": 1,
             "title": "Conclusion",
             "type": "string"
+          },
+          "implemented": {
+            "cls": "internal",
+            "default": false,
+            "title": "Implemented",
+            "type": "boolean"
+          },
+          "implemented_reference": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Implemented Reference"
           }
         },
         "required": [
@@ -30180,14 +30199,180 @@
         "title": "ConsultationConcludeIn",
         "type": "object"
       },
+      "ConsultationCountsOut": {
+        "additionalProperties": false,
+        "properties": {
+          "concluded": {
+            "cls": "internal",
+            "title": "Concluded",
+            "type": "integer"
+          },
+          "open": {
+            "cls": "internal",
+            "title": "Open",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "open",
+          "concluded"
+        ],
+        "title": "ConsultationCountsOut",
+        "type": "object"
+      },
+      "ConsultationDetailOut": {
+        "additionalProperties": false,
+        "description": "AUD-28 a/b: what A-06's record does not carry.",
+        "properties": {
+          "consultation_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Consultation Id",
+            "type": "string"
+          },
+          "consulted_role": {
+            "anyOf": [
+              {
+                "enum": [
+                  "partner",
+                  "specialist",
+                  "national"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Consulted Role"
+          },
+          "difference_unresolved": {
+            "cls": "internal",
+            "title": "Difference Unresolved",
+            "type": "boolean"
+          },
+          "facts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Facts"
+          },
+          "implemented": {
+            "cls": "internal",
+            "title": "Implemented",
+            "type": "boolean"
+          },
+          "implemented_reference": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Implemented Reference"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/ConsultationLinkOut"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "positions": {
+            "items": {
+              "$ref": "#/components/schemas/ConsultationPositionOut"
+            },
+            "title": "Positions",
+            "type": "array"
+          },
+          "reopened_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reopened At"
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConsultationResolutionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "consultation_id",
+          "facts",
+          "consulted_role",
+          "implemented",
+          "implemented_reference",
+          "reopened_at",
+          "links",
+          "positions",
+          "resolution",
+          "difference_unresolved"
+        ],
+        "title": "ConsultationDetailOut",
+        "type": "object"
+      },
       "ConsultationIn": {
         "additionalProperties": false,
         "properties": {
+          "consulted_role": {
+            "anyOf": [
+              {
+                "enum": [
+                  "partner",
+                  "specialist",
+                  "national"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Consulted Role"
+          },
           "consulted_with_user_id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Consulted With User Id",
             "type": "string"
+          },
+          "facts": {
+            "anyOf": [
+              {
+                "maxLength": 8000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Facts"
           },
           "question": {
             "cls": "confidential",
@@ -30202,6 +30387,172 @@
           "consulted_with_user_id"
         ],
         "title": "ConsultationIn",
+        "type": "object"
+      },
+      "ConsultationLinkIn": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "finding",
+              "issue",
+              "document",
+              "workpaper",
+              "post_issuance_case"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "target_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "target_id"
+        ],
+        "title": "ConsultationLinkIn",
+        "type": "object"
+      },
+      "ConsultationLinkOut": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "finding",
+              "issue",
+              "document",
+              "workpaper",
+              "post_issuance_case"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "linked_by_name": {
+            "cls": "internal",
+            "title": "Linked By Name",
+            "type": "string"
+          },
+          "target_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "target_id",
+          "linked_by_name",
+          "at"
+        ],
+        "title": "ConsultationLinkOut",
+        "type": "object"
+      },
+      "ConsultationLogOut": {
+        "additionalProperties": false,
+        "description": "AUD-28 a: the bands Open and Concluded, counted over the rows the reader may see.",
+        "properties": {
+          "counts": {
+            "$ref": "#/components/schemas/ConsultationCountsOut"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ConsultationLogRowOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "counts"
+        ],
+        "title": "ConsultationLogOut",
+        "type": "object"
+      },
+      "ConsultationLogRowOut": {
+        "additionalProperties": false,
+        "properties": {
+          "consultation_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Consultation Id",
+            "type": "string"
+          },
+          "consulted_with_name": {
+            "cls": "internal",
+            "title": "Consulted With Name",
+            "type": "string"
+          },
+          "consulted_with_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Consulted With User Id",
+            "type": "string"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Id"
+          },
+          "raised_by_name": {
+            "cls": "internal",
+            "title": "Raised By Name",
+            "type": "string"
+          },
+          "ref": {
+            "cls": "internal",
+            "maxLength": 10,
+            "title": "Ref",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "open",
+              "concluded"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "consultation_id",
+          "ref",
+          "engagement_id",
+          "status",
+          "consulted_with_user_id",
+          "consulted_with_name",
+          "raised_by_name",
+          "created_at"
+        ],
+        "title": "ConsultationLogRowOut",
         "type": "object"
       },
       "ConsultationOut": {
@@ -30310,6 +30661,134 @@
           "allowed_actions"
         ],
         "title": "ConsultationOut",
+        "type": "object"
+      },
+      "ConsultationPositionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "agrees": {
+            "cls": "internal",
+            "title": "Agrees",
+            "type": "boolean"
+          },
+          "position": {
+            "cls": "confidential",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Position",
+            "type": "string"
+          },
+          "role": {
+            "cls": "internal",
+            "enum": [
+              "engagement_partner",
+              "eqr_reviewer"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "agrees",
+          "position"
+        ],
+        "title": "ConsultationPositionIn",
+        "type": "object"
+      },
+      "ConsultationPositionOut": {
+        "additionalProperties": false,
+        "properties": {
+          "agrees": {
+            "cls": "internal",
+            "title": "Agrees",
+            "type": "boolean"
+          },
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "position": {
+            "cls": "confidential",
+            "title": "Position",
+            "type": "string"
+          },
+          "recorded_by_name": {
+            "cls": "internal",
+            "title": "Recorded By Name",
+            "type": "string"
+          },
+          "role": {
+            "cls": "internal",
+            "enum": [
+              "engagement_partner",
+              "eqr_reviewer"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "agrees",
+          "position",
+          "recorded_by_name",
+          "at"
+        ],
+        "title": "ConsultationPositionOut",
+        "type": "object"
+      },
+      "ConsultationResolutionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "resolution": {
+            "cls": "confidential",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Resolution",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resolution"
+        ],
+        "title": "ConsultationResolutionIn",
+        "type": "object"
+      },
+      "ConsultationResolutionOut": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "before_release": {
+            "cls": "internal",
+            "title": "Before Release",
+            "type": "boolean"
+          },
+          "resolution": {
+            "cls": "confidential",
+            "title": "Resolution",
+            "type": "string"
+          },
+          "resolved_by_name": {
+            "cls": "internal",
+            "title": "Resolved By Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resolution",
+          "resolved_by_name",
+          "at",
+          "before_release"
+        ],
+        "title": "ConsultationResolutionOut",
         "type": "object"
       },
       "ConsultationStatus": {
@@ -208718,6 +209197,282 @@
         "x-abacus-action": "elimination.propose_run"
       }
     },
+    "/v1/consultations": {
+      "get": {
+        "description": "AUD-28 a, d, e: the firm log; walled rows never show or count (DEC-43).",
+        "operationId": "consultations_log",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "engagement_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Engagement Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "open",
+                    "concluded"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "consulted_with",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Consulted With"
+            }
+          },
+          {
+            "in": "query",
+            "name": "year",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 2100,
+                  "minimum": 2000,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultationLogOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Consultations Log Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "consultation.read"
+      }
+    },
+    "/v1/consultations/{consultation_id}": {
+      "get": {
+        "description": "AUD-28 a/b detail: facts, implementation, links, positions and the resolution.",
+        "operationId": "consultation_detail",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "consultation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Consultation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultationDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Consultation Detail Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "consultation.read"
+      }
+    },
     "/v1/consultations/{consultation_id}/conclude": {
       "post": {
         "description": "Concluded only by the person consulted (403 `not_the_consulted_person`; 0644's guard).",
@@ -208864,6 +209619,528 @@
           "assurance"
         ],
         "x-abacus-action": "consultation.conclude"
+      }
+    },
+    "/v1/consultations/{consultation_id}/links": {
+      "post": {
+        "description": "Insert-only; linking the same target twice is a no-op.",
+        "operationId": "consultation_link",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "consultation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Consultation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsultationLinkIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultationDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Consultation Link Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "consultation.link"
+      }
+    },
+    "/v1/consultations/{consultation_id}/positions": {
+      "post": {
+        "description": "AUD-28 b: the EP's or EQR's own position, in the role they hold on the engagement.",
+        "operationId": "consultation_position",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "consultation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Consultation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsultationPositionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultationDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Consultation Position Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "consultation.record_position"
+      }
+    },
+    "/v1/consultations/{consultation_id}/reopen": {
+      "post": {
+        "description": "The consultee or the QM owner; 409 `consultation_not_concluded` on an open one.",
+        "operationId": "consultation_reopen",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "consultation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Consultation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultationDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Consultation Reopen Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "consultation.reopen"
+      }
+    },
+    "/v1/consultations/{consultation_id}/resolve-difference": {
+      "post": {
+        "description": "The QM owner, fresh MFA (the matrix); one resolution per consultation (409 on a second).",
+        "operationId": "consultation_resolve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "consultation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Consultation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsultationResolutionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultationDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Consultation Resolve Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "consultation.resolve_difference"
       }
     },
     "/v1/contacts/{contact_id}": {

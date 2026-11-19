@@ -208,3 +208,33 @@ class ConfirmationResponded(DomainEvent):
     confirmation_id: Annotated[UUID, classified("internal")]
     engagement_id: Annotated[UUID, classified("internal")]
     user_id: Annotated[UUID, classified("internal")]  # the person told
+
+
+class ConsultationRequested(DomainEvent):
+    """Q-05-T09 (§4.8): the person consulted is told a consultation needs their conclusion."""
+
+    event_type: ClassVar[str] = "consultation.requested"
+
+    consultation_id: Annotated[UUID, classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]
+    recipient_user_ids: Annotated[list[UUID], classified("internal")]
+
+
+class ConsultationConcluded(DomainEvent):
+    """Q-05-T09: the person who raised it is told it was concluded."""
+
+    event_type: ClassVar[str] = "consultation.concluded"
+
+    consultation_id: Annotated[UUID, classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]
+    recipient_user_ids: Annotated[list[UUID], classified("internal")]
+
+
+class ConsultationDifferenceRecorded(DomainEvent):
+    """Q-05-T09 (AUD-28 b): a disagreeing position; the QM owners are told it needs resolving."""
+
+    event_type: ClassVar[str] = "consultation.difference_recorded"
+
+    consultation_id: Annotated[UUID, classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]
+    recipient_user_ids: Annotated[list[UUID], classified("internal")]

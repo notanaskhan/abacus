@@ -1637,6 +1637,10 @@ INSERT_COLUMNS["consultation_resolutions"] = frozenset(
 UPDATE_COLUMNS["consultations"] = UPDATE_COLUMNS["consultations"] | frozenset(
     {"implemented", "implemented_reference", "reopened_at"}
 )
+# S51 partials (0985, DEC-5723): a new consultation's facts and consulted role.
+INSERT_COLUMNS["consultations"] = INSERT_COLUMNS["consultations"] | frozenset(
+    {"facts_sealed", "consulted_role"}
+)
 
 # Q-05-T12 (0984, DEC-5714): post-issuance cases; comparisons and evaluations insert-only.
 Q05T12_TABLES: frozenset[str] = frozenset(
