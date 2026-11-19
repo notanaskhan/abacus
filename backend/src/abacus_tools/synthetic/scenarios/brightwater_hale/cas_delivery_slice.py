@@ -359,7 +359,7 @@ def _money(x: Decimal) -> str:
 COMMENTARY: Final = (
     "Revenue rose 4.5% to $214,600. Payroll rose 12.5% to $68,910: two baristas joined at the end "
     "of July, merit increases took effect Aug 1, and the roastery ran overtime during the "
-    "Aug 10–14 changeover. Repairs and maintenance of $3,200 was an electrical repair at the "
+    "Aug 10\u201314 changeover. Repairs and maintenance of $3,200 was an electrical repair at the "
     "espresso bar. Net income was $27,795 (July $31,455)."
 )
 

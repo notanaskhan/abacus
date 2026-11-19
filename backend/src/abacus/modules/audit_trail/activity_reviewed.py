@@ -1192,5 +1192,18 @@ REVIEWED_FALLBACK: Final = frozenset(
         "posting_batch.undone",
         "proposed_entry.post_failed",
         "proposed_entry.posted",
+        # reviewed 2026-11-19 (S51 partials end pass, TASK-8738): post-issuance cases show on
+        # AUD-30's timeline, monitoring findings on ADM-12, the season manifest's build, export
+        # and row changes on ENG-07's own history; none needs a sentence in the firm's feed.
+        "post_issuance.case_opened",
+        "post_issuance.compared",
+        "post_issuance.decided",
+        "qm_finding.raised",
+        "qm_finding.due_notified",
+        "qm_evaluation.due_notified",
+        "season_manifest.built",
+        "season_manifest.exported",
+        "season_manifest_row.excluded",
+        "season_manifest_row.reassigned",
     }
 )

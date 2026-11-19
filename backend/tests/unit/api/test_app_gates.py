@@ -391,6 +391,14 @@ NOT_CREATING = {
     "/v1/portal/auth/verify",
     "/v1/portal/auth/refresh",
     "/v1/portal/auth/sign-out",
+    # S51 partials (Q-05-T09, T12): consultation actions and a case's comparison and decision
+    # answer the updated record, 200; nothing new is addressable.
+    "/v1/consultations/{consultation_id}/reopen",
+    "/v1/consultations/{consultation_id}/links",
+    "/v1/consultations/{consultation_id}/positions",
+    "/v1/consultations/{consultation_id}/resolve-difference",
+    "/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/comparison",
+    "/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/decision",
     # G-04-T14 (DEC-5532): the console BFF's cookie refresh rotates it; sign-out ends it.
     "/v1/platform/auth/refresh",
     "/v1/platform/auth/sign-out",

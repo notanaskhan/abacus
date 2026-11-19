@@ -166,6 +166,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/consents/records", "consent.record"),
     ("POST", "/v1/consents/{consent_id}/declines", "consent.record"),
     ("POST", "/v1/consents/{consent_id}/revocations", "consent.record"),
+    (
+        "POST",
+        "/v1/consultations/{consultation_id}/resolve-difference",
+        "consultation.resolve_difference",
+    ),
     ("POST", "/v1/contacts/{contact_id}/unlock", "contact.unlock"),
     ("POST", "/v1/decision-cards/{card_id}/decide", "decision.decide"),
     ("POST", "/v1/destruction-batches/{batch_id}/approvals", "destruction.approve"),

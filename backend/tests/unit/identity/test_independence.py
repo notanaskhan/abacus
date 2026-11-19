@@ -387,6 +387,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "population.read",  # A-03-T01 (DEC-1550)
         "post_issuance.analyse",  # S50 (T-08, Q-05 bundles)
         "post_issuance.create",  # S50 (T-08, Q-05 bundles)
+        "post_issuance.decide",  # S51 partials (Q-05-T12, DEC-5724)
         "post_issuance.read",  # S50 (T-08, Q-05 bundles)
         "post_issuance.reissue",  # S50 (T-08, Q-05 bundles)
         "posting_batch.dry_run",  # S49 (C-02, T-06, A-09 bundles)

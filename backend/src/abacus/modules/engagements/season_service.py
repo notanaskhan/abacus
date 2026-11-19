@@ -157,6 +157,11 @@ async def build_manifest(ctx: AuthContext, tax_year: int, *, rebuild: bool = Fal
         raise NoCandidateSource(facts={"tax_year": str(tax_year)})
     candidates = [c for c in await _sources[0](ctx.tenant, tax_year) if not c.prospect]
     digest = inputs_hash(candidates)
+    async with tenant_session(ctx.tenant) as session:
+        known = await session.scalar(_SEASON_ID, {"y": tax_year})
+        current = None if known is None else (await session.execute(_READY, {"s": known})).first()
+    if current is not None and not rebuild:
+        return cast(UUID, current[0])  # the ready manifest; nothing is written
     async with uow(ctx.tenant) as tx:
         await tx.session.scalar(
             _OPEN_SEASON, {"t": ctx.tenant_id, "y": tax_year, "u": ctx.user_id}
@@ -164,7 +169,7 @@ async def build_manifest(ctx: AuthContext, tax_year: int, *, rebuild: bool = Fal
         season = cast(UUID, await tx.session.scalar(_SEASON_ID, {"y": tax_year}))
         ready = (await tx.session.execute(_READY, {"s": season})).first()
         if ready is not None and not rebuild:
-            return cast(UUID, ready[0])
+            raise CohortApproved(facts={"tax_year": str(tax_year)})  # built meanwhile
         if ready is not None and await tx.session.scalar(_APPROVED, {"s": season}):
             raise CohortApproved(facts={"tax_year": str(tax_year)})
         if ready is not None:
@@ -527,17 +532,26 @@ async def exclude(ctx: AuthContext, row_ids: Sequence[UUID], reason: str) -> int
     for row_id in row_ids:
         await _draft_row(ctx, row_id, walled)
     done = 0
-    async with uow(ctx.tenant) as tx:
-        for row_id in row_ids:
-            if await tx.session.scalar(
-                _EXCLUDE, {"u": ctx.user_id, "reason": reason, "id": row_id}
-            ):
-                done += 1
-                tx.record(
-                    "season_manifest_row.excluded",
-                    target=Target("season_manifest_row", row_id),
-                )
+    try:
+        async with uow(ctx.tenant) as tx:
+            for row_id in row_ids:
+                if await tx.session.scalar(
+                    _EXCLUDE, {"u": ctx.user_id, "reason": reason, "id": row_id}
+                ):
+                    done += 1
+                    tx.record(
+                        "season_manifest_row.excluded",
+                        target=Target("season_manifest_row", row_id),
+                    )
+            if done == 0:
+                raise _Nothing  # every row was excluded already: no write, no event
+    except _Nothing:
+        return 0
     return done
+
+
+class _Nothing(Exception):
+    """Leave the unit of work without a commit (nothing changed)."""
 
 
 # --- export --------------------------------------------------------------------------------------
@@ -573,6 +587,19 @@ async def export_xlsx(ctx: AuthContext, tax_year: int, manifest_id: UUID) -> byt
     async with uow(ctx.tenant) as tx:
         tx.record("season_manifest.exported", target=Target("season_manifest", manifest_id))
     return workbook([Sheet(f"TY{tax_year} manifest", rows)])
+
+
+AUDIT_CLIENT_KINDS: Final = frozenset({"season_manifest_row"})
+_ROW_CLIENTS = text("SELECT id, client_id FROM season_manifest_rows WHERE id = ANY(:i)")
+
+
+async def audit_clients(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:
+    """A manifest row's audit events belong to its client (walls apply in the trail)."""
+    if kind not in AUDIT_CLIENT_KINDS or not ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(_ROW_CLIENTS, {"i": list(ids)})
+        return {cast(UUID, r[0]): cast(UUID, r[1]) for r in rows}
 
 
 __all__ = [

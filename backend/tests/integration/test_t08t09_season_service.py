@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import AsyncIterator
+from dataclasses import replace
 from typing import cast
 
 import pytest
@@ -16,6 +17,7 @@ from abacus.kernel.config import settings
 from abacus.kernel.db import configure_engine, configure_relay_engine, dispose_engine
 from abacus.kernel.flags import forget_flags
 from abacus.modules.engagements import season_service as svc
+from abacus.modules.identity.api import AuthContext
 from abacus.modules.tax import api as tax_api
 
 from .agent_tests.support import Person, Seeder
@@ -38,6 +40,10 @@ async def engines(
     await dispose_engine()
     settings.cache_clear()
     forget_flags()
+
+
+def _as_admin(who: Person) -> AuthContext:
+    return replace(who.context(), firm_role="firm_admin")
 
 
 async def _admin(seed: Seeder, tenant: uuid.UUID) -> Person:
@@ -121,10 +127,10 @@ async def test_ac_the_season_builds_reads_and_guards_its_rows(
     abbott = await _client(seed, tenant, partner, "Abbott", offices["Chicago"], "1040")
     baker = await _client(seed, tenant, partner, "Baker Logistics", offices["Denver"], "1065")
 
-    made = await svc.build_manifest(admin.context(), 2026)
-    again = await svc.build_manifest(admin.context(), 2026)
+    made = await svc.build_manifest(_as_admin(admin), 2026)
+    again = await svc.build_manifest(_as_admin(admin), 2026)
     assert again == made  # the ready manifest, not a second version
-    view = await svc.manifest(admin.context(), 2026, made)
+    view = await svc.manifest(_as_admin(admin), 2026, made)
     assert [(c.office_name, c.segment, c.engagements) for c in view.cohorts] == [
         ("Chicago", "individuals_trusts", 1),
         ("Denver", "entities_exempt", 1),
@@ -141,16 +147,16 @@ async def test_ac_the_season_builds_reads_and_guards_its_rows(
         baker,
         partner.user_id,
     )
-    theirs = await svc.manifest(walled.context(), 2026, made)
+    theirs = await svc.manifest(_as_admin(walled), 2026, made)
     assert sum(c.engagements for c in theirs.cohorts) == 1  # no row, no count
     with pytest.raises(svc.AssigneeNotEligible):
         await svc.reassign(
-            admin.context(), rows[baker].row_id, rows[baker].row_version, preparer=walled.user_id
+            _as_admin(admin), rows[baker].row_id, rows[baker].row_version, preparer=walled.user_id
         )
 
-    excluded = await svc.exclude(admin.context(), [rows[abbott].row_id], "not_continuing")
+    excluded = await svc.exclude(_as_admin(admin), [rows[abbott].row_id], "not_continuing")
     assert excluded == 1
-    after = await svc.manifest(admin.context(), 2026, made)
+    after = await svc.manifest(_as_admin(admin), 2026, made)
     assert sum(c.engagements for c in after.cohorts) == 1
 
     await seed.run(
@@ -158,6 +164,6 @@ async def test_ac_the_season_builds_reads_and_guards_its_rows(
         made,
     )
     with pytest.raises(svc.CohortApproved):
-        await svc.build_manifest(admin.context(), 2026, rebuild=True)
+        await svc.build_manifest(_as_admin(admin), 2026, rebuild=True)
     with pytest.raises(svc.CohortApproved):
-        await svc.exclude(admin.context(), [rows[baker].row_id], "duplicate")
+        await svc.exclude(_as_admin(admin), [rows[baker].row_id], "duplicate")
