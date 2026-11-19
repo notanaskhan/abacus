@@ -94,7 +94,9 @@ from abacus.modules.engagements.gate_policy import required_gates as required_ga
 from abacus.modules.engagements.gates import recorded_letter, register_gates
 from abacus.modules.engagements.hold_scope import (
     EngagementHoldFacts,
+    RetentionFacts,
     engagement_hold_facts,
+    engagement_retention_facts,
     engagements_in_hold_scope,
     work_item_engagement,
     work_item_period,
@@ -530,6 +532,7 @@ __all__ = [
     "PriorItem",
     "ProgressFact",
     "ProgressSource",
+    "RetentionFacts",
     "RosterMember",
     "StoredFile",
     "TemplateItem",
@@ -588,6 +591,7 @@ __all__ = [
     "engagement_hold_facts",
     "engagement_label",
     "engagement_metadata",
+    "engagement_retention_facts",  # Q-05-T11: destruction eligibility
     "engagement_roster",
     "engagement_trace_samples",
     "engagements_for",

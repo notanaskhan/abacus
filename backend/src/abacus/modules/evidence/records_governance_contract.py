@@ -168,6 +168,25 @@ records_governance_router = AbacusRouter(prefix="/v1", tags=["evidence"])
 _B = "/destruction-batches/{batch_id}"
 
 
+def _batch_out(row: dict[str, object]) -> RecordsBatchOut:
+    return RecordsBatchOut.model_validate(
+        {
+            "batch_id": row["id"],
+            "ref": row["ref"],
+            "scope_description": row["scope_description"],
+            "status": row["status"],
+            "assembled_at": row["assembled_at"],
+            "eligible_count": row["eligible_count"],
+            "held_excluded_count": row["held_excluded_count"],
+            "destroyed_count": row["destroyed_count"],
+            "client_count": row["client_count"],
+            "approvals": [],
+            "hold_recheck_at": row["hold_recheck_at"],
+            "confirmation_phrase": row["confirmation_phrase"],
+        }
+    )
+
+
 async def _on(ctx: AuthContext) -> None:
     if ctx.client or not await flag_enabled(ctx.tenant, RECORDS_GOVERNANCE):
         raise NotFound(RECORDS_GOVERNANCE.name)
@@ -183,8 +202,11 @@ async def _human(ctx: AuthContext, action: str) -> None:
     "/retention/summary", action="retention.read", response_model=RecordsSummaryOut, errors=(501,)
 )
 async def retention_summary_route(ctx: Ctx) -> RecordsSummaryOut:
+    """FIL-02 tiles (Q-05-T11)."""
+    from abacus.modules.evidence import destruction
+
     await _on(ctx)
-    raise NotImplementedYet
+    return RecordsSummaryOut.model_validate(await destruction.summary(ctx.tenant))
 
 
 @records_governance_router.get(
@@ -224,16 +246,23 @@ async def retention_policy_create_route(
 async def destruction_batches_route(
     ctx: Ctx, status: BatchStatus | None = None, cursor: str | None = None
 ) -> RecordsBatchListOut:
+    """Newest first (Q-05-T11); the approvals join with Q-05-T12's approval task."""
+    from abacus.modules.evidence import destruction
+
     await _on(ctx)
-    raise NotImplementedYet
+    del cursor
+    rows = await destruction.batches(ctx.tenant, status)
+    return RecordsBatchListOut(items=[_batch_out(r) for r in rows])
 
 
 @records_governance_router.get(
     _B, action="retention.read", response_model=RecordsBatchOut, errors=(501,)
 )
 async def destruction_batch_route(batch_id: UUID, ctx: Ctx) -> RecordsBatchOut:
+    from abacus.modules.evidence import destruction
+
     await _on(ctx)
-    raise NotImplementedYet
+    return _batch_out(await destruction.batch(ctx.tenant, batch_id))
 
 
 @records_governance_router.get(
@@ -241,8 +270,14 @@ async def destruction_batch_route(batch_id: UUID, ctx: Ctx) -> RecordsBatchOut:
 )
 async def destruction_documents_route(batch_id: UUID, ctx: Ctx) -> bytes:
     """An audited export with fresh MFA (DEC-60)."""
+    from abacus.kernel.uow import Target, uow
+    from abacus.modules.evidence import destruction
+
     await _human(ctx, "destruction.export_list")
-    raise NotImplementedYet
+    body = await destruction.documents_csv(ctx.tenant, batch_id)
+    async with uow(ctx.tenant) as tx:
+        tx.record("destruction_batch.exported", target=Target("destruction_batch", batch_id))
+    return body
 
 
 @records_governance_router.post(
