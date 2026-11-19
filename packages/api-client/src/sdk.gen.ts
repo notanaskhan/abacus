@@ -19508,6 +19508,9 @@ export const entityTallies = <ThrowOnError extends boolean = false>(options: Opt
 
 /**
  * Two Year Route
+ *
+ * TAX-10 a/b; 409 `threshold_unavailable` without the firm's two-year variance row,
+ * `comparison_unavailable` without both years' approved summaries (S51 partials).
  */
 export const twoYear = <ThrowOnError extends boolean = false>(options: Options<TwoYearData, ThrowOnError>): RequestResult<TwoYearResponses, TwoYearErrors, ThrowOnError> => (options.client ?? client).get<TwoYearResponses, TwoYearErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -19526,6 +19529,8 @@ export const twoYearExport = <ThrowOnError extends boolean = false>(options: Opt
 
 /**
  * Two Year Explanation Route
+ *
+ * A new insert-only version (S51 partials).
  */
 export const twoYearExplanation = <ThrowOnError extends boolean = false>(options: Options<TwoYearExplanationData, ThrowOnError>): RequestResult<TwoYearExplanationResponses, TwoYearExplanationErrors, ThrowOnError> => (options.client ?? client).put<TwoYearExplanationResponses, TwoYearExplanationErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

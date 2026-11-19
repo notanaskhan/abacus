@@ -358205,6 +358205,7 @@
     },
     "/v1/tax-returns/{return_id}/two-year": {
       "get": {
+        "description": "TAX-10 a/b; 409 `threshold_unavailable` without the firm's two-year variance row,\n`comparison_unavailable` without both years' approved summaries (S51 partials).",
         "operationId": "two_year",
         "parameters": [
           {
@@ -358453,6 +358454,7 @@
     },
     "/v1/tax-returns/{return_id}/two-year/lines/{line_key}/explanation": {
       "put": {
+        "description": "A new insert-only version (S51 partials).",
         "operationId": "two_year_explanation",
         "parameters": [
           {
