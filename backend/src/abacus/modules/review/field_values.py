@@ -437,13 +437,14 @@ async def changed_since(
 
 
 _DRAFT_ACCURACY = text(
-    "WITH f AS (SELECT DISTINCT ON (target_id, field_key) target_id, field_key, value, "
-    "value_source FROM field_value_versions WHERE target_type = :t AND target_id = ANY(:ids) "
-    "ORDER BY target_id, field_key, seq), l AS (SELECT DISTINCT ON (target_id, field_key) "
-    "target_id, field_key, value FROM field_value_versions WHERE target_type = :t "
-    "AND target_id = ANY(:ids) ORDER BY target_id, field_key, seq DESC) "
-    "SELECT count(*), count(*) FILTER (WHERE l.value <> f.value) FROM f JOIN l "
-    "USING (target_id, field_key) WHERE f.value_source = 'agent_suggested'"
+    "SELECT count(*), count(*) FILTER (WHERE last_v.value <> first_v.value) FROM ("
+    "SELECT DISTINCT ON (target_id, field_key) target_id, field_key, value, value_source "
+    "FROM field_value_versions WHERE target_type = :t AND target_id = ANY(:ids) "
+    "ORDER BY target_id, field_key, seq) AS first_v JOIN ("
+    "SELECT DISTINCT ON (target_id, field_key) target_id, field_key, value "
+    "FROM field_value_versions WHERE target_type = :t AND target_id = ANY(:ids) "
+    "ORDER BY target_id, field_key, seq DESC) AS last_v USING (target_id, field_key) "
+    "WHERE first_v.value_source = 'agent_suggested'"
 )
 
 

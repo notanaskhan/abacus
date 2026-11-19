@@ -5,8 +5,11 @@ A candidate is a continuing tax client's prior-year return with its binder count
 segment, the people carried from last year, and the facts the exception rules read. Cohorts group
 candidates by office and segment in a stable order; tallies count engagements (one per client),
 returns and binders. An exception rule marks a row for a person's answer (it stays out of the
-cohort's executable rows until resolved): a missing §7216 consent set, a lapsed engagement letter,
-or a client flagged inactive. Prospects never enter a manifest (DEC-39).
+cohort's executable rows until resolved): the codes are ENG-07's (SPEC-710 AC-3; the season
+contract's `ExceptionCode`), each a fact the candidate source states — a seasonal preparer not
+started, a bounced contact, an offshore preparer without §7216 consent, an assignee walled or
+departed, no signer, a missing confirmation, two prior binders, a changed continuance fact.
+Prospects never enter a manifest (DEC-39).
 """
 
 from __future__ import annotations
@@ -15,8 +18,26 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from typing import Final, Literal
 
-Exception_ = Literal["consent_missing", "letter_lapsed", "client_inactive"]
-RULES: Final[tuple[Exception_, ...]] = ("consent_missing", "letter_lapsed", "client_inactive")
+Exception_ = Literal[
+    "assignee_seasonal_not_started",
+    "contact_bounced",
+    "offshore_without_consent",
+    "assignee_walled_or_departed",
+    "signer_missing",
+    "confirmation_missing",
+    "binder_ambiguous",
+    "continuance_changed",
+]
+RULES: Final[tuple[Exception_, ...]] = (
+    "assignee_seasonal_not_started",
+    "contact_bounced",
+    "offshore_without_consent",
+    "assignee_walled_or_departed",
+    "signer_missing",
+    "confirmation_missing",
+    "binder_ambiguous",
+    "continuance_changed",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,9 +49,7 @@ class Candidate:
     binders: int
     preparer: str | None
     reviewer: str | None
-    consent_on_file: bool = True
-    letter_current: bool = True
-    active: bool = True
+    flags: frozenset[str] = frozenset()  # the facts the source found, by exception code
     prospect: bool = False
 
 
@@ -64,14 +83,8 @@ class Cohort:
 
 
 def exceptions_of(c: Candidate) -> tuple[Exception_, ...]:
-    found: list[Exception_] = []
-    if not c.consent_on_file:
-        found.append("consent_missing")
-    if not c.letter_current:
-        found.append("letter_lapsed")
-    if not c.active:
-        found.append("client_inactive")
-    return tuple(found)
+    """The rules that apply, in ENG-07's order; a fact the rules do not name is ignored."""
+    return tuple(code for code in RULES if code in c.flags)
 
 
 def build(candidates: Iterable[Candidate], order: Sequence[tuple[str, str]]) -> list[Cohort]:

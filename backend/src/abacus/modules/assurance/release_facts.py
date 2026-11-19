@@ -15,7 +15,7 @@ Values are words for AUD-24's rows ("5 of 5"); the facts are identifiers and cou
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Final, cast
+from typing import Final
 from uuid import UUID
 
 from sqlalchemy import text
@@ -81,10 +81,9 @@ async def governance_260(
     return AlsoRequired("governance_260", met, None if status is None else str(status))
 
 
-_UNLOCKED = text(
-    "SELECT DISTINCT w.engagement_id FROM report_releases r JOIN work_items w "
-    "ON w.id = r.work_item_id WHERE w.engagement_id = ANY(:e) AND NOT EXISTS "
-    "(SELECT 1 FROM archives a WHERE a.engagement_id = w.engagement_id)"
+_RELEASED = text(
+    "SELECT EXISTS (SELECT 1 FROM report_releases WHERE work_item_id = :w) "
+    "AND NOT EXISTS (SELECT 1 FROM archives WHERE engagement_id = :e)"
 )
 
 
@@ -93,11 +92,17 @@ async def unlocked_archives(
 ) -> frozenset[UUID]:
     """Q-05-T11 (S51 partials): engagements released but not yet locked; their documentation is
     still being assembled, so nothing in them is eligible for destruction."""
-    if not engagement_ids:
-        return frozenset()
-    async with tenant_session(tenant) as session:
-        found = await session.scalars(_UNLOCKED, {"e": list(engagement_ids)})
-        return frozenset(cast(UUID, e) for e in found)
+    from abacus.modules.engagements.api import assurance_item_id
+
+    out: set[UUID] = set()
+    for engagement_id in engagement_ids:
+        work_item = await assurance_item_id(tenant, engagement_id)
+        if work_item is None:
+            continue
+        async with tenant_session(tenant) as session:
+            if await session.scalar(_RELEASED, {"w": work_item, "e": engagement_id}):
+                out.add(engagement_id)
+    return frozenset(out)
 
 
 def register() -> None:

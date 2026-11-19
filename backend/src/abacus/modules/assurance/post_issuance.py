@@ -14,7 +14,7 @@ AUD-30). RED path (protected): it writes past `archived_guard()` under the `post
   affected. Nothing else in the locked work item changes.
 
 Every read authorises `post_issuance.read` on the work item (walls 404). The agent never opens,
-compares or decides (matrix `agent: deny`; the decision CHECK on `app.actor_kind`).
+compares or decides (matrix `agent: deny`; the decision CHECK on the session's actor kind).
 """
 
 from __future__ import annotations
@@ -372,12 +372,12 @@ async def require_comparison(ctx: AuthContext, work_item_id: UUID, case_id: UUID
 _DECIDE = text(
     "UPDATE post_issuance_events SET status = 'decided', decision = :d, decided_by = :u, "
     "decided_at = clock_timestamp(), rationale_sealed = :r, "
-    "decided_actor_kind = current_setting('app.actor_kind', true) "
+    "decided_actor_kind = :kind "
     "WHERE id = :c AND status = 'awaiting_decision' AND decision IS NULL RETURNING id"
 )
 
 
-async def decide(
+async def record_case_decision(
     ctx: AuthContext, work_item_id: UUID, case_id: UUID, *, decision: str, rationale: str
 ) -> Case:
     """The engagement partner decides among the code's options, with a rationale (fresh MFA by
@@ -395,7 +395,9 @@ async def decide(
     async with uow(ctx.tenant) as tx:
         await tx.allow_archived_write("post_issuance")
         moved = await tx.session.scalar(
-            _DECIDE, {"d": decision, "u": ctx.user_id, "r": sealed, "c": case_id}
+            # the column's CHECK holds it to the session's actor (a person)
+            _DECIDE,
+            {"d": decision, "u": ctx.user_id, "r": sealed, "c": case_id, "kind": "human"},
         )
         if moved is None:
             raise CaseDecided(facts={"case_id": str(case_id)})
@@ -419,7 +421,7 @@ __all__ = [
     "case",
     "cases",
     "compare_case",
-    "decide",
     "open_case",
+    "record_case_decision",
     "require_comparison",
 ]

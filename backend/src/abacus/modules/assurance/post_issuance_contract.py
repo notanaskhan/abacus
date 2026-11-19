@@ -371,7 +371,7 @@ async def post_issuance_decision_route(
     await _human(ctx, "post_issuance.decide")
     from abacus.modules.assurance import post_issuance as pi
 
-    found = await pi.decide(
+    found = await pi.record_case_decision(
         ctx, work_item_id, case_id, decision=body.decision, rationale=body.rationale
     )
     return _case_out(found, await _actions(ctx, work_item_id))

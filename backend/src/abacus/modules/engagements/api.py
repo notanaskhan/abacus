@@ -463,6 +463,12 @@ register_pilot_metric_source("w4", w4_portal_activation)  # Q-04-T008 (DEC-825)
 # P-10-T28: the agent tools this module owns (C17 via the kernel slot; `agents` registers them).
 from abacus.modules.engagements.agent_tools import AGENT_TOOLS  # noqa: E402
 
+# T-08-T09 (S51 partials): season setup's service and its candidate source slot (tax fills it).
+from abacus.modules.engagements.season_service import (  # noqa: E402
+    SeasonCandidate,
+    register_season_candidates,
+)
+
 __all__ = [
     "ACCEPTANCE_DECISION_DUE",
     "ACTIVITIES",
@@ -534,6 +540,7 @@ __all__ = [
     "ProgressSource",
     "RetentionFacts",
     "RosterMember",
+    "SeasonCandidate",
     "StoredFile",
     "TemplateItem",
     "TemplateSeed",
@@ -651,6 +658,7 @@ __all__ = [
     "register_open_requests",
     "register_progress_source",
     "register_roll_forward_items",
+    "register_season_candidates",
     "register_work_item_kind",
     "remove_from_team",
     "replace_gate_provider",

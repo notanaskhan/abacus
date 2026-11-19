@@ -7,17 +7,17 @@ from __future__ import annotations
 from abacus.modules.engagements.season_manifest import Candidate, build, tally
 
 
-def _c(name: str, office: str, segment: str, **kw: object) -> Candidate:
-    return Candidate(name, office, segment, 1, 1, "OB", "SI", **kw)  # type: ignore[arg-type]  # flags only
+def _c(name: str, office: str, segment: str, *flags: str, prospect: bool = False) -> Candidate:
+    return Candidate(name, office, segment, 1, 1, "OB", "SI", frozenset(flags), prospect)
 
 
 def test_ac_cohorts_foot_and_flag_exceptions() -> None:
     cands = [
         _c("Abbott", "Chicago", "individual"),
         _c("Baker", "Chicago", "individual"),
-        _c("Osterberg", "Denver", "fiduciary", consent_on_file=False),
-        _c("Farouk", "Denver", "fiduciary", letter_current=False),
-        _c("Barlow", "Denver", "fiduciary", active=False),
+        _c("Osterberg", "Denver", "fiduciary", "assignee_seasonal_not_started"),
+        _c("Farouk", "Denver", "fiduciary", "assignee_seasonal_not_started"),
+        _c("Barlow", "Denver", "fiduciary", "contact_bounced", "not_a_rule"),
         _c("Prospect Co.", "Denver", "fiduciary", prospect=True),
     ]
     cohorts = build(cands, [("Chicago", "individual"), ("Denver", "fiduciary")])

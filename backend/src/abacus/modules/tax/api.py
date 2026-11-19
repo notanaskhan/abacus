@@ -486,6 +486,12 @@ from abacus.modules.tax.worksheet_review import (  # noqa: E402
 
 _register_worksheet_review()
 
+# T-08-T09 (S51 partials): the season's candidates come from the prior year's returns.
+from abacus.modules.engagements.api import register_season_candidates  # noqa: E402
+from abacus.modules.tax.season_candidates import candidates as _season_candidates  # noqa: E402
+
+register_season_candidates(_season_candidates)
+
 # Q-05-T07 (S51 partials): ADM-11's accuracy reads the filed returns' worksheets.
 # T-04-T31 (DEC-3413): a return's issues are fixed and explained by the tax agents, through P-04's
 # fail-closed slots (keyed by the issue's record type).

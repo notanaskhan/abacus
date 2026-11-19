@@ -154,6 +154,7 @@ class RetentionFacts:
     client_id: UUID
     type: str
     period_end: date | None
+    office_id: UUID | None = None  # S51 partials (T-08-T09): the season cohort's office
 
 
 async def engagement_retention_facts(
@@ -169,7 +170,8 @@ async def engagement_retention_facts(
                     Engagement.client_id,
                     Engagement.type,
                     Engagement.fiscal_period_end,
+                    Engagement.office_id,
                 ).where(Engagement.id.in_(list(engagement_ids)))
             )
         ).all()
-    return {r[0]: RetentionFacts(r[1], str(r[2]), r[3]) for r in rows}
+    return {r[0]: RetentionFacts(r[1], str(r[2]), r[3], r[4]) for r in rows}
