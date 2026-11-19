@@ -1215,6 +1215,7 @@ async def approve_proposal(
             after=Ref(decision=decision_id, version=version, edits=len(edited)),
             scope=Scope(engagement_id=engagement_id),
         )
+        told = await _outcome_fields(tx, person, locked, decision)
         tx.emit(
             ProposalDecided(
                 proposal_id=locked.id,
@@ -1222,9 +1223,48 @@ async def approve_proposal(
                 engagement_id=engagement_id,
                 decision=decision,
                 by_user=person.user_id,
+                agent_key=told.agent_key,
+                outcome=told.outcome,
+                source_id=told.source_id,
+                decided_at=told.decided_at,
+                decided_by=told.decided_by,
             )
         )
     return await proposal_view(person, proposal_id)
+
+
+_OUTCOME: Final = {
+    "approved": "adopted",
+    "approved_with_edits": "changed",
+    "rejected": "rejected",
+}
+
+
+@dataclass(frozen=True)
+class _Outcome:
+    agent_key: str | None = None
+    outcome: str | None = None
+    source_id: UUID | None = None
+    decided_at: str | None = None
+    decided_by: UUID | None = None
+
+
+async def _outcome_fields(
+    tx: UnitOfWork, person: AuthContext, locked: Proposal, decision: str
+) -> _Outcome:
+    """Q-05-T07 (S51 partials; DEC-96): the override projection's facts, from the proposal's own
+    run (the agent that proposed), dated by this decision. A proposal with no run carries none
+    and the projection skips it."""
+    run = await run_of(tx.session, locked.agent_run_id)
+    if run is None:
+        return _Outcome()
+    return _Outcome(
+        run.agent_id,
+        _OUTCOME.get(decision),
+        locked.id,
+        (await clock.now(person.tenant)).isoformat(),
+        person.user_id,
+    )
 
 
 async def _resolve_suggestion(
@@ -1317,6 +1357,7 @@ async def reject_proposal(
             after=Ref(decision=decision_id, version=version),
             scope=Scope(engagement_id=engagement_id),
         )
+        told = await _outcome_fields(tx, person, locked, "rejected")
         tx.emit(
             ProposalDecided(
                 proposal_id=locked.id,
@@ -1325,6 +1366,11 @@ async def reject_proposal(
                 decision="rejected",
                 reason_code=reason_code,
                 by_user=person.user_id,
+                agent_key=told.agent_key,
+                outcome=told.outcome,
+                source_id=told.source_id,
+                decided_at=told.decided_at,
+                decided_by=told.decided_by,
             )
         )
     return await proposal_view(person, proposal_id)

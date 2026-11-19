@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from datetime import date, datetime
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final, cast
 from uuid import UUID
 
@@ -40,6 +41,26 @@ def register_quality_signal(name: str, reader: Signal) -> None:
 _OBJECTIVES = text("SELECT component, health_flag FROM qm_objectives WHERE active")
 _FINDINGS = text("SELECT status, due_on FROM qm_findings WHERE status <> 'remediated'")
 _SETTINGS = text("SELECT evaluation_as_of_month_day FROM qm_settings LIMIT 1")
+
+
+ONE_PLACE: Final = Decimal("0.1")
+
+
+async def accuracy(tenant: TenantContext, cycle: int) -> dict[str, object]:
+    """ADM-11 f (AC-4; S51 partials): the cycle's draft-vs-final accuracy over the prior tax
+    year's filed returns: of the fields the agent drafted, how many a person changed by the
+    final; 1 - changed ÷ fields to one place (None with nothing drafted). Firm-wide."""
+    from abacus.modules.review.api import draft_accuracy
+    from abacus.modules.tax.api import filed_return_worksheets
+
+    filed, worksheets = await filed_return_worksheets(tenant, cycle - 1)
+    fields, changed = await draft_accuracy(tenant, "return_worksheet", worksheets)
+    rate = (
+        None
+        if fields == 0
+        else (100 - Decimal(changed) * 100 / Decimal(fields)).quantize(ONE_PLACE, ROUND_HALF_UP)
+    )
+    return {"returns_filed": filed, "fields": fields, "changed": changed, "accuracy": rate}
 
 
 async def dashboard(
@@ -77,7 +98,7 @@ async def dashboard(
             "overrides": rates["overrides"],
             "outputs": rates["outputs"],
             "tolerance_pct": rates["tolerance_pct"],
-            "accuracy": None,
+            "accuracy": (await accuracy(tenant, today.year))["accuracy"],
             "consultations_open": signals.get("consultations_open", 0),
             "days_to_evaluation": days_to(evaluation, today),
         },

@@ -434,3 +434,29 @@ async def changed_since(
                 )
             ).scalars()
         )
+
+
+_DRAFT_ACCURACY = text(
+    "WITH f AS (SELECT DISTINCT ON (target_id, field_key) target_id, field_key, value, "
+    "value_source FROM field_value_versions WHERE target_type = :t AND target_id = ANY(:ids) "
+    "ORDER BY target_id, field_key, seq), l AS (SELECT DISTINCT ON (target_id, field_key) "
+    "target_id, field_key, value FROM field_value_versions WHERE target_type = :t "
+    "AND target_id = ANY(:ids) ORDER BY target_id, field_key, seq DESC) "
+    "SELECT count(*), count(*) FILTER (WHERE l.value <> f.value) FROM f JOIN l "
+    "USING (target_id, field_key) WHERE f.value_source = 'agent_suggested'"
+)
+
+
+async def draft_accuracy(
+    tenant: TenantContext, target_type: str, target_ids: Sequence[UUID]
+) -> tuple[int, int]:
+    """Q-05-T07 (S51 partials; ADM-11 f): of the fields the agent drafted on these targets (their
+    first value was its suggestion), how many, and how many a person changed by the final value.
+    Values are compared as stored, never read or logged."""
+    if not target_ids:
+        return 0, 0
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(_DRAFT_ACCURACY, {"t": target_type, "ids": list(target_ids)})
+        ).one()
+    return int(cast(int, row[0])), int(cast(int, row[1]))

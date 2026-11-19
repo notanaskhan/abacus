@@ -385,6 +385,7 @@ __all__ = [
     "estimates_for",
     "explain_workflow_id",
     "extension_for",
+    "filed_return_worksheets",
     "filed_returns",
     "final_approval_eligibility",
     "fix_workflow_id",
@@ -485,9 +486,11 @@ from abacus.modules.tax.worksheet_review import (  # noqa: E402
 
 _register_worksheet_review()
 
+# Q-05-T07 (S51 partials): ADM-11's accuracy reads the filed returns' worksheets.
 # T-04-T31 (DEC-3413): a return's issues are fixed and explained by the tax agents, through P-04's
 # fail-closed slots (keyed by the issue's record type).
 from abacus.modules.review.api import register_explainer, register_fix_runner  # noqa: E402
+from abacus.modules.tax.worksheet_review import filed_return_worksheets  # noqa: E402
 
 register_fix_runner(_fix_runner.RECORD_TYPE, _fix_runner.start_fix)
 register_explainer(_fix_runner.RECORD_TYPE, _explain.start_explain)

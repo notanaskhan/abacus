@@ -27556,6 +27556,9 @@ export const qualityAccuracyQueryKey = (options?: Options<QualityAccuracyData>) 
 
 /**
  * Quality Accuracy Route
+ *
+ * ADM-11 f: draft-vs-final over the cycle's filed returns (firm-wide; an office does not
+ * narrow it yet: returns carry no office).
  */
 export const qualityAccuracyOptions = (options?: Options<QualityAccuracyData>) => queryOptions<QualityAccuracyResponse, QualityAccuracyError, QualityAccuracyResponse, ReturnType<typeof qualityAccuracyQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
