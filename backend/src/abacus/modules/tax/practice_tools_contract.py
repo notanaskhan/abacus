@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -443,14 +443,80 @@ _P = TAX_PLANNING
 _A = TAX_AMENDMENTS
 
 
+def _two_year_out(found: object, view: TwoYearFilter) -> TaxPracticeTwoYearOut:
+    from abacus.modules.tax.two_year_service import Comparison
+
+    c = cast(Comparison, found)
+
+    def pct(cy: Decimal, py: Decimal) -> Decimal | None:
+        return None if py == 0 else ((cy - py) * 100 / abs(py)).quantize(Decimal("0.1"))
+
+    lines = [
+        TaxPracticeTwoYearLineOut(
+            line_key=ln.line.code,
+            label=ln.line.label,
+            current=ln.line.current,
+            prior=ln.line.prior,
+            delta=ln.line.delta,
+            delta_pct=ln.line.delta_pct,
+            flagged=ln.line.flagged,
+            below_reason=(
+                "below_amount"
+                if not ln.line.flagged
+                and abs(ln.line.delta) < c.threshold.amount
+                and ln.line.delta_pct is not None
+                and abs(ln.line.delta_pct) >= c.threshold.pct
+                else None
+            ),
+            state=cast(ExplanationState | None, ln.state),
+            explanation=None if ln.explanation is None else ln.explanation.text,
+            explanation_version_id=None if ln.explanation is None else ln.explanation.version_id,
+            author_kind=None
+            if ln.explanation is None
+            else cast(Literal["human", "agent"], ln.explanation.author_kind),
+            accepted_at=None if ln.explanation is None else ln.explanation.accepted_at,
+            values_hash=ln.values_hash,
+        )
+        for ln in c.lines
+        if view == "all" or ln.line.flagged
+    ]
+    flagged = [ln for ln in c.lines if ln.line.flagged]
+    return TaxPracticeTwoYearOut(
+        tax_return_id=c.return_id,
+        current_summary_id=c.summary_version[:60],
+        filter=view,
+        threshold=TaxPracticeTwoYearThresholdOut(
+            source="variance_policy",
+            source_label="Firm variance policy (two-year)",
+            version_id=c.threshold_version_id,
+            amount=c.threshold.amount,
+            percent=c.threshold.pct,
+        ),
+        lines=lines,
+        agi=c.agi,
+        agi_delta_pct=pct(c.agi, c.agi_prior),
+        total_tax=c.total_tax,
+        total_tax_delta_pct=pct(c.total_tax, c.total_tax_prior),
+        refund=c.refund,
+        prior_refund=c.prior_refund,
+        over_threshold=len(flagged),
+        accepted=sum(1 for ln in flagged if ln.state == "accepted"),
+        explain_available=False,
+    )
+
+
 @practice_tools_router.get(
     f"{_R}/two-year", action="tax_return.read", response_model=TaxPracticeTwoYearOut, errors=(501,)
 )
 async def two_year_route(
     return_id: UUID, ctx: Ctx, filter: TwoYearFilter = "all"
 ) -> TaxPracticeTwoYearOut:
+    """TAX-10 a/b; 409 `threshold_unavailable` without the firm's two-year variance row,
+    `comparison_unavailable` without both years' approved summaries (S51 partials)."""
     await _on(ctx, _Y)
-    raise NotImplementedYet
+    from abacus.modules.tax.two_year_service import comparison
+
+    return _two_year_out(await comparison(ctx, return_id), filter)
 
 
 @practice_tools_router.post(
@@ -477,8 +543,12 @@ async def two_year_explain_route(
 async def two_year_explanation_route(
     return_id: UUID, line_key: str, body: TaxPracticeExplanationIn, ctx: Ctx, if_match: IfMatch
 ) -> TaxPracticeTwoYearLineOut:
+    """A new insert-only version (S51 partials)."""
     await _human(ctx, _Y, "variance_explanation.edit")
-    raise NotImplementedYet
+    from abacus.modules.tax.two_year_service import edit_explanation
+
+    found = _two_year_out(await edit_explanation(ctx, return_id, line_key, body.text), "all")
+    return next(ln for ln in found.lines if ln.line_key == line_key)
 
 
 @practice_tools_router.post(
@@ -492,7 +562,13 @@ async def two_year_accept_route(
 ) -> TaxPracticeTwoYearLineOut:
     """Human-only, insert-only; 409 `explanation_stale` when the values moved (AC-24, AC-25)."""
     await _human(ctx, _Y, "variance_explanation.accept")
-    raise NotImplementedYet
+    from abacus.modules.tax.two_year_service import accept
+
+    found = _two_year_out(
+        await accept(ctx, return_id, line_key, body.explanation_version_id, body.values_hash),
+        "all",
+    )
+    return next(ln for ln in found.lines if ln.line_key == line_key)
 
 
 @practice_tools_router.get(
@@ -500,7 +576,9 @@ async def two_year_accept_route(
 )
 async def two_year_export_route(return_id: UUID, ctx: Ctx) -> bytes:
     await _human(ctx, _Y, "export.create")
-    raise NotImplementedYet
+    from abacus.modules.tax.two_year_service import export_xlsx
+
+    return await export_xlsx(ctx, return_id)
 
 
 @practice_tools_router.get(

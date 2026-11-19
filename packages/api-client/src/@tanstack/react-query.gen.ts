@@ -32067,6 +32067,9 @@ export const twoYearQueryKey = (options: Options<TwoYearData>) => createQueryKey
 
 /**
  * Two Year Route
+ *
+ * TAX-10 a/b; 409 `threshold_unavailable` without the firm's two-year variance row,
+ * `comparison_unavailable` without both years' approved summaries (S51 partials).
  */
 export const twoYearOptions = (options: Options<TwoYearData>) => queryOptions<TwoYearResponse, TwoYearError, TwoYearResponse, ReturnType<typeof twoYearQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -32101,6 +32104,8 @@ export const twoYearExportOptions = (options: Options<TwoYearExportData>) => que
 
 /**
  * Two Year Explanation Route
+ *
+ * A new insert-only version (S51 partials).
  */
 export const twoYearExplanationMutation = (options?: Partial<Options<TwoYearExplanationData>>): UseMutationOptions<TwoYearExplanationResponse, TwoYearExplanationError, Options<TwoYearExplanationData>> => {
     const mutationOptions: UseMutationOptions<TwoYearExplanationResponse, TwoYearExplanationError, Options<TwoYearExplanationData>> = {
