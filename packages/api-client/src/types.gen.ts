@@ -16454,6 +16454,10 @@ export type DeliveryStatementLineOut = {
      * Label
      */
     label: string;
+    /**
+     * Prior
+     */
+    prior?: string | null;
 };
 
 /**

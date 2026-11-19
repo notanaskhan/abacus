@@ -214,6 +214,13 @@ export function StructurePane({
         {...(readOnlyReason === undefined ? {} : { disabledReason: readOnlyReason })}
         {...(onToggleSection === undefined ? {} : { onToggle: onToggleSection })}
       />
+      {structure.after?.map((sheet) => (
+        <KvSheet
+          key={sheet.crumb}
+          sheet={sheet}
+          {...(onOpenLink === undefined ? {} : { onOpenLink })}
+        />
+      ))}
       {structure.variables.length > 0 && (
         <VariablesFieldset
           title={variablesTitle}

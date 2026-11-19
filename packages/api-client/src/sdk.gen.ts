@@ -3694,7 +3694,7 @@ export const lock = <ThrowOnError extends boolean = false>(options: Options<Lock
 /**
  * Package Route
  *
- * Structure, preconditions and route (C-02-T21).
+ * Structure, preconditions and route (C-02-T21, DEC-5703): figures from the posted TB.
  */
 export const package_ = <ThrowOnError extends boolean = false>(options: Options<PackageData, ThrowOnError>): RequestResult<PackageResponses, PackageErrors, ThrowOnError> => (options.client ?? client).get<PackageResponses, PackageErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3704,6 +3704,8 @@ export const package_ = <ThrowOnError extends boolean = false>(options: Options<
 
 /**
  * Package Edit Route
+ *
+ * Section toggles and the CAS answer: a new version at the version seen (C-02-T21).
  */
 export const packageEdit = <ThrowOnError extends boolean = false>(options: Options<PackageEditData, ThrowOnError>): RequestResult<PackageEditResponses, PackageEditErrors, ThrowOnError> => (options.client ?? client).patch<PackageEditResponses, PackageEditErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

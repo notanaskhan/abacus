@@ -140,7 +140,11 @@ async def _figures(
 
 def _line_out(ln: pkg.StatementLine) -> DeliveryStatementLineOut:
     return DeliveryStatementLineOut(
-        key=ln.key, label=ln.label, amount=ln.amount, account_refs=list(ln.account_refs)
+        key=ln.key,
+        label=ln.label,
+        amount=ln.amount,
+        account_refs=list(ln.account_refs),
+        prior=ln.prior,
     )
 
 

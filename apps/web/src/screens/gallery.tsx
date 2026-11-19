@@ -303,6 +303,8 @@ import {
 } from "./POR-08/scenarios";
 import { POR11 } from "./POR-11";
 import { SHL05 } from "./SHL-05";
+import { CLS08 } from "./CLS-08";
+import { CLS08_CLOSE_ID, scenarios as cls08Scenarios } from "./CLS-08/scenarios";
 import {
   OPENING as SHL05_OPENING,
   SHL05_STATES,
@@ -735,6 +737,34 @@ function Shl05Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-05", { title: "Support panel", Component: Shl05Artboard });
+
+// C-02-T23 (TASK-8711): CLS-08 a-g, the package's panes on each state's package read.
+const CLS08_STATES = ["a", "a2", "b", "c", "d", "e", "f", "g"] as const;
+function Cls08Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state = CLS08_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      cls08Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div data-artboard={state} className="w-[1400px]">
+      <CLS08
+        closeId={CLS08_CLOSE_ID}
+        periodEnd={state === "f" ? "Dec 31, 2026" : "Aug 31, 2026"}
+      />
+    </div>
+  );
+}
+registerScreen("CLS-08", { title: "Close › Deliverables", Component: Cls08Artboard });
 
 function Bnd01Frame({ state }: { state: Bnd01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
