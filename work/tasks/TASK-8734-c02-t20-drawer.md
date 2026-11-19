@@ -1,7 +1,7 @@
 ---
 id: TASK-8734
 title: "C-02-T20: Ledger console batch drawer read"
-spec: SPEC-703
+spec: SPEC-700
 acceptance_criteria: [AC-9]
 risk_zone: red
 status: in-review

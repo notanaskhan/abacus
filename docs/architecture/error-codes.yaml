@@ -332,6 +332,10 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.collaboration.errors.AssigneeNotAllowed
+  assignee_not_eligible:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.season_service.AssigneeNotEligible
   attachment_filed:
     status: 409
     raised_by:
@@ -578,6 +582,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.season_errors.CohortApproved
+    - abacus.modules.engagements.season_service.CohortApproved
     summary: 'The cohort is approved: its rows are frozen until the approval is withdrawn (AC1.3).'
   column_map_invalid:
     status: 422
@@ -763,6 +768,10 @@ codes:
     raised_by:
     - abacus.modules.ledger.consolidation.ConsolidationNotDraft
     summary: Only a draft consolidation changes.
+  consultation_not_concluded:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.consultations_log.ConsultationNotConcluded
   consultee_not_eligible:
     status: 422
     raised_by:
@@ -2356,6 +2365,10 @@ codes:
     raised_by:
     - abacus.modules.tax.estimates.NoBasisReturn
     summary: A confirmation request lives in a binder, which hangs off the basis return's engagement.
+  no_candidate_source:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.season_service.NoCandidateSource
   no_client_copy:
     status: 409
     raised_by:
@@ -2371,6 +2384,10 @@ codes:
     raised_by:
     - abacus.modules.methodology.standards.NoCurrentVersion
     summary: 'Nothing is published to draft from: import the first version (K-02-T11).'
+  no_difference_to_resolve:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.consultations_log.NoDifferenceToResolve
   no_draft:
     status: 409
     raised_by:
@@ -3846,6 +3863,7 @@ codes:
     - abacus.modules.engagements.intake.IntakeStaleVersion
     - abacus.modules.engagements.letters.LetterStale
     - abacus.modules.engagements.roll_forward_v2.RollForwardStale
+    - abacus.modules.engagements.season_service.StaleRow
     - abacus.modules.engagements.team_errors.TeamChanged
     - abacus.modules.evidence.firm_export_schedule.ScheduleStale
     - abacus.modules.identity.annual_independence.StaleStatement

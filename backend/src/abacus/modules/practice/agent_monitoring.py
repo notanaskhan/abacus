@@ -137,8 +137,12 @@ async def monitor(tenant_id: UUID, at: datetime) -> int:
                         recipient_user_ids=[cast(UUID, owner)],
                     )
                 )
+                tx.record(
+                    "qm_finding.due_notified", target=Target("qm_finding", cast(UUID, finding_id))
+                )
             if notice and settings is not None:
                 tx.emit(QmEvaluationDue(recipient_user_ids=[cast(UUID, settings[1])]))
+                tx.record("qm_evaluation.due_notified", target=Target("firm", tenant_id))
     return raised
 
 

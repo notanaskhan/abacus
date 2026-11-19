@@ -461,13 +461,21 @@ SUBSCRIPTIONS: dict[str, Callable[[OutboxEvent], Awaitable[None]]] = {
 register_pilot_metric_source("w4", w4_portal_activation)  # Q-04-T008 (DEC-825)
 
 # P-10-T28: the agent tools this module owns (C17 via the kernel slot; `agents` registers them).
-from abacus.modules.engagements.agent_tools import AGENT_TOOLS  # noqa: E402
-
 # T-08-T09 (S51 partials): season setup's service and its candidate source slot (tax fills it).
+from abacus.kernel.audit_owners import register_client_owners  # noqa: E402
+from abacus.modules.engagements.agent_tools import AGENT_TOOLS  # noqa: E402
+from abacus.modules.engagements.season_service import (  # noqa: E402
+    AUDIT_CLIENT_KINDS as _SEASON_ROW_KINDS,
+)
 from abacus.modules.engagements.season_service import (  # noqa: E402
     SeasonCandidate,
     register_season_candidates,
 )
+from abacus.modules.engagements.season_service import (  # noqa: E402
+    audit_clients as _season_row_clients,
+)
+
+register_client_owners(_SEASON_ROW_KINDS, _season_row_clients)
 
 __all__ = [
     "ACCEPTANCE_DECISION_DUE",

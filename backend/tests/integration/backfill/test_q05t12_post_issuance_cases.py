@@ -2,8 +2,8 @@
 
 Boundary: `create_app()` over HTTP on the migrated test database, `audit.post_issuance` on. A case
 opens only on an archived audit, under the `post_issuance` kind (nothing else in the locked work
-item is writable); with no certified line to match the comparison is unavailable, analysis and
-the decision are refused; the agent never opens a case.
+item is writable: A-07's guard tests); with no certified line to match the comparison is
+unavailable, analysis and the decision are refused; the agent never opens a case.
 """
 
 from __future__ import annotations
@@ -58,6 +58,11 @@ async def _lock(world: Books) -> None:
         "a" * 64,
         world.partner.user_id,
     )
+    # A-07's lock sets the work item's seal time last, in the same unit (the guard reads it).
+    await world.seed.run(
+        "UPDATE work_items SET archive_locked_at = clock_timestamp() WHERE id = $1",
+        world.work_item_id,
+    )
 
 
 async def test_ac_a_case_opens_only_on_an_archived_audit(world: Books) -> None:
@@ -86,7 +91,7 @@ async def test_ac_a_case_opens_only_on_an_archived_audit(world: Books) -> None:
     listed = await world.call("GET", _cases(world), world.senior)
     assert listed.status_code == 200, listed.text
     body = cast(Json, listed.json())
-    assert [cast(Json, i)["ref"] for i in cast(list[Json], body["items"])] == ["PI-01"]
+    assert [i["ref"] for i in cast(list[Json], body["items"])] == ["PI-01"]
     assert body["archive_locked_at"] is not None
 
 
@@ -115,10 +120,3 @@ async def test_ac_no_matching_line_no_comparison_no_analysis_no_decision(world: 
         headers=_keyed(),
     )
     assert decided.status_code == 409, decided.text
-
-    # Nothing else in the locked work item is writable.
-    with pytest.raises(Exception, match="archived"):
-        await world.seed.run(
-            "UPDATE post_issuance_events SET status = 'analysing' WHERE work_item_id = $1",
-            world.work_item_id,
-        )

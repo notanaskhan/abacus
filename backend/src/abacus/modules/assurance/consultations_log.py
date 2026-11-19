@@ -31,6 +31,7 @@ from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
     Resource,
+    allowed_actions,
     authorise,
     quality_partners,
     team_of,
@@ -172,9 +173,27 @@ _REOPEN = text(
 )
 
 
+_CONSULTEE = text("SELECT consulted_with_user_id FROM consultations WHERE id = :id")
+
+
 async def reopen(ctx: AuthContext, consultation_id: UUID) -> None:
+    """The consultee or the QM owner only (AUD-28 g); the matrix's other roles may not."""
     if await _authorised(ctx, "consultation.reopen", consultation_id) != "concluded":
         raise ConsultationNotConcluded(facts={"consultation_id": str(consultation_id)})
+    async with tenant_session(ctx.tenant) as session:
+        consultee = await session.scalar(_CONSULTEE, {"id": consultation_id})
+    if consultee != ctx.user_id:
+        # The QM owner is who may resolve a difference here (the matrix's QM-only action).
+        engagement_id, _ = await _consultation(ctx.tenant, consultation_id)
+        resource = (
+            await engagement_resource_of(ctx.tenant, engagement_id)
+            if engagement_id is not None
+            else Resource.firm(ctx.tenant_id)
+        )
+        if "consultation.resolve_difference" not in await allowed_actions(
+            ctx, resource, ("consultation.resolve_difference",)
+        ):
+            raise Forbidden("consultation.reopen", "relationship")
     async with uow(ctx.tenant) as tx:
         prior = await tx.session.scalar(_REOPEN, {"id": consultation_id})
         if prior is None:
@@ -336,14 +355,13 @@ async def _opened(ctx: AuthContext, sealed: object) -> str:
 
 async def detail(ctx: AuthContext, consultation_id: UUID) -> ConsultationDetail:
     """AUD-28's detail beyond A-06's record: facts, implementation, links, positions and the
-    resolution (`before_release` computed from `report_releases`, never typed). The consultee
-    reads theirs; anyone else needs `consultation.read` on the engagement (walls: 404)."""
+    resolution (`before_release` computed from `report_releases`, never typed), behind
+    `consultation.read` on the engagement (walls: 404)."""
     async with tenant_session(ctx.tenant) as session:
         row = (await session.execute(_DETAIL, {"id": consultation_id})).first()
         if row is None:
             raise NotFound(TARGET)
-        if row[6] != ctx.user_id:
-            await _authorised(ctx, "consultation.read", consultation_id)
+        await _authorised(ctx, "consultation.read", consultation_id)
         links = [tuple(r) for r in (await session.execute(_LINKS, {"id": consultation_id}))]
         positions = [
             tuple(r) for r in (await session.execute(_POSITIONS, {"id": consultation_id}))

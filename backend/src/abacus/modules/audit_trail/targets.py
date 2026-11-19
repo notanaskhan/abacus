@@ -94,6 +94,8 @@ FIRM_LEVEL: Final = frozenset(
         "envelope_policy",  # N-02: the firm's envelope fallback policy (the firm is its id)
         "methodology_step",  # K-01-T18: a step of a firm methodology version (no engagement)
         "destruction_batch",  # Q-05-T11: a quarter's batch spans former clients (counts only)
+        "qm_finding",  # Q-05-T08: a firm's QM finding (agent monitoring names an agent, no client)
+        "season_manifest",  # T-08-T09: the firm's season manifest (rows are placed by client)
     }
 )
 # Kinds whose rows may belong to no engagement (a notification about the firm): then firm-level.

@@ -2,7 +2,7 @@
 id: TASK-8728
 title: "S51-END: S51 end pass: gates, suites, security review and fixes"
 spec: SPEC-000
-acceptance_criteria: []
+acceptance_criteria: [AC-20]
 risk_zone: amber
 status: in-review
 branch: s51-end-pass

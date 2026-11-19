@@ -17,6 +17,7 @@ import pytest
 from abacus.kernel.db import TenantContext
 from abacus.modules.assurance import release
 
+from .support import Person
 from .tb_support import Books, Json, books
 
 pytestmark = pytest.mark.asyncio
@@ -42,14 +43,19 @@ def _keyed() -> dict[str, str]:
     return {"Idempotency-Key": str(uuid.uuid4())}
 
 
-async def _raised(world: Books) -> str:
+def _consultee(world: Books) -> Person:
+    """The consultee: a partner (AUD-28 f lists partners and specialists)."""
+    return world.partner
+
+
+async def _raised(world: Books, consultee: Person) -> str:
     made = await world.call(
         "POST",
         f"/v1/work-items/{world.work_item_id}/consultations",
         world.manager,
         {
             "question": "Implementation fees: over the term, or a distinct obligation?",
-            "consulted_with_user_id": str(world.reviewer.user_id),
+            "consulted_with_user_id": str(consultee.user_id),
             "facts": "$33,540 + $15,060 = $48,600",
             "consulted_role": "specialist",
         },
@@ -60,27 +66,30 @@ async def _raised(world: Books) -> str:
 
 
 async def test_ac_create_with_facts_conclude_with_implementation_then_reopen(world: Books) -> None:
-    cid = await _raised(world)
+    celia = _consultee(world)
+    cid = await _raised(world, celia)
     base = f"/v1/consultations/{cid}"
-    detail = cast(Json, (await world.call("GET", base, world.reviewer)).json())
+    got = await world.call("GET", base, celia)
+    assert got.status_code == 200, got.text
+    detail = cast(Json, got.json())
     assert (detail["facts"], detail["consulted_role"]) == (
         "$33,540 + $15,060 = $48,600",
         "specialist",
     )
 
     no_ref = {"conclusion": "Over the term.", "implemented": True}
-    refused = await world.call(
-        "POST", f"{base}/conclude", world.reviewer, no_ref, headers=_keyed()
-    )
-    assert refused.status_code == 400, refused.text
+    refused = await world.call("POST", f"{base}/conclude", celia, no_ref, headers=_keyed())
+    assert refused.status_code == 422, refused.text
 
     body = {"conclusion": "Over the term.", "implemented": True, "implemented_reference": "F-01"}
-    done = await world.call("POST", f"{base}/conclude", world.reviewer, body, headers=_keyed())
+    done = await world.call("POST", f"{base}/conclude", celia, body, headers=_keyed())
     assert done.status_code == 200, done.text
-    detail = cast(Json, (await world.call("GET", base, world.reviewer)).json())
+    detail = cast(Json, (await world.call("GET", base, celia)).json())
     assert (detail["implemented"], detail["implemented_reference"]) == (True, "F-01")
 
-    reopened = await world.call("POST", f"{base}/reopen", world.reviewer, headers=_keyed())
+    by_manager = await world.call("POST", f"{base}/reopen", world.manager, headers=_keyed())
+    assert by_manager.status_code == 403, by_manager.text  # neither the consultee nor the QM owner
+    reopened = await world.call("POST", f"{base}/reopen", celia, headers=_keyed())
     assert reopened.status_code == 200, reopened.text
     after = cast(Json, reopened.json())
     assert (after["implemented"], after["implemented_reference"]) == (False, None)
@@ -90,14 +99,14 @@ async def test_ac_create_with_facts_conclude_with_implementation_then_reopen(wor
         uuid.UUID(cid),
     )
     assert (row[0]["status"], row[0]["cleared"]) == ("open", True)
-    again = await world.call("POST", f"{base}/reopen", world.reviewer, headers=_keyed())
+    again = await world.call("POST", f"{base}/reopen", celia, headers=_keyed())
     assert again.status_code == 409, again.text
 
 
 async def test_ac_a_position_is_the_callers_own_role_and_a_difference_blocks_release(
     world: Books,
 ) -> None:
-    cid = await _raised(world)
+    cid = await _raised(world, _consultee(world))
     base = f"/v1/consultations/{cid}"
     as_eqr = {"role": "eqr_reviewer", "agrees": False, "position": "A distinct obligation."}
     claimed = await world.call(
@@ -123,6 +132,13 @@ async def test_ac_a_position_is_the_callers_own_role_and_a_difference_blocks_rel
     assert "also_required:consultation_differences" in snap.blockers
 
     qm = await world.seed.person(world.tenant_id, "quality_partner")
+    # the QM owner reads consultations in scope: their service lines include the engagement's
+    await world.seed.run(
+        "UPDATE memberships SET service_lines = ARRAY['audit'] WHERE tenant_id = $1 "
+        "AND user_id = $2",
+        world.tenant_id,
+        qm.user_id,
+    )
     resolution = {"resolution": "EQR concurs; recognise over the term."}
     not_qm = await world.call(
         "POST", f"{base}/resolve-difference", world.manager, resolution, headers=_keyed()
@@ -144,7 +160,7 @@ async def test_ac_a_position_is_the_callers_own_role_and_a_difference_blocks_rel
 
 
 async def test_ac_the_firm_log_counts_only_visible_rows(world: Books) -> None:
-    await _raised(world)
+    await _raised(world, _consultee(world))
     mine = await world.call("GET", "/v1/consultations", world.manager)
     assert mine.status_code == 200, mine.text
     counts = cast(Json, cast(Json, mine.json())["counts"])
