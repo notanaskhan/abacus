@@ -1,0 +1,26 @@
+# T-06-T26 (TASK-8721; ADR-078 independent author, solo edition; implementer of E10/E11 AY): the
+# TXP-13 figures as golden cases with their sources. Amounts are quoted text read as Decimal.
+e10_bluestem:
+  source: "T-06 §1 personas (Samuel Ito, TXP-13 a); handoff TXP-13 spec state a"
+  screen: TXP-13
+  state: a
+  aaa: "1488200"
+  shareholders: {A: [700, 365], B: [300, 365]}
+  split: {A: "1041740", B: "446460"}
+e11_ashford:
+  source: "T-06 §1 personas; handoff TXP-13 states b and b2"
+  screen: TXP-13
+  state: b
+  current: "2134650"
+  deferred: "122550"
+  provision: "2257200"
+  etr_pct: "28.9"
+  pretax_synthetic: "7810000"  # not in the handoff: chosen so the ETR rounds to 28.9
+  b2_unclassified: "1200"
+e12_lakeshore:
+  source: "T-06 §1 personas; handoff TXP-13 state c"
+  screen: TXP-13
+  state: c
+  part_ix_total: "4014000"
+  program_ratio: "80.0"
+  public_support_pct: "87.4"  # no source table anywhere (T-06-T18): pinned as a known gap
