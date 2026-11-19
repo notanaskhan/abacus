@@ -70,6 +70,7 @@ from abacus.modules.integrations.api import (
     W1Scope,
     WriteError,
     execute_write,
+    register_batch_entity,
     register_posting_log,
     w1_ledger,
     w1_refusal,
@@ -699,6 +700,17 @@ async def posting_facts_for(tenant: TenantContext, client_entity_id: UUID) -> Po
 
 
 register_posting_log(posting_facts_for)
+
+_BATCH_ENTITY = text("SELECT client_entity_id FROM posting_batches WHERE id = :b")
+
+
+async def batch_entity(tenant: TenantContext, batch_id: UUID) -> UUID | None:
+    """C-02-T20 (S51 partials): the batch's client entity, for the ledger console's drawer."""
+    async with tenant_session(tenant) as session:
+        return cast(UUID | None, await session.scalar(_BATCH_ENTITY, {"b": batch_id}))
+
+
+register_batch_entity(batch_entity)
 
 
 # --- views --------------------------------------------------------------------------------------

@@ -27137,7 +27137,8 @@ export const postingBatchQueryKey = (options: Options<PostingBatchData>) => crea
 /**
  * Posting Batch Route
  *
- * The O2 batch drawer (CLS-11b2); entries with QBO ids come from C8's batch read.
+ * The O2 batch drawer (CLS-11b2); entries with QBO ids come from C8's batch read. Walls and
+ * an unknown batch answer 404 (C-02-T20, S51 partials).
  */
 export const postingBatchOptions = (options: Options<PostingBatchData>) => queryOptions<PostingBatchResponse, PostingBatchError, PostingBatchResponse, ReturnType<typeof postingBatchQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

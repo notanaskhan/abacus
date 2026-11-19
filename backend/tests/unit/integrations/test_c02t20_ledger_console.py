@@ -5,8 +5,12 @@ deterministic CSV."""
 from __future__ import annotations
 
 from datetime import date, datetime
+from types import SimpleNamespace
 from uuid import uuid4
 
+import pytest
+
+from abacus.kernel.errors import NotFound
 from abacus.modules.integrations import ledger_console as lc
 
 CT = datetime(2026, 8, 11, 10, 0).astimezone()
@@ -57,3 +61,26 @@ def test_ac_a_provider_reference_never_reaches_the_csv_as_a_formula() -> None:
     )
     line = lc.posting_log_csv([hostile]).decode().splitlines()[1]
     assert ",'=HYPERLINK(1),'@SUM(1)," in line
+
+
+async def test_ac_the_drawer_reads_one_batch_and_hides_an_unknown_one(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    entity, batch = uuid4(), uuid4()
+    row = lc.LogRow(
+        batch, "2026-07-A", "2026-07", "posted", 6, 6, "47901", "47906", 1, 1, CT, None
+    )
+
+    async def entity_of(_t: object, b: object) -> object:
+        return entity if b == batch else None
+
+    async def log(_ctx: object, e: object, **_k: object) -> list[lc.LogRow]:
+        assert e == entity  # authorised through the console's own read (walls: 404)
+        return [row]
+
+    monkeypatch.setattr(lc, "_batch_entities", [entity_of])
+    monkeypatch.setattr(lc, "posting_log", log)
+    ctx = SimpleNamespace(tenant=None)
+    assert await lc.posting_batch(ctx, batch) == row  # type: ignore[arg-type]  # a stand-in
+    with pytest.raises(NotFound):
+        await lc.posting_batch(ctx, uuid4())  # type: ignore[arg-type]  # a stand-in
