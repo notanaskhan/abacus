@@ -5,6 +5,7 @@ Pre-registered (F-03-T08; ADR-140); A-06-T05 (DEC-1965): the C8 contract stub
 """
 
 from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.kernel.dispatch import WorkClass, register_work_classes
 from abacus.modules.adjustments.client_approvals import (
     ProposedEntryApprovals,
 )
@@ -40,8 +41,13 @@ register_client_delivery(deliver_proposed_entries)
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (router, posting_router)  # posting: C8 v2 (C-02-T06)
 # The worker serves a module with SUBSCRIPTIONS (A-06-T10's send): no workflows or activities.
-WORKFLOWS: dict[type, str] = {}
-ACTIVITIES: tuple[object, ...] = ()
+# C-02-T18 (DEC-5704): PostingBatchWorkflow, time sensitive (the client waits on the post).
+from abacus.modules.adjustments.posting import ACTIVITIES as _POSTING_ACTIVITIES  # noqa: E402
+from abacus.modules.adjustments.posting_workflow import PostingBatchWorkflow  # noqa: E402
+
+WORKFLOWS: dict[type, WorkClass] = {PostingBatchWorkflow: "time_sensitive"}
+register_work_classes(WORKFLOWS)
+ACTIVITIES: tuple[object, ...] = _POSTING_ACTIVITIES
 
 # A-09-T20 (DEC-5313): consolidation eliminations on C8.
 from abacus.modules.adjustments import eliminations  # noqa: E402

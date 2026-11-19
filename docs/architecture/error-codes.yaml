@@ -4525,6 +4525,7 @@ codes:
   write_capability_refused:
     status: 409
     raised_by:
+    - abacus.modules.integrations.writes.W1Refused
     - abacus.modules.integrations.writes.WriteCapabilityRefused
     summary: 'A write to a client''s system was refused: the registry enables none (ADR-150).'
   write_grant_missing:

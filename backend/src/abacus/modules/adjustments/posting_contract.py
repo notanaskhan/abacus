@@ -527,8 +527,26 @@ async def entries_export_route(work_item_id: UUID, ctx: Ctx) -> bytes:
 )
 async def dry_run_route(work_item_id: UUID, body: PostingEntryIdsIn, ctx: Ctx) -> PostingDryRunOut:
     """Preflight only; no write (C-02-T18)."""
+    from abacus.modules.adjustments import posting
+
     await _human(ctx, "posting_batch.dry_run")
-    raise NotImplementedYet
+    found = await posting.dry_run(ctx, work_item_id, body.entry_ids)
+    return PostingDryRunOut(
+        entry_count=found.entry_count,
+        total_amount=found.total_amount,
+        ledger_label=posting.LEDGER_LABEL,
+        client_entity_name=await posting.entity_label(ctx, work_item_id),
+        closing_date_target=found.closing_date_target,
+        results=[
+            PostingPreflightResultOut(
+                entry_id=r.entry_id,
+                ok=r.ok,
+                failed_check=cast(PreflightCheck | None, r.failed_check),
+                account_ref=r.account_ref,
+            )
+            for r in found.results
+        ],
+    )
 
 
 @posting_router.post(
@@ -543,8 +561,20 @@ async def post_batch_route(
 ) -> PostingBatchOut:
     """The batch, its approval grant (`not_before = +10 s`) and `PostingBatchWorkflow`; fresh
     MFA; refused for an attest client (C-02-T18)."""
+    from abacus.modules.adjustments import posting
+
     await _human(ctx, "posting_batch.post")
-    raise NotImplementedYet
+    made = await posting.create_batch(
+        ctx,
+        work_item_id,
+        body.entry_ids,
+        body.seen_versions,
+        set_closing_date=body.set_closing_date,
+        idempotency_key=idempotency_key,
+    )
+    if made.created:
+        await posting.start_posting(ctx.tenant_id, made.batch_id)
+    return PostingBatchOut.model_validate(await posting.batch_view(ctx.tenant, made.batch_id))
 
 
 @posting_router.post(
@@ -555,8 +585,11 @@ async def post_batch_route(
 )
 async def undo_batch_route(batch_id: UUID, ctx: Ctx) -> PostingBatchOut:
     """Void the grant inside the hold: nothing is written."""
+    from abacus.modules.adjustments import posting
+
     await _human(ctx, "posting_batch.post")
-    raise NotImplementedYet
+    await posting.undo_batch(ctx, batch_id)
+    return PostingBatchOut.model_validate(await posting.batch_view(ctx.tenant, batch_id))
 
 
 @posting_router.post(
