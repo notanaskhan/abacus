@@ -302,6 +302,8 @@ import {
   scenarios as por08Scenarios,
 } from "./POR-08/scenarios";
 import { POR11 } from "./POR-11";
+import { POR23 } from "./POR-23";
+import { STATES as POR23_STATES, scenarios as por23Scenarios } from "./POR-23/scenarios";
 import { scenarios as por11Scenarios } from "./POR-11/scenarios";
 import { copperleafPortalQuestions } from "../fixtures/seed/close-book";
 import { POR09 } from "./POR-09";
@@ -4131,6 +4133,15 @@ registerScreen("POR-11", {
         />
       );
     },
+  ),
+});
+// A-09-T42 (TASK-8702): POR-23 a-f for j20 7 (the room has no portal path of its own yet).
+registerScreen("POR-23", {
+  title: "Component auditor room · Harlow & Pike Distribution, Inc.",
+  Component: portalArtboard(
+    POR23_STATES,
+    (st) => por23Scenarios[st as keyof typeof por23Scenarios],
+    (_st, mobile) => <POR23 frame mobile={mobile} />,
   ),
 });
 registerScreen("POR-09", {
