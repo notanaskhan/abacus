@@ -71,6 +71,8 @@ const Index = lazyScreen(async () => (await import("../../screens/CLS-01")).CLS0
 // C-01-T40: CLS-10's flux inside the Review tab.
 const Flux = lazyScreen(async () => (await import("../../screens/CLS-10")).CLS10);
 const Plan = lazyScreen(async () => (await import("../../screens/CLS-09")).CLS09);
+// C-02-T23 (S51 partials): CLS-08's package inside the Deliverables tab.
+const Deliverables = lazyScreen(async () => (await import("../../screens/CLS-08")).CLS08);
 
 // CLS-01 (C-01-T33): `/closes` behind `closes.engine`. The filters are the search params
 // (`period`, `status`, `preparer`, `reviewer`, `attest`, `q`), so a filtered view is a link. The
@@ -165,7 +167,7 @@ function CloseTabPage({ tab, screen }: { tab: Tab; screen: string }): JSX.Elemen
       intake: "/closes/$closeId/intake",
       accounts: "/closes/$closeId/accounts",
       review: "/closes/$closeId/review",
-      deliverables: "/closes/$closeId",
+      deliverables: "/closes/$closeId/deliverables",
     }[next];
     void navigate({ to: path, params: { closeId: id } });
   };
@@ -220,6 +222,8 @@ function CloseTabPage({ tab, screen }: { tab: Tab; screen: string }): JSX.Elemen
           />
         ) : screen === "CLS-10" ? (
           <Flux closeId={closeId} />
+        ) : screen === "CLS-08" ? (
+          <Deliverables closeId={closeId} />
         ) : undefined}
       </Shell>
     </div>
@@ -282,7 +286,15 @@ export const closeFluxRoute = createRoute({
   },
 });
 
-// Any other slug (a mistyped tab, or Deliverables before C-02) lands on Overview.
+export const closeDeliverablesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/closes/$closeId/deliverables",
+  component: function CloseDeliverablesPage(): JSX.Element {
+    return <CloseTabPage tab="deliverables" screen="CLS-08" />;
+  },
+});
+
+// Any other slug (a mistyped tab) lands on Overview.
 export const closeUnknownTabRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/closes/$closeId/$tab",
@@ -325,6 +337,7 @@ export const closeRoutes = [
   closeReviewRoute,
   closeAdjustmentsRoute,
   closeFluxRoute,
+  closeDeliverablesRoute,
   closeUnknownTabRoute,
   closePlanRoute,
 ] as const;

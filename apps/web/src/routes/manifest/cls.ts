@@ -39,8 +39,8 @@ export const clsScreens = {
   },
   "CLS-08": {
     name: "Close › Deliverables · Copperleaf August 2026 statements",
-    status: "planned",
-    path: null,
+    status: "live", // C-02-T23 (S51 partials): the package read, edit and commentary
+    path: "/closes/$closeId/deliverables",
     entry: true,
   },
   "CLS-09": {

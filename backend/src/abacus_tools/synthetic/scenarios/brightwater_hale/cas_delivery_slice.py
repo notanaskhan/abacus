@@ -356,6 +356,14 @@ def _money(x: Decimal) -> str:
     return f"{x.quantize(D('0.01'))}"
 
 
+COMMENTARY: Final = (
+    "Revenue rose 4.5% to $214,600. Payroll rose 12.5% to $68,910: two baristas joined at the end "
+    "of July, merit increases took effect Aug 1, and the roastery ran overtime during the "
+    "Aug 10–14 changeover. Repairs and maintenance of $3,200 was an electrical repair at the "
+    "espresso bar. Net income was $27,795 (July $31,455)."
+)
+
+
 def cls08_package() -> dict[str, object]:
     """CLS-08 a's statements as the package read returns them (`DeliveryPackageOut` lines), with
     the section subtotals and grand totals computed here (ADR-050): total assets 549,195.45,
@@ -419,6 +427,9 @@ def cls08_package() -> dict[str, object]:
     inc.append({"key": "net_income", "label": "Net income", "amount": _money(ni(1)),
                 "prior": _money(ni(2)), "account_refs": []})  # fmt: skip
     return {
+        # CLS-08's outline note, page 6 (S51 partials, TASK-8736): the commentary Raj's accepted
+        # flux explanations give (CLS-10), as the paper reads it.
+        "commentary": COMMENTARY,
         # CLS-08's outline note: the two agings by bucket (they foot to the control accounts).
         "ar_aging": [["current", "12960.00"], ["1_30", "4180.00"], ["31_60", "1280.00"]],
         "ap_aging": [["current", "17240.45"], ["1_30", "3620.00"], ["31_60", "520.00"]],

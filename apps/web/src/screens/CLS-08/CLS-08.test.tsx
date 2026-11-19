@@ -34,22 +34,22 @@ function show(state: Cls08State): void {
 }
 
 describe("CLS-08 Close › Deliverables", () => {
-  it("a: two pages from the posted ledger, each with the legend", async () => {
+  it("a: the statements and the commentary, each page with the legend", async () => {
     show("a");
     const total = await screen.findByText("Total assets");
     expect(within(total.closest("tr") as HTMLElement).getByText("$549,195.45")).toBeTruthy();
     const ni = screen.getByText("Net income");
     expect(within(ni.closest("tr") as HTMLElement).getByText("$27,795.00")).toBeTruthy();
     expect(within(ni.closest("tr") as HTMLElement).getByText("$31,455.00")).toBeTruthy();
-    expect(screen.getAllByText("No assurance is provided.")).toHaveLength(2);
-    expect(screen.getByText(C.statements.page(2, 2))).toBeTruthy();
+    expect(screen.getAllByText("No assurance is provided.")).toHaveLength(3);
+    expect(screen.getByText(C.statements.page(3, 3))).toBeTruthy();
   });
 
   it("toggling the income statement off renumbers the pages", async () => {
     show("a");
     await screen.findByText("Total assets");
     fireEvent.click(screen.getByRole("switch", { name: C.sections.income_statement ?? "" }));
-    expect(await screen.findByText(C.statements.page(1, 1))).toBeTruthy();
+    expect(await screen.findByText(C.statements.page(2, 2))).toBeTruthy();
   });
 
   it("c: the three blockers of 9:24 AM", async () => {
@@ -73,6 +73,19 @@ describe("CLS-08 Close › Deliverables", () => {
     await screen.findByText("Total assets");
     expect(screen.queryAllByText("No assurance is provided.")).toHaveLength(0);
     expect(screen.getByText(C.basis.routes.cas_by_product ?? "")).toBeTruthy();
+  });
+
+  it("a: the commentary page reads the accepted flux, and Edit changes commentary only", async () => {
+    show("a");
+    const page = await screen.findByText(/Payroll rose 12\.5% to \$68,910/);
+    expect(page.closest("[data-commentary]")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: C.edit }));
+    const field = screen.getByLabelText(C.commentaryEdit.label);
+    fireEvent.change(field, { target: { value: "Revenue rose 4.5% to $214,600." } });
+    fireEvent.click(screen.getByRole("button", { name: C.commentaryEdit.save }));
+    expect(await screen.findByText("Revenue rose 4.5% to $214,600.")).toBeTruthy();
+    // the figures are untouched by a commentary edit
+    expect(screen.getByText("Total assets")).toBeTruthy();
   });
 
   it("g: the No answer routes to a standalone engagement", async () => {

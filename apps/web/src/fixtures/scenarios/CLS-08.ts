@@ -28,6 +28,7 @@ function pkg(state: string): DeliveryPackageOut {
     cas_answer: true,
     balance_sheet: exported.balance_sheet,
     income_statement: exported.income_statement,
+    commentary: exported.commentary,
     preconditions: [],
     content_hash: "0".repeat(64),
     version: 2,
@@ -84,6 +85,8 @@ function at(state: string, persona: string, clock: string): Scenario {
         },
         "GET /v1/closes/{close_id}/package": () => json(pkg(state)),
         "PATCH /v1/closes/{close_id}/package": () => json(pkg(state)),
+        "PATCH /v1/closes/{close_id}/package/commentary": ({ body }: { body?: unknown }) =>
+          json({ ...pkg(state), commentary: (body as { doc?: string } | undefined)?.doc ?? null }),
       };
     },
   };
