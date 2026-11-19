@@ -92,6 +92,13 @@ def _parser() -> argparse.ArgumentParser:
     draft.add_argument("--file", required=True, type=Path, help="a JSON article (schema v1)")
     draft.add_argument("--operator", required=True)
     draft.add_argument("--reason", required=True)
+    switch = sub.add_parser("floor-switch")  # Q-05-T31 (DEC-5708): the retention floor's source
+    switch.add_argument("--to", required=True, choices=("retention_floors", "retention_minimums"))
+    switch.add_argument(
+        "--expected", required=True, type=int, help="the setting's version (0: new)"
+    )
+    switch.add_argument("--operator", required=True)
+    switch.add_argument("--reason", required=True)
     content = sub.add_parser("content-import")
     content.add_argument("--dir", required=True, type=Path, help="the reviewed content folder")
     content.add_argument("--operator", required=True)
@@ -212,6 +219,15 @@ async def run(ops_dsn: str, args: argparse.Namespace) -> object:
     reason = str(args.reason).strip()
     if not 10 <= len(reason) <= 500:
         raise Refused("--reason is 10 to 500 characters")
+    if args.command == "floor-switch":
+        # The database refuses the switch to retention_minimums while any floor differs
+        # (`floors_differ`, from retention_floor_differences()).
+        return await _call(
+            ops_dsn,
+            "SELECT platform_setting_put($1, $2::jsonb, $3, $4, $5)",
+            "retention_floor_source", json.dumps({"source": args.to}), args.expected, operator,
+            reason,
+        )  # fmt: skip
     if args.command == "content-import":
         plan = content_plan(args.dir)
         if args.dry_run:
