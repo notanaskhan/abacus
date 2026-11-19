@@ -17822,8 +17822,9 @@ export const seasonAskAnswer = <ThrowOnError extends boolean = false>(options: O
 /**
  * Season Cohort Approve Route
  *
- * Human-only; issues a single-use approval grant (ADR-161). 409 `manifest_superseded` when
- * the version moved.
+ * Human-only; issues a single-use approval grant (ADR-161) pinning the rows hash and manifest
+ * version seen (409 `stale_version` when either moved; `rows_hidden` when the approver is
+ * walled from a row; `cohort_approved` when not a draft), then starts the execution.
  */
 export const seasonCohortApprove = <ThrowOnError extends boolean = false>(options: Options<SeasonCohortApproveData, ThrowOnError>): RequestResult<SeasonCohortApproveResponses, SeasonCohortApproveErrors, ThrowOnError> => (options.client ?? client).post<SeasonCohortApproveResponses, SeasonCohortApproveErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -17860,7 +17861,7 @@ export const seasonRowsExclude = <ThrowOnError extends boolean = false>(options:
 /**
  * Season Cohort Withdraw Route
  *
- * 409 `execution_started` after the first step ran.
+ * 409 `execution_started` after the first step ran; the grant is voided.
  */
 export const seasonCohortWithdraw = <ThrowOnError extends boolean = false>(options: Options<SeasonCohortWithdrawData, ThrowOnError>): RequestResult<SeasonCohortWithdrawResponses, SeasonCohortWithdrawErrors, ThrowOnError> => (options.client ?? client).post<SeasonCohortWithdrawResponses, SeasonCohortWithdrawErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

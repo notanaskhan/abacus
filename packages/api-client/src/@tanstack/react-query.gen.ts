@@ -29357,8 +29357,9 @@ export const seasonAskAnswerMutation = (options?: Partial<Options<SeasonAskAnswe
 /**
  * Season Cohort Approve Route
  *
- * Human-only; issues a single-use approval grant (ADR-161). 409 `manifest_superseded` when
- * the version moved.
+ * Human-only; issues a single-use approval grant (ADR-161) pinning the rows hash and manifest
+ * version seen (409 `stale_version` when either moved; `rows_hidden` when the approver is
+ * walled from a row; `cohort_approved` when not a draft), then starts the execution.
  */
 export const seasonCohortApproveMutation = (options?: Partial<Options<SeasonCohortApproveData>>): UseMutationOptions<SeasonCohortApproveResponse, SeasonCohortApproveError, Options<SeasonCohortApproveData>> => {
     const mutationOptions: UseMutationOptions<SeasonCohortApproveResponse, SeasonCohortApproveError, Options<SeasonCohortApproveData>> = {
@@ -29442,7 +29443,7 @@ export const seasonRowsExcludeMutation = (options?: Partial<Options<SeasonRowsEx
 /**
  * Season Cohort Withdraw Route
  *
- * 409 `execution_started` after the first step ran.
+ * 409 `execution_started` after the first step ran; the grant is voided.
  */
 export const seasonCohortWithdrawMutation = (options?: Partial<Options<SeasonCohortWithdrawData>>): UseMutationOptions<SeasonCohortWithdrawResponse, SeasonCohortWithdrawError, Options<SeasonCohortWithdrawData>> => {
     const mutationOptions: UseMutationOptions<SeasonCohortWithdrawResponse, SeasonCohortWithdrawError, Options<SeasonCohortWithdrawData>> = {

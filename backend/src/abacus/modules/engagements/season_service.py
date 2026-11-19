@@ -183,7 +183,11 @@ async def build_manifest(ctx: AuthContext, tax_year: int, *, rebuild: bool = Fal
             ),
         )
         by_client = {str(c.client_id): c for c in candidates}
-        offices = list(dict.fromkeys(str(c.office_id) for c in candidates))
+        names = dict(await firm_offices(ctx.tenant))
+        offices = sorted(
+            dict.fromkeys(str(c.office_id) for c in candidates),
+            key=lambda o: (names.get(UUID(o), ""), o),
+        )  # cohorts by office name, then segment: a stable order
         order = [(o, s) for o in offices for s in SEGMENTS]
         cohorts = calc.build(
             [

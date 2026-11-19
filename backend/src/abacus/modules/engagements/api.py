@@ -55,9 +55,13 @@ from abacus.modules.engagements.client_approvals import (
 )
 from abacus.modules.engagements.client_facts import client_engagements, engagements_section
 from abacus.modules.engagements.client_import_activities import (
-    ACTIVITIES,
+    ACTIVITIES as _IMPORT_ACTIVITIES,
+)
+from abacus.modules.engagements.client_import_activities import (
     SCHEDULES,
-    WORKFLOWS,
+)
+from abacus.modules.engagements.client_import_activities import (
+    WORKFLOWS as _IMPORT_WORKFLOWS,
 )
 from abacus.modules.engagements.conditions import (
     engagement_labels,
@@ -477,6 +481,26 @@ from abacus.modules.engagements.season_service import (  # noqa: E402
 
 register_client_owners(_SEASON_ROW_KINDS, _season_row_clients)
 
+# T-08-T12 (S51 partials): a cohort's execution after its approval (time to the batch class).
+from abacus.kernel.dispatch import register_work_classes  # noqa: E402
+from abacus.modules.engagements.season_execution_service import (  # noqa: E402
+    execute_cohort_activity as _season_exec_activity,
+)
+from abacus.modules.engagements.season_execution_service import (  # noqa: E402
+    register_season_step,
+)
+from abacus.modules.engagements.season_execution_workflow import (  # noqa: E402
+    ACTIVITY as SEASON_EXEC_ACTIVITY,
+)
+from abacus.modules.engagements.season_execution_workflow import (  # noqa: E402
+    SeasonExecInput,
+    SeasonSetupExecutionWorkflow,
+)
+
+WORKFLOWS = {**_IMPORT_WORKFLOWS, SeasonSetupExecutionWorkflow: "batch"}
+register_work_classes({SeasonSetupExecutionWorkflow: "batch"})
+ACTIVITIES = (*_IMPORT_ACTIVITIES, _season_exec_activity)
+
 __all__ = [
     "ACCEPTANCE_DECISION_DUE",
     "ACTIVITIES",
@@ -490,6 +514,7 @@ __all__ = [
     "LETTER_PARTNER_APPROVAL",
     "ROUTERS",
     "SCHEDULES",
+    "SEASON_EXEC_ACTIVITY",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "WORK_ITEM_FUNCTIONS",
@@ -549,6 +574,8 @@ __all__ = [
     "RetentionFacts",
     "RosterMember",
     "SeasonCandidate",
+    "SeasonExecInput",
+    "SeasonSetupExecutionWorkflow",
     "StoredFile",
     "TemplateItem",
     "TemplateSeed",
@@ -667,6 +694,7 @@ __all__ = [
     "register_progress_source",
     "register_roll_forward_items",
     "register_season_candidates",
+    "register_season_step",
     "register_work_item_kind",
     "remove_from_team",
     "replace_gate_provider",

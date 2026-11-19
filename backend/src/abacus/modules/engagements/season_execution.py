@@ -4,8 +4,8 @@
   approving creates nothing by itself: it issues a single-use grant the execution consumes.
 - **Withdraw**: only before the cohort's execution starts.
 - **Order**: cohorts execute FIFO by approval time within a season, one at a time.
-- **Steps**: each row runs the same steps (engagement, returns, assignments, binder roll-forward,
-  letter and consent drafts, invitations), each keyed `{season}:{row}:{step}`, so re-running a
+- **Steps**: each row runs the same steps (engagement, returns, assignments, binder, letter and
+  consent drafts, invitations), each keyed `{season}:{row}:{step}`, so re-running a
   row skips the steps already done and creates no duplicate; every created record reads
   "system on behalf of" the approver.
 """
@@ -20,9 +20,9 @@ from typing import Final, Literal
 APPROVER_ROLES: Final = frozenset(
     {"engagement_partner", "manager", "firm_partner", "firm_manager"}
 )
+# 0960's `season_row_steps.step` CHECK, in execution order (S51 partials: the S51 names differed).
 STEPS: Final = (
-    "engagement", "returns", "assignments", "binder_roll_forward", "letter_draft",
-    "consent_draft", "invitations",
+    "engagement", "returns", "assignments", "binder", "letter", "consents", "invitations",
 )  # fmt: skip
 Refusal = Literal["not_a_person", "role_below_manager", "already_started"]
 
