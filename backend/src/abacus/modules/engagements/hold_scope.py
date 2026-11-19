@@ -144,3 +144,32 @@ __all__ = [
     "engagements_in_hold_scope",
     "work_item_engagement",
 ]
+
+
+@dataclass(frozen=True)
+class RetentionFacts:
+    """Q-05-T11 (DEC-5709): what destruction eligibility needs about an engagement: its client,
+    its type (the service line) and its period end (the policy's anchor)."""
+
+    client_id: UUID
+    type: str
+    period_end: date | None
+
+
+async def engagement_retention_facts(
+    tenant: TenantContext, engagement_ids: Sequence[UUID]
+) -> dict[UUID, RetentionFacts]:
+    if not engagement_ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                select(
+                    Engagement.id,
+                    Engagement.client_id,
+                    Engagement.type,
+                    Engagement.fiscal_period_end,
+                ).where(Engagement.id.in_(list(engagement_ids)))
+            )
+        ).all()
+    return {r[0]: RetentionFacts(r[1], str(r[2]), r[3]) for r in rows}
