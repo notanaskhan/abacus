@@ -45,7 +45,8 @@ LEGENDS: Final = {pkg.NO_ASSURANCE: "No assurance is provided."}
 
 _DELIVERABLE = text(
     "SELECT d.id, d.status, d.current_version_no, d.released_at, d.client_approved_at, "
-    "v.sections, v.cas_answer, v.content_hash FROM close_deliverables d "
+    "v.sections, v.cas_answer, v.content_hash, v.route, v.legend_key, v.posted_tb_ref, "
+    "v.commentary FROM close_deliverables d "
     "LEFT JOIN close_deliverable_versions v ON v.deliverable_id = d.id "
     "AND v.version_no = d.current_version_no WHERE d.close_id = :c"
 )
@@ -55,8 +56,9 @@ _NEW_DELIVERABLE = text(
 )
 _NEW_VERSION = text(
     "INSERT INTO close_deliverable_versions (tenant_id, deliverable_id, version_no, sections, "
-    "cas_answer, route, legend_key, posted_tb_ref, content_hash) VALUES (:t, :d, :n, "
-    "CAST(:sections AS jsonb), :cas, :route, :legend, CAST(:tb AS jsonb), :hash)"
+    "cas_answer, route, legend_key, posted_tb_ref, content_hash, commentary) VALUES (:t, :d, :n, "
+    "CAST(:sections AS jsonb), :cas, :route, :legend, CAST(:tb AS jsonb), :hash, "
+    "CAST(:commentary AS jsonb))"
 )
 _BUMP = text(
     "UPDATE close_deliverables SET current_version_no = :n, status = 'draft' "
@@ -177,6 +179,10 @@ async def get_package(ctx: AuthContext, close_id: UUID) -> DeliveryPackageOut:
         unposted_entries=int(cast(int, tb_ref.get("pending_entries", 0))),
     )
     version_no = int(row.current_version_no) if row is not None and row.current_version_no else 1
+    stored = dict(row.commentary or {}) if row is not None else {}
+    commentary = (
+        str(stored["doc"]) if "doc" in stored else await drafted_commentary(ctx.tenant, close_id)
+    )
     return DeliveryPackageOut(
         close_id=close_id,
         status=row.status if row is not None else "drafting",
@@ -194,7 +200,76 @@ async def get_package(ctx: AuthContext, close_id: UUID) -> DeliveryPackageOut:
         client_approved_at=row.client_approved_at if row is not None else None,
         content_hash=pkg.content_hash(bs, inc, routed, sections),
         version=version_no,
+        commentary=commentary if "commentary" in sections else None,
     )
+
+
+COMMENTARY_TEMPLATE: Final = "{flux}"
+
+
+async def drafted_commentary(tenant: TenantContext, close_id: UUID) -> str:
+    """C-02-T21 (S51 partials): the commentary before anyone writes it, filled by code from the
+    close's accepted flux explanations (drafts never appear). The firm's own commentary template
+    is content (an admin import, C-02-T28); until one is loaded the lines stand alone."""
+    from abacus.modules.closes.flux import accepted_flux
+
+    accepted = [
+        pkg.AcceptedFlux(label, change, pct, explanation)
+        for label, change, pct, explanation in await accepted_flux(tenant, close_id)
+    ]
+    return pkg.commentary(COMMENTARY_TEMPLATE, accepted)
+
+
+async def edit_commentary(
+    ctx: AuthContext, close_id: UUID, doc: str, expected_version: int
+) -> DeliveryPackageOut:
+    """CLS-08's commentary edit: a new version with the person's text and everything else as the
+    current version holds it (figures stay locked to the ledger), at the version they saw (409
+    `stale_version`); a released package is not edited (409 `package_released`). Before any
+    version exists the structure defaults apply."""
+    close = await visible_close(ctx, close_id)
+    ref = await get_ref(ctx, close.engagement_id)
+    await authorise(ctx, "close_package.edit", ref.resource())
+    framework = await _framework(ctx.tenant_id, _period_end(close.period))
+    async with uow(ctx.tenant) as tx:
+        row = (await tx.session.execute(_DELIVERABLE, {"c": close_id})).first()
+        if row is not None and row.status in ("released", "approved_by_client"):
+            raise PackageReleased(facts={"close_id": str(close_id)})
+        seen = int(row.current_version_no) if row is not None else 0
+        if (seen or 1) != expected_version:
+            raise StaleVersion(facts={"close_id": str(close_id)})
+        if row is not None and row.sections is not None:
+            sections = list(row.sections)
+            cas, route, legend = bool(row.cas_answer), str(row.route), row.legend_key
+            tb_ref, content = dict(row.posted_tb_ref), str(row.content_hash)
+        else:
+            sections, cas = list(DEFAULT_SECTIONS), True
+            routed = pkg.route(framework, cas_answer=cas)
+            bs, inc, tb_ref = await _figures(ctx, close_id)
+            route, legend = routed.route, routed.legend_key
+            content = pkg.content_hash(bs, inc, routed, sections)
+        deliverable = row.id if row is not None else await tx.session.scalar(
+            _NEW_DELIVERABLE, {"t": ctx.tenant_id, "c": close_id})  # fmt: skip
+        if deliverable is None:
+            raise StaleVersion(facts={"close_id": str(close_id)})
+        number = seen + 1
+        await tx.session.execute(
+            _NEW_VERSION,
+            {
+                "t": ctx.tenant_id, "d": deliverable, "n": number,
+                "sections": json.dumps(sections), "cas": cas, "route": route, "legend": legend,
+                "tb": json.dumps(tb_ref), "hash": content,
+                "commentary": json.dumps({"doc": doc.strip()}),
+            },
+        )  # fmt: skip
+        if await tx.session.scalar(_BUMP, {"d": deliverable, "n": number, "seen": seen}) is None:
+            raise StaleVersion(facts={"close_id": str(close_id)})
+        tx.record(
+            "close_package.commentary_edited",
+            target=Target("close", close_id),
+            after=Ref(version=number),
+        )
+    return await get_package(ctx, close_id)
 
 
 async def edit_package(
@@ -233,6 +308,8 @@ async def edit_package(
                 "legend": routed.legend_key,
                 "tb": json.dumps(tb_ref),
                 "hash": pkg.content_hash(bs, inc, routed, sections),
+                # a structure edit keeps the person's commentary (regenerate keeps edits)
+                "commentary": json.dumps(dict(row.commentary or {}) if row is not None else {}),
             },
         )
         if await tx.session.scalar(_BUMP, {"d": deliverable, "n": number, "seen": seen}) is None:
@@ -245,4 +322,4 @@ async def edit_package(
     return await get_package(ctx, close_id)
 
 
-__all__ = ["edit_package", "get_package"]
+__all__ = ["drafted_commentary", "edit_commentary", "edit_package", "get_package"]

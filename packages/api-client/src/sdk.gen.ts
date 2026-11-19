@@ -3773,7 +3773,7 @@ export const packageXlsx = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Commentary Route
  *
- * Only commentary is editable; figures are locked to the ledger.
+ * Only commentary is editable; figures are locked to the ledger (C-02-T21, S51 partials).
  */
 export const commentary = <ThrowOnError extends boolean = false>(options: Options<CommentaryData, ThrowOnError>): RequestResult<CommentaryResponses, CommentaryErrors, ThrowOnError> => (options.client ?? client).patch<CommentaryResponses, CommentaryErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

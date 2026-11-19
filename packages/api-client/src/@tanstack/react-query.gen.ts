@@ -6383,7 +6383,7 @@ export const packageXlsxOptions = (options: Options<PackageXlsxData>) => queryOp
 /**
  * Commentary Route
  *
- * Only commentary is editable; figures are locked to the ledger.
+ * Only commentary is editable; figures are locked to the ledger (C-02-T21, S51 partials).
  */
 export const commentaryMutation = (options?: Partial<Options<CommentaryData>>): UseMutationOptions<CommentaryResponse, CommentaryError, Options<CommentaryData>> => {
     const mutationOptions: UseMutationOptions<CommentaryResponse, CommentaryError, Options<CommentaryData>> = {
