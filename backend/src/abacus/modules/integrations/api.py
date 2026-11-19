@@ -115,7 +115,9 @@ from abacus.modules.integrations.writers.quickbooks_online import (
 )
 from abacus.modules.integrations.writes import (
     W1_CAPABILITY,
+    W1Evidence,
     W1Ledger,
+    W1Operation,
     W1Refusal,
     W1Refused,
     W1Scope,
@@ -163,7 +165,9 @@ __all__ = [
     "ReadConnectorEntry",
     "SyntheticInstallRefused",
     "UndeclaredEgress",
+    "W1Evidence",
     "W1Ledger",
+    "W1Operation",
     "W1Refusal",
     "W1Refused",
     "W1Scope",

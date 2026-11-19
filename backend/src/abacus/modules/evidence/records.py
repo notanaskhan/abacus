@@ -33,11 +33,17 @@ if TYPE_CHECKING:
     from types_boto3_s3 import S3Client
 
 RecordClass = Literal[
-    "chain_anchor", "seal_manifest", "consent_evidence", "signature_evidence", "addition_manifest"
+    "chain_anchor",
+    "seal_manifest",
+    "consent_evidence",
+    "signature_evidence",
+    "addition_manifest",
+    "ledger_write_evidence",
 ]
 RECORD_CLASSES: Final = frozenset(
     {"chain_anchor", "seal_manifest", "consent_evidence", "signature_evidence"}
     | {"addition_manifest"}  # A-07-T42: a post-lock addition's appended manifest
+    | {"ledger_write_evidence"}  # C-02-T19: a W1 write's request, response and read-back
 )
 _RACE: Final = ("PreconditionFailed", "ConditionalRequestConflict")
 

@@ -219,6 +219,114 @@ class W1Refused(DomainConflict):
     code = "write_capability_refused"
 
 
+# --- W1 evidence and the operation's trail (C-02-T19; ADR-344 §5; DEC-5705) ---------------------
+
+EVIDENCE_YEARS: Final = 7  # the write-once bodies outlive the engagement's records (ADR-004)
+WriteStatus = Literal["verified", "failed", "verify_mismatch"]
+
+
+@dataclass(frozen=True)
+class W1Evidence:
+    """What one W1 call leaves behind: its request, the provider's response and the read-back,
+    each stored write-once (Object Lock) with its SHA-256, and the operation's outcome."""
+
+    response: bytes
+    readback: bytes
+    external_ref: str | None
+    status: WriteStatus
+
+
+@dataclass(frozen=True)
+class W1Operation:
+    """The write being made: what `ledger_write_operations` names (never a body)."""
+
+    subject_type: str
+    subject_id: UUID
+    operation: Literal["create_journal_entry", "set_closing_date"]
+    actor_user_id: UUID
+    request: bytes
+
+
+_OPERATION = text(
+    "INSERT INTO ledger_write_operations (tenant_id, capability_id, client_entity_id, "
+    "connection_id, subject_type, subject_id, operation, idempotency_key, approval_grant_id, "
+    "actor_user_id) VALUES (:t, :cap, :ce, :c, :st, :sid, :op, :k, :g, :u) "
+    "ON CONFLICT (tenant_id, capability_id, idempotency_key) DO NOTHING RETURNING id"
+)
+_OPERATION_AGAIN = text(
+    "UPDATE ledger_write_operations SET attempt = attempt + 1, started_at = clock_timestamp() "
+    "WHERE capability_id = :cap AND idempotency_key = :k RETURNING id"
+)
+_OPERATION_SENT = text(
+    "UPDATE ledger_write_operations SET status = 'sent', started_at = clock_timestamp() "
+    "WHERE id = :id"
+)
+_OPERATION_DONE = text(
+    "UPDATE ledger_write_operations SET status = :s, external_ref = :ext, "
+    "finished_at = clock_timestamp() WHERE id = :id"
+)
+_EVIDENCE = text(
+    "INSERT INTO ledger_write_evidence (tenant_id, write_operation_id, kind, object_key, sha256, "
+    "bytes) VALUES (:t, :op, :kind, :key, :sha, :n) "
+    "ON CONFLICT (tenant_id, write_operation_id, kind) DO NOTHING"
+)
+
+
+async def _open_operation(
+    ctx: Actor, scope: W1Scope, op: W1Operation, key: str, grant: UUID
+) -> UUID:
+    async with uow(ctx.tenant) as tx:
+        found = await tx.session.scalar(
+            _OPERATION,
+            {"t": ctx.tenant_id, "cap": W1_CAPABILITY, "ce": scope.client_entity_id,
+             "c": scope.connection_id, "st": op.subject_type, "sid": op.subject_id,
+             "op": op.operation, "k": key, "g": grant, "u": op.actor_user_id},
+        )  # fmt: skip
+        if found is None:
+            found = await tx.session.scalar(_OPERATION_AGAIN, {"cap": W1_CAPABILITY, "k": key})
+        await tx.session.execute(_OPERATION_SENT, {"id": found})
+        tx.record("ledger_write.sent", target=Target("ledger_write_operation", cast(UUID, found)))
+    return cast(UUID, found)
+
+
+async def _close_operation(ctx: Actor, op_id: UUID, request: bytes, out: W1Evidence) -> None:
+    """The three bodies write-once under Object Lock (COMPLIANCE), then the outcome."""
+    from datetime import timedelta
+
+    from abacus.kernel.clock import system_now
+    from abacus.modules.evidence.api import put_record
+
+    until = system_now() + timedelta(days=365 * EVIDENCE_YEARS)
+    stored = [
+        (kind, await put_record(ctx.tenant_id, "ledger_write_evidence", body, until), len(body))
+        for kind, body in (("request", request), ("response", out.response),
+                           ("readback", out.readback))
+    ]  # fmt: skip
+    async with uow(ctx.tenant) as tx:
+        for kind, record, size in stored:
+            await tx.session.execute(
+                _EVIDENCE,
+                {"t": ctx.tenant_id, "op": op_id, "kind": kind, "key": record.key,
+                 "sha": record.sha256, "n": size},
+            )  # fmt: skip
+        await tx.session.execute(
+            _OPERATION_DONE, {"s": out.status, "ext": out.external_ref, "id": op_id}
+        )
+        tx.record(
+            "ledger_write.verified" if out.status == "verified" else f"ledger_write.{out.status}",
+            target=Target("ledger_write_operation", op_id),
+        )
+
+
+async def _ledger_write_paused(tenant: TenantContext) -> bool:
+    from abacus.kernel.controls import control_active_now
+
+    return await control_active_now("ledger_write_pause", tenant.tenant_id)
+
+
+register_w1_kill_switch(_ledger_write_paused)
+
+
 async def execute_write[T](
     ctx: Actor,
     capability: str,
@@ -228,6 +336,8 @@ async def execute_write[T](
     idempotency_key: str | None = None,
     w1: W1Scope | None = None,
     perform: Callable[[], Awaitable[T]] | None = None,
+    operation: W1Operation | None = None,
+    evidence_of: Callable[[T], W1Evidence] | None = None,
 ) -> T:
     """Run a declared write (ADR-150). Every capability but W1 is refused and audited, and no
     writer runs. W1 (ADR-344) runs `perform` only when the caller passes its scope, the consumed
@@ -243,7 +353,12 @@ async def execute_write[T](
     ):
         refusal = await w1_refusal(ctx.tenant, w1)
         if refusal is None:
-            return await perform()
+            if operation is None or evidence_of is None:
+                return await perform()
+            op_id = await _open_operation(ctx, w1, operation, idempotency_key, approval_ref)
+            result = await perform()
+            await _close_operation(ctx, op_id, operation.request, evidence_of(result))
+            return result
         async with uow(ctx.tenant) as tx:
             tx.record(
                 "write_capability.refused",
