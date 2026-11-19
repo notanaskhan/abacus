@@ -14030,6 +14030,73 @@ export type ConsultationConcludeIn = {
      * Conclusion
      */
     conclusion: string;
+    /**
+     * Implemented
+     */
+    implemented?: boolean;
+    /**
+     * Implemented Reference
+     */
+    implemented_reference?: string | null;
+};
+
+/**
+ * ConsultationCountsOut
+ */
+export type ConsultationCountsOut = {
+    /**
+     * Concluded
+     */
+    concluded: number;
+    /**
+     * Open
+     */
+    open: number;
+};
+
+/**
+ * ConsultationDetailOut
+ *
+ * AUD-28 a/b: what A-06's record does not carry.
+ */
+export type ConsultationDetailOut = {
+    /**
+     * Consultation Id
+     */
+    consultation_id: string;
+    /**
+     * Consulted Role
+     */
+    consulted_role: 'partner' | 'specialist' | 'national' | null;
+    /**
+     * Difference Unresolved
+     */
+    difference_unresolved: boolean;
+    /**
+     * Facts
+     */
+    facts: string | null;
+    /**
+     * Implemented
+     */
+    implemented: boolean;
+    /**
+     * Implemented Reference
+     */
+    implemented_reference: string | null;
+    /**
+     * Links
+     */
+    links: Array<ConsultationLinkOut>;
+    /**
+     * Positions
+     */
+    positions: Array<ConsultationPositionOut>;
+    /**
+     * Reopened At
+     */
+    reopened_at: string | null;
+    resolution: ConsultationResolutionOut | null;
 };
 
 /**
@@ -14037,13 +14104,108 @@ export type ConsultationConcludeIn = {
  */
 export type ConsultationIn = {
     /**
+     * Consulted Role
+     */
+    consulted_role?: 'partner' | 'specialist' | 'national' | null;
+    /**
      * Consulted With User Id
      */
     consulted_with_user_id: string;
     /**
+     * Facts
+     */
+    facts?: string | null;
+    /**
      * Question
      */
     question: string;
+};
+
+/**
+ * ConsultationLinkIn
+ */
+export type ConsultationLinkIn = {
+    /**
+     * Kind
+     */
+    kind: 'finding' | 'issue' | 'document' | 'workpaper' | 'post_issuance_case';
+    /**
+     * Target Id
+     */
+    target_id: string;
+};
+
+/**
+ * ConsultationLinkOut
+ */
+export type ConsultationLinkOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Kind
+     */
+    kind: 'finding' | 'issue' | 'document' | 'workpaper' | 'post_issuance_case';
+    /**
+     * Linked By Name
+     */
+    linked_by_name: string;
+    /**
+     * Target Id
+     */
+    target_id: string;
+};
+
+/**
+ * ConsultationLogOut
+ *
+ * AUD-28 a: the bands Open and Concluded, counted over the rows the reader may see.
+ */
+export type ConsultationLogOut = {
+    counts: ConsultationCountsOut;
+    /**
+     * Items
+     */
+    items: Array<ConsultationLogRowOut>;
+};
+
+/**
+ * ConsultationLogRowOut
+ */
+export type ConsultationLogRowOut = {
+    /**
+     * Consultation Id
+     */
+    consultation_id: string;
+    /**
+     * Consulted With Name
+     */
+    consulted_with_name: string;
+    /**
+     * Consulted With User Id
+     */
+    consulted_with_user_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string | null;
+    /**
+     * Raised By Name
+     */
+    raised_by_name: string;
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Status
+     */
+    status: 'open' | 'concluded';
 };
 
 /**
@@ -14091,6 +14253,82 @@ export type ConsultationOut = {
      */
     ref: string;
     status: ConsultationStatus;
+};
+
+/**
+ * ConsultationPositionIn
+ */
+export type ConsultationPositionIn = {
+    /**
+     * Agrees
+     */
+    agrees: boolean;
+    /**
+     * Position
+     */
+    position: string;
+    /**
+     * Role
+     */
+    role: 'engagement_partner' | 'eqr_reviewer';
+};
+
+/**
+ * ConsultationPositionOut
+ */
+export type ConsultationPositionOut = {
+    /**
+     * Agrees
+     */
+    agrees: boolean;
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Position
+     */
+    position: string;
+    /**
+     * Recorded By Name
+     */
+    recorded_by_name: string;
+    /**
+     * Role
+     */
+    role: 'engagement_partner' | 'eqr_reviewer';
+};
+
+/**
+ * ConsultationResolutionIn
+ */
+export type ConsultationResolutionIn = {
+    /**
+     * Resolution
+     */
+    resolution: string;
+};
+
+/**
+ * ConsultationResolutionOut
+ */
+export type ConsultationResolutionOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Before Release
+     */
+    before_release: boolean;
+    /**
+     * Resolution
+     */
+    resolution: string;
+    /**
+     * Resolved By Name
+     */
+    resolved_by_name: string;
 };
 
 /**
@@ -97121,6 +97359,122 @@ export type GroupProposeEliminationsResponses = {
 
 export type GroupProposeEliminationsResponse = GroupProposeEliminationsResponses[keyof GroupProposeEliminationsResponses];
 
+export type ConsultationsLogData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Engagement Id
+         */
+        engagement_id?: string | null;
+        /**
+         * Status
+         */
+        status?: 'open' | 'concluded' | null;
+        /**
+         * Consulted With
+         */
+        consulted_with?: string | null;
+        /**
+         * Year
+         */
+        year?: number | null;
+    };
+    url: '/v1/consultations';
+};
+
+export type ConsultationsLogErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ConsultationsLogError = ConsultationsLogErrors[keyof ConsultationsLogErrors];
+
+export type ConsultationsLogResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsultationLogOut;
+};
+
+export type ConsultationsLogResponse = ConsultationsLogResponses[keyof ConsultationsLogResponses];
+
+export type ConsultationDetailData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Consultation Id
+         */
+        consultation_id: string;
+    };
+    query?: never;
+    url: '/v1/consultations/{consultation_id}';
+};
+
+export type ConsultationDetailErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ConsultationDetailError = ConsultationDetailErrors[keyof ConsultationDetailErrors];
+
+export type ConsultationDetailResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsultationDetailOut;
+};
+
+export type ConsultationDetailResponse = ConsultationDetailResponses[keyof ConsultationDetailResponses];
+
 export type ConsultationConcludeData = {
     body: ConsultationConcludeIn;
     headers: {
@@ -97184,6 +97538,238 @@ export type ConsultationConcludeResponses = {
 };
 
 export type ConsultationConcludeResponse = ConsultationConcludeResponses[keyof ConsultationConcludeResponses];
+
+export type ConsultationLinkData = {
+    body: ConsultationLinkIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Consultation Id
+         */
+        consultation_id: string;
+    };
+    query?: never;
+    url: '/v1/consultations/{consultation_id}/links';
+};
+
+export type ConsultationLinkErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ConsultationLinkError = ConsultationLinkErrors[keyof ConsultationLinkErrors];
+
+export type ConsultationLinkResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsultationDetailOut;
+};
+
+export type ConsultationLinkResponse = ConsultationLinkResponses[keyof ConsultationLinkResponses];
+
+export type ConsultationPositionData = {
+    body: ConsultationPositionIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Consultation Id
+         */
+        consultation_id: string;
+    };
+    query?: never;
+    url: '/v1/consultations/{consultation_id}/positions';
+};
+
+export type ConsultationPositionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ConsultationPositionError = ConsultationPositionErrors[keyof ConsultationPositionErrors];
+
+export type ConsultationPositionResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsultationDetailOut;
+};
+
+export type ConsultationPositionResponse = ConsultationPositionResponses[keyof ConsultationPositionResponses];
+
+export type ConsultationReopenData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Consultation Id
+         */
+        consultation_id: string;
+    };
+    query?: never;
+    url: '/v1/consultations/{consultation_id}/reopen';
+};
+
+export type ConsultationReopenErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ConsultationReopenError = ConsultationReopenErrors[keyof ConsultationReopenErrors];
+
+export type ConsultationReopenResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsultationDetailOut;
+};
+
+export type ConsultationReopenResponse = ConsultationReopenResponses[keyof ConsultationReopenResponses];
+
+export type ConsultationResolveData = {
+    body: ConsultationResolutionIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Consultation Id
+         */
+        consultation_id: string;
+    };
+    query?: never;
+    url: '/v1/consultations/{consultation_id}/resolve-difference';
+};
+
+export type ConsultationResolveErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ConsultationResolveError = ConsultationResolveErrors[keyof ConsultationResolveErrors];
+
+export type ConsultationResolveResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsultationDetailOut;
+};
+
+export type ConsultationResolveResponse = ConsultationResolveResponses[keyof ConsultationResolveResponses];
 
 export type GetContactData = {
     body?: never;

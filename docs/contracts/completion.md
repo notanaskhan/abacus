@@ -31,7 +31,9 @@
 | Misstatements | `GET /v1/work-items/{wi}/misstatements?view=` | `misstatement.read` |
 | Consultations | `GET /v1/work-items/{wi}/consultations` | `consultation.read` |
 | Raise a consultation | `POST /v1/work-items/{wi}/consultations` | `consultation.create` |
-| Conclude a consultation | `POST /v1/consultations/{id}/conclude` | `consultation.conclude` (the person consulted) |
+| Conclude a consultation | `POST /v1/consultations/{id}/conclude` | `consultation.conclude` (the person consulted; Q-05-T09 adds `implemented` and `implemented_reference`, required when implemented) |
+| Consultations log v2 (Q-05-T09, `audit.consultations_log`; off: 404) | `GET /v1/consultations?engagement_id&status&consulted_with&year` · `GET /v1/consultations/{id}` | `consultation.read` (walls: no row and no count, DEC-43) |
+| Reopen · link · position · resolve | `POST /v1/consultations/{id}/reopen` · `…/links` · `…/positions` · `…/resolve-difference` | `consultation.reopen` · `consultation.link` · `consultation.record_position` (the caller's own EP or EQR role) · `consultation.resolve_difference` (QM owner, fresh MFA; once, 409 `no_difference_to_resolve`). Each answers the detail. An unresolved difference adds `also_required:consultation_differences` to the release snapshot |
 | Pass on SUM | `POST /v1/misstatements/{id}/pass-to-sum` | `misstatement.pass_to_sum` |
 | SUM | `GET /v1/work-items/{wi}/sum` | `sum.read` |
 | A qualitative factor | `PUT /v1/work-items/{wi}/sum/qualitative-factors/{factor}` | `sum.update_factors` |

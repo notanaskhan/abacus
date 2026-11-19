@@ -20,6 +20,8 @@ from abacus.kernel.crypto import open_sealed, seal
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainForbidden, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, uow
+from abacus.modules.assurance.events import ConsultationConcluded as ConsultationConcludedEvent
+from abacus.modules.assurance.events import ConsultationRequested
 from abacus.modules.engagements.api import get_ref, lock_ref, work_item_engagement
 from abacus.modules.identity.api import AuthContext, allowed_actions, is_active_member, names_of
 
@@ -114,16 +116,28 @@ async def consultations_of(ctx: AuthContext, work_item_id: UUID) -> list[Consult
 
 
 async def raise_consultation(
-    ctx: AuthContext, work_item_id: UUID, *, question: str, consulted_with_user_id: UUID
+    ctx: AuthContext,
+    work_item_id: UUID,
+    *,
+    question: str,
+    consulted_with_user_id: UUID,
+    facts: str | None = None,
+    consulted_role: str | None = None,
 ) -> Consultation:
     """`POST …/consultations` (the route authorised `consultation.create`). The person consulted
-    is another active member of the firm."""
+    is another active member of the firm. Q-05-T09 (AUD-28 f): the facts the consultee reads
+    (sealed) and the consulted role (partner, specialist or national)."""
     if consulted_with_user_id == ctx.user_id or not await is_active_member(
         ctx.tenant_id, consulted_with_user_id
     ):
         raise DomainInvalid(facts={"field": "consulted_with_user_id"})
     engagement_id = cast(UUID, await work_item_engagement(ctx.tenant, work_item_id))
     sealed = await seal(ctx.tenant_id, question.strip().encode(), _FINGERPRINT)
+    facts_sealed = (
+        None
+        if facts is None or not facts.strip()
+        else await seal(ctx.tenant_id, facts.strip().encode(), _FINGERPRINT)
+    )
     async with uow(ctx.tenant) as tx:
         await lock_ref(tx, engagement_id)
         number = (
@@ -136,8 +150,9 @@ async def raise_consultation(
             await tx.session.execute(
                 text(
                     "INSERT INTO consultations (tenant_id, engagement_id, work_item_id, ref, "
-                    "question_sealed, raised_by, consulted_with_user_id) VALUES (:t, :e, :w, "
-                    ":ref, :q, :by, :with) RETURNING id"
+                    "question_sealed, raised_by, consulted_with_user_id, facts_sealed, "
+                    "consulted_role) VALUES (:t, :e, :w, :ref, :q, :by, :with, :facts, :role) "
+                    "RETURNING id"
                 ),
                 {
                     "t": ctx.tenant_id,
@@ -147,6 +162,8 @@ async def raise_consultation(
                     "q": sealed,
                     "by": ctx.user_id,
                     "with": consulted_with_user_id,
+                    "facts": facts_sealed,
+                    "role": consulted_role,
                 },
             )
         ).scalar_one()
@@ -155,6 +172,13 @@ async def raise_consultation(
             target=Target(TARGET, consultation_id),
             after=Ref(consulted=consulted_with_user_id),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
+        )
+        tx.emit(
+            ConsultationRequested(
+                consultation_id=consultation_id,
+                by_user=ctx.user_id,
+                recipient_user_ids=[consulted_with_user_id],
+            )
         )
     return await consultation(ctx, consultation_id)
 
@@ -188,8 +212,18 @@ async def work_item_of(tenant: TenantContext, consultation_id: UUID) -> UUID:
     return found
 
 
-async def conclude(ctx: AuthContext, consultation_id: UUID, *, conclusion: str) -> Consultation:
-    """`POST /v1/consultations/{id}/conclude`: the person consulted, once."""
+async def conclude(
+    ctx: AuthContext,
+    consultation_id: UUID,
+    *,
+    conclusion: str,
+    implemented: bool = False,
+    implemented_reference: str | None = None,
+) -> Consultation:
+    """`POST /v1/consultations/{id}/conclude`: the person consulted, once. Q-05-T09 (AUD-28 g):
+    whether the conclusion was implemented, with a reference when it was."""
+    if implemented and not (implemented_reference or "").strip():
+        raise DomainInvalid(facts={"field": "implemented_reference"})
     found = await consultation(ctx, consultation_id)
     if found.consulted_with_user_id != ctx.user_id:
         raise NotTheConsultedPerson
@@ -200,18 +234,34 @@ async def conclude(ctx: AuthContext, consultation_id: UUID, *, conclusion: str) 
             await tx.session.execute(
                 text(
                     "UPDATE consultations SET status = 'concluded', conclusion_sealed = :c, "
-                    "concluded_at = clock_timestamp() WHERE id = :id AND status = 'open' "
+                    "concluded_at = clock_timestamp(), implemented = :done, "
+                    "implemented_reference = :ref WHERE id = :id AND status = 'open' "
                     "RETURNING id"
                 ),
-                {"c": sealed, "id": consultation_id},
+                {
+                    "c": sealed,
+                    "id": consultation_id,
+                    "done": implemented,
+                    "ref": (implemented_reference or "").strip()[:200] or None,
+                },
             )
         ).first()
         if moved is None:
             raise ConsultationConcluded
+        raised_by = await tx.session.scalar(
+            text("SELECT raised_by FROM consultations WHERE id = :id"), {"id": consultation_id}
+        )
         tx.record(
             "consultation.concluded",
             target=Target(TARGET, consultation_id),
             after=Ref(consulted=ctx.user_id),
             scope=Scope(engagement_id=engagement_id, work_item_id=found.work_item_id),
+        )
+        tx.emit(
+            ConsultationConcludedEvent(
+                consultation_id=consultation_id,
+                by_user=ctx.user_id,
+                recipient_user_ids=[cast(UUID, raised_by)],
+            )
         )
     return await consultation(ctx, consultation_id)

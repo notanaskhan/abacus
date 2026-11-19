@@ -167,12 +167,22 @@ class ConsultationIn(BaseModel):
 
     question: Annotated[str, Field(min_length=1, max_length=4000), classified("confidential")]
     consulted_with_user_id: Annotated[UUID, classified("internal")]
+    # Q-05-T09 (AUD-28 f): the facts the consultee reads, and the consulted role.
+    facts: Annotated[str | None, Field(max_length=8000), classified("confidential")] = None
+    consulted_role: Annotated[
+        Literal["partner", "specialist", "national"] | None, classified("internal")
+    ] = None
 
 
 class ConsultationConcludeIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     conclusion: Annotated[str, Field(min_length=1, max_length=4000), classified("confidential")]
+    # Q-05-T09 (AUD-28 g): implemented, with a reference when Yes (400 otherwise).
+    implemented: Annotated[bool, classified("internal")] = False
+    implemented_reference: Annotated[str | None, Field(max_length=200), classified("internal")] = (
+        None
+    )
 
 
 class ConsultationOut(BaseModel):
@@ -1075,6 +1085,8 @@ async def consultation_create_route(
             work_item_id,
             question=body.question,
             consulted_with_user_id=body.consulted_with_user_id,
+            facts=body.facts,
+            consulted_role=body.consulted_role,
         )
     )
 
@@ -1094,7 +1106,13 @@ async def consultation_conclude_route(
     work_item = await consultations.work_item_of(ctx.tenant, consultation_id)
     await _gate(ctx, work_item, "consultation.conclude")
     return _consultation_out(
-        await consultations.conclude(ctx, consultation_id, conclusion=body.conclusion)
+        await consultations.conclude(
+            ctx,
+            consultation_id,
+            conclusion=body.conclusion,
+            implemented=body.implemented,
+            implemented_reference=body.implemented_reference,
+        )
     )
 
 

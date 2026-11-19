@@ -390,6 +390,9 @@ async def snapshot(tenant: TenantContext, work_item_id: UUID) -> ReleaseSnapshot
             also.append(await provider(tenant, engagement_id, work_item_id))
         except Exception:
             also.append(AlsoRequired(key, False))
+    differences = await _consultation_differences(tenant, work_item_id)
+    if differences is not None:
+        also.append(differences)
     async with tenant_session(tenant) as session:
         report = (await session.execute(_REPORT_ROW, {"wi": work_item_id})).first()
     approved = False
@@ -408,6 +411,28 @@ async def snapshot(tenant: TenantContext, work_item_id: UUID) -> ReleaseSnapshot
         None if report is None else report.report_date,
         None if report is None else report.city,
     )
+
+
+DIFFERENCES_KEY: Final = "consultation_differences"
+
+
+async def _consultation_differences(
+    tenant: TenantContext, work_item_id: UUID
+) -> AlsoRequired | None:
+    """Q-05-T09 (SPEC-711 AC-14; DEC-5723): behind `audit.consultations_log`, a consultation on
+    the work item with a disagreeing position and no QM-owner resolution blocks release. Off, no
+    item is added (the snapshot and its hash are unchanged); a failed read is unmet."""
+    from abacus.kernel._flags import AUDIT_CONSULTATIONS_LOG
+    from abacus.kernel.flags import flag_enabled
+    from abacus.modules.assurance.consultations_log import unresolved_differences
+
+    if not await flag_enabled(tenant, AUDIT_CONSULTATIONS_LOG):
+        return None
+    try:
+        refs = await unresolved_differences(tenant, work_item_id)
+    except Exception:
+        return AlsoRequired(DIFFERENCES_KEY, False)
+    return AlsoRequired(DIFFERENCES_KEY, not refs, ", ".join(refs) or None)
 
 
 @dataclass(frozen=True)

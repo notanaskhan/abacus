@@ -127,6 +127,9 @@ from abacus.modules.assurance.confirmations_contract import router as confirmati
 from abacus.modules.assurance.confirmations_follow_up import ACTIVITIES as FOLLOW_UP_ACTIVITIES
 from abacus.modules.assurance.confirmations_follow_up import SCHEDULES as FOLLOW_UP_SCHEDULES
 from abacus.modules.assurance.confirmations_follow_up import WORKFLOWS as FOLLOW_UP_WORKFLOWS
+
+# The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.assurance.consultations_log_contract import consultations_log_router
 from abacus.modules.assurance.draft_mappings import gap_inputs, risk_inputs, risk_narrative_inputs
 from abacus.modules.assurance.ebp_contract import ResultIn as EbpResultIn  # TASK-7815: the seed
 from abacus.modules.assurance.ebp_contract import TestIn as EbpTestIn  # TASK-7815: the seed
@@ -221,8 +224,6 @@ from abacus.modules.assurance.phase import (
 from abacus.modules.assurance.phase import SUBSCRIPTIONS as PHASE_SUBSCRIPTIONS
 from abacus.modules.assurance.planning_contract import router as planning_router
 from abacus.modules.assurance.planning_gate import g4_facts
-
-# The routers the API mounts, in order (P-39; F-03-T07).
 from abacus.modules.assurance.post_issuance_contract import post_issuance_router
 from abacus.modules.assurance.post_release import ACTIVITIES as POST_RELEASE_ACTIVITIES
 from abacus.modules.assurance.post_release import SUBSCRIPTIONS as POST_RELEASE_SUBSCRIPTIONS
@@ -315,6 +316,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     tb_router,  # C9 v1 (docs/contracts/c09-ledger.md): A-02-T03 stubs, A-02-T10 live reads
     audits_router,  # A-01-T02 audits family stub (docs/contracts/audits-cockpit.md)
     post_issuance_router,  # Q-05-T03: post-issuance v1 (stubs; dark)
+    consultations_log_router,  # Q-05-T09: AUD-28 firm log v2 (dark: audit.consultations_log)
     completion_router,
     mapping_router,
     grouping_router,
