@@ -77,6 +77,7 @@ INSERT_COLUMNS["decision_cards"] = frozenset(
     | {"reserved_role", "reserved_user_id", "options", "context", "factors"}
     | {"recommendation_suggestion_id", "blocking_refs", "supersedes_id", "raised_by_kind"}
     | {"raised_by_id", "run_id"}
+    | {"scope_kind"}  # Q-05-T16 (0996)
 )
 INSERT_COLUMNS["decisions"] = frozenset(
     {"tenant_id", "card_id", "option_key", "rationale_sealed", "factors", "seen_card_version"}
