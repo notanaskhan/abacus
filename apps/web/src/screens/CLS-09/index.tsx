@@ -295,9 +295,14 @@ export function CLS09({ clientId, clientName, initial = {}, onBack }: CLS09Props
             open={stepperOpen}
             onOpenChange={setStepperOpen}
             trigger={
-              <span data-version-stepper="" className="flex items-center text-ink-3">
+              <button
+                type="button"
+                aria-label={COPY.versionStepper}
+                data-version-stepper=""
+                className="flex items-center text-ink-3"
+              >
                 <Icon name="chevrons-up-down" size={14} />
-              </span>
+              </button>
             }
             sections={[
               [...new Set((versions.data?.items ?? []).map((v) => v.version))]

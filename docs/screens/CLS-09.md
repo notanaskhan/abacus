@@ -29,6 +29,13 @@
 | e requests | the version's eight request templates with BD due days | `e` |
 | f history | v3, v2 by Priya Raman; v1 "Close Planner via Raj Malhotra" | `f` |
 
+## Parity
+| Artboard | Tier (A/B/C/D) | Diff % | Notes |
+|---|---|---|---|
+| a, e, f | C (locked in C-01-T50) | not run (handoff baselines not on this machine; axe light and forced colors in `e2e/screens/CLS-09.spec.ts`) | — |
+| a2, a3, b, b2, c, d | C (report only) | not run | — |
+| host | D | — | T7 rail 336 + main 1030 |
+
 ## Links
 
 | From | To | Status |
