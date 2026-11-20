@@ -77,6 +77,12 @@ def unmapped_ref(return_id: UUID) -> str:
 @dataclass(frozen=True)
 class StateRow:
     state: str
+    numerator: Decimal
+    denominator: Decimal
+    rate: Decimal | None
+    status: str
+    nexus_basis: str | None
+    return_form: str | None
     share: Decimal
     ptet: Ptet
     ptet_amount: Decimal | None
@@ -87,7 +93,17 @@ class StateRow:
 
 
 @dataclass(frozen=True)
+class NexusRow:
+    state: str
+    fact: str
+    evidence_version_id: UUID | None
+    conclusion: str
+
+
+@dataclass(frozen=True)
 class StatesView:
+    nexus_rows: tuple[NexusRow, ...]
+    partner_names: dict[UUID, str]
     states: tuple[StateRow, ...]
     tally: Tally
     sourcing: str | None
@@ -97,8 +113,10 @@ class StatesView:
 
 
 _APPORTION: Final = text(
-    "SELECT state, sum(numerator) AS numerator, max(denominator) AS denominator "
-    "FROM state_apportionments WHERE work_item_id = :r GROUP BY state ORDER BY state"
+    "SELECT state, sum(numerator) AS numerator, max(denominator) AS denominator, "
+    "max(nexus_basis) AS nexus_basis, max(return_form) AS return_form, "
+    "bool_and(status = 'approved') AS approved FROM state_apportionments WHERE work_item_id = :r "
+    "GROUP BY state ORDER BY state"
 )
 _ELECTIONS: Final = text(
     "SELECT state, election, amount, base, rate, version FROM ptet_elections "
@@ -109,8 +127,8 @@ _PAID: Final = text(
     "WHERE work_item_id = :r GROUP BY state"
 )
 _NEXUS: Final = text(
-    "SELECT DISTINCT ON (state) state, conclusion FROM nexus_facts WHERE work_item_id = :r "
-    "ORDER BY state, id DESC"
+    "SELECT state, fact, evidence_version_id, conclusion FROM nexus_facts WHERE work_item_id = :r "
+    "ORDER BY state, id"
 )
 _UNMAPPED: Final = text(
     "SELECT count(*) FROM tax_properties WHERE work_item_id = :r AND state IS NULL "
@@ -156,12 +174,25 @@ async def view(ctx: AuthContext, return_id: UUID) -> StatesView:
         apportion = (await session.execute(_APPORTION, {"r": return_id})).all()
         elections = {str(e.state): e for e in await session.execute(_ELECTIONS, {"r": return_id})}
         paid = {str(p.state): p for p in await session.execute(_PAID, {"r": return_id})}
-        nexus = {
-            str(n.state): str(n.conclusion)
+        nexus_rows = tuple(
+            NexusRow(
+                str(n.state),
+                str(n.fact),
+                None if n.evidence_version_id is None else UUID(str(n.evidence_version_id)),
+                str(n.conclusion),
+            )
             for n in await session.execute(_NEXUS, {"r": return_id})
+        )
+        names = {
+            UUID(str(x.id)): str(x.display_name)
+            for x in await session.execute(
+                text("SELECT id, display_name FROM partners WHERE work_item_id = :r"),
+                {"r": return_id},
+            )
         }
         unmapped = int(await session.scalar(_UNMAPPED, {"r": return_id}) or 0)
         sourcing = (await session.execute(_SOURCING, {"r": return_id})).first()
+    nexus = {n.state: n.conclusion for n in nexus_rows}
     rows: list[StateRow] = []
     for a in apportion:
         state = str(a.state)
@@ -170,17 +201,29 @@ async def view(ctx: AuthContext, return_id: UUID) -> StatesView:
         p = paid.get(state)
         rows.append(
             StateRow(
-                state, share, cast(Ptet, "not_elected" if e is None else str(e.election)),
+                state,
+                Decimal(a.numerator),
+                Decimal(a.denominator),
+                None if e is None or e.rate is None else Decimal(e.rate),
+                "approved" if a.approved else "in_review",
+                a.nexus_basis,
+                a.return_form,
+                share,
+                cast(Ptet, "not_elected" if e is None else str(e.election)),
                 None if e is None or e.amount is None else Decimal(e.amount),
-                None if p is None else Decimal(p.paid), None if p is None else p.paid_on,
-                unmapped == 0, nexus.get(state),
+                None if p is None else Decimal(p.paid),
+                None if p is None else p.paid_on,
+                unmapped == 0,
+                nexus.get(state),
             )
-        )  # fmt: skip
+        )
     total = sum((r.share for r in rows), ZERO)
     tally: Tally = "check" if unmapped else ("tie" if rows and total == HUNDRED else "off")
     payable = [r for r in rows if r.ptet == "elected" and r.ptet_amount]
     paid_full = [r for r in payable if (r.paid or ZERO) >= (r.ptet_amount or ZERO)]
     return StatesView(
+        nexus_rows,
+        names,
         tuple(rows), tally, None if sourcing is None else str(sourcing.status), len(paid_full),
         len(payable), await partner_state_credits(ctx.tenant, return_id),
     )  # fmt: skip

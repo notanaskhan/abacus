@@ -8,6 +8,7 @@ import { type AssetView, type AssetsVariant, fixedAssets, rowsOf } from "../seed
 import { type BookTaxVariant, M1, M3, m2 } from "../seed/tax-depth-booktax";
 import type { IssuesState } from "../seed/tax-entity-issues";
 import { basis } from "../seed/tax-depth-basis";
+import { type StatesVariant, states } from "../seed/tax-depth-states";
 
 const R = "/v1/tax-returns/{return_id}";
 const notYet = () => json({ detail: "not_implemented" }, 501);
@@ -17,6 +18,8 @@ export interface DepthOptions {
   bookTax?: BookTaxVariant;
   /** The T-05 issue queue's state (TXP-10; d: the M-2 fix applied). */
   issues?: IssuesState;
+  /** T-06-T32: TXP-09's variant (b missing factor, c payment gap, e approved). */
+  states?: StatesVariant;
 }
 
 const VIEWS: readonly AssetView[] = ["register", "by_property", "dispositions"];
@@ -63,6 +66,16 @@ export function taxDepthHandlers(
     },
     [`GET ${R}/basis`]: (req) =>
       json(basis(req.query.get("view") === "s752" ? "s752" : "basis", req.query.get("partner"))),
+    [`GET ${R}/states`]: (req) => {
+      const v = req.query.get("view");
+      return json({
+        ...states(options.states ?? "e0"),
+        view: v === "credits" || v === "nexus" ? v : "apportionment",
+      });
+    },
+    [`POST ${R}/states/sourcing:approve`]: notYet,
+    [`POST ${R}/states/sourcing/undo`]: notYet,
+    [`PATCH ${R}/states/{state}/ptet`]: notYet,
     [`POST ${R}/decision-cards`]: notYet,
     "POST /v1/decision-cards/{card_id}/send-to-client": notYet,
     [`POST ${R}/fixed-assets`]: notYet,

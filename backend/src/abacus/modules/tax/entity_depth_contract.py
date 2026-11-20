@@ -234,6 +234,54 @@ class TaxDepthStateOut(BaseModel):
     ptet_paid_on: Annotated[date | None, Tri] = None
     mapped: Annotated[bool, Internal]
     nexus_conclusion: Annotated[str | None, Field(max_length=200), Tri] = None
+    # T-06-T32 (additive; DEC-5837): the row TXP-09 a draws, every figure the server's.
+    name: Annotated[str | None, Field(max_length=60), Internal] = None
+    property_name: Annotated[str | None, Field(max_length=200), Tri] = None
+    numerator: MaybeMoney = None
+    denominator: MaybeMoney = None
+    nexus_basis: Annotated[str | None, Field(max_length=200), Tri] = None
+    rate_pct: Annotated[Decimal | None, Field(ge=0, le=100), Tri] = None
+    ptet_amount: MaybeMoney = None
+    return_form: Annotated[str | None, Field(max_length=60), Internal] = None
+    status: Annotated[Literal["in_review", "approved"] | None, Internal] = None
+    approved_by_initials: Annotated[str | None, Field(max_length=4), Internal] = None
+    approved_on: Annotated[date | None, Internal] = None
+
+
+class TaxDepthCreditOut(BaseModel):
+    """TXP-09 a's Partner PTET credits: one partner's credit by state (to the state K-1s)."""
+
+    model_config = _cfg()
+
+    partner_id: Annotated[UUID, Internal]
+    name: Annotated[str, Field(max_length=200), Tri]
+    note: Annotated[str | None, Field(max_length=60), Tri] = None
+    by_state: Annotated[dict[str, Decimal], Tri]
+    total: Money
+
+
+class TaxDepthNexusOut(BaseModel):
+    """TXP-09 d: a state's nexus fact, its evidence, conclusion and owner."""
+
+    model_config = _cfg()
+
+    state: Annotated[str, Field(max_length=60), Internal]
+    fact: Annotated[str, Field(max_length=500), Tri]
+    evidence_name: Annotated[str | None, Field(max_length=200), Tri] = None
+    evidence_version_id: Annotated[UUID | None, Internal] = None
+    conclusion: Annotated[str, Field(max_length=200), Tri]
+    owner_initials: Annotated[str | None, Field(max_length=4), Internal] = None
+
+
+class TaxDepthOpportunityOut(BaseModel):
+    """TXP-09 a's opportunity row (NYC): a recommendation only; nothing is elected here."""
+
+    model_config = _cfg()
+
+    jurisdiction: Annotated[str, Field(max_length=60), Internal]
+    subject: Annotated[str, Field(max_length=200), Tri]
+    basis: Annotated[str, Field(max_length=200), Tri]
+    deadline_note: Annotated[str, Field(max_length=200), Tri]
 
 
 class TaxDepthStatesOut(BaseModel):
@@ -247,6 +295,12 @@ class TaxDepthStatesOut(BaseModel):
     sourcing: Annotated[Literal["proposed", "approved", "rejected", "undone"] | None, Internal]
     paid_count: Annotated[int, Field(ge=0), Internal]
     payable_count: Annotated[int, Field(ge=0), Internal]
+    # T-06-T32 (additive; DEC-5837): TXP-09's tallies, credits, nexus and opportunity rows.
+    base: MaybeMoney = None
+    ptet_total: MaybeMoney = None
+    credits: Annotated[list[TaxDepthCreditOut], Internal] = []
+    nexus: Annotated[list[TaxDepthNexusOut], Internal] = []
+    opportunities: Annotated[list[TaxDepthOpportunityOut], Internal] = []
 
 
 class TaxDepthPtetIn(BaseModel):
@@ -721,7 +775,23 @@ async def states_route(
         sourcing=cast(Any, found.sourcing),
         paid_count=found.paid_count,
         payable_count=found.payable_count,
-    )
+        base=found.states[0].denominator if found.states else None,
+        ptet_total=sum((r.ptet_amount or Decimal(0) for r in found.states), Decimal(0)),
+        credits=[
+            TaxDepthCreditOut(
+                partner_id=pid, name=found.partner_names.get(pid, ""), by_state=by_state,
+                total=sum(by_state.values(), Decimal(0)),
+            )
+            for pid, by_state in found.credits.items()
+        ],
+        nexus=[
+            TaxDepthNexusOut(
+                state=n.state, fact=n.fact, evidence_version_id=n.evidence_version_id,
+                conclusion=n.conclusion,
+            )
+            for n in found.nexus_rows
+        ],
+    )  # fmt: skip
 
 
 def _state_out(r: object) -> TaxDepthStateOut:
@@ -729,6 +799,9 @@ def _state_out(r: object) -> TaxDepthStateOut:
     return TaxDepthStateOut(
         state=row.state, apportionment_pct=row.share, ptet=row.ptet, ptet_paid=row.paid,
         ptet_paid_on=row.paid_on, mapped=row.mapped, nexus_conclusion=row.nexus,
+        numerator=row.numerator, denominator=row.denominator, nexus_basis=row.nexus_basis,
+        rate_pct=row.rate, ptet_amount=row.ptet_amount, return_form=row.return_form,
+        status=row.status,
     )  # fmt: skip
 
 
