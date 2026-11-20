@@ -293,3 +293,7 @@ from abacus.modules.integrations import w1_switches as _w1_switches  # noqa: E40
 from abacus.modules.integrations.w1_switches import memo_prefix_of as memo_prefix_of  # noqa: E402
 
 _w1_switches.register()
+# C-02-T30: the live W1 transport over the kernel's write lane (registered by C-02-T50's release).
+from abacus.modules.integrations.writers.quickbooks_online import (  # noqa: E402
+    HttpQboTransport as HttpQboTransport,
+)

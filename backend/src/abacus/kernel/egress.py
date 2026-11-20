@@ -47,6 +47,10 @@ _BY_CONNECTOR: dict[str, frozenset[str]] = {}
 # before a byte leaves the process (ED-156).
 _READ_METHODS: Final = frozenset({"GET", "HEAD"})
 _READ_POSTS: set[tuple[str, str]] = set()
+# C-02-T30 (ADR-344 §6): the W1 write lane. Empty unless a released (`enabled: true`) W1 registry
+# entry declares (host, path prefix) at start-up, or a test (the QuickBooks sandbox conformance
+# run) configures its own sandbox host. `write()` is the only way a POST that writes leaves.
+_WRITE_POSTS: set[tuple[str, str]] = set()
 TIMEOUT_SECONDS: Final = 20.0
 MAX_RESPONSE_BYTES: Final = 20 * 1024 * 1024
 
@@ -77,6 +81,16 @@ def configure_egress(
     _BY_CONNECTOR.clear()
     for key, own in (by_connector or {}).items():
         _BY_CONNECTOR[key] = frozenset(h.lower() for h in own) & frozenset(_ALLOWED)
+
+
+def configure_write_egress(paths: frozenset[tuple[str, str]]) -> None:
+    """Replace the W1 write lane: (host, path prefix) pairs, each host already allowlisted."""
+    _WRITE_POSTS.clear()
+    _WRITE_POSTS.update((h.lower(), p) for h, p in paths if h.lower() in _ALLOWED)
+
+
+def write_lane() -> frozenset[tuple[str, str]]:
+    return frozenset(_WRITE_POSTS)
 
 
 def allowed_hosts() -> frozenset[str]:
@@ -160,6 +174,26 @@ class EgressClient:
                 headers=dict(headers or {}),
                 data=dict(data) if data else None,
                 content=content,
+            ) as response:
+                body = bytearray()
+                async for chunk in response.aiter_bytes():
+                    body += chunk
+                    if len(body) > MAX_RESPONSE_BYTES:
+                        raise EgressRefused("response too large")
+                return EgressResponse(response.status_code, dict(response.headers), bytes(body))
+
+    async def write(
+        self, url: str, *, headers: Mapping[str, str] | None = None, content: bytes
+    ) -> EgressResponse:
+        """C-02-T30: a POST that writes, only on the W1 lane (`configure_write_egress`); refused
+        before a byte leaves otherwise. Callers are the W1 adapter only (POST-001)."""
+        target = check_egress(url, self._connector)
+        host = target.host.lower()
+        if not any(host == h and target.path.startswith(p) for h, p in _WRITE_POSTS):
+            raise EgressRefused("not on the write lane")
+        async with asyncio.timeout(TIMEOUT_SECONDS):
+            async with self._client.stream(
+                "POST", target, headers=dict(headers or {}), content=content
             ) as response:
                 body = bytearray()
                 async for chunk in response.aiter_bytes():

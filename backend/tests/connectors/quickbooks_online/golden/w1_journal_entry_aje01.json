@@ -1,0 +1,29 @@
+{
+  "DocNumber": "AJE-01",
+  "Line": [
+    {
+      "Amount": "4200.00",
+      "Description": "",
+      "DetailType": "JournalEntryLineDetail",
+      "JournalEntryLineDetail": {
+        "AccountRef": {
+          "value": "64"
+        },
+        "PostingType": "Debit"
+      }
+    },
+    {
+      "Amount": "4200.00",
+      "Description": "",
+      "DetailType": "JournalEntryLineDetail",
+      "JournalEntryLineDetail": {
+        "AccountRef": {
+          "value": "33"
+        },
+        "PostingType": "Credit"
+      }
+    }
+  ],
+  "PrivateNote": "BH AJE \u00b7 batch 2026-08-A",
+  "TxnDate": "2026-08-31"
+}
