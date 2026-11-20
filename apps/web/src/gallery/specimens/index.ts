@@ -8,6 +8,7 @@ import { Tpl06Artboard } from "./TPL-06";
 import { Tpl10Artboard } from "./TPL-10";
 import { Tpl16Artboard } from "./TPL-16";
 import { Tpl19Artboard } from "./TPL-19";
+import { Tpl20Artboard } from "./TPL-20";
 import { T4Artboard, Tpl04Artboard } from "./T4";
 
 registerScreen("TPL-16", {
@@ -59,4 +60,10 @@ registerScreen("T4", {
 registerScreen("TPL-04", {
   title: "Workbench chat specimen · TY2025 season progress by office",
   Component: Tpl04Artboard,
+});
+
+// F-08-T09: the TPL-20 SURL sheet specimen, a to g (Granite Peak BH-FS-430, Sep 24 to Oct 1).
+registerScreen("TPL-20", {
+  title: "T18 Sheet specimen · Granite Peak FY2026 · BH-FS-430",
+  Component: Tpl20Artboard,
 });
