@@ -46,12 +46,13 @@ export function editSuggestion(s: Suggestion, value: string, by: Actor, at: stri
 /** The tooltip's two lines (C-31). */
 export function suggestionLines(s: Suggestion): { head: string; line: string } {
   const n = s.cites?.length ?? 0;
-  const cited = `${String(n)} citation${n === 1 ? "" : "s"}`;
+  // No typed citation, no count: the line never claims sources it does not carry (INV-2).
+  const cited = n === 0 ? "" : ` · ${String(n)} citation${n === 1 ? "" : "s"}`;
   const head =
     s.state === "suggested"
-      ? `Suggested by ${AGENT_NAME} · ${cited} · not yet adopted`
+      ? `Suggested by ${AGENT_NAME}${cited} · not yet adopted`
       : s.state === "adopted"
-        ? `Suggested by ${AGENT_NAME} · ${cited}`
+        ? `Suggested by ${AGENT_NAME}${cited}`
         : "";
   const by = s.by === undefined ? "" : formatActor(s.by);
   const line =
