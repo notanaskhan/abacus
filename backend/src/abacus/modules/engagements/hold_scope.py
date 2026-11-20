@@ -138,7 +138,29 @@ async def work_item_engagement(tenant: TenantContext, work_item_id: UUID) -> UUI
         )
 
 
+async def inspectable_work_items(
+    tenant: TenantContext, year: int
+) -> list[tuple[UUID, UUID, dict[str, bool]]]:
+    """Q-05-T18: the year's assurance and tax work items monitoring may inspect, with the facts the
+    selection rule weighs (archived, the kind). Practice scores them; engagements only lists."""
+    from sqlalchemy import extract
+
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                select(WorkItem.id, WorkItem.engagement_id, WorkItem.kind, WorkItem.status)
+                .where(extract("year", WorkItem.period_end) == year)
+                .order_by(WorkItem.id)
+            )
+        ).all()
+    return [
+        (r.id, r.engagement_id, {"archived": r.status == "archived", f"kind_{r.kind}": True})
+        for r in rows
+    ]
+
+
 __all__ = [
+    "inspectable_work_items",
     "EngagementHoldFacts",
     "engagement_hold_facts",
     "engagements_in_hold_scope",

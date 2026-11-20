@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header
@@ -23,6 +23,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import QUALITY_MANAGEMENT
 from abacus.kernel.classification import classified
+from sqlalchemy import text
+
+from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
@@ -541,7 +544,13 @@ async def quality_accuracy_route(
 )
 async def quality_cycles_route(ctx: Ctx) -> QualityCycleListOut:
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.practice import inspections as svc
+
+    rows = await svc.cycles(ctx.tenant)
+    return QualityCycleListOut(items=[QualityCycleOut(
+        cycle_id=r["id"], year=r["year"], as_of=r["as_of"], planned=r["planned"],
+        in_progress=r["in_progress"], concluded=r["concluded"], findings_open=r["findings_open"],
+    ) for r in rows])  # type: ignore[arg-type]  # fmt: skip
 
 
 @quality_router.get(
@@ -559,7 +568,13 @@ async def quality_inspections_route(
     cursor: str | None = None,
 ) -> QualityInspectionListOut:
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.practice import inspections as svc
+
+    del cursor, cycle
+    rows = [r for r in await svc.inspections(ctx.tenant, None)
+            if (type is None or r["kind"] == type) and (status is None or r["status"] == status)
+            and (inspector is None or r["inspector_user_id"] == inspector)]  # fmt: skip
+    return QualityInspectionListOut(items=[await _inspection_out(ctx, r) for r in rows], next_cursor=None)
 
 
 @quality_router.get(
@@ -570,7 +585,17 @@ async def quality_inspections_route(
 )
 async def quality_candidates_route(ctx: Ctx, cycle: int) -> QualityCandidateListOut:
     await _human(ctx, "inspection.plan")
-    raise NotImplementedYet
+    from abacus.modules.practice import inspections as svc
+
+    async with tenant_session(ctx.tenant) as session:
+        cycle_id = await session.scalar(text("SELECT id FROM qm_cycles WHERE year = :y"), {"y": cycle})
+    if cycle_id is None:
+        raise NotFound("qm_cycle")
+    version, found = await svc.candidates(ctx, cast(UUID, cycle_id))
+    return QualityCandidateListOut(rule_version=version, items=[QualityCandidateOut(
+        work_item_id=c.work_item_id, engagement_name=c.engagement_name, risk_score=c.risk_score,
+        selected_because=c.selected_because, not_objective_user_ids=c.not_objective_user_ids,
+    ) for c in found])  # fmt: skip
 
 
 @quality_router.post(
@@ -585,7 +610,12 @@ async def quality_inspection_create_route(
 ) -> QualityInspectionOut:
     """409 `inspector_not_objective` (AC-7); planning issues the inspector's grant (AC-8)."""
     await _human(ctx, "inspection.plan")
-    raise NotImplementedYet
+    from abacus.modules.practice import inspections as svc
+
+    del key
+    made = await svc.plan(ctx, cycle_id=body.cycle_id, work_item_id=body.work_item_id,
+                          kind=body.kind, inspector_user_id=body.inspector_user_id, due_on=body.due_on)  # fmt: skip
+    return await _inspection_by_id(ctx, made)
 
 
 @quality_router.post(
@@ -598,7 +628,11 @@ async def quality_inspection_start_route(
     inspection_id: UUID, ctx: Ctx, key: IdempotencyKey
 ) -> QualityInspectionOut:
     await _human(ctx, "inspection.update")
-    raise NotImplementedYet
+    from abacus.modules.practice import inspections as svc
+
+    del key
+    await svc.start(ctx, inspection_id)
+    return await _inspection_by_id(ctx, inspection_id)
 
 
 @quality_router.post(
@@ -612,7 +646,11 @@ async def quality_inspection_conclude_route(
 ) -> QualityInspectionOut:
     """Concluding revokes the inspector's grant."""
     await _human(ctx, "inspection.update")
-    raise NotImplementedYet
+    from abacus.modules.practice import inspections as svc
+
+    del key
+    await svc.conclude(ctx, inspection_id)
+    return await _inspection_by_id(ctx, inspection_id)
 
 
 @quality_router.get(
@@ -622,7 +660,10 @@ async def quality_findings_route(
     ctx: Ctx, cycle: int | None = None, status: FindingStatus | None = None
 ) -> QualityFindingListOut:
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.practice import inspections as svc
+
+    rows = await svc.findings(ctx.tenant, cycle, status)
+    return QualityFindingListOut(items=[await _finding_out(r) for r in rows], next_cursor=None)
 
 
 @quality_router.get(
@@ -633,7 +674,7 @@ async def quality_findings_route(
 )
 async def quality_finding_route(finding_id: UUID, ctx: Ctx) -> QualityFindingOut:
     await _on(ctx)
-    raise NotImplementedYet
+    return await _finding_by_id(ctx, finding_id)
 
 
 @quality_router.post(
@@ -647,7 +688,12 @@ async def quality_finding_create_route(
     body: QualityFindingIn, ctx: Ctx, key: IdempotencyKey
 ) -> QualityFindingOut:
     await _human(ctx, "qm_finding.record")
-    raise NotImplementedYet
+    from abacus.modules.practice import inspections as svc
+
+    del key
+    made = await svc.record_finding(ctx, cycle_id=body.cycle_id, inspection_id=body.inspection_id,
+                                    title=body.title, owner_user_id=body.owner_user_id, due_on=body.due_on)  # fmt: skip
+    return await _finding_by_id(ctx, made)
 
 
 @quality_router.patch(
@@ -660,7 +706,14 @@ async def quality_finding_patch_route(
     finding_id: UUID, body: QualityFindingPatchIn, ctx: Ctx
 ) -> QualityFindingOut:
     await _human(ctx, "qm_finding.update")
-    raise NotImplementedYet
+    from abacus.modules.practice import inspections as svc
+
+    await svc.update_finding(
+        ctx, finding_id, root_cause_category=body.root_cause_category, root_cause=body.root_cause,
+        remediation=body.remediation, owner_user_id=body.owner_user_id, due_on=body.due_on,
+        version=body.version,
+    )  # fmt: skip
+    return await _finding_by_id(ctx, finding_id)
 
 
 @quality_router.post(
@@ -675,7 +728,11 @@ async def quality_finding_evaluate_route(
 ) -> QualityFindingOut:
     """Human-only, insert-only; the QM owner (AC-9)."""
     await _human(ctx, "qm_finding.evaluate")
-    raise NotImplementedYet
+    from abacus.modules.practice import inspections as svc
+
+    del key
+    await svc.evaluate_finding(ctx, finding_id, evaluation=body.evaluation, rationale=body.rationale)
+    return await _finding_by_id(ctx, finding_id)
 
 
 @quality_router.post(
@@ -688,7 +745,11 @@ async def quality_finding_remediate_route(
     finding_id: UUID, body: QualityRemediateIn, ctx: Ctx, key: IdempotencyKey
 ) -> QualityFindingOut:
     await _human(ctx, "qm_finding.remediate")
-    raise NotImplementedYet
+    from abacus.modules.practice import inspections as svc
+
+    del key
+    await svc.remediate(ctx, finding_id, body.note)
+    return await _finding_by_id(ctx, finding_id)
 
 
 @quality_router.post(
@@ -702,7 +763,12 @@ async def quality_finding_todo_route(
     finding_id: UUID, body: QualityTodoIn, ctx: Ctx, key: IdempotencyKey
 ) -> QualityTodoOut:
     await _human(ctx, "todo.create")
-    raise NotImplementedYet
+    from abacus.modules.practice import inspections as svc
+
+    del key
+    todo_id = await svc.remediation_todo(ctx, finding_id, title=body.title,
+                                         assignee_user_id=body.assignee_user_id, due_on=body.due_on)  # fmt: skip
+    return QualityTodoOut.model_validate({"todo_id": todo_id, "finding_id": finding_id})
 
 
 @quality_router.get(
@@ -713,7 +779,7 @@ async def quality_finding_todo_route(
 )
 async def quality_evaluation_route(year: int, ctx: Ctx) -> QualityAnnualEvaluationOut:
     await _on(ctx)
-    raise NotImplementedYet
+    return await _evaluation_out(ctx, year)
 
 
 @quality_router.patch(
@@ -726,7 +792,10 @@ async def quality_evaluation_checklist_route(
     year: int, body: QualityChecklistIn, ctx: Ctx
 ) -> QualityAnnualEvaluationOut:
     await _human(ctx, "quality.manage")
-    raise NotImplementedYet
+    from abacus.modules.practice import inspections as svc
+
+    await svc.save_checklist(ctx, year, dict(body.checklist))
+    return await _evaluation_out(ctx, year)
 
 
 @quality_router.post(
@@ -740,4 +809,75 @@ async def quality_evaluation_request_route(
 ) -> QualityAnnualEvaluationOut:
     """Raises the firm-scope `qm_annual_evaluation` card; 409 `inspections_open`."""
     await _human(ctx, "quality.manage")
-    raise NotImplementedYet
+    from abacus.modules.practice import inspections as svc
+
+    del key
+    await svc.request_conclusion(ctx, year)
+    return await _evaluation_out(ctx, year)
+
+
+# --- Q-05-T18 (DEC-5827): the outs of inspections, findings and the evaluation -----------------
+
+
+async def _person(user_id: UUID | None) -> QualityPersonOut:
+    from abacus.modules.identity.api import display_names
+
+    if user_id is None:
+        return QualityPersonOut.model_validate({"user_id": None, "name": ""})
+    return QualityPersonOut.model_validate(
+        {"user_id": user_id, "name": (await display_names([user_id])).get(user_id, "")}
+    )
+
+
+async def _inspection_out(ctx: AuthContext, r: dict[str, object]) -> QualityInspectionOut:
+    from abacus.modules.engagements.api import engagement_label
+
+    label = await engagement_label(ctx.tenant, cast(UUID, r["inspected_engagement_id"]))
+    return QualityInspectionOut(
+        inspection_id=cast(UUID, r["id"]), ref=str(r["ref"]), work_item_id=cast(UUID, r["work_item_id"]),
+        engagement_name="" if label is None else (label.client_entity_name or label.client_name),
+        kind=cast(InspectionKind, r["kind"]), basis=cast(Any, r["basis"]),
+        inspector=await _person(cast(UUID, r["inspector_user_id"])),
+        status=cast(InspectionStatus, r["status"]), due_on=cast(Any, r["due_on"]),
+    )  # fmt: skip
+
+
+async def _inspection_by_id(ctx: AuthContext, inspection_id: UUID) -> QualityInspectionOut:
+    from abacus.modules.practice import inspections as svc
+
+    found = [r for r in await svc.inspections(ctx.tenant, None) if r["id"] == inspection_id]
+    if not found:
+        raise NotFound("inspection")
+    return await _inspection_out(ctx, found[0])
+
+
+async def _finding_out(r: dict[str, object]) -> QualityFindingOut:
+    return QualityFindingOut.model_validate({
+        "finding_id": r["id"], "ref": r["ref"], "source": r["source"], "agent_key": r["agent_key"],
+        "inspection_ref": r["inspection_ref"], "title": r["title"], "status": r["status"],
+        "evaluation": r["evaluation"], "root_cause_category": r["root_cause_category"],
+        "owner": None if r["owner_user_id"] is None else (await _person(cast(UUID, r["owner_user_id"]))).model_dump(),
+        "due_on": r["due_on"], "raised_by_kind": r["raised_by_kind"], "version": r["version"],
+    })  # fmt: skip
+
+
+async def _finding_by_id(ctx: AuthContext, finding_id: UUID) -> QualityFindingOut:
+    from abacus.modules.practice import inspections as svc
+
+    found = [r for r in await svc.findings(ctx.tenant, None, None) if r["id"] == finding_id]
+    if not found:
+        raise NotFound("qm_finding")
+    return await _finding_out(found[0])
+
+
+async def _evaluation_out(ctx: AuthContext, year: int) -> QualityAnnualEvaluationOut:
+    from abacus.modules.practice import inspections as svc
+
+    found = await svc.evaluation(ctx.tenant, year)
+    return QualityAnnualEvaluationOut(
+        year=year, status=cast(Any, found["status"]),
+        responsible=await _person(cast(UUID | None, found["responsible_user_id"])),
+        decision_card_id=cast(UUID | None, found["decision_card_id"]),
+        concluded_at=cast(Any, found["concluded_at"]), checklist=cast(dict[str, bool], found["checklist"]),
+        inspections_open=int(cast(int, found["inspections_open"])),
+    )  # fmt: skip
