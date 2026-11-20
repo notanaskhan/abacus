@@ -36,6 +36,17 @@ locals {
   ]
 }
 
+# G-04-T22: the staff console's IP allowlist. Only built when the caller names CIDRs.
+resource "aws_wafv2_ip_set" "allow" {
+  count              = length(var.allow_ipv4_cidrs) > 0 ? 1 : 0
+  name               = "${var.name}-allow"
+  description        = "Sources allowed to reach ${var.name} (G-04-T22)"
+  scope              = "CLOUDFRONT"
+  region             = local.edge_region
+  ip_address_version = "IPV4"
+  addresses          = var.allow_ipv4_cidrs
+}
+
 resource "aws_wafv2_web_acl" "this" {
   name        = var.name
   description = "Edge rules for ${var.name}, chapter 06 section 1.13"
@@ -56,6 +67,36 @@ resource "aws_wafv2_web_acl" "this" {
     key          = "too_large"
     content_type = "APPLICATION_JSON"
     content      = jsonencode({ detail = "too_large" })
+  }
+
+  # G-04-T22: with an allowlist, a source outside it is blocked first (priority 4 sits before the
+  # managed rules; no earlier rule allows, so nothing reaches the origin around it).
+  dynamic "rule" {
+    for_each = length(var.allow_ipv4_cidrs) > 0 ? [1] : []
+    content {
+      name     = "ip-allowlist"
+      priority = 4
+
+      action {
+        block {}
+      }
+
+      statement {
+        not_statement {
+          statement {
+            ip_set_reference_statement {
+              arn = aws_wafv2_ip_set.allow[0].arn
+            }
+          }
+        }
+      }
+
+      visibility_config {
+        cloudwatch_metrics_enabled = true
+        metric_name                = "${var.name}-ip-allowlist"
+        sampled_requests_enabled   = true
+      }
+    }
   }
 
   rule {

@@ -46,6 +46,13 @@ The assignment is gone (Identity Center), and CloudTrail shows no further use.
 ## 8. Review
 Every use gets a line in the incident review: why the ops-task path was not enough.
 
+## Firm-content support sessions after G-04 (G-04-T22)
+Break-glass is never a way into firm content. Since G-04 (SPEC-681, the SPEC-012 amendment, DEC-72):
+- Accrued Support requests a session from the staff console (PLT-01 d): one object ("Integration settings and sync logs only"), a reason and a duration. The console has **no approve control**, and the staff emergency-approve route is removed (`POST /v1/support/sessions/{id}/approve` answers 404; SPEC-681 AC-15).
+- The firm's `firm_admin` or `security_admin` approves or declines in ADM-06 or SHL-05 c ("Granted by ‹name› · until ‹time›" with Revoke). The session ends at its time or on Revoke, whichever comes first.
+- If an incident truly needs firm content and the firm cannot approve in time, the answer is to wait and to say so in the incident; a break-glass role assumed for firm content is a SEV1 by itself (RB-08).
+- Console access itself is staff SSO with MFA on the staff issuer, from the allowlisted networks only (RB-95). Losing either is a RB-95 problem, not a break-glass one.
+
 ## Rehearsal log
 | Date | Kind (drill, staging walk-through, tabletop) | Result | Changes made |
 |---|---|---|---|

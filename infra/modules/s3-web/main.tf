@@ -113,7 +113,7 @@ data "aws_iam_policy_document" "this" {
       condition {
         test     = "StringEquals"
         variable = "aws:SourceArn"
-        values   = [var.distribution_arn]
+        values   = concat([var.distribution_arn], var.extra_distribution_arns)
       }
     }
   }
