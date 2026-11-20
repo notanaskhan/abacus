@@ -99,6 +99,19 @@ RECONNECT_REQUEST: Final = register_email_template(
     used_by_label="CLS-11 · expired connections",
     designed=True,
 )
+# C-02-T24 (C-02 §4.8, DEC-5816): CLS-11e's "Ask the client to lift the date…". A registration
+# only: the words are each firm's row (database content); until published every send fails
+# closed (template_missing).
+LIFT_CLOSING_DATE_REQUEST: Final = register_email_template(
+    "lift_closing_date_request",
+    ("client",),
+    ("client_first_name", "firm_name", "connection_name", "due_date"),
+    (),
+    ("CLS-11",),
+    firm_editable=True,
+    name="Lift closing date request",
+    used_by_label="CLS-11 · an entry dated on or before the closing date",
+)
 # R-02-T14 (R-02 §4.8, DEC-3112): the portal's two new client emails. Registrations only (not
 # among POR-20's designed six): the words are each firm's (database content); until published
 # every send fails closed.

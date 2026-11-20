@@ -28,9 +28,9 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Annotated, Final
+from typing import Annotated, Final, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -38,10 +38,11 @@ from sqlalchemy import text
 from abacus.kernel import clock
 from abacus.kernel._statuses import ProposedEntryStatus as S
 from abacus.kernel.classification import classified
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
-from abacus.kernel.uow import DomainEvent, Scope, Target, uow
+from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, uow
 from abacus.modules.adjustments import decisions as _decisions
+from abacus.modules.adjustments import entries as _entries
 from abacus.modules.adjustments.entries import TARGET, engagement_of
 from abacus.modules.adjustments.posting_errors import EntryLocked, OverApprovalLimit
 from abacus.modules.engagements.api import attest_of, engagement_resource_of, lock_ref
@@ -499,3 +500,205 @@ def role_label(role: str | None) -> str:
 async def posting_enabled(ctx: AuthContext, work_item_id: UUID) -> bool:
     """Whether the close's engagement may post (W1 on); off shows "Export approved entries"."""
     return await posting_enabled_for(ctx.tenant, await engagement_of(ctx.tenant, work_item_id))
+
+
+# --- C-02-T24: re-date, reversals and Recorded in ledger (posting_recovery's database half) ------
+
+
+async def redate_withdraw(
+    ctx: AuthContext, entry_id: UUID, new_date: date, reason: str, *, conflict_id: UUID
+) -> UUID:
+    """CLS-11e "Re-date to …": the approval is withdrawn (`approval_withdrawn`), the date edited and
+    the entry taken out of its batch, so it is re-approved (a new payload hash) before it posts.
+    The conflict is closed `redated` in the same unit of work."""
+    row = await _entry(ctx, entry_id)
+    engagement_id, work_item_id = UUID(str(row["engagement_id"])), UUID(str(row["work_item_id"]))
+    await _authorised(ctx, "closing_date_conflict.resolve", engagement_id)
+    if str(row["status"]) != "failed_post":
+        raise EntryLocked(facts={"status": str(row["status"])})
+    status = await _threshold_status(ctx, row)
+    async with uow(ctx.tenant) as tx:
+        await lock_ref(tx, engagement_id)
+        version = int(
+            (
+                await tx.session.execute(
+                    text("SELECT version FROM proposed_entries WHERE id = :id FOR UPDATE"),
+                    {"id": entry_id},
+                )
+            ).scalar_one()
+        )
+        await _decisions.write_decision(
+            tx, ctx, engagement_id, work_item_id, entry_id, decision="approval_withdrawn",
+            seen_version=version, reason_code="redated", note=reason,
+        )  # fmt: skip
+        await tx.session.execute(
+            text(
+                "UPDATE proposed_entries SET status = :s, txn_date = :d, posting_batch_id = NULL, "
+                "posting_target = NULL, version = version + 1 WHERE id = :id"
+            ),
+            {"s": status, "d": new_date, "id": entry_id},
+        )
+        await tx.session.execute(
+            text(
+                "UPDATE closing_date_conflicts SET status = 'redated', resolved_by = :u, "
+                "resolved_at = clock_timestamp() WHERE id = :c AND status IN ('open', "
+                "'client_asked')"
+            ),
+            {"u": ctx.user_id, "c": conflict_id},
+        )
+        decision_id = (
+            await tx.session.execute(
+                text(
+                    "SELECT id FROM proposed_entry_decisions WHERE entry_id = :id "
+                    "ORDER BY created_at DESC LIMIT 1"
+                ),
+                {"id": entry_id},
+            )
+        ).scalar_one()
+        tx.record(
+            "closing_date_conflict.redated",
+            target=Target("closing_date_conflict", conflict_id),
+            after=Ref(entry_id=entry_id),
+            scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
+        )
+        tx.record(
+            "proposed_entry.approval_withdrawn",
+            target=Target(TARGET, entry_id),
+            scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
+        )
+    return UUID(str(decision_id))
+
+
+_REVERSAL_SOURCE = text(
+    "SELECT e.id, e.ref, e.kind, e.reverses_on, e.engagement_id, e.work_item_id, l.account_code, "
+    "l.debit, l.credit, l.account_scope FROM proposed_entries e JOIN proposed_entry_lines l ON "
+    "l.entry_id = e.id WHERE e.id = :e ORDER BY l.line_no"
+)
+
+
+async def _reversal_of(
+    tenant: TenantContext, entry_id: UUID
+) -> tuple[_entries.NewEntry, str, date | None, UUID]:
+    async with tenant_session(tenant) as session:
+        rows = list((await session.execute(_REVERSAL_SOURCE, {"e": entry_id})).all())
+    if not rows:
+        raise NotFound("proposed_entry")
+    first = rows[0]
+    lines = tuple(
+        _entries.NewLine(str(r.account_code), Decimal(r.credit), Decimal(r.debit), r.account_scope)
+        for r in rows
+    )  # debits and credits swapped: the reversal
+    return (
+        _entries.NewEntry(first.kind, f"Reversal of {first.ref}", None, lines),
+        str(first.ref),
+        cast(date | None, first.reverses_on),
+        UUID(str(first.engagement_id)),
+    )
+
+
+async def _mark_reversal(tenant: TenantContext, new_id: UUID, of: UUID, on: date | None) -> None:
+    async with uow(tenant) as tx:
+        await tx.session.execute(
+            text(
+                "UPDATE proposed_entries SET reversal_of_id = :of, txn_date = :d, "
+                "version = version + 1 WHERE id = :id"
+            ),
+            {"of": of, "d": on, "id": new_id},
+        )
+        tx.record("proposed_entry.reversal_linked", target=Target(TARGET, new_id), after=Ref(of=of))
+
+
+async def propose_reversal(ctx: AuthContext, entry_id: UUID, on: date | None) -> UUID:
+    """Manual Reverse: a new proposed entry on the same close; approved and posted like any."""
+    new, _, reverses_on, _ = await _reversal_of(ctx.tenant, entry_id)
+    work_item_id = await _entries.work_item_of(ctx.tenant, entry_id)
+    made = await _entries.propose(ctx, work_item_id, new)
+    await _mark_reversal(ctx.tenant, made.id, entry_id, on or reverses_on)
+    return made.id
+
+
+_ORIGINAL_APPROVER = text(
+    "SELECT actor_id FROM proposed_entry_decisions WHERE entry_id = :e AND decision = 'approved' "
+    "ORDER BY created_at DESC LIMIT 1"
+)
+
+
+async def carry_reversal(tenant: TenantContext, entry_id: UUID, next_work_item_id: UUID) -> UUID | None:
+    """The auto-reversal carry (US-3.4): the reversing entry on the next period's close, dated
+    `reverses_on`, approved with the original's decision under its approver ("Approved with
+    AJE-01 by RM under …"). It posts only when a person posts that period's batch."""
+    from abacus.modules.identity.api import member_context
+
+    new, ref, reverses_on, _ = await _reversal_of(tenant, entry_id)
+    async with tenant_session(tenant) as session:
+        approver_id = await session.scalar(_ORIGINAL_APPROVER, {"e": entry_id})
+    if approver_id is None:
+        return None
+    approver = await member_context(tenant.tenant_id, UUID(str(approver_id)))
+    if approver is None:
+        return None  # the approver left the firm: the reversal waits for a person to propose it
+    made = await _entries.propose(approver, next_work_item_id, new)
+    await _mark_reversal(tenant, made.id, entry_id, reverses_on)
+    engagement_id = await _entries.engagement_of(tenant, next_work_item_id)
+    async with uow(approver.tenant) as tx:
+        version = int(
+            (
+                await tx.session.execute(
+                    text("SELECT version FROM proposed_entries WHERE id = :id FOR UPDATE"),
+                    {"id": made.id},
+                )
+            ).scalar_one()
+        )
+        await _decisions.write_decision(
+            tx, approver, engagement_id, next_work_item_id, made.id, decision="approved",
+            seen_version=version, reason_code="reversal_carry", note=f"Approved with {ref}",
+        )  # fmt: skip
+        await _decisions.set_status(tx, [made.id], S.APPROVED)
+        tx.record(
+            "proposed_entry.approved",
+            target=Target(TARGET, made.id),
+            after=Ref(carried_from=entry_id),
+            scope=Scope(engagement_id=engagement_id, work_item_id=next_work_item_id),
+        )
+    return made.id
+
+
+async def mark_recorded_externally(
+    ctx: AuthContext, entry_id: UUID, *, evidence_version_id: UUID | None, match_ref: str | None
+) -> UUID:
+    """Recorded in ledger (export path): an approved, unposted entry the client's ledger now holds,
+    shown by evidence or a sync match (`recorded_externally`)."""
+    row = await _entry(ctx, entry_id)
+    engagement_id, work_item_id = UUID(str(row["engagement_id"])), UUID(str(row["work_item_id"]))
+    await _authorised(ctx, "proposed_entry.record_external", engagement_id)
+    if str(row["status"]) not in (S.APPROVED, "client_approved") or await _in_batch(ctx, entry_id):
+        raise EntryLocked(facts={"status": str(row["status"])})
+    async with uow(ctx.tenant) as tx:
+        await lock_ref(tx, engagement_id)
+        await _decisions.write_decision(
+            tx, ctx, engagement_id, work_item_id, entry_id, decision="recorded_externally",
+            seen_version=int(str(row["version"])), evidence_version_id=evidence_version_id,
+        )  # fmt: skip
+        await tx.session.execute(
+            text(
+                "UPDATE proposed_entries SET status = 'recorded_externally', "
+                "recorded_externally_at = clock_timestamp(), recorded_externally_evidence_id = :ev, "
+                "recorded_externally_match_ref = :m, version = version + 1 WHERE id = :id"
+            ),
+            {"ev": evidence_version_id, "m": match_ref, "id": entry_id},
+        )
+        decision_id = (
+            await tx.session.execute(
+                text(
+                    "SELECT id FROM proposed_entry_decisions WHERE entry_id = :id "
+                    "ORDER BY created_at DESC LIMIT 1"
+                ),
+                {"id": entry_id},
+            )
+        ).scalar_one()
+        tx.record(
+            "proposed_entry.recorded_externally",
+            target=Target(TARGET, entry_id),
+            scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
+        )
+    return UUID(str(decision_id))

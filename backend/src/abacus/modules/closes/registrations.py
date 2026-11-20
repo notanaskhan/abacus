@@ -480,10 +480,97 @@ async def on_question_answered(event: OutboxEvent) -> None:
         )
 
 
+# --- C-02-T24: posting failures become CLS-06 issues; posted reversals carry forward ---------------
+
+
+def _next_period(period: str) -> str:
+    year, month = (int(p) for p in period.split("-"))
+    return f"{year + (month == 12):04d}-{month % 12 + 1:02d}"
+
+
+async def on_posting_failed(event: OutboxEvent) -> None:
+    """An entry failed to post (not the closing date): one exception on the close, raised as the
+    person who posted the batch, deduplicated per entry and attempt."""
+    from abacus.modules.adjustments.api import failed_entry_facts, failure_line
+    from abacus.modules.closes.issues import raise_exception
+    from abacus.modules.identity.api import member_context
+
+    raw_item, raw_by = event.payload.get("work_item_id"), event.payload.get("posted_by_user_id")
+    raw_entries = event.payload.get("entry_ids")
+    if raw_item is None or raw_by is None or not isinstance(raw_entries, list):
+        return
+    tenant = _system(event.tenant_id)
+    close_id = UUID(str(raw_item))
+    async with tenant_session(tenant) as session:
+        close = await repo.close_row(session, close_id)
+    if close is None:
+        return  # not a close's batch (an audit's elimination never posts)
+    poster = await member_context(event.tenant_id, UUID(str(raw_by)))
+    if poster is None:
+        return
+    for raw in cast(list[object], raw_entries):
+        facts = await failed_entry_facts(tenant, UUID(str(raw)))
+        if facts is None:
+            continue
+        await raise_exception(
+            poster,
+            close_id,
+            severity="high",
+            issue_class="posting",
+            title=f"{facts.ref} failed to post",
+            why=failure_line(facts),
+            account_ref=facts.ref,
+            register_line_ref=f"attempt-{facts.attempt}",
+        )
+
+
+async def on_posting_posted(event: OutboxEvent) -> None:
+    """Batch posted: entries with `reverses_on` reverse on the next period's close, if it exists
+    (else when it is created: `on_close_for_reversals`)."""
+    from abacus.modules.adjustments.api import carry_reversals
+
+    raw_item, raw_batch = event.payload.get("work_item_id"), event.payload.get("batch_id")
+    if raw_item is None or raw_batch is None:
+        return
+    tenant = _system(event.tenant_id)
+    async with tenant_session(tenant) as session:
+        close = await repo.close_row(session, UUID(str(raw_item)))
+        if close is None:
+            return
+        following = (
+            await repo.neighbours(session, close.engagement_id, [_next_period(close.period)])
+        ).get(_next_period(close.period))
+    if following is not None:
+        await carry_reversals(tenant, UUID(str(raw_batch)), following)
+
+
+async def on_close_for_reversals(event: OutboxEvent) -> None:
+    """A new close: the previous period's posted batches carry their reversals onto it."""
+    from abacus.modules.adjustments.api import carry_reversals, posted_batches_of
+
+    raw = event.payload.get("close_id")
+    if raw is None:
+        return
+    tenant = _system(event.tenant_id)
+    async with tenant_session(tenant) as session:
+        close = await repo.close_row(session, UUID(str(raw)))
+        if close is None:
+            return
+        year, month = (int(p) for p in close.period.split("-"))
+        previous = f"{year - (month == 1):04d}-{(month - 2) % 12 + 1:02d}"
+        before = (await repo.neighbours(session, close.engagement_id, [previous])).get(previous)
+    if before is None:
+        return
+    for batch_id in await posted_batches_of(tenant, before):
+        await carry_reversals(tenant, batch_id, close.work_item_id)
+
+
 SUBSCRIPTIONS: Final = {
     "agent_run.ready_for_review": on_run_ready,
     "agent_run.needs_input": on_run_needs_input,
     "transaction_question.answered": on_question_answered,
+    "posting_batch.failed": on_posting_failed,
+    "posting_batch.posted": on_posting_posted,
 }
 
 

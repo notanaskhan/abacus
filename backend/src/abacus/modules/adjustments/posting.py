@@ -535,6 +535,7 @@ async def run_batch(tenant_id: UUID, batch_id: UUID) -> str:
     writer = QuickBooksOnlineWriter(await transport_for(acting, row.connection_id))
     refs: list[str] = []
     failed = 0
+    issue_ids: list[UUID] = []  # C-02-T24: failures other than the closing date (CLS-06, C16)
     for e in entries:
         if e.id in done:
             refs.append(done[e.id])
@@ -559,6 +560,7 @@ async def run_batch(tenant_id: UUID, batch_id: UUID) -> str:
             evidence_of=_posted_evidence,
         )  # fmt: skip
         ok = posted.error is None and posted.verified
+        closed_on = None if ok else await writer.book_close_date()
         async with uow(acting) as tx:
             attempt = int(await tx.session.scalar(_ATTEMPTS, {"b": batch_id, "e": e.id}) or 0) + 1
             await tx.session.execute(
@@ -583,6 +585,12 @@ async def run_batch(tenant_id: UUID, batch_id: UUID) -> str:
                 target=Target("proposed_entry", e.id),
                 after=Ref(batch=batch_id, attempt=attempt),
             )
+            if not ok and await _recovery.record_failure(
+                tx, tenant_id=tenant_id, batch_id=batch_id, entry_id=e.id,
+                entry_date=_journal(e, period_end).txn_date,
+                code=posted.error or "verify_mismatch", closed_on=closed_on,
+            ):  # fmt: skip
+                issue_ids.append(e.id)
         if ok:
             refs.append(posted.external_ref)
         else:
@@ -622,6 +630,13 @@ async def run_batch(tenant_id: UUID, batch_id: UUID) -> str:
                  "d": row.closing_date_target, "u": approver, "b": batch_id},
             )  # fmt: skip
         tx.record(f"posting_batch.{status}", target=Target(SUBJECT, batch_id))
+        if issue_ids:
+            tx.emit(
+                await _recovery.failed_event(
+                    acting, batch_id=batch_id, work_item_id=row.work_item_id,
+                    posted_by=approver, entry_ids=issue_ids,
+                )
+            )  # fmt: skip
         if status == "posted":
             tx.emit(
                 PostingBatchPosted(
@@ -770,15 +785,35 @@ from temporalio import activity  # noqa: E402
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy  # noqa: E402
 
 from abacus.kernel.dispatch import dispatch  # noqa: E402
+from abacus.modules.adjustments import posting_recovery as _recovery  # noqa: E402
 from abacus.modules.adjustments.posting_types import RUN, PostingInput  # noqa: E402
 
 
 @activity.defn(name=RUN)
 async def run_posting_batch_activity(given: PostingInput) -> str:
+    if given.entry_id is not None and given.grant_id is not None:  # C-02-T24: one entry's retry
+        return await _recovery.run_retry(
+            UUID(given.tenant_id), UUID(given.batch_id), UUID(given.entry_id), UUID(given.grant_id)
+        )
     return await run_batch(UUID(given.tenant_id), UUID(given.batch_id))
 
 
 ACTIVITIES = (run_posting_batch_activity,)
+
+
+async def start_retry(tenant_id: UUID, retried: _recovery.Retried) -> None:
+    """C-02-T24: the retry's workflow (the same hold, then one entry), once per attempt."""
+    from abacus.modules.adjustments.posting_workflow import PostingBatchWorkflow
+
+    await dispatch(
+        PostingBatchWorkflow,
+        PostingInput(
+            str(tenant_id), str(retried.batch_id), str(retried.entry_id), str(retried.grant_id)
+        ),
+        id=_recovery.retry_workflow_id(tenant_id, retried),
+        id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+    )
 
 
 async def start_posting(tenant_id: UUID, batch_id: UUID) -> None:

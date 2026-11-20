@@ -105,6 +105,10 @@ class QuickBooksOnlineWriter:
     def capability(self) -> str:
         return CAPABILITY
 
+    async def book_close_date(self) -> date | None:
+        """The ledger's closing date as QuickBooks has it now (C-02-T24's conflict row)."""
+        return await self._t.book_close_date()
+
     async def preflight(self, entry: JournalEntry) -> Preflight:
         if not entry.doc_number:
             return Preflight(False, "doc_number")
