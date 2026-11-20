@@ -2,7 +2,7 @@
 id: RB-93
 title: "September close shadow and close support (C-01)"
 owner: builder
-alarms: [close-sync-freshness, close-sync-failure-rate, intuit-meter-budget]
+alarms: [SLO-09]  # sync freshness; the failure-rate and meter-budget alarms are C-01 §10 item 6, not built yet
 last_rehearsed: never
 rehearse_by: 2028-10-03
 ---

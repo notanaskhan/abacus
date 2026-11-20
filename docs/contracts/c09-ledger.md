@@ -211,7 +211,7 @@ The v2 contract is `docs/contracts/ledger-mapping.md` (stub, A-03-T03, 2026-10-3
 
 ## C9 v2.1 · CAS monthly datasets and sync facts (C-01-T07, additive)
 
-Stub (C-01-T07, 2026-11-14); provider ledger and connections (red); consumers closes (CLS-04,
+Stub (C-01-T07, 2026-11-14); final for C-01 (C-01-T56, 2026-11-20: served by C-01-T17 and T18 as written below; no change to the shapes); provider ledger and connections (red); consumers closes (CLS-04,
 CLS-05, CLS-10). Freezes with `docs/contracts/closes.md` (end of S45). Readers of C9 v1 and v2 are
 unaffected. Read only: no write method or route (CONN-001, ADR-040).
 
