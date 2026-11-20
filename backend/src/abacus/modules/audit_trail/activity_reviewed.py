@@ -1191,6 +1191,13 @@ REVIEWED_FALLBACK: Final = frozenset(
         "consultation.position_recorded",
         "consultation.reopened",
         "destruction_batch.assembled",
+        "destruction_batch.first_approval",  # Q-05-T15 (TASK-8819): FIL-02 c, d, i
+        "destruction_batch.approved",
+        "destruction_batch.cancelled",
+        "destruction_batch.destroying",
+        "destruction_batch.destroyed",
+        "destruction_item.excluded",
+        "evidence_version.destroyed",
         "destruction_batch.exported",
         "ledger_connection.exported",
         "ledger_write.sent",

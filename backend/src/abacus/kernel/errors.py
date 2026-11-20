@@ -101,6 +101,13 @@ class DomainUnsupported(_Coded):
     code: ClassVar[str] = "unsupported"
 
 
+class DomainGone(_Coded):
+    """The record existed and was destroyed under a records-destruction batch (Q-05-T15): 410 with
+    the class's fixed `code` and the certificate's reference in `facts` (never the content)."""
+
+    code: ClassVar[str] = "destroyed"
+
+
 class ServiceUnavailable(Exception):
     """A dependency isn't reachable right now: 503."""
 

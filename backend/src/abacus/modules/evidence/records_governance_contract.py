@@ -22,7 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import RECORDS_GOVERNANCE
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
 
@@ -325,8 +325,14 @@ async def destruction_approval_route(
     batch_id: UUID, body: RecordsApprovalIn, ctx: Ctx, key: IdempotencyKey
 ) -> RecordsBatchOut:
     """409 `same_approver`, `approver_role_taken`, `batch_phrase_mismatch` (AC-22, AC-23)."""
+    from abacus.modules.evidence import destruction, destruction_execute
+
     await _human(ctx, "destruction.approve")
-    raise NotImplementedYet
+    del key
+    await destruction_execute.approve(
+        ctx, batch_id, items_seen=body.items_seen, confirmation=body.confirmation
+    )
+    return _batch_out(await destruction.batch(ctx.tenant, batch_id))
 
 
 @records_governance_router.post(
@@ -339,8 +345,12 @@ async def destruction_cancel_route(
     batch_id: UUID, body: RecordsCancelIn, ctx: Ctx, key: IdempotencyKey
 ) -> RecordsBatchOut:
     """Before execution only; API and runbook (OQ-12)."""
+    from abacus.modules.evidence import destruction, destruction_execute
+
     await _human(ctx, "destruction.approve")
-    raise NotImplementedYet
+    del key
+    await destruction_execute.cancel(ctx, batch_id, body.reason)
+    return _batch_out(await destruction.batch(ctx.tenant, batch_id))
 
 
 @records_governance_router.get(
@@ -350,5 +360,16 @@ async def destruction_cancel_route(
     errors=(501,),
 )
 async def destruction_certificate_route(certificate_id: UUID, ctx: Ctx) -> RecordsCertificateOut:
+    from abacus.modules.evidence import destruction_execute
+
     await _on(ctx)
-    raise NotImplementedYet
+    row = await destruction_execute.certificate(ctx.tenant, certificate_id)
+    return RecordsCertificateOut(
+        certificate_id=cast(UUID, row["id"]), ref=str(row["ref"]), batch_id=cast(UUID, row["batch_id"]),
+        destroyed_count=int(cast(int, row["destroyed_count"])),
+        excluded_count=int(cast(int, row["held_excluded_count"])),
+        manifest_sha256=str(row["manifest_sha256"]),
+        audit_checkpoint_root=str(row["audit_checkpoint_root"]),
+        generated_at=cast(datetime, row["generated_at"]),
+        document_version_id=certificate_id,
+    )  # fmt: skip

@@ -40,6 +40,7 @@ from abacus.kernel.errors import (
     DomainForbidden,
     DomainInvalid,
     DomainRateLimited,
+    DomainGone,
     DomainTooLarge,
     DomainUnavailable,
     DomainUnsupported,
@@ -136,7 +137,8 @@ def _coded(
     | DomainForbidden
     | DomainRateLimited
     | DomainTooLarge
-    | DomainUnsupported,
+    | DomainUnsupported
+    | DomainGone,
 ) -> dict[str, object]:
     # The class's fixed code and its identifier-only facts (ADR-139): nothing from the request or
     # the database is echoed as text.
@@ -172,6 +174,10 @@ async def _db_error(_request: Request, exc: Exception) -> JSONResponse:
 
 async def _domain_invalid(_request: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(_coded(cast(DomainInvalid, exc)), status_code=422)
+
+
+async def _gone(_request: Request, exc: Exception) -> JSONResponse:
+    return JSONResponse(_coded(cast(DomainGone, exc)), status_code=410)  # Q-05-T15
 
 
 async def _too_large(_request: Request, exc: Exception) -> JSONResponse:
@@ -312,6 +318,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(DomainRateLimited, _rate_limited)
     app.add_exception_handler(DomainInvalid, _domain_invalid)
     app.add_exception_handler(DomainTooLarge, _too_large)  # R-01-T09
+    app.add_exception_handler(DomainGone, _gone)  # Q-05-T15: a destroyed record, 410
     app.add_exception_handler(DomainUnsupported, _unsupported)  # R-01-T09
     app.add_exception_handler(ServiceUnavailable, _unavailable)
     app.add_exception_handler(ReadOnlyMode, _read_only)
