@@ -27,6 +27,7 @@ gradients in product UI, emoji, saturated blue, heavy shadows, invented colours,
 ## Deviations (chosen truth)
 - **f viewer:** the README lists Hannah Leclerc; the spec says Simone Baptiste or Cole Hart (a manager cannot be the "not a manager" viewer). Truth: the spec — Simone Baptiste.
 - Template mode with a Source binding row is a design follow-up (K-03-T05, `docs/design/revisions/K-03-T05/sht02-template-mode.md`).
+- Design follow-up board **SHT-02g** Template mode · Source binding: `docs/design/revisions/K-03-T05/sht02-template-mode.md`.
 
 ## Walls and agent
 - Walled users: 404, absent from lists, no hidden counts (INV-3, DEC-43).

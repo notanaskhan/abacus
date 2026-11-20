@@ -28,6 +28,7 @@ gradients in product UI, emoji, saturated blue, heavy shadows, invented colours,
 - **e viewer:** Aiden Ward (Staff) per the spec; a CSV only.
 - Until K-04 builds ENG-11 the overlay opens over the AUD-02 cockpit (K-03-T05, `shl22-underlay.md`); parity masks the underlay.
 - A "Removed in vN" row is not drawn (seed has Removed 0); design follow-up `shl22-removed-row.md` (DEC-5805).
+- Design follow-up boards **SHL-22f** (Removed in v6 row) and **SHL-22g** (over AUD-02): `docs/design/revisions/K-03-T05/shl22-removed-row.md`, `shl22-underlay.md`.
 
 ## Walls and agent
 - Walled users: 404, absent from lists, no hidden counts (INV-3, DEC-43).
