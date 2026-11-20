@@ -51,6 +51,8 @@ _C = table(
     column("status"),
     column("consulted_with_user_id"),
     column("raised_by"),
+    column("question_sealed"),
+    column("conclusion_sealed"),
     column("created_at"),
     column("concluded_at"),
 )
@@ -69,12 +71,20 @@ class ConsultationRow:
     consulted_with_user_id: UUID
     raised_by: UUID
     created_at: datetime
+    question: str | None = None  # Q-05-T20: AUD-28's queue titles
+    conclusion: str | None = None  # Q-05-T20: AUD-28's Conclusion band
 
 
 @dataclass(frozen=True)
 class ConsultationList:
     rows: tuple[ConsultationRow, ...]
     counts: dict[str, int]
+
+
+async def _question(ctx: AuthContext, sealed: object) -> str:
+    from abacus.modules.assurance.consultations import _text  # pyright: ignore[reportPrivateUsage]
+
+    return await _text(ctx, sealed)
 
 
 def _filtered(
@@ -107,7 +117,7 @@ async def firm_log(
         ctx,
         select(
             _C.c.id, _C.c.ref, _C.c.engagement_id, _C.c.status, _C.c.consulted_with_user_id,
-            _C.c.raised_by, _C.c.created_at,
+            _C.c.raised_by, _C.c.created_at, _C.c.question_sealed, _C.c.conclusion_sealed,
         ),
         engagement_id=engagement_id, consultee=consultee, year=year,
     )  # fmt: skip
@@ -123,19 +133,18 @@ async def firm_log(
         rows = [tuple(r) for r in found.all()]
         counted = [tuple(r) for r in (await session.execute(counts_q)).all()]
         counts = {str(r[0]): int(cast(int, r[1])) for r in counted}
-    return ConsultationList(
-        tuple(
+    shaped: list[ConsultationRow] = []
+    for r in rows:
+        shaped.append(
             ConsultationRow(
-                cast(UUID, r[0]),
-                str(r[1]),
-                cast(UUID | None, r[2]),
-                str(r[3]),
-                cast(UUID, r[4]),
-                cast(UUID, r[5]),
-                cast(datetime, r[6]),
-            )
-            for r in rows
-        ),
+                cast(UUID, r[0]), str(r[1]), cast(UUID | None, r[2]), str(r[3]), cast(UUID, r[4]),
+                cast(UUID, r[5]), cast(datetime, r[6]),
+                (await _question(ctx, r[7])) if r[7] is not None else None,
+                (await _question(ctx, r[8])) if r[8] is not None else None,
+            )  # fmt: skip
+        )
+    return ConsultationList(
+        tuple(shaped),
         {"open": counts.get("open", 0), "concluded": counts.get("concluded", 0)},
     )
 

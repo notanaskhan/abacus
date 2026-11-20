@@ -27,7 +27,7 @@ function at(state: Adm11State): Scenario {
       "GET /v1/quality/agent-overrides": () => json(overrides()),
       "GET /v1/quality/findings": () => json(findings(state)),
       "GET /v1/quality/agent-overrides/{agent_key}/reasons": () => json(reasons()),
-      "GET /v1/audits/consultations": () => json(consultationsLog()),
+      "GET /v1/consultations": () => json(consultationsLog()),
     },
   };
 }

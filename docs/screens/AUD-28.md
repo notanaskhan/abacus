@@ -39,3 +39,12 @@ The designed links of the handoff link graph (link-contract rule 5); each is wir
 | Opens AUD-12 · testing workspace · revenue | AUD-12 | designed (handoff link graph) |
 | Opens AUD-18 · EQR workspace · Oakline | AUD-18 | designed (handoff link graph) |
 | Opens AUD-19 · completion checklist · going concern | AUD-19 | designed (handoff link graph) |
+
+## Q-05-T20 (TASK-8826): built
+a–g build from `fixtures/scenarios/AUD-28.ts` (seed `fixtures/seed/aud28.ts`) over `GET
+/v1/consultations` (C-03 conclusion and questions: the log row gains `question` and `conclusion`,
+additive) and `GET /v1/consultations/{id}`; Record conclusion posts `…/conclude`.
+- The consultee picker takes the firm's partners and specialists from the caller (the server's
+  `consultation.create` refuses anyone else, the agent included); walled people never appear.
+- **Deviation:** the read-only decision card is the linked card's label until SHL-11's read-only
+  embed is wired (the timeline card follows it).

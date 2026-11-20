@@ -2017,7 +2017,7 @@ export const postIssuanceDecision = <ThrowOnError extends boolean = false>(optio
 /**
  * Post Issuance Reissue Route
  *
- * The EP, fresh MFA; opens AUD-23 g through A-07's release path (AC-18).
+ * The EP, fresh MFA; opens AUD-23 g through A-07's release path (AC-18; Q-05-T17).
  */
 export const postIssuanceReissue = <ThrowOnError extends boolean = false>(options: Options<PostIssuanceReissueData, ThrowOnError>): RequestResult<PostIssuanceReissueResponses, PostIssuanceReissueErrors, ThrowOnError> => (options.client ?? client).post<PostIssuanceReissueResponses, PostIssuanceReissueErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3754,6 +3754,9 @@ export const packageEdit = <ThrowOnError extends boolean = false>(options: Optio
 
 /**
  * Package Pdf Route
+ *
+ * The latest render's PDF through P-03's audited content route (a redirect, never bytes
+ * copied here).
  */
 export const packagePdf = <ThrowOnError extends boolean = false>(options: Options<PackagePdfData, ThrowOnError>): RequestResult<PackagePdfResponses, PackagePdfErrors, ThrowOnError> => (options.client ?? client).get<PackagePdfResponses, PackagePdfErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3788,7 +3791,7 @@ export const commentary = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Generate Route
  *
- * A deterministic DET run; regenerate keeps commentary edits.
+ * A deterministic DET run; regenerate keeps commentary edits (C-02-T28).
  */
 export const generate = <ThrowOnError extends boolean = false>(options: Options<GenerateData, ThrowOnError>): RequestResult<GenerateResponses, GenerateErrors, ThrowOnError> => (options.client ?? client).post<GenerateResponses, GenerateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3808,7 +3811,7 @@ export const page = <ThrowOnError extends boolean = false>(options: Options<Page
 /**
  * Close Package Release Route
  *
- * Partner only, live, fresh MFA; 409 `release_preconditions_unmet` (C-02-T23).
+ * Partner only, live, fresh MFA; 409 `release_preconditions_unmet` (C-02-T29).
  */
 export const closePackageRelease = <ThrowOnError extends boolean = false>(options: Options<ClosePackageReleaseData, ThrowOnError>): RequestResult<ClosePackageReleaseResponses, ClosePackageReleaseErrors, ThrowOnError> => (options.client ?? client).post<ClosePackageReleaseResponses, ClosePackageReleaseErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -17428,7 +17431,7 @@ export const listRetentionPolicies = <ThrowOnError extends boolean = false>(opti
 /**
  * Retention Policy Create Route
  *
- * A policy below the legal minimum is refused (AC-19); fresh MFA.
+ * A policy below the legal minimum is refused (AC-19); fresh MFA (Q-05-T13).
  */
 export const retentionPolicyCreate = <ThrowOnError extends boolean = false>(options: Options<RetentionPolicyCreateData, ThrowOnError>): RequestResult<RetentionPolicyCreateResponses, RetentionPolicyCreateErrors, ThrowOnError> => (options.client ?? client).post<RetentionPolicyCreateResponses, RetentionPolicyCreateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -17458,6 +17461,8 @@ export const saveRetentionPolicy = <ThrowOnError extends boolean = false>(option
 
 /**
  * Retention Policy Versions Route
+ *
+ * FIL-02g: every version of the policy one of its versions names (Q-05-T13).
  */
 export const retentionPolicyVersions = <ThrowOnError extends boolean = false>(options: Options<RetentionPolicyVersionsData, ThrowOnError>): RequestResult<RetentionPolicyVersionsResponses, RetentionPolicyVersionsErrors, ThrowOnError> => (options.client ?? client).get<RetentionPolicyVersionsResponses, RetentionPolicyVersionsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

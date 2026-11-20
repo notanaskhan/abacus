@@ -55,6 +55,9 @@ class ConsultationLogRowOut(BaseModel):
     consulted_with_name: Annotated[str, Internal]
     raised_by_name: Annotated[str, Internal]
     created_at: Annotated[datetime, Internal]
+    # Q-05-T20 (additive): AUD-28's queue title (sealed at rest, opened for a reader).
+    question: Annotated[str | None, Field(max_length=4000), Confidential] = None
+    conclusion: Annotated[str | None, Field(max_length=20000), Confidential] = None
 
 
 class ConsultationCountsOut(BaseModel):
@@ -189,6 +192,8 @@ async def consultations_log_route(
                 consulted_with_name=names.get(r.consulted_with_user_id, "Former member"),
                 raised_by_name=names.get(r.raised_by, "Former member"),
                 created_at=r.created_at,
+                question=r.question,
+                conclusion=r.conclusion,
             )
             for r in found.rows
         ],
