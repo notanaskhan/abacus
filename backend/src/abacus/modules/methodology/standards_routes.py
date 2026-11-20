@@ -338,6 +338,19 @@ async def import_standard_route(
     )
     if payload is None:
         _invalid(problems)
+    if kind == "review_checklist":  # T-08-T13: the registry lives in this process, not the child
+        from abacus.modules.methodology.check_codes import unknown_items
+
+        unknown = unknown_items(payload)
+        if unknown:
+            _invalid(
+                [
+                    standards_import.Problem(
+                        standards_import.ROWS, i + 2, None, "check_code_unknown"
+                    )
+                    for i in unknown
+                ]
+            )
     draft = await standards.import_draft(ctx, standard_id, payload)
     return StandardImportResultOut(drafts=[draft], problems=[])
 
