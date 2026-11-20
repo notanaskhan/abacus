@@ -39,3 +39,10 @@ The designed links of the handoff link graph (link-contract rule 5); each is wir
 | Opens ADM-01 · Settings home | ADM-01 | designed (handoff link graph) |
 | Opens FIL-01 · the 3 held documents | FIL-01 | designed (handoff link graph) |
 | Opens ADM-07 · Audit log | ADM-07 | designed (handoff link graph) |
+
+## Q-05-T21 (TASK-8827): built
+a–i build from `fixtures/scenarios/FIL-02.ts` over the retention summary and policies, the legal
+holds list, the destruction batches and approvals, and a policy's versions (Q-05-T13/T15).
+- **Deviation:** the "Applies to" counts are not in the policies read; FIL-02g's drawer carries the
+  versions. Hold rows read the year and reason; the client and work-item names come with the live
+  swap.
