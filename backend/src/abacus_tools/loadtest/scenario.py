@@ -19,7 +19,7 @@ from abacus_tools.loadtest.bodies import BODIES
 
 SCENARIOS = Path(__file__).resolve().parent / "scenarios"
 _NAME = r"^[a-z][a-z0-9_]{0,39}$"
-_PATH = r"^/[A-Za-z0-9_\-./?=&%{}]*$"
+_PATH = r"^/[A-Za-z0-9_\-./?=&%{}:]*$"  # ":" for AIP custom methods (Q-03-T359)
 
 
 class _Strict(BaseModel):
@@ -38,11 +38,16 @@ class Step(_Strict):
     auth: bool = True
     # N-02-T47: a fresh `Idempotency-Key` per request, for routes that require one (a send).
     idempotency: bool = False
+    # Q-03-T359: send the same request this many more times with the same key (C-02-T43's
+    # "posting never runs twice for one idempotency key"); each replay is a sample of the group.
+    replays: Annotated[int, Field(ge=0, le=3)] = 0
 
     @model_validator(mode="after")
     def _one_body(self) -> Step:
         if self.body is not None and self.json_body is not None:
             raise ValueError("a step sends json_body or a named body, not both")
+        if self.replays and not self.idempotency:
+            raise ValueError("replays resend one Idempotency-Key, so the step needs idempotency")
         if self.body is not None and self.body not in BODIES:
             raise ValueError(f"no body {self.body!r}; known: {', '.join(sorted(BODIES))}")
         return self

@@ -1,0 +1,87 @@
+# Q-03-T359 (S52; Q-03 §9 ×100 November 2028 content; amber): the content for Q-03-T376's ×100
+# run in S54, with C-02-T43's W1 posting profile. Three loads at once:
+#   - W1 posting: Raj Malhotra's "Post N approved…" path on CLS-07 (a dry run first, then the post
+#     with an Idempotency-Key, replayed once with the same key: posting must never run twice for
+#     one key) and the CLS-11 posting log; C-02-T43 sizes it at 22 closes posting in one hour;
+#   - CAS month-end: October 2028 closes (the list, one close's accounts and reconciliation, flux,
+#     runs, the close package and the T-06 tax handoff);
+#   - TY2028 season tools: the season list, a TY2028 manifest and its cohort rows, the filing
+#     deadlines (HOME-03) and the C12 hand-off read.
+# Targets: reads p95 under 500 ms; the dry run under 1 s; the post accepted (202) p95 under 1 s;
+# errors under 0.1%. A post with a fresh key after the batch posted is a 409 (stale versions),
+# counted as expected; a replay of the same key returns the first answer. Writes: the synthetic
+# firm only (PF-X1, DEC-1530), with the QuickBooks sandbox behind the connector (C-02-T30); the
+# write capability stays disabled anywhere but the perf stack. Loaded through the service APIs,
+# never the database.
+# Vars (the perf seed's ids): work_item_id (an October 2028 close's posting work item),
+# entry_ids (its approved entries, a JSON list), seen_versions (a JSON map entry id → version),
+# client_entity_id (the close's client entity), close_id, account_ref, return_id (a TY2028
+# return with a C12 hand-off), tax_year (2028), manifest_id and cohort_id (a TY2028 season manifest and cohort).
+# Not run in S52: the perf stack is not up in this build (the run is Q-03-T376).
+name: november_2028
+description: November 2028 x100 - W1 posting with idempotency replay, October CAS month-end and TY2028 season tools (Q-03-T359).
+duration_seconds: 3600
+users: 200
+think_ms: 1500
+ramp_seconds: 300
+max_error_rate: 0.001
+personas:
+  - {subject: scenario-raj-malhotra, weight: 3, groups: [w1_post, posting_log, close_detail, close_flux]}
+  - {subject: scenario-priya-raman, weight: 2, groups: [close_list, close_detail, close_package, posting_log]}
+  - {subject: scenario-ana-cruz, weight: 3, groups: [season_tools, deadlines, tax_handoff]}
+  - {subject: scenario-hannah-leclerc, weight: 2, groups: [season_tools, deadlines, close_list]}
+groups:
+  - name: w1_post
+    weight: 1
+    p95_ms: 1000
+    steps:
+      - {method: POST, path: "/v1/work-items/{work_item_id}/posting-batches:dry-run", json_body: {entry_ids: "{entry_ids}"}, expect: [200, 409]}
+      - {method: POST, path: "/v1/work-items/{work_item_id}/posting-batches", json_body: {entry_ids: "{entry_ids}", seen_versions: "{seen_versions}", set_closing_date: true}, expect: [202, 409], idempotency: true, replays: 1}
+  - name: posting_log
+    weight: 2
+    p95_ms: 500
+    steps:
+      - {path: "/v1/client-entities/{client_entity_id}/posting-batches"}
+  - name: close_list
+    weight: 3
+    p95_ms: 500
+    steps:
+      - {path: "/v1/closes?period=2028-10"}
+      - {path: "/v1/closes/running"}
+  - name: close_detail
+    weight: 3
+    p95_ms: 500
+    steps:
+      - {path: "/v1/closes/{close_id}"}
+      - {path: "/v1/closes/{close_id}/accounts"}
+      - {path: "/v1/closes/{close_id}/reconciliations/{account_ref}"}
+      - {path: "/v1/closes/{close_id}/requests"}
+  - name: close_flux
+    weight: 2
+    p95_ms: 500
+    steps:
+      - {path: "/v1/closes/{close_id}/flux"}
+      - {path: "/v1/closes/{close_id}/runs"}
+  - name: close_package
+    weight: 1
+    p95_ms: 500
+    steps:
+      - {path: "/v1/closes/{close_id}/package"}
+      - {path: "/v1/closes/{close_id}/tax-handoff"}
+  - name: season_tools
+    weight: 3
+    p95_ms: 500
+    steps:
+      - {path: "/v1/seasons"}
+      - {path: "/v1/seasons/{tax_year}/manifests/{manifest_id}"}
+      - {path: "/v1/season-cohorts/{cohort_id}/rows"}
+  - name: deadlines
+    weight: 3
+    p95_ms: 500
+    steps:
+      - {path: "/v1/filing-deadlines?tax_year=2028"}
+  - name: tax_handoff
+    weight: 1
+    p95_ms: 500
+    steps:
+      - {path: "/v1/tax-returns/{return_id}/handoff"}
