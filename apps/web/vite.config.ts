@@ -175,6 +175,14 @@ export default defineConfig(({ mode, command }) => {
                       name: "api-client",
                       test: /packages[\\/]api-client[\\/]src[\\/]/,
                     },
+                    // F-08-T12 (DEC-16): the two engines get chunks of their own, so the budget
+                    // script can hold each (engine-dnd 40 KB, engine-editor 180 KB) and no route
+                    // that never drags or edits pays for them.
+                    { name: "engine-dnd", test: /node_modules[\\/]@dnd-kit[\\/]/ },
+                    {
+                      name: "engine-editor",
+                      test: /node_modules[\\/](@tiptap|prosemirror-[a-z-]+|orderedmap|rope-sequence|w3c-keyname|linkifyjs)[\\/]/,
+                    },
                   ],
                 },
               },

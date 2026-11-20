@@ -17,6 +17,8 @@ import { gzipSync } from "node:zlib";
 
 const KB = 1000;
 export const BUDGETS = { firm: 300 * KB, portal: 150 * KB, route: 140 * KB };
+// F-08-T12 (DEC-16): the engine chunks named in vite.config.ts, each held on its own.
+export const ENGINE_BUDGETS = { "engine-dnd": 40 * KB, "engine-editor": 180 * KB };
 
 /** @param {string} dist @param {string} file @returns {number} */
 function gzipSize(dist, file) {
@@ -69,6 +71,12 @@ export function budgetLines(manifest, size) {
     // P-08-T07: the portal is its own build (dist/portal) with no firm entry; its route chunks
     // add to the portal's initial load, not to nothing.
     if (firm === undefined) initial = portalInitial;
+  }
+  for (const [key, chunk] of Object.entries(manifest)) {
+    const engine = ENGINE_BUDGETS[chunk.name ?? ""];
+    if (engine !== undefined && chunk.file.endsWith(".js")) {
+      lines.push({ name: `engine ${chunk.name}`, bytes: size(chunk.file), budget: engine });
+    }
   }
   for (const [key, chunk] of Object.entries(manifest)) {
     if (chunk.isDynamicEntry !== true) continue;

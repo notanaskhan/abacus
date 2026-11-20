@@ -126,3 +126,25 @@ describe("F-05-T17 bundle budgets", () => {
     expect(lines.find((l) => l.name.startsWith("portal initial"))?.bytes).toBe(130 * KB);
   });
 });
+
+describe("F-08-T12 engine chunk budgets", () => {
+  const engines: Record<string, Chunk & { name?: string }> = {
+    "index.html": { file: "assets/index.js", isEntry: true },
+    "_engine-dnd.js": { file: "assets/engine-dnd.js", name: "engine-dnd" } as Chunk,
+    "_engine-editor.js": { file: "assets/engine-editor.js", name: "engine-editor" } as Chunk,
+  };
+  it("holds engine-dnd to 40 KB and engine-editor to 180 KB", () => {
+    const sizes: Record<string, number> = {
+      "assets/engine-dnd.js": 41 * KB,
+      "assets/engine-editor.js": 179 * KB,
+    };
+    const { lines } = budget.budgetLines(engines, (file) => sizes[file] ?? 0);
+    const dnd = lines.find((l) => l.name === "engine engine-dnd");
+    const editor = lines.find((l) => l.name === "engine engine-editor");
+    expect(dnd?.budget).toBe(40 * KB);
+    expect(editor?.budget).toBe(180 * KB);
+    expect(lines.filter((l) => l.bytes > l.budget).map((l) => l.name)).toEqual([
+      "engine engine-dnd",
+    ]);
+  });
+});

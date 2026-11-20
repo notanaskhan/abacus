@@ -71,6 +71,14 @@ typescript:
     "@fontsource/gelasio": approved         # self-hosted serif for statements and letters (F-05-T02)
     "@tanstack/react-table": approved       # headless table state for the DataTable kit (F-05-T02, ADR-011)
     "@tanstack/react-virtual": approved     # row virtualisation for long tables and lists (F-05-T02)
+    "@dnd-kit/core": approved               # BoardCanvas drag engine, keyboard sensor (F-08-T12, DEC-16; engine-dnd chunk 40 KB)
+    "@dnd-kit/sortable": approved           # sortable lists and columns on the Board (F-08-T12, DEC-16)
+    "@dnd-kit/utilities": approved          # dnd-kit CSS transform helpers (F-08-T12, DEC-16)
+    "@tiptap/react": approved               # T20 document editor, custom schema, one editor at a time (F-08-T12, DEC-16, DEC-80/P-59; engine-editor chunk 180 KB)
+    "@tiptap/pm": approved                  # ProseMirror bundle TipTap builds on (F-08-T12, DEC-16)
+    "@tiptap/starter-kit": approved         # TipTap base nodes and marks (F-08-T12, DEC-16)
+    "@tiptap/extension-underline": approved # underline mark (F-08-T12, DEC-16)
+    "@tiptap/extension-text-align": approved # paragraph alignment (F-08-T12, DEC-16)
   dev:
     typescript: approved
     vite: approved
