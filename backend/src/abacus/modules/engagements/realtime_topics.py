@@ -54,6 +54,15 @@ async def work_item_topic(ctx: object, ident: str) -> realtime.TopicAccess | Non
     return await _engagement_access(auth, engagement_id, UUID(ident))
 
 
+async def work_item_presence(ctx: object, object_id: UUID) -> bool:
+    """F-08-T13 (DEC-5844): a person may be seen on a work item (a sheet, board or document is a
+    work item's) exactly when they may read its content."""
+    return await work_item_topic(ctx, str(object_id)) == "content"
+
+
 def register() -> None:
+    from abacus.modules.platform.api import register_presence_kind
+
     realtime.register_topic("engagement", engagement_topic)
     realtime.register_topic("work_item", work_item_topic)
+    register_presence_kind("work_item", work_item_presence)

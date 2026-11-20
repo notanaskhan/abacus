@@ -126,3 +126,4 @@ Once a contract is `frozen` at v1:
 ## Adding or changing a row
 
 Copy `_TEMPLATE.md` to `docs/contracts/<name>.md`, fill it, and update the row here (file, version, status). Then run `cd backend && uv run python -m abacus_tools.quality.validate_docs`.
+| C-PR | Presence: heartbeats, the presence topic and the kind slot | `presence.md` | platform | F-08 | — | — | v1 | live (F-08-T13, DEC-5844) |

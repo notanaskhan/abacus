@@ -315,9 +315,19 @@ register_posture_source("open_incidents", open_incidents)
 # G-02-T20 (AC-30): the posture's open Pub 4557 items are the safeguards record's.
 register_posture_source("pub4557_open", open_pub4557_controls)
 
+# F-08-T13 (DEC-5844): presence (heartbeats, the presence topic, the kind slot).
+from abacus.modules.platform import presence as _presence  # noqa: E402
+from abacus.modules.platform.presence import (  # noqa: E402
+    register_presence_kind as register_presence_kind,
+)
+from abacus.modules.platform.presence_routes import presence_router  # noqa: E402
+
+_presence.register()
+
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
+    presence_router,  # F-08-T13: PUT/GET /v1/presence
     firm_usage_router,  # C6 v2 (P-10-T09 stub; P-10-T42 implements it)
     engagement_effort_router,
     incident_router,  # Q-02-T33: the firm's incident register
@@ -592,6 +602,7 @@ __all__ = [
     "register_home_count",
     "register_module_review",
     "register_pilot_metric_source",
+    "register_presence_kind",
     "register_search_projection",
     "register_usage_labeller",
     "register_wisp_document_reader",
