@@ -40,7 +40,7 @@ Fixture scenarios: `apps/web/src/fixtures/scenarios/plan-usage.ts` (G-04-T13) fr
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a–f | C (locked in G-04-T21) | not run (handoff baselines not on this machine; axe in `e2e/screens/ADM-14.spec.ts`) | the meter fill is geometry from the server's integers |
+| a–f | C (locked; G-04-T21) | not run (handoff baselines not on this machine; axe in `e2e/screens/ADM-14.spec.ts`) | the meter fill is geometry from the server's integers |
 | host | D | — | settings subbar 42, pane header 46, band 33, value row 34, dialog 440 |
 
 ## Links

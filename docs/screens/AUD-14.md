@@ -45,6 +45,13 @@ Every state reads this endpoint set (A-08 §4.3; stubs in A-08-T05 / T06):
 
 Matrix actions from `permission-matrix/{sampling,workpapers,assurance,identity}.yaml` (A-08-T03): every adopt, accept, approve, decide, send and close is a person's (`agent: deny`); every client principal is denied.
 
+## Parity
+| Artboard | Tier (A/B/C/D) | Diff % | Notes |
+|---|---|---|---|
+| a, e | C (locked; A-08-T37) | not run (handoff baselines not on this machine; axe light and forced colors in `e2e/screens/AUD-14.spec.ts`) | data-stable frames |
+| b, c, d | C (report only) | not run (handoff baselines not on this machine; axe light and forced colors in `e2e/screens/AUD-14.spec.ts`) | — |
+| host | D | — | audit bar 59, rail 330 / canvas 536 / viewer 490 |
+
 ## Links
 
 | From | To | Status |

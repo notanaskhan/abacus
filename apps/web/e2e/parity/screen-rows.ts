@@ -115,6 +115,10 @@ export const BUILT_PLANNED: readonly string[] = [
   // built on fixtures and stay `planned` in the firm registry; the suites measure them all the same.
   "PLT-01",
   "ADM-14",
+  // A-08-T37: AUD-13 and AUD-26 are AUD-02 canvases, `planned` until their links have builders;
+  // their gallery artboards measure them all the same.
+  "AUD-13",
+  "AUD-26",
   "POR-03",
   "POR-04",
   "POR-14",

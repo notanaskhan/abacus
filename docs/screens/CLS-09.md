@@ -32,7 +32,7 @@
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a, e, f | C (locked in C-01-T50) | not run (handoff baselines not on this machine; axe light and forced colors in `e2e/screens/CLS-09.spec.ts`) | — |
+| a, e, f | C (locked; C-01-T50) | not run (handoff baselines not on this machine; axe light and forced colors in `e2e/screens/CLS-09.spec.ts`) | — |
 | a2, a3, b, b2, c, d | C (report only) | not run | — |
 | host | D | — | T7 rail 336 + main 1030 |
 
