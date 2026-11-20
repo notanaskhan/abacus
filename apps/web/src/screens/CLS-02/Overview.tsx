@@ -239,13 +239,14 @@ function Rail({
         <Menu
           label="Close status"
           trigger={
-            <span
+            <button
+              type="button"
               data-status={summary.status}
               className="flex h-[25px] items-center gap-[4px] rounded-pill bg-amber-tint pr-[11px] pl-[13px] text-[12.5px] font-medium text-amber-ink"
             >
               {summary.status === "not_started" ? OVERVIEW.notStarted : "In progress"}
               <Icon name="chevron-down" size={12} className="opacity-55" />
-            </span>
+            </button>
           }
           sections={[statusItems(summary, (to) => props.onStatus?.(to))]}
         />
@@ -403,7 +404,7 @@ function RunCard({
             />
           </span>
           {frame === "a" ? (
-            <span className="text-ink-4">{minutesAgo(run.started_at, now)}</span>
+            <span className="text-ink-3">{minutesAgo(run.started_at, now)}</span>
           ) : null}
         </div>
       ) : null}
@@ -609,10 +610,13 @@ export function CloseOverview(props: CloseOverviewProps): JSX.Element {
               <Menu
                 label="Run history"
                 trigger={
-                  <span className="flex items-center gap-[4px] text-[13.5px] font-normal text-ink-2">
+                  <button
+                    type="button"
+                    className="flex items-center gap-[4px] text-[13.5px] font-normal text-ink-2"
+                  >
                     {OVERVIEW.historyRun(runNo ?? 1)}
                     <Icon name="chevron-down" size={12} />
-                  </span>
+                  </button>
                 }
                 sections={[
                   runs.data.items.map((r): MenuItem => ({
@@ -699,7 +703,7 @@ export function CloseOverview(props: CloseOverviewProps): JSX.Element {
           type="button"
           data-composer
           onClick={props.onComposer}
-          className="m-[10px] flex h-[38px] items-center gap-[8px] rounded-pill bg-card px-[12px] text-left text-[13px] text-ink-4 shadow-e1"
+          className="m-[10px] flex h-[38px] items-center gap-[8px] rounded-pill bg-card px-[12px] text-left text-[13px] text-ink-3 shadow-e1"
         >
           <Icon name="paperclip" size={14} className="text-ink-3" />
           {OVERVIEW.composer}

@@ -37,7 +37,16 @@ export function Amount({
 }: AmountProps): JSX.Element {
   const { text, tone } = amount(value, style, zero === undefined ? {} : { zero });
   return (
-    <span className={cn("tabular-nums", TONE_CLASS[tone], className)} {...props}>
+    // C-01-T50 (DEC-5745): an explicit zero is a figure ("$0.00"), read at ink-3 (AA); only the
+    // em dash for zero or blank is the ink-4 mark.
+    <span
+      className={cn(
+        "tabular-nums",
+        tone === "zero" && zero === "explicit" ? "text-ink-3" : TONE_CLASS[tone],
+        className,
+      )}
+      {...props}
+    >
       {text}
     </span>
   );
