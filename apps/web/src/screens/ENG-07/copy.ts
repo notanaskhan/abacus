@@ -1,0 +1,83 @@
+// ENG-07 · Season setup / roll-forward words (T-08-T15; docs/screens/ENG-07.md), verbatim from the
+// handoff and the design deltas (T-08-T02, DEC-5601): the system creates records on the
+// approver's behalf; the planner only drafts.
+export const COPY = {
+  back: "‹ All Engagements",
+  title: "Season setup",
+  context: "TY2025 · Brightwater Hale",
+  inProgress: "In progress",
+  provenance: "Season Setup Planner · Published by Accrued",
+  viewRun: "View run ›",
+  segments: { cohorts: "Cohorts", all: "All clients", exceptions: "Exceptions" },
+  manifest: "Roll-forward manifest",
+  export: "Export manifest",
+  search: "Search clients",
+  cohortsTitle: "Cohorts",
+  office: "Office",
+  tally: {
+    engagements: "Engagements",
+    returns: "Returns",
+    binders: "Binders",
+    approved: "Cohorts approved",
+    created: "Created so far",
+    exceptions: "Exceptions",
+  },
+  of: (a: number, b: number) => `${String(a)} of ${String(b)}`,
+  check: "Check",
+  columns: [
+    "Cohort / client",
+    "Return(s)",
+    "Preparer",
+    "Reviewer",
+    "Signer",
+    "Binder template",
+    "Letter",
+    "§7216 consent",
+    "Portal invite",
+    "Status",
+  ],
+  segment: { individuals_trusts: "Individuals & trusts", entities_exempt: "Entities & exempt" },
+  display: {
+    draft: "Draft",
+    review_required: "Review required",
+    approved: "Approved",
+    queued: "Approved · queued",
+    executing: "Executing",
+    executed: "Executed",
+    failed: "Failed",
+  },
+  executedOn: (d: string) => `Executed ${d}`,
+  executingOf: (a: number, b: number) => `Executing · ${String(a)} of ${String(b)}`,
+  approvedBy: (name: string, when: string) => `Approved by ${name} · ${when}`,
+  queuedAfter: (n: number) => `Queued after cohort ${String(n)}`,
+  totals: "Total",
+  ready: "Ready",
+  created: "Created",
+  renewal: (fee: string | null) => (fee ? `Renewal · fee +${fee}%` : "Renewal"),
+  consents: (n: number, signers: number) =>
+    `Use · AI disclosure (${String(n)} consents) · ${String(signers)} ${signers === 1 ? "signer" : "signers"}`,
+  showing: (shown: number, total: number, cohort: number, exceptions: number) =>
+    `Showing ${String(shown)} of ${String(total)} engagements in cohort ${String(cohort)} · ${String(exceptions)} exceptions`,
+  bar: {
+    title: (n: number, office: string, segment: string) =>
+      `Cohort ${String(n)} · ${office} · ${segment}`,
+    counts: (e: number, r: number, b: number, l: number, i: number) =>
+      `${String(e)} engagements · ${String(r)} returns · ${String(b)} binders · ${String(l)} letters with separate §7216 consents · ${String(i)} portal invitations`,
+    exclude: "Exclude selected…",
+    edit: "Edit assignments…",
+    approve: (n: number) => `Approve cohort ${String(n)}`,
+    helper: "Creates nothing until approved. Letters go to SIG-02 for partner review.",
+    confirm: (e: number, office: string) => `Approve ${String(e)} engagements for ${office}?`,
+    withdraw: "Withdraw approval",
+  },
+  reassign: "Reassign…",
+  excludeRow: "Exclude",
+  running: (n: number, name: string) =>
+    `Creating engagements for cohort ${String(n)} · approved by ${name}`,
+  ask: {
+    title: "Two Feld binders exist in TY2024 (2024 Binder, 2024 Binder pt 2). Carry both forward?",
+    skip: "Skip",
+    next: "Next",
+  },
+  plannerOff: "Two TY2024 binders exist for Feld · choose one or two",
+} as const;
