@@ -57,8 +57,32 @@ const NOT_FOUND = { detail: "not found" };
 
 const FELD_EXPORT_ID = "6b1f2a40-6f0e-4a8c-9a39-0b0f3c8e2f11";
 
+// C-02-T27: ADM-08b's GL-posting settings (the handoff's "Post as" row) and the firm switch.
+function glPosting(on: boolean) {
+  return {
+    memo_prefix: "BH AJE",
+    post_as: "Brightwater Hale (service user)",
+    human_approved_only: true,
+    attest_posting_disabled: true,
+    version: 1,
+    w1_enabled: on,
+    w1_released: true,
+  };
+}
+
+function w1Switch(on: boolean) {
+  return {
+    capability_id: "ledger_post_journal_entries",
+    enabled: on,
+    released: true,
+    changed_by: "Felix Andersen",
+    changed_at: "2026-09-14T14:24:00Z",
+  };
+}
+
 /** `state` is the artboard: TAX-09's engine-sync answer differs by state (T-01-T15). */
 export function taxComplianceHandlers(state = "a"): Record<string, FixtureHandler> {
+  let w1On = false;
   const exported = {
     id: FELD_EXPORT_ID,
     return_id: FELD_RETURN_ID,
@@ -149,6 +173,16 @@ export function taxComplianceHandlers(state = "a"): Record<string, FixtureHandle
         : json({ rows: {}, seen_version: 3 }),
     "POST /v1/firm/integrations/{key}/test": ({ params }) =>
       json(testResult(params.key ?? "", state)),
+    // C-02-T27: ADM-08b's live GL-posting settings and the W1 firm switch (Felix Andersen).
+    "GET /v1/integrations/quickbooks_online/settings/gl-posting": () => json(glPosting(w1On)),
+    "POST /v1/write-capabilities/ledger_post_journal_entries:enable": () => {
+      w1On = true;
+      return json(w1Switch(true));
+    },
+    "POST /v1/write-capabilities/ledger_post_journal_entries:disable": () => {
+      w1On = false;
+      return json(w1Switch(false));
+    },
     // T-01-T24: TAX-12's delivery, final approval and the 8879 envelope (C7's view), by artboard.
     "GET /v1/tax-returns/{return_id}/delivery": ({ params }) =>
       params.return_id === FELD_RETURN_ID ? json(feldDelivery(state)) : json(NOT_FOUND, 404),

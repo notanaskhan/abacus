@@ -67,6 +67,25 @@ export const COPY = {
     failedHelp:
       "The Sage Intacct user lacks permission to create journal entries. Ask Arjun Mehta to grant 'GL journal: add' and reconnect in the portal (POR-16).",
     reconnect: "Send reconnect request",
+    // C-02-T27 (ADR-344 §3): the firm switch for QuickBooks Online posting. No handoff frame draws
+    // the dialog (docs/screens/ADM-08.md deviations); words follow ADM-07's grammar.
+    w1: {
+      row: "QuickBooks Online posting",
+      on: "On",
+      off: "Off",
+      notReleased: "Not released yet",
+      enable: "Enable…",
+      disable: "Turn off",
+      changedBy: (name: string) => `Enabled QuickBooks Online posting · ${name}`,
+      dialogTitle: "Enable QuickBooks Online posting?",
+      dialogBody:
+        "Posting writes human-approved batches to a client's QuickBooks Online ledger once the engagement turns posting on and the client grants it in the portal. Attest clients stay locked.",
+      confirm: "Enable posting",
+      cancel: "Cancel",
+      enabledToast: "QuickBooks Online posting enabled · logged in Activity",
+      disabledToast: "QuickBooks Online posting turned off",
+      notReleasedToast: "QuickBooks Online posting isn't released yet.",
+    },
   },
   mailboxes: {
     rows: {

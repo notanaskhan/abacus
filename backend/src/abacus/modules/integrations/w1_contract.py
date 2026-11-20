@@ -178,6 +178,9 @@ class W1GlPostingSettingsOut(BaseModel):
     human_approved_only: Annotated[Literal[True], Internal] = True
     attest_posting_disabled: Annotated[Literal[True], Internal] = True
     version: Annotated[int, Field(ge=1), Internal]
+    # C-02-T27 (additive): the firm switch beside the settings, for ADM-08b's Enable row.
+    w1_enabled: Annotated[bool, Internal] = False
+    w1_released: Annotated[bool, Internal] = False
 
 
 class W1GlPostingSettingsIn(BaseModel):
@@ -438,9 +441,11 @@ async def gl_posting_settings_route(ctx: Ctx) -> W1GlPostingSettingsOut:
 
     await _console_on(ctx)
     found = await w1_switches.gl_settings(ctx)
+    switch = await w1_switches.firm_switch(ctx.tenant)
     return W1GlPostingSettingsOut(
-        memo_prefix=found.memo_prefix, post_as=found.post_as, version=found.version
-    )
+        memo_prefix=found.memo_prefix, post_as=found.post_as, version=found.version,
+        w1_enabled=switch.enabled, w1_released=switch.released,
+    )  # fmt: skip
 
 
 @w1_router.put(

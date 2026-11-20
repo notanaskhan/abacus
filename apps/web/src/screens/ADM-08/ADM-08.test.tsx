@@ -83,6 +83,19 @@ describe("ADM-08 integration settings", () => {
     expect(post.disabled || post.getAttribute("aria-disabled") === "true").toBe(true);
   });
 
+  it("b · Ledgers live (C-02-T27): Enable… opens the dialog and writes the firm switch", async () => {
+    show("b");
+    const ledgers = within(await screen.findByRole("region", { name: COPY.ledgers.title }));
+    expect(await ledgers.findByText("Brightwater Hale (service user)")).toBeTruthy();
+    expect(ledgers.getByText(COPY.ledgers.w1.off)).toBeTruthy();
+    fireEvent.click(ledgers.getByRole("button", { name: COPY.ledgers.w1.enable }));
+    fireEvent.click(await screen.findByRole("button", { name: COPY.ledgers.w1.confirm }));
+    expect(await screen.findByText(COPY.ledgers.w1.changedBy("Felix Andersen"))).toBeTruthy();
+    await waitFor(() => {
+      expect(toastStore.list().map((t) => t.text)).toContain(COPY.ledgers.w1.enabledToast);
+    });
+  });
+
   it("c · Mailboxes", async () => {
     show("c");
     expect(
