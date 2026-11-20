@@ -6444,7 +6444,8 @@
               "proposed_entry",
               "uncorrected_misstatements",
               "fs_draft",
-              "fs_package"
+              "fs_package",
+              "section_754"
             ],
             "title": "Kind",
             "type": "string"
@@ -6660,7 +6661,8 @@
               "proposed_entry",
               "uncorrected_misstatements",
               "fs_draft",
-              "fs_package"
+              "fs_package",
+              "section_754"
             ],
             "title": "Kind",
             "type": "string"
@@ -133727,6 +133729,133 @@
         "title": "TaxDepthBasisOut",
         "type": "object"
       },
+      "TaxDepthChangeDecidedOut": {
+        "additionalProperties": false,
+        "properties": {
+          "checkpoint_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Checkpoint Id"
+          },
+          "current": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Current",
+            "type": "string",
+            "x-tri": true
+          },
+          "decision": {
+            "cls": "internal",
+            "enum": [
+              "approved",
+              "rejected"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "proposal_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Proposal Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal_id",
+          "decision",
+          "current"
+        ],
+        "title": "TaxDepthChangeDecidedOut",
+        "type": "object"
+      },
+      "TaxDepthChangeDecisionIn": {
+        "additionalProperties": false,
+        "description": "T-06-T33: a reviewer's decision on a person's asset change (reason when rejecting).",
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Reason",
+            "x-tri": true
+          }
+        },
+        "title": "TaxDepthChangeDecisionIn",
+        "type": "object"
+      },
+      "TaxDepthCreditOut": {
+        "additionalProperties": false,
+        "description": "TXP-09 a's Partner PTET credits: one partner's credit by state (to the state K-1s).",
+        "properties": {
+          "by_state": {
+            "additionalProperties": {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            "cls": "restricted",
+            "title": "By State",
+            "type": "object",
+            "x-tri": true
+          },
+          "name": {
+            "cls": "restricted",
+            "maxLength": 200,
+            "title": "Name",
+            "type": "string",
+            "x-tri": true
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Note",
+            "x-tri": true
+          },
+          "partner_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Partner Id",
+            "type": "string"
+          },
+          "total": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Total",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "partner_id",
+          "name",
+          "by_state",
+          "total"
+        ],
+        "title": "TaxDepthCreditOut",
+        "type": "object"
+      },
       "TaxDepthDecisionCardIn": {
         "additionalProperties": false,
         "properties": {
@@ -134332,6 +134461,120 @@
         "title": "TaxDepthM3RowOut",
         "type": "object"
       },
+      "TaxDepthNexusOut": {
+        "additionalProperties": false,
+        "description": "TXP-09 d: a state's nexus fact, its evidence, conclusion and owner.",
+        "properties": {
+          "conclusion": {
+            "cls": "restricted",
+            "maxLength": 200,
+            "title": "Conclusion",
+            "type": "string",
+            "x-tri": true
+          },
+          "evidence_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Evidence Name",
+            "x-tri": true
+          },
+          "evidence_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Evidence Version Id"
+          },
+          "fact": {
+            "cls": "restricted",
+            "maxLength": 500,
+            "title": "Fact",
+            "type": "string",
+            "x-tri": true
+          },
+          "owner_initials": {
+            "anyOf": [
+              {
+                "maxLength": 4,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Owner Initials"
+          },
+          "state": {
+            "cls": "internal",
+            "maxLength": 60,
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "fact",
+          "conclusion"
+        ],
+        "title": "TaxDepthNexusOut",
+        "type": "object"
+      },
+      "TaxDepthOpportunityOut": {
+        "additionalProperties": false,
+        "description": "TXP-09 a's opportunity row (NYC): a recommendation only; nothing is elected here.",
+        "properties": {
+          "basis": {
+            "cls": "restricted",
+            "maxLength": 200,
+            "title": "Basis",
+            "type": "string",
+            "x-tri": true
+          },
+          "deadline_note": {
+            "cls": "restricted",
+            "maxLength": 200,
+            "title": "Deadline Note",
+            "type": "string",
+            "x-tri": true
+          },
+          "jurisdiction": {
+            "cls": "internal",
+            "maxLength": 60,
+            "title": "Jurisdiction",
+            "type": "string"
+          },
+          "subject": {
+            "cls": "restricted",
+            "maxLength": 200,
+            "title": "Subject",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "jurisdiction",
+          "subject",
+          "basis",
+          "deadline_note"
+        ],
+        "title": "TaxDepthOpportunityOut",
+        "type": "object"
+      },
       "TaxDepthPartnerBasisOut": {
         "additionalProperties": false,
         "properties": {
@@ -134726,10 +134969,77 @@
             "type": "string",
             "x-tri": true
           },
+          "approved_by_initials": {
+            "anyOf": [
+              {
+                "maxLength": 4,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approved By Initials"
+          },
+          "approved_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approved On"
+          },
+          "denominator": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Denominator",
+            "x-tri": true
+          },
           "mapped": {
             "cls": "internal",
             "title": "Mapped",
             "type": "boolean"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Name"
+          },
+          "nexus_basis": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Nexus Basis",
+            "x-tri": true
           },
           "nexus_conclusion": {
             "anyOf": [
@@ -134745,6 +135055,34 @@
             "title": "Nexus Conclusion",
             "x-tri": true
           },
+          "numerator": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Numerator",
+            "x-tri": true
+          },
+          "property_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Property Name",
+            "x-tri": true
+          },
           "ptet": {
             "cls": "internal",
             "enum": [
@@ -134754,6 +135092,20 @@
             ],
             "title": "Ptet",
             "type": "string"
+          },
+          "ptet_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Ptet Amount",
+            "x-tri": true
           },
           "ptet_paid": {
             "anyOf": [
@@ -134783,11 +135135,54 @@
             "title": "Ptet Paid On",
             "x-tri": true
           },
+          "rate_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Rate Pct",
+            "x-tri": true
+          },
+          "return_form": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Return Form"
+          },
           "state": {
             "cls": "internal",
             "pattern": "^[A-Z]{2}$",
             "title": "State",
             "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "in_review",
+                  "approved"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Status"
           }
         },
         "required": [
@@ -134813,6 +135208,47 @@
             "title": "Apportionment Tally",
             "type": "string"
           },
+          "base": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Base",
+            "x-tri": true
+          },
+          "credits": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TaxDepthCreditOut"
+            },
+            "title": "Credits",
+            "type": "array"
+          },
+          "nexus": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TaxDepthNexusOut"
+            },
+            "title": "Nexus",
+            "type": "array"
+          },
+          "opportunities": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TaxDepthOpportunityOut"
+            },
+            "title": "Opportunities",
+            "type": "array"
+          },
           "paid_count": {
             "cls": "internal",
             "minimum": 0.0,
@@ -134824,6 +135260,20 @@
             "minimum": 0.0,
             "title": "Payable Count",
             "type": "integer"
+          },
+          "ptet_total": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Ptet Total",
+            "x-tri": true
           },
           "sourcing": {
             "anyOf": [
@@ -212253,7 +212703,7 @@
     },
     "/v1/decision-cards/{card_id}/send-to-client": {
       "post": {
-        "description": "One POR-04 request from the firm's template; 409 `decision_already_sent`.",
+        "description": "The client owner's decision (C18 `section_754`, POR-08; DEC-5835); 409\n`decision_already_sent` on a second send.",
         "operationId": "send_decision",
         "parameters": [
           {
@@ -349910,6 +350360,7 @@
     },
     "/v1/tax-returns/{return_id}/basis": {
       "get": {
+        "description": "TXP-08 a to c, e (T-06-T35): basis and \u00a7752 shares as E8 stored them.",
         "operationId": "basis",
         "parameters": [
           {
@@ -350036,16 +350487,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Basis Route",
@@ -350195,7 +350636,7 @@
     },
     "/v1/tax-returns/{return_id}/decision-cards": {
       "post": {
-        "description": "The \u00a7754 card with options computed by code.",
+        "description": "The \u00a7754 card with options computed by code (T-06-T35); the open card answers again.",
         "operationId": "raise_decision",
         "parameters": [
           {
@@ -351830,8 +352271,272 @@
         "x-abacus-action": "tax_return.approve"
       }
     },
+    "/v1/tax-returns/{return_id}/fixed-asset-changes/{change_id}:approve": {
+      "post": {
+        "description": "A reviewer other than the requester; 409 `proposal_changed` when the asset moved.",
+        "operationId": "fixed_asset_change_approve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "change_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Change Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthChangeDecidedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Fixed Asset Change Approve Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "fixed_asset.approve_change"
+      }
+    },
+    "/v1/tax-returns/{return_id}/fixed-asset-changes/{change_id}:reject": {
+      "post": {
+        "operationId": "fixed_asset_change_reject",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "change_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Change Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaxDepthChangeDecisionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthChangeDecidedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Fixed Asset Change Reject Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "fixed_asset.approve_change"
+      }
+    },
     "/v1/tax-returns/{return_id}/fixed-assets": {
       "get": {
+        "description": "TXP-03 a, b, d from E3 (T-06-T33): register, by property, dispositions.",
         "operationId": "fixed_assets",
         "parameters": [
           {
@@ -351942,16 +352647,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Fixed Assets Route",
@@ -352077,16 +352772,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Fixed Asset Create Route",
@@ -352098,6 +352783,7 @@
     },
     "/v1/tax-returns/{return_id}/fixed-assets/{asset_id}": {
       "get": {
+        "description": "TXP-03 a2's drawer (T-06-T33).",
         "operationId": "fixed_asset",
         "parameters": [
           {
@@ -352203,16 +352889,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Fixed Asset Route",
@@ -352224,7 +352900,7 @@
     },
     "/v1/tax-returns/{return_id}/fixed-assets/{asset_id}/changes": {
       "post": {
-        "description": "A ghost value; nothing changes until a reviewer approves (C3).",
+        "description": "A ghost value; nothing changes until a reviewer approves (T-06-T33, DEC-5833).",
         "operationId": "fixed_asset_change",
         "parameters": [
           {
@@ -352350,16 +353026,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Fixed Asset Change Route",
@@ -353133,7 +353799,7 @@
     },
     "/v1/tax-returns/{return_id}/handoff": {
       "get": {
-        "description": "The landing banner and M-1 starting point (TXP-13 d, TXP-02; T-06-T39).",
+        "description": "The landing banner and M-1 starting point (TXP-13 d, TXP-02; T-06-T39). A return with no\nhand-off answers an empty landing (every field null).",
         "operationId": "return_handoff",
         "parameters": [
           {
@@ -356889,7 +357555,7 @@
     },
     "/v1/tax-returns/{return_id}/schedules/m1": {
       "get": {
-        "description": "The M-1 reference: never filed beside an M-3.",
+        "description": "The M-1 reference: never filed beside an M-3 (T-06-T34).",
         "operationId": "m1",
         "parameters": [
           {
@@ -356985,16 +357651,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "M1 Route",
@@ -357127,6 +357783,7 @@
     },
     "/v1/tax-returns/{return_id}/schedules/m3": {
       "get": {
+        "description": "TXP-04 a (T-06-T34): Parts II and III from E4; filed when required.",
         "operationId": "m3",
         "parameters": [
           {
@@ -357222,16 +357879,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "M3 Route",
@@ -357497,6 +358144,7 @@
     },
     "/v1/tax-returns/{return_id}/states": {
       "get": {
+        "description": "TXP-09 a to c (T-06-T36): apportionment, credits and nexus.",
         "operationId": "states",
         "parameters": [
           {
@@ -357607,16 +358255,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "States Route",
@@ -357628,7 +358266,7 @@
     },
     "/v1/tax-returns/{return_id}/states/sourcing/undo": {
       "post": {
-        "description": "`sourcing.undone` inside the 10-second window (DEC-24).",
+        "description": "`sourcing.undone` inside the 10-second window (DEC-24); 409 `undo_window_closed`.",
         "operationId": "sourcing_undo",
         "parameters": [
           {
@@ -357763,8 +358401,126 @@
         "x-abacus-action": "sourcing.approve"
       }
     },
+    "/v1/tax-returns/{return_id}/states/sourcing:approve": {
+      "post": {
+        "description": "A reviewer's approval; the review point resolves once (T-06-T36, DEC-5836).",
+        "operationId": "sourcing_approve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDepthProposalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Sourcing Approve Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "sourcing.approve"
+      }
+    },
     "/v1/tax-returns/{return_id}/states/sourcing:propose": {
       "post": {
+        "description": "A person's sourcing position; the TXP-10 review point is raised once (T-06-T36).",
         "operationId": "sourcing_propose",
         "parameters": [
           {
@@ -357891,6 +358647,7 @@
     },
     "/v1/tax-returns/{return_id}/states/{state}/ptet": {
       "patch": {
+        "description": "The election and a payment on its version (T-06-T36); 409 `ptet_changed`.",
         "operationId": "ptet",
         "parameters": [
           {
@@ -369656,6 +370413,7 @@
     },
     "/v1/tb-handoffs/{handoff_id}": {
       "get": {
+        "description": "One hand-off version (T-06-T39): source members or the target return's team.",
         "operationId": "tb_handoff",
         "parameters": [
           {
@@ -369772,7 +370530,7 @@
     },
     "/v1/tb-handoffs/{handoff_id}/mappings": {
       "get": {
-        "description": "The O4 128-row table.",
+        "description": "The O4 128-row table (T-06-T39).",
         "operationId": "handoff_mappings",
         "parameters": [
           {

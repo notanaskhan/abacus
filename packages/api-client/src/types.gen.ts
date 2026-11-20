@@ -2988,7 +2988,7 @@ export type ApprovalItemDetailOut = {
     /**
      * Kind
      */
-    kind: 'proposed_entry' | 'uncorrected_misstatements' | 'fs_draft' | 'fs_package';
+    kind: 'proposed_entry' | 'uncorrected_misstatements' | 'fs_draft' | 'fs_package' | 'section_754';
     /**
      * Legend
      */
@@ -3068,7 +3068,7 @@ export type ApprovalItemOut = {
     /**
      * Kind
      */
-    kind: 'proposed_entry' | 'uncorrected_misstatements' | 'fs_draft' | 'fs_package';
+    kind: 'proposed_entry' | 'uncorrected_misstatements' | 'fs_draft' | 'fs_package' | 'section_754';
     /**
      * Question Sent At
      */
@@ -62677,6 +62677,70 @@ export type TaxDepthBasisOut = {
 };
 
 /**
+ * TaxDepthChangeDecidedOut
+ */
+export type TaxDepthChangeDecidedOut = {
+    /**
+     * Checkpoint Id
+     */
+    checkpoint_id?: string | null;
+    /**
+     * Current
+     */
+    current: string;
+    /**
+     * Decision
+     */
+    decision: 'approved' | 'rejected';
+    /**
+     * Proposal Id
+     */
+    proposal_id: string;
+};
+
+/**
+ * TaxDepthChangeDecisionIn
+ *
+ * T-06-T33: a reviewer's decision on a person's asset change (reason when rejecting).
+ */
+export type TaxDepthChangeDecisionIn = {
+    /**
+     * Reason
+     */
+    reason?: string | null;
+};
+
+/**
+ * TaxDepthCreditOut
+ *
+ * TXP-09 a's Partner PTET credits: one partner's credit by state (to the state K-1s).
+ */
+export type TaxDepthCreditOut = {
+    /**
+     * By State
+     */
+    by_state: {
+        [key: string]: string;
+    };
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Partner Id
+     */
+    partner_id: string;
+    /**
+     * Total
+     */
+    total: string;
+};
+
+/**
  * TaxDepthDecisionCardIn
  */
 export type TaxDepthDecisionCardIn = {
@@ -62995,6 +63059,62 @@ export type TaxDepthM3RowOut = {
 };
 
 /**
+ * TaxDepthNexusOut
+ *
+ * TXP-09 d: a state's nexus fact, its evidence, conclusion and owner.
+ */
+export type TaxDepthNexusOut = {
+    /**
+     * Conclusion
+     */
+    conclusion: string;
+    /**
+     * Evidence Name
+     */
+    evidence_name?: string | null;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id?: string | null;
+    /**
+     * Fact
+     */
+    fact: string;
+    /**
+     * Owner Initials
+     */
+    owner_initials?: string | null;
+    /**
+     * State
+     */
+    state: string;
+};
+
+/**
+ * TaxDepthOpportunityOut
+ *
+ * TXP-09 a's opportunity row (NYC): a recommendation only; nothing is elected here.
+ */
+export type TaxDepthOpportunityOut = {
+    /**
+     * Basis
+     */
+    basis: string;
+    /**
+     * Deadline Note
+     */
+    deadline_note: string;
+    /**
+     * Jurisdiction
+     */
+    jurisdiction: string;
+    /**
+     * Subject
+     */
+    subject: string;
+};
+
+/**
  * TaxDepthPartnerBasisOut
  */
 export type TaxDepthPartnerBasisOut = {
@@ -63191,17 +63311,49 @@ export type TaxDepthStateOut = {
      */
     apportionment_pct: string;
     /**
+     * Approved By Initials
+     */
+    approved_by_initials?: string | null;
+    /**
+     * Approved On
+     */
+    approved_on?: string | null;
+    /**
+     * Denominator
+     */
+    denominator?: string | null;
+    /**
      * Mapped
      */
     mapped: boolean;
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Nexus Basis
+     */
+    nexus_basis?: string | null;
     /**
      * Nexus Conclusion
      */
     nexus_conclusion?: string | null;
     /**
+     * Numerator
+     */
+    numerator?: string | null;
+    /**
+     * Property Name
+     */
+    property_name?: string | null;
+    /**
      * Ptet
      */
     ptet: 'elected' | 'recommend' | 'not_elected';
+    /**
+     * Ptet Amount
+     */
+    ptet_amount?: string | null;
     /**
      * Ptet Paid
      */
@@ -63211,9 +63363,21 @@ export type TaxDepthStateOut = {
      */
     ptet_paid_on?: string | null;
     /**
+     * Rate Pct
+     */
+    rate_pct?: string | null;
+    /**
+     * Return Form
+     */
+    return_form?: string | null;
+    /**
      * State
      */
     state: string;
+    /**
+     * Status
+     */
+    status?: 'in_review' | 'approved' | null;
 };
 
 /**
@@ -63227,6 +63391,22 @@ export type TaxDepthStatesOut = {
      */
     apportionment_tally: 'tie' | 'off' | 'check';
     /**
+     * Base
+     */
+    base?: string | null;
+    /**
+     * Credits
+     */
+    credits?: Array<TaxDepthCreditOut>;
+    /**
+     * Nexus
+     */
+    nexus?: Array<TaxDepthNexusOut>;
+    /**
+     * Opportunities
+     */
+    opportunities?: Array<TaxDepthOpportunityOut>;
+    /**
      * Paid Count
      */
     paid_count: number;
@@ -63234,6 +63414,10 @@ export type TaxDepthStatesOut = {
      * Payable Count
      */
     payable_count: number;
+    /**
+     * Ptet Total
+     */
+    ptet_total?: string | null;
     /**
      * Sourcing
      */
@@ -161226,10 +161410,6 @@ export type BasisErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type BasisError = BasisErrors[keyof BasisErrors];
@@ -162065,6 +162245,126 @@ export type ApproveReturnResponses = {
 
 export type ApproveReturnResponse = ApproveReturnResponses[keyof ApproveReturnResponses];
 
+export type FixedAssetChangeApproveData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+        /**
+         * Change Id
+         */
+        change_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/fixed-asset-changes/{change_id}:approve';
+};
+
+export type FixedAssetChangeApproveErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type FixedAssetChangeApproveError = FixedAssetChangeApproveErrors[keyof FixedAssetChangeApproveErrors];
+
+export type FixedAssetChangeApproveResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxDepthChangeDecidedOut;
+};
+
+export type FixedAssetChangeApproveResponse = FixedAssetChangeApproveResponses[keyof FixedAssetChangeApproveResponses];
+
+export type FixedAssetChangeRejectData = {
+    body: TaxDepthChangeDecisionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+        /**
+         * Change Id
+         */
+        change_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/fixed-asset-changes/{change_id}:reject';
+};
+
+export type FixedAssetChangeRejectErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type FixedAssetChangeRejectError = FixedAssetChangeRejectErrors[keyof FixedAssetChangeRejectErrors];
+
+export type FixedAssetChangeRejectResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxDepthChangeDecidedOut;
+};
+
+export type FixedAssetChangeRejectResponse = FixedAssetChangeRejectResponses[keyof FixedAssetChangeRejectResponses];
+
 export type FixedAssetsData = {
     body?: never;
     headers?: {
@@ -162109,10 +162409,6 @@ export type FixedAssetsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FixedAssetsError = FixedAssetsErrors[keyof FixedAssetsErrors];
@@ -162169,10 +162465,6 @@ export type FixedAssetCreateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FixedAssetCreateError = FixedAssetCreateErrors[keyof FixedAssetCreateErrors];
@@ -162229,10 +162521,6 @@ export type FixedAssetErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FixedAssetError = FixedAssetErrors[keyof FixedAssetErrors];
@@ -162293,10 +162581,6 @@ export type FixedAssetChangeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FixedAssetChangeError = FixedAssetChangeErrors[keyof FixedAssetChangeErrors];
@@ -164421,10 +164705,6 @@ export type M1Errors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type M1Error = M1Errors[keyof M1Errors];
@@ -164534,10 +164814,6 @@ export type M3Errors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type M3Error = M3Errors[keyof M3Errors];
@@ -164711,10 +164987,6 @@ export type StatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type StatesError = StatesErrors[keyof StatesErrors];
@@ -164787,6 +165059,62 @@ export type SourcingUndoResponses = {
 };
 
 export type SourcingUndoResponse = SourcingUndoResponses[keyof SourcingUndoResponses];
+
+export type SourcingApproveData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/states/sourcing:approve';
+};
+
+export type SourcingApproveErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SourcingApproveError = SourcingApproveErrors[keyof SourcingApproveErrors];
+
+export type SourcingApproveResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxDepthProposalOut;
+};
+
+export type SourcingApproveResponse = SourcingApproveResponses[keyof SourcingApproveResponses];
 
 export type SourcingProposeData = {
     body?: never;

@@ -36,3 +36,11 @@ The designed links of the handoff link graph (link-contract rule 5); each is wir
 | Opens SHL-09 · 08 States!F8 | SHL-09 | designed (handoff link graph) |
 | Opens TAX-15 · a planning opportunity for Jonah Feld | TAX-15 | designed (handoff link graph) |
 | Opens TXP-12 · state K-1s for Ridgeline GP LLC | TXP-12 | designed (handoff link graph) |
+
+## T-06-T32 (TASK-8835): built
+a–e build from `fixtures/scenarios/TXP-09.ts` over `seed/tax-depth-states.ts` (`GET …/states`,
+additive fields DEC-5837) inside the entity return's Review › States tab; the live wrapper is
+`screens/TXP-09/States.tsx`. Pills carry their words (Elected, Recommend, Not elected, In review,
+Approved · SI · Sep 14, Not paid). The NYC Recommend row opens TAX-15 and records nothing.
+- **Deviation:** "Approve sourcing…" opens the TXP-10 review point (SHL-10 rides on it) until the
+  live swap (T-06-T58); numerator popovers (8825 figures) are drawn by SHL-08 on the live swap.
