@@ -1,0 +1,5 @@
+Record your suggested tax-line code for each kept new account of a trial balance hand-off, as
+suggestions the tax team adopts on the return. Give the source work item id, the target return id
+and, per account, its number, the catalogue code, the evidence account you followed and your
+explanation (at most 140 characters). This writes suggestions only; it never maps, hands off or
+confirms anything.

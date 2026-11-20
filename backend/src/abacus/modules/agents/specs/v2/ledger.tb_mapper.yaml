@@ -6,6 +6,10 @@
 # person's). The shape is `workflow` (code's steps, one model call, one propose tool), as
 # tax.account_mapper's. Source of truth: compiled into ../_specs_v2.py by
 # `python -m abacus_tools.codegen.agent_specs_v2`.
+# T-06-T38 (TASK-8829; DEC-5831): mode `tax_lines` (`modules/tax/tb_mapper_tax_lines.py`, prompt
+# ledger.tb_mapper.tax_lines@v1): a TB hand-off's new accounts to tax-line codes from names and
+# numbers only, following last year's tax-line evidence; judgment accounts stay blank with an
+# explanation; the target taxpayer's §7216 consent is checked before the call (`tri`).
 id: ledger.tb_mapper
 version: 1
 purpose: Suggest a catalogue FS line for each account of a group entity's trial balance from its code, name and code's facts, or abstain, for a person to adopt.
@@ -16,7 +20,7 @@ escalation_tier: small
 input_schema: TbMapperInput
 output_schema: TbMapperOutput
 tools:
-  propose: [assurance.suggest_account_mappings]
+  propose: [assurance.suggest_account_mappings, tax.suggest_tax_lines]
 task_scope:
   - mapping_set.read
   - suggestion.create
@@ -28,7 +32,7 @@ limits:
   max_tool_calls: 1
 plan: required_when_writes
 autonomy: propose
-data_classes: [confidential]
+data_classes: [confidential, tri]
 untrusted_inputs: [account_names]
 evaluation_suite: evals/tb_mapping
 work_class: background
