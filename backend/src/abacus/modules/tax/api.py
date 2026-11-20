@@ -542,6 +542,10 @@ _entity_decisions.register()
 from abacus.modules.tax import entity_guards as _entity_guards  # noqa: E402
 
 _entity_guards.register()
+# T-06-T37 (DEC-5830): the form-preview diagnostics block final approval (409 blocking_diagnostics).
+from abacus.modules.tax import form_preview_blockers as _form_preview_blockers  # noqa: E402
+
+_form_preview_blockers.register()
 
 # T-05-T54 (DEC-4909, DEC-4910): the preparer memo service (the memo as a P-04 reviewable and its
 # draft run's workflow).
