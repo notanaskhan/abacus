@@ -42,3 +42,8 @@ Ledger snapshots and trial balance lines in the common ledger model (ADR-038). O
   - Flip per firm on Tue Oct 19, 2027.
   - Retire in the Oct 21 batch (RB-46).
 - **Independent tests** (ADR-078): `tests/unit/ledger/test_a03t17_*` and `tests/integration/test_a03t17_mapping_guards.py`.
+
+## C9 v2.1 · CAS monthly datasets (C-01-T07, T18, T56)
+- **Python (ledger.api; `cas_contract.py`):** `account_tree`, `monthly_balances`, `register_lines` (each line a `ledger_line` citable) and `compare_periods` for the close screens (CLS-04, CLS-05, CLS-10); `record_month_snapshot` for the connections sync.
+- **Snapshots:** a month's set is immutable; a change records a new snapshot, an unchanged month records nothing (ADR-004). A superseded snapshot answers 409 `stale_source`; a walled or unknown entity answers 404.
+- **Contract:** `docs/contracts/c09-ledger.md` § C9 v2.1 (final for C-01; additive to v1 and v2).

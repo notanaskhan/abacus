@@ -70,6 +70,21 @@ and the health pass skips its installs. Recover: clear the kill switch; the next
 health pass returns the installs to **Connected**; failed runs are retried by people, never
 automatically. Status page component: **Integrations** (SEV3 unless a close or a filing is blocked).
 
+## Addendum · the hourly close sync (C-01-T56)
+The close sync (`LedgerSyncWorkflow`, `ledger_sync:<tenant>`; `connections/ledger_sync.py`) keeps the entities with an unlocked close fresh every hour inside the firm's business hours (07:00–19:00 firm time by default, QC-5), the close month and the one before it. SLO: freshness 60 ± 15 min. Its kill switches: `connections.ledger_sync` per firm (off: nothing leaves Accrued, `connector_paused`) and `connections.live_ledger` (above).
+
+**Recognise it.** CLS-02's record bar and CLS-04/05 show the last sync older than 75 minutes inside business hours; `GET /v1/client-entities/{eid}/ledger-pull` answers `state` `rate_limited`, `paused` or a `last_failure_code`; many schedules of one firm carry the same code.
+
+**Contain.** Throttling (`rate_limited`, `circuit_open`) waits on Intuit's Retry-After by itself; do not shorten it. If the provider is down, turn `connections.ledger_sync` off for the affected firms: the close screens keep their last snapshots (ADR-004), and staff see the stale time. People can still record entries in QuickBooks; the next sync after recovery ties the schedules.
+
+**Catch-up after recovery.**
+1. Turn `connections.ledger_sync` back on. The next tick picks up every due entity; change-data-capture since each schedule's cursor names only the changed datasets, a month at a time, so the catch-up is bounded by what changed, not by the outage's length.
+2. A schedule paused for `needs_reauth` stays paused until the client reconnects (RB-05). A schedule paused for `meter_budget_exhausted` follows RB-94.
+3. Watch the meter during the catch-up (`ledger-pull` → meter `ok · warning · exhausted`): a long outage on many entities can spend a month's budget in the first hours.
+4. Verify: freshness back under 60 minutes for the firm's open closes; CLS-04 ties recompute from the new snapshots; no figure is recomputed by hand.
+
+**Never.** Re-run a close's tasks to "refresh" figures, or edit a snapshot: a stale figure is shown stale, not overwritten.
+
 ## Rehearsal log
 | Date | Kind (drill, staging walk-through, tabletop) | Result | Changes made |
 |---|---|---|---|
