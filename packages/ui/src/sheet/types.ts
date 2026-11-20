@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Actor } from "../attribution/actor";
 import type { CitationView } from "../tracing/types";
 
@@ -107,6 +108,8 @@ export interface SheetStatus {
   exceptions: number;
   view: string;
   agentRunning?: boolean;
+  /** F-08-T08: the agent summary at the status bar's right ("3 suggested · 1 adopted"). */
+  agentSummary?: string;
 }
 
 /** What a header's "···" menu asks the consumer to do; the kit performs none of them. */
@@ -140,4 +143,13 @@ export interface SheetGridProps {
   onOpenRow?: (rowKey: string) => void;
   /** F-08-T07: the agent column's run (spinners and "Agent column running"). */
   run?: SheetRunSource;
+  /** F-08-T08: a column after the data columns that a template fills (the P · R column). */
+  trailing?: SheetTrailingColumn;
+}
+
+/** F-08-T08: a template's own column (SheetLayout's 64 px P · R column of C-25 slots). */
+export interface SheetTrailingColumn {
+  label: string;
+  width: number;
+  render: (row: SheetGridRow) => ReactNode;
 }
