@@ -1967,3 +1967,4 @@ The plan's owner, effective decide-by and default-on-silence eligibility for the
 | DEC-5808 | K-03 Q6 methodology publish routing | KNW-02/03 approve of a methodology draft inside a template draft routes to KNW-07; one effective date; ENG-13c conflict rows become a K-04 revision ticket (TASK-8800). |
 | DEC-5809 | K-03 Q7 real-firm agent columns | No real-firm agent_columns.enabled before K-05's firm pass bar (18/20) and G-1…G-6; text mode ships dark for X-03 with its own eval section (TASK-8800). |
 | DEC-5810 | K-03 Q8 KNW-01 g/h and KNW-03 g coverage | Artboard-level carry: KNW-01 g/h and the rules half of KNW-03 g belong to K-03; the skill half of KNW-03 g to K-05 (TASK-8800). |
+| DEC-5811 | K-03-T02: SPEC-720 Templates v2 (TASK-8801) | SPEC-720 supersedes SPEC-008 Q4, AC-5 and the §4 non-goal; re-pin 409 stays while templates_v2.enabled is off. |
