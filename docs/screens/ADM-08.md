@@ -83,3 +83,11 @@ Every deviation above is closed: each has its decision recorded (T-01-T54, 2026-
 
 ## Open gaps
 - Status objects live in the registry since T-01-T06; the contracts move from `Literal` types to the registry's enums when the routes go live.
+
+## C-02-T27 (TASK-8811): Ledgers live
+- b reads `GET /v1/integrations/quickbooks_online/settings/gl-posting` (Post as, the firm switch)
+  beside the engine-settings cells; both locked rows stay code.
+- **Deviation:** no handoff frame draws the W1 firm switch. A "QuickBooks Online posting" row
+  (On / Off / Not released yet) with "Enable…" opens a Dialog 440 and calls
+  `write_capability.enable`; a 403 offers Confirm it's you (fresh MFA). Words follow ADM-07's
+  grammar ("Enabled QuickBooks Online posting · Felix Andersen"). Design-fidelity review: Ayush.

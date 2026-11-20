@@ -1,15 +1,30 @@
 import type { EngineSettingsOut, FormatCheckOut, MappingRowOut } from "@abacus/api-client";
 import {
+  disableCapabilityMutation,
+  enableCapabilityMutation,
   engineSettingsOptions,
+  glPostingSettingsOptions,
+  glPostingSettingsQueryKey,
   putEngineSettingsMutation,
   putStatusMirrorMutation,
   testEngineMutation,
 } from "@abacus/api-client/query";
-import { Button, Drawer, Icon, Pill, Segmented, SettingsLayout, Toggle, toast } from "@abacus/ui";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  Button,
+  Dialog,
+  Drawer,
+  Icon,
+  Pill,
+  Segmented,
+  SettingsLayout,
+  Toggle,
+  toast,
+} from "@abacus/ui";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useEffect, useMemo, useState } from "react";
 import { useOpenHref, useOpenOverlay } from "../../app-core/open";
 import { hrefOf, ov, to } from "../../routes/to";
+import { ConfirmItsYou, isForbidden } from "../../shell/mfa";
 import { GROUPS } from "../ADM-01/copy";
 import { COPY } from "./copy";
 import { integrationOverlay } from "./links";
@@ -324,9 +339,13 @@ function Ledgers({
     return [...by.entries()];
   }, [settings]);
   const reauth = failed || cellOf(settings, "sage_intacct_state") === "needs_reauth";
+  const gl = useQuery(glPostingSettingsOptions());
   return (
     <section aria-label={COPY.ledgers.title} className="rounded-[12px] bg-card shadow-e1">
       <Band title={COPY.ledgers.title} />
+      {gl.data !== undefined && (
+        <PostingSwitch enabled={gl.data.w1_enabled ?? false} released={gl.data.w1_released ?? false} />
+      )}
       {(
         [
           "post_only_approved",
@@ -344,6 +363,8 @@ function Ledgers({
         >
           {key === "post_only_approved" ? (
             <Switch label={COPY.ledgers.rows[key]} on locked onChange={() => undefined} />
+          ) : key === "post_as" && gl.data !== undefined ? (
+            gl.data.post_as
           ) : (
             cellOf(settings, key)
           )}
@@ -379,6 +400,101 @@ function Ledgers({
         {COPY.ledgers.help}
       </p>
     </section>
+  );
+}
+
+/** C-02-T27: ADR-344's firm switch for W1, a security admin's act with a fresh MFA; the server
+ * refuses everyone else, and 409 while the registry has not released W1. */
+function PostingSwitch({ enabled, released }: { enabled: boolean; released: boolean }): JSX.Element {
+  const client = useQueryClient();
+  const [asking, setAsking] = useState(false);
+  const [mfa, setMfa] = useState(false);
+  const [changedBy, setChangedBy] = useState<string | null>(null);
+  const done = (on: boolean, by: string | null | undefined): void => {
+    setAsking(false);
+    setChangedBy(on ? (by ?? null) : null);
+    toast(on ? COPY.ledgers.w1.enabledToast : COPY.ledgers.w1.disabledToast);
+    void client.invalidateQueries({ queryKey: glPostingSettingsQueryKey() });
+  };
+  const failed = (error: unknown): void => {
+    setAsking(false);
+    if (isForbidden(error)) setMfa(true);
+    else toast(COPY.ledgers.w1.notReleasedToast);
+  };
+  const enable = useMutation({
+    ...enableCapabilityMutation(),
+    onSuccess: (out) => {
+      done(true, out.changed_by);
+    },
+    onError: failed,
+  });
+  const disable = useMutation({
+    ...disableCapabilityMutation(),
+    onSuccess: () => {
+      done(false, null);
+    },
+    onError: failed,
+  });
+  return (
+    <Value
+      label={COPY.ledgers.w1.row}
+      help={changedBy === null ? null : COPY.ledgers.w1.changedBy(changedBy)}
+    >
+      <span className="flex items-center gap-[8px]">
+        <Pill variant={enabled ? "green-tint" : "neutral"}>
+          {enabled ? COPY.ledgers.w1.on : released ? COPY.ledgers.w1.off : COPY.ledgers.w1.notReleased}
+        </Pill>
+        {enabled ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={disable.isPending}
+            onClick={() => {
+              disable.mutate({ body: { reason: null } });
+            }}
+          >
+            {COPY.ledgers.w1.disable}
+          </Button>
+        ) : (
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={!released}
+            onClick={() => {
+              setAsking(true);
+            }}
+          >
+            {COPY.ledgers.w1.enable}
+          </Button>
+        )}
+      </span>
+      <Dialog
+        open={asking}
+        onOpenChange={setAsking}
+        title={COPY.ledgers.w1.dialogTitle}
+        description={COPY.ledgers.w1.dialogBody}
+      >
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setAsking(false);
+            }}
+          >
+            {COPY.ledgers.w1.cancel}
+          </Button>
+          <Button
+            disabled={enable.isPending}
+            onClick={() => {
+              enable.mutate({ body: { reason: null } });
+            }}
+          >
+            {COPY.ledgers.w1.confirm}
+          </Button>
+        </div>
+      </Dialog>
+      <ConfirmItsYou open={mfa} onOpenChange={setMfa} />
+    </Value>
   );
 }
 

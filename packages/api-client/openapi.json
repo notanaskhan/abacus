@@ -30283,6 +30283,7 @@
             "title": "Implemented Reference"
           },
           "links": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/ConsultationLinkOut"
             },
@@ -30290,6 +30291,7 @@
             "type": "array"
           },
           "positions": {
+            "cls": "confidential",
             "items": {
               "$ref": "#/components/schemas/ConsultationPositionOut"
             },
@@ -30317,7 +30319,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "confidential"
           }
         },
         "required": [
@@ -30465,9 +30468,11 @@
         "description": "AUD-28 a: the bands Open and Concluded, counted over the rows the reader may see.",
         "properties": {
           "counts": {
-            "$ref": "#/components/schemas/ConsultationCountsOut"
+            "$ref": "#/components/schemas/ConsultationCountsOut",
+            "cls": "internal"
           },
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/ConsultationLogRowOut"
             },
@@ -94787,7 +94792,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "options": {
             "cls": "internal",
@@ -94910,6 +94916,7 @@
         "description": "DV-9: the corrected figures by certified line key (the parser's output, or attached when it\ncannot match); the code compares and evaluates.",
         "properties": {
           "corrected": {
+            "cls": "confidential",
             "maxProperties": 200,
             "minProperties": 1,
             "patternProperties": {
@@ -96110,6 +96117,54 @@
           "user_id"
         ],
         "title": "PostingRequestApprovalIn",
+        "type": "object"
+      },
+      "PostingReversalOut": {
+        "additionalProperties": false,
+        "properties": {
+          "entry_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "reversal_entry_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Reversal Entry Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entry_id",
+          "reversal_entry_id"
+        ],
+        "title": "PostingReversalOut",
+        "type": "object"
+      },
+      "PostingReverseIn": {
+        "additionalProperties": false,
+        "examples": [
+          {
+            "reverse_on": "2026-09-01"
+          }
+        ],
+        "properties": {
+          "reverse_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reverse On"
+          }
+        },
+        "title": "PostingReverseIn",
         "type": "object"
       },
       "PostingTalliesOut": {
@@ -99276,7 +99331,8 @@
             "type": "integer"
           },
           "responsible": {
-            "$ref": "#/components/schemas/QualityPersonOut"
+            "$ref": "#/components/schemas/QualityPersonOut",
+            "cls": "confidential"
           },
           "status": {
             "cls": "internal",
@@ -99560,7 +99616,8 @@
             "title": "Office Id"
           },
           "tiles": {
-            "$ref": "#/components/schemas/QualityTilesOut"
+            "$ref": "#/components/schemas/QualityTilesOut",
+            "cls": "internal"
           }
         },
         "required": [
@@ -99780,7 +99837,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "confidential"
           },
           "raised_by_kind": {
             "cls": "internal",
@@ -100151,7 +100209,8 @@
             "type": "string"
           },
           "inspector": {
-            "$ref": "#/components/schemas/QualityPersonOut"
+            "$ref": "#/components/schemas/QualityPersonOut",
+            "cls": "confidential"
           },
           "kind": {
             "cls": "internal",
@@ -100243,7 +100302,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "confidential"
           },
           "ref": {
             "cls": "internal",
@@ -100577,7 +100637,8 @@
             "type": "string"
           },
           "reviewed_by": {
-            "$ref": "#/components/schemas/QualityPersonOut"
+            "$ref": "#/components/schemas/QualityPersonOut",
+            "cls": "confidential"
           },
           "reviewed_on": {
             "cls": "internal",
@@ -103367,7 +103428,8 @@
             "type": "string"
           },
           "approver": {
-            "$ref": "#/components/schemas/RecordsPersonOut"
+            "$ref": "#/components/schemas/RecordsPersonOut",
+            "cls": "confidential"
           },
           "approver_role": {
             "cls": "internal",
@@ -103773,7 +103835,8 @@
             "type": "string"
           },
           "created_by": {
-            "$ref": "#/components/schemas/RecordsPersonOut"
+            "$ref": "#/components/schemas/RecordsPersonOut",
+            "cls": "confidential"
           },
           "effective_from": {
             "anyOf": [
@@ -149698,6 +149761,18 @@
             "minimum": 1.0,
             "title": "Version",
             "type": "integer"
+          },
+          "w1_enabled": {
+            "cls": "internal",
+            "default": false,
+            "title": "W1 Enabled",
+            "type": "boolean"
+          },
+          "w1_released": {
+            "cls": "internal",
+            "default": false,
+            "title": "W1 Released",
+            "type": "boolean"
           }
         },
         "required": [
@@ -200991,7 +201066,7 @@
     },
     "/v1/closing-date-conflicts/{conflict_id}/ask-client": {
       "post": {
-        "description": "The firm's \"Lift closing date request\" template row, sent by a person (C-02-T19).",
+        "description": "The firm's \"Lift closing date request\" template row, sent by a person (C-02-T24).",
         "operationId": "ask_client",
         "parameters": [
           {
@@ -230925,7 +231000,7 @@
     },
     "/v1/engagements/{engagement_id}/ledger-settings": {
       "put": {
-        "description": "The engagement's `posting_enabled` (partner or manager).",
+        "description": "The engagement's `posting_enabled` (partner or manager); never for an attest client.",
         "operationId": "engagement_ledger_settings",
         "parameters": [
           {
@@ -325545,7 +325620,7 @@
     },
     "/v1/posting-batches/{batch_id}/entries/{entry_id}/retry": {
       "post": {
-        "description": "Re-read by DocNumber and marker, then re-write under the same key (C-02-T19).",
+        "description": "Re-read through the preflight, then re-write under the same key (C-02-T24).",
         "operationId": "retry_entry",
         "parameters": [
           {
@@ -327636,7 +327711,7 @@
     },
     "/v1/proposed-entries/{entry_id}/record-external": {
       "post": {
-        "description": "Recorded in ledger / Recorded by <client> (C-02-T22).",
+        "description": "Recorded in ledger (export path): evidence or a sync match (C-02-T24). Recorded by\n<client> for an attest client is C-02-T32's.",
         "operationId": "record_external",
         "parameters": [
           {
@@ -328190,6 +328265,133 @@
           "adjustments"
         ],
         "x-abacus-action": "proposed_entry.request_approval"
+      }
+    },
+    "/v1/proposed-entries/{entry_id}/reverse": {
+      "post": {
+        "description": "Manual Reverse (C-02-T24): a posted entry's reversal as a new proposed entry, approved and\nposted like any other; never a delete.",
+        "operationId": "reverse_entry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostingReverseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostingReversalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Reverse Entry Route",
+        "tags": [
+          "adjustments"
+        ],
+        "x-abacus-action": "proposed_entry.create"
       }
     },
     "/v1/proposed-entries/{entry_id}/withdraw-approval": {

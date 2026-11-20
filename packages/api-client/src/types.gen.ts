@@ -45154,6 +45154,30 @@ export type PostingRequestApprovalIn = {
 };
 
 /**
+ * PostingReversalOut
+ */
+export type PostingReversalOut = {
+    /**
+     * Entry Id
+     */
+    entry_id: string;
+    /**
+     * Reversal Entry Id
+     */
+    reversal_entry_id: string;
+};
+
+/**
+ * PostingReverseIn
+ */
+export type PostingReverseIn = {
+    /**
+     * Reverse On
+     */
+    reverse_on?: string | null;
+};
+
+/**
  * PostingTalliesOut
  *
  * CLS-07a: PROPOSED 5 · $34,920.00, WITHIN 4 · $20,020.00, REVIEW 1 · $14,900.00, APPROVED
@@ -70263,6 +70287,14 @@ export type W1GlPostingSettingsOut = {
      * Version
      */
     version: number;
+    /**
+     * W1 Enabled
+     */
+    w1_enabled?: boolean;
+    /**
+     * W1 Released
+     */
+    w1_released?: boolean;
 };
 
 /**
@@ -151462,6 +151494,62 @@ export type PostingRequestApprovalResponses = {
 };
 
 export type PostingRequestApprovalResponse = PostingRequestApprovalResponses[keyof PostingRequestApprovalResponses];
+
+export type ReverseEntryData = {
+    body: PostingReverseIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Entry Id
+         */
+        entry_id: string;
+    };
+    query?: never;
+    url: '/v1/proposed-entries/{entry_id}/reverse';
+};
+
+export type ReverseEntryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReverseEntryError = ReverseEntryErrors[keyof ReverseEntryErrors];
+
+export type ReverseEntryResponses = {
+    /**
+     * Successful Response
+     */
+    201: PostingReversalOut;
+};
+
+export type ReverseEntryResponse = ReverseEntryResponses[keyof ReverseEntryResponses];
 
 export type WithdrawApprovalData = {
     body: PostingReasonIn;
