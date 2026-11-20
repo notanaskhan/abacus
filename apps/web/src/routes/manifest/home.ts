@@ -19,7 +19,14 @@ export const homeScreens = {
     path: "/home/approvals",
     navArea: "Home",
   },
-  "HOME-03": { name: "Deadlines calendar", status: "planned", path: null },
+  // T-08-T16 built a–f and x1–x3 on fixtures at /home/deadlines behind `practice.filing_deadlines`;
+  // planned until HOME-01's Deadlines segment links it with to.HOME03().
+  "HOME-03": {
+    name: "Deadlines calendar",
+    status: "planned",
+    path: "/home/deadlines",
+    navArea: "Home",
+  },
   "HOME-04": { name: "Capacity & resource planner", status: "planned", path: null },
   "HOME-05": { name: "Home with Today brief", status: "planned", path: null, navArea: "Home" },
   // seed-manifest: new screens are added above this line

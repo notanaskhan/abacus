@@ -54,3 +54,14 @@ The designed links of the handoff link graph (link-contract rule 5); each is wir
 | Opens TXT-04 (later wave) · Estate of Walter Thornbury · Form 706 | TXT-04 | designed (handoff link graph) |
 | Opens TAX-01 · Q3 2026 individual estimates · Form 1040-ES | TAX-01 | designed (handoff link graph) |
 | Opens SIG-01 · envelope E14 · Granite Peak Outdoor Supply · FY2026 FS audit engagement letter | SIG-01 | designed (handoff link graph) |
+
+## T-08-T16 (TASK-8842): built
+a–f and x1–x3 build from `fixtures/scenarios/HOME-03.ts` over `seed/home03.ts` (`GET /v1/filing-
+deadlines`, FD-1) at `/home/deadlines` behind `practice.filing_deadlines`; the live wrapper is
+`screens/HOME-03/Deadlines.tsx`. Every chip's accessible name and list Risk cell carry the server's
+`risk_label` in words beside the tint; chips route by source kind (TAX-02, AUD-02, CLS-02, NOT-02,
+SIG-01; the Thornbury 706 → TXT-04 later).
+- **Deviation:** the handoff leaves two of Sep 15's 1065s unnamed; the seed uses the synthetic
+  scenario's 1065 clients (Cedar Hollow Farms, Vantage Point Realty). Owners for chips the list
+  mode does not show are the seeded preparers of that family. The Office/Service/Risk chips are
+  drawn with the Person chip's behaviour; their menus arrive with the live swap (T-08-T40).
