@@ -63,6 +63,23 @@ export const COPY = {
     body: "The closing date will be set to Aug 31, 2026.",
     confirm: "Post",
   },
+  // C-02-T31: d, e and g (handoff CLS-07 STATES D, E, G).
+  posted: {
+    banner: (code: string, n: number, total: string, closing: string, at: string) =>
+      `Posted to QuickBooks Online · batch ${code} · ${String(n)} entries · ${total} · closing date set to ${closing} at ${at}`,
+    bannerNoClosing: (code: string, n: number, total: string) =>
+      `Posted to QuickBooks Online · batch ${code} · ${String(n)} entries · ${total}`,
+    resolved: (n: number) => `${String(n)} failure${n === 1 ? "" : "s"} resolved`,
+    ledgerSync: "View in ledger sync ›",
+    qbo: (ref: string) => `Posted · QBO ${ref}`,
+  },
+  retry: "Retry",
+  retrying: "Retrying…",
+  attestHeld: "Review required · attest clients always held",
+  closingSentence: (date: string) => `The closing date will be set to ${date}.`,
+  noClosing: "The closing date will not change.",
+  postTitle: (n: number, amount: string, entity: string) =>
+    `Post ${String(n)} entries (${amount}) to QuickBooks Online · ${entity}?`,
   undone: "Approval undone",
   approvedToast: (n: number) => `${String(n)} entries approved`,
   detail: {

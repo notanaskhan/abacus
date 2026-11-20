@@ -15,8 +15,11 @@ import {
   approveEntryMutation,
   closeEntriesOptions,
   closeEntriesQueryKey,
+  dryRunMutation,
+  postBatchMutation,
   proposedEntriesOptions,
   postingRequestApprovalMutation,
+  retryEntryMutation,
   undoApprovalMutation,
 } from "@abacus/api-client/query";
 import {
@@ -28,9 +31,12 @@ import {
   Segmented,
   Skeleton,
   StatusDisc,
+  Pill,
   TallyStrip,
   amount,
   cn,
+  dateTime,
+  time,
   toast,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -54,6 +60,8 @@ export interface CLS07Props {
   onPost?: (entryIds: readonly string[]) => void;
   onExport?: () => void;
   onSendToClient?: () => void;
+  /** CLS-07d → CLS-11: "View in ledger sync ›". */
+  onLedgerSync?: () => void;
 }
 
 const TH = "h-[30px] bg-nested px-[10px] text-[11.5px] font-medium text-ink-2";
@@ -233,6 +241,85 @@ function Detail({
   );
 }
 
+/** CLS-07d: the posted batch's banner, every figure from the read. */
+function PostedBanner({
+  view,
+  onLedgerSync,
+}: {
+  view: PostingCloseEntriesOut;
+  onLedgerSync?: () => void;
+}): JSX.Element {
+  const t = view.tallies;
+  const code = t.posted_batch_code ?? "";
+  const n = t.posted_count ?? 0;
+  const total = amount(t.posted_amount ?? "0.00").text;
+  const text =
+    t.closing_date_set && t.posted_at
+      ? C.posted.banner(code, n, total, dateTime(t.closing_date_set), time(t.posted_at))
+      : C.posted.bannerNoClosing(code, n, total);
+  return (
+    <div
+      role="status"
+      data-cls07="posted"
+      className="mx-[10px] flex h-[36px] items-center justify-between rounded-[8px] bg-green-tint px-[12px] text-[12.5px] text-green-ink"
+    >
+      <span>
+        {text}
+        {(t.resolved_failure_count ?? 0) > 0
+          ? ` · ${C.posted.resolved(t.resolved_failure_count ?? 0)}`
+          : ""}
+      </span>
+      <button type="button" className="font-medium hover:underline" onClick={onLedgerSync}>
+        {C.posted.ledgerSync}
+      </button>
+    </div>
+  );
+}
+
+/** A row's status: d's green "Posted · QBO 48213", e's red pill with its line and Retry, g's
+ * attest hold. Retry is a person's (the read names `posting_batch.post`); never an agent's. */
+function StatusCell({
+  row,
+  attest,
+  retrying,
+  onRetry,
+}: {
+  row: PostingCloseEntryRowOut;
+  attest: boolean;
+  retrying: boolean;
+  onRetry: () => void;
+}): JSX.Element {
+  if (attest && row.status === "review_required") return <>{C.attestHeld}</>;
+  if (row.status === "posted" && row.external_txn_ref) {
+    return <Pill variant="green-tint">{C.posted.qbo(row.external_txn_ref)}</Pill>;
+  }
+  if (row.status === "failed_post") {
+    const may = (row.allowed_actions ?? []).includes("posting_batch.post");
+    return (
+      <div className="flex flex-col items-start gap-[4px] py-[4px]">
+        <Pill variant="red">{C.status.failed_post}</Pill>
+        {row.failure_line ? (
+          <span className="text-[12.5px] text-red">{row.failure_line}</span>
+        ) : null}
+        {may && !attest ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={retrying}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRetry();
+            }}
+          >
+            {retrying ? C.retrying : C.retry}
+          </Button>
+        ) : null}
+      </div>
+    );
+  }
+  return <>{C.status[row.status] ?? row.status}</>;
+}
+
 export function CLS07(props: CLS07Props): JSX.Element {
   const { workItemId, initial = {} } = props;
   const path = { work_item_id: workItemId };
@@ -249,6 +336,11 @@ export function CLS07(props: CLS07Props): JSX.Element {
   const approve = useMutation({ ...approveEntryMutation(), onSuccess: refresh });
   const request = useMutation({ ...postingRequestApprovalMutation(), onSuccess: refresh });
   const undo = useMutation({ ...undoApprovalMutation(), onSuccess: refresh });
+  // C-02-T31: c2 reads the dry run (preflight only, nothing written); confirming posts the batch
+  // under an Idempotency-Key; e's Retry re-posts one failed entry under its own grant.
+  const dry = useMutation(dryRunMutation());
+  const post = useMutation({ ...postBatchMutation(), onSuccess: refresh });
+  const retry = useMutation({ ...retryEntryMutation(), onSuccess: refresh });
 
   if (view.data === undefined) {
     return <Skeleton aria-label={C.entries} className="h-[604px] w-full" />;
@@ -294,6 +386,7 @@ export function CLS07(props: CLS07Props): JSX.Element {
       <Button
         variant={held.length > 0 ? "secondary" : "primary"}
         onClick={() => {
+          dry.mutate({ path, body: { entry_ids: approved.map((r) => r.entry_id) } });
           setPostOpen(true);
         }}
       >
@@ -326,6 +419,9 @@ export function CLS07(props: CLS07Props): JSX.Element {
         </button>
       </div>
       <Tallies view={data} />
+      {data.tallies.posted_batch_code ? (
+        <PostedBanner view={data} onLedgerSync={props.onLedgerSync} />
+      ) : null}
       <div className="flex min-h-0 flex-1 gap-[10px] p-[10px]">
         <section
           aria-label={C.entries}
@@ -393,8 +489,18 @@ export function CLS07(props: CLS07Props): JSX.Element {
                         r.status === "review_required" && "font-medium text-amber-ink",
                       )}
                     >
-                      {C.status[r.status] ?? r.status}
-                      {r.external_txn_ref ? ` · QBO ${r.external_txn_ref}` : ""}
+                      <StatusCell
+                        row={r}
+                        attest={data.is_attest_client}
+                        retrying={retry.isPending}
+                        onRetry={() => {
+                          if (!r.posting_batch_id) return;
+                          retry.mutate({
+                            path: { batch_id: r.posting_batch_id, entry_id: r.entry_id },
+                            headers: { "Idempotency-Key": `cls07-retry-${crypto.randomUUID()}` },
+                          });
+                        }}
+                      />
                     </td>
                   </tr>
                 );
@@ -510,11 +616,35 @@ export function CLS07(props: CLS07Props): JSX.Element {
         open={postOpen}
         onOpenChange={setPostOpen}
         destructive={false}
-        title={C.post.title(approved.length, amount(data.tallies.proposed.amount).text)}
+        title={
+          dry.data
+            ? C.postTitle(
+                dry.data.entry_count,
+                amount(dry.data.total_amount).text,
+                dry.data.client_entity_name,
+              )
+            : C.post.title(approved.length, amount(data.tallies.proposed.amount).text)
+        }
         confirmLabel={C.post.confirm}
-        onConfirm={() => props.onPost?.(approved.map((r) => r.entry_id))}
+        onConfirm={() => {
+          const ids = approved.map((r) => r.entry_id);
+          post.mutate({
+            path,
+            headers: { "Idempotency-Key": `cls07-post-${crypto.randomUUID()}` },
+            body: {
+              entry_ids: ids,
+              seen_versions: Object.fromEntries(approved.map((r) => [r.entry_id, r.version])),
+              set_closing_date: true,
+            },
+          });
+          props.onPost?.(ids);
+        }}
       >
-        {C.post.body}
+        {dry.data
+          ? dry.data.closing_date_target
+            ? C.closingSentence(dateTime(dry.data.closing_date_target))
+            : C.noClosing
+          : C.post.body}
       </ConfirmDialog>
     </div>
   );

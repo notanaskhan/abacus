@@ -34,6 +34,7 @@ export const CLOSE_WORK_ITEM_ID = stableId("work-item:copperleaf-close-2026-08")
 const BATCH_AT = "9:31 AM";
 const HELD_AT = "10:12 AM";
 const POSTED_BATCH = "2026-08-A";
+const BATCH_ID = stableId("posting-batch:2026-08-A");
 const FAILED_REF = "AJE-03"; // CLS-07e: "Accumulated Depreciation" inactive in QuickBooks
 
 const PEOPLE = {
@@ -158,6 +159,12 @@ export function closeEntries(state: Cls07Fixture): PostingCloseEntriesOut {
       external_txn_ref: r.status === "posted" ? r.e.qbo_id : null,
       version: 1,
       allowed_actions: allowed(r, persona),
+      // C-02-T31: CLS-07e's Retry and its red line (the reason by code, never provider text).
+      posting_batch_id: r.status === "posted" || r.status === "failed_post" ? BATCH_ID : null,
+      failure_line:
+        r.status === "failed_post"
+          ? "QuickBooks Online: account 'Accumulated Depreciation' is inactive"
+          : null,
     })),
     total: rows.length,
     tallies: {
@@ -167,6 +174,13 @@ export function closeEntries(state: Cls07Fixture): PostingCloseEntriesOut {
       approved: live.filter((r) => done.has(r.status)).length,
       of: live.length,
       posted_batch_code: posted ? POSTED_BATCH : null,
+      // C-02-T31: CLS-07d's banner (Sep 14, 10:22 AM CDT).
+      posted_batch_id: posted ? BATCH_ID : null,
+      posted_count: posted ? rows.length : null,
+      posted_amount: posted ? tally(live).amount : null,
+      posted_at: posted ? "2026-09-14T10:22:00-05:00" : null,
+      closing_date_set: posted ? "2026-08-31" : null,
+      resolved_failure_count: 0,
     },
     approver: {
       user_id: stableId(`user:${persona}`),
@@ -213,4 +227,37 @@ export function entries(state: Cls07Fixture): EntryOut[] {
 /** The count of lines a row shows (the handoff's Lines column, even where lines are not named). */
 export function lineCount(ref: string): number {
   return ENTRIES.find((e) => e.ref === ref)?.line_count ?? 0;
+}
+
+/** C-02-T31: CLS-07 c2's dry run: "Post 6 entries ($35,300.00) to QuickBooks Online · Copperleaf
+ * Coffee Roasters? The closing date will be set to Aug 31, 2026." Nothing is written. */
+export function dryRun(state: Cls07Fixture) {
+  const approved = rowsOf(state).filter((r) => r.status === "approved");
+  return {
+    entry_count: approved.length,
+    total_amount: tally(approved).amount,
+    ledger_label: "QuickBooks Online",
+    client_entity_name: "Copperleaf Coffee Roasters",
+    closing_date_target: "2026-08-31",
+    results: approved.map((r) => ({ entry_id: entryId(r.e.ref), ok: true })),
+  };
+}
+
+/** The batch drawer's read after a post or a Retry (C8 v2 `PostingBatchOut`). */
+export function batchView(state: Cls07Fixture) {
+  const rows = rowsOf(state).filter((r) => r.status !== "rejected");
+  return {
+    batch_id: BATCH_ID,
+    batch_code: POSTED_BATCH,
+    period: "2026-08",
+    status: "posting",
+    entry_count: rows.length,
+    total_amount: tally(rows).amount,
+    closing_date_target: "2026-08-31",
+    failure_count: state === "e" ? 1 : 0,
+    resolved_failure_count: 0,
+    undo_until: null,
+    entries: [],
+    version: 2,
+  };
 }

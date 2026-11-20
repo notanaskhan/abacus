@@ -95647,6 +95647,32 @@
             "cls": "internal",
             "title": "External Txn Ref"
           },
+          "failure_line": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Failure Line"
+          },
+          "posting_batch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Posting Batch Id"
+          },
           "ref": {
             "cls": "internal",
             "pattern": "^(AJE|RJE|PAJE)-0?[1-9][0-9]{0,3}$",
@@ -96177,11 +96203,50 @@
             "title": "Approved",
             "type": "integer"
           },
+          "closing_date_set": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Closing Date Set"
+          },
           "of": {
             "cls": "internal",
             "minimum": 0.0,
             "title": "Of",
             "type": "integer"
+          },
+          "posted_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Posted Amount"
+          },
+          "posted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Posted At"
           },
           "posted_batch_code": {
             "anyOf": [
@@ -96195,9 +96260,42 @@
             "cls": "internal",
             "title": "Posted Batch Code"
           },
+          "posted_batch_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Posted Batch Id"
+          },
+          "posted_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Posted Count"
+          },
           "proposed": {
             "$ref": "#/components/schemas/PostingTallyOut",
             "cls": "internal"
+          },
+          "resolved_failure_count": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Resolved Failure Count",
+            "type": "integer"
           },
           "review_required": {
             "$ref": "#/components/schemas/PostingTallyOut",

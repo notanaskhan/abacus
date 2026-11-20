@@ -44941,6 +44941,14 @@ export type PostingCloseEntryRowOut = {
      */
     external_txn_ref?: string | null;
     /**
+     * Failure Line
+     */
+    failure_line?: string | null;
+    /**
+     * Posting Batch Id
+     */
+    posting_batch_id?: string | null;
+    /**
      * Ref
      */
     ref: string;
@@ -45189,14 +45197,38 @@ export type PostingTalliesOut = {
      */
     approved: number;
     /**
+     * Closing Date Set
+     */
+    closing_date_set?: string | null;
+    /**
      * Of
      */
     of: number;
     /**
+     * Posted Amount
+     */
+    posted_amount?: string | null;
+    /**
+     * Posted At
+     */
+    posted_at?: string | null;
+    /**
      * Posted Batch Code
      */
     posted_batch_code?: string | null;
+    /**
+     * Posted Batch Id
+     */
+    posted_batch_id?: string | null;
+    /**
+     * Posted Count
+     */
+    posted_count?: number | null;
     proposed: PostingTallyOut;
+    /**
+     * Resolved Failure Count
+     */
+    resolved_failure_count?: number;
     review_required: PostingTallyOut;
     within_threshold: PostingTallyOut;
 };
