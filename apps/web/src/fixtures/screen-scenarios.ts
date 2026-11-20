@@ -105,7 +105,8 @@ import { scenarios as txp10 } from "./scenarios/TXP-10";
 import { TXP03_OPENS, scenarios as t06txp03 } from "./scenarios/TXP-03";
 import { PARKING_ID } from "./seed/tax-depth-assets";
 import { TXP04_OPENS, scenarios as t06txp04 } from "./scenarios/TXP-04";
-import { scenarios as t06txp08 } from "./scenarios/TXP-08";
+import { TXP08_OPENS, scenarios as t06txp08 } from "./scenarios/TXP-08";
+import { FELD_ID, PELL_II_ID } from "./seed/tax-depth-basis";
 import { scenarios as t06txp09 } from "./scenarios/TXP-09";
 import { scenarios as t06txp13 } from "./scenarios/TXP-13";
 import { scenarios as t06tax11 } from "./scenarios/TAX-11";
@@ -470,8 +471,12 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
       "tax.review_workspace",
       "tax.entity_depth",
     ]),
-    opens: {},
-    ids: idsOf(t06txp08, () => ({ returnId: RIDGELINE_RETURN_ID })),
+    opens: TXP08_OPENS,
+    ids: idsOf(t06txp08, () => ({
+      returnId: RIDGELINE_RETURN_ID,
+      feldId: FELD_ID,
+      pellIIId: PELL_II_ID,
+    })),
   },
   "TXP-09": {
     scenarios: onE0(t06txp09, [
