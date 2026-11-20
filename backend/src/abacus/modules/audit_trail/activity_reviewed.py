@@ -1181,6 +1181,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "close_package.generated",  # C-02-T28 (TASK-8814): CLS-08's version line
         "close_package.assembled",
         "close_package.exported",
+        "close_package.released",  # C-02-T29 (TASK-8815): CLS-08 d, e and POR-08
+        "close_package.client_approved",
+        "close.delivered",
+        "close.locked",
+        "close.reopened",
         "consultation.difference_resolved",
         "consultation.linked",
         "consultation.position_recorded",
