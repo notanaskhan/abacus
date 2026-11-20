@@ -452,7 +452,9 @@ async def package_pdf_route(close_id: UUID, ctx: Ctx) -> Response:
 
     await _human(ctx, CLOSES_DELIVERY, "close_package.export")
     url, _ = await package_render.page_url(ctx, close_id, 1)
-    return Response(status_code=303, headers={"Location": url.rsplit("/pages/", 1)[0] + "/content"})
+    return Response(
+        status_code=303, headers={"Location": url.rsplit("/pages/", 1)[0] + "/content"}
+    )
 
 
 @delivery_router.get(
@@ -498,7 +500,11 @@ async def lock_route(close_id: UUID, ctx: Ctx) -> DeliveryCloseStateOut:
     await _human(ctx, CLOSES_DELIVERY, "close.lock")
     await release.lock(ctx, close_id)
     status, version = await release.state_of(ctx.tenant, close_id)
-    return DeliveryCloseStateOut(close_id=close_id, status=cast(Any, status), version=version)
+    return DeliveryCloseStateOut(
+        close_id=close_id,
+        status=cast(Any, status),  # Any: a row value
+        version=version,
+    )
 
 
 @delivery_router.post(
@@ -510,7 +516,11 @@ async def reopen_route(close_id: UUID, body: DeliveryReopenIn, ctx: Ctx) -> Deli
     await _human(ctx, CLOSES_DELIVERY, "close.reopen")
     await release.reopen(ctx, close_id, body.reason)
     status, version = await release.state_of(ctx.tenant, close_id)
-    return DeliveryCloseStateOut(close_id=close_id, status=cast(Any, status), version=version)
+    return DeliveryCloseStateOut(
+        close_id=close_id,
+        status=cast(Any, status),  # Any: a row value
+        version=version,
+    )
 
 
 @delivery_router.get(

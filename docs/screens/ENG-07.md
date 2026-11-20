@@ -23,6 +23,8 @@ Parity tier target: C (T-08 §5.5). Copy keys live in `apps/web/src/screens/ENG-
 | x2 | Composed C-20: flag off | `season-flag-off` | Samuel Ito | Mon Jan 12, 10:15 AM | planned | AY |
 
 ## Deviations
+
+- "Approve cohort 5" reads "Approve cohort 5…": the button opens the confirm dialog, and the kit's rule is that a dialog-opening label ends with "…" (S52 end pass).
 - OQ-8: the running pill reads 'Creating engagements for cohort 3 · approved by Samuel Ito' (attribution; T-08-T02).
 - The provenance chip to WB-06 is a planned link until W-03; 'View run ›' to WB-09 is live.
 - Letters and §7216 consents are separate documents (R-01 #1).

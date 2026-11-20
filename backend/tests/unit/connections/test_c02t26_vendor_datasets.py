@@ -50,8 +50,10 @@ def connector(tmp_path: Path) -> Iterator[object]:
     fakes.uninstall_fake_ledgers()
 
 
-async def test_ac_twelve_vendors_with_masked_tax_ids(connector: object) -> None:
-    page = await connector.pull("vendors", YTD, None)  # type: ignore[attr-defined]
+async def test_ac_twelve_vendors_with_masked_tax_ids(
+    connector: quickbooks_online.QuickBooksOnlineConnector,
+) -> None:
+    page = await connector.pull("vendors", YTD, None)
     vendors = parse_qbo_vendors(page.content)
     assert len(vendors) == 12
     assert {v.name for v in vendors} == {v.name for v in cas.VENDORS}
@@ -60,26 +62,35 @@ async def test_ac_twelve_vendors_with_masked_tax_ids(connector: object) -> None:
     assert page.next_cursor is None
 
 
-async def test_ac_payments_split_check_ach_card(connector: object) -> None:
-    first = await connector.pull("vendor_payments", YTD, None)  # type: ignore[attr-defined]
+async def test_ac_payments_split_check_ach_card(
+    connector: quickbooks_online.QuickBooksOnlineConnector,
+) -> None:
+    first = await connector.pull("vendor_payments", YTD, None)
     assert first.next_cursor == "Purchase:1"
-    second = await connector.pull("vendor_payments", YTD, first.next_cursor)  # type: ignore[attr-defined]
+    second = await connector.pull("vendor_payments", YTD, first.next_cursor)
     assert second.next_cursor is None
     payments = parse_qbo_vendor_payments(first.content) + parse_qbo_vendor_payments(second.content)
     by_method = Counter(p.method for p in payments)
     assert set(by_method) == {"check", "ach", "card"}
     assert by_method["card"] == 1
     totals: dict[str, Decimal] = {}
-    vendors = {v.external_id: v.name for v in parse_qbo_vendors(
-        (await connector.pull("vendors", YTD, None)).content  # type: ignore[attr-defined]
-    )}
+    vendors = {
+        v.external_id: v.name
+        for v in parse_qbo_vendors((await connector.pull("vendors", YTD, None)).content)
+    }
     for p in payments:
-        totals[vendors[p.vendor_external_id]] = totals.get(vendors[p.vendor_external_id], Decimal(0)) + p.amount
+        totals[vendors[p.vendor_external_id]] = (
+            totals.get(vendors[p.vendor_external_id], Decimal(0)) + p.amount
+        )
     assert totals == {v.name: v.amount for v in cas.VENDORS}
 
 
 def test_an_unmasked_tax_id_is_refused() -> None:
-    body = {"QueryResponse": {"Vendor": [{"Id": "1", "DisplayName": "X", "TaxIdentifier": "123-45-6789"}]}}
+    body = {
+        "QueryResponse": {
+            "Vendor": [{"Id": "1", "DisplayName": "X", "TaxIdentifier": "900-45-6789"}]
+        }
+    }
     with pytest.raises(NormaliseError):
         parse_qbo_vendors(json.dumps(body).encode())
 
@@ -93,8 +104,12 @@ def test_purchases_to_non_vendors_are_left_out() -> None:
 
 
 def test_cdc_names_the_vendor_datasets() -> None:
-    body = {"CDCResponse": [{"QueryResponse": [{"Vendor": [{"Id": "1"}]}, {"BillPayment": [{"Id": "2"}]}]}]}
-    entities = quickbooks_online._cdc_entities(json.dumps(body).encode())  # pyright: ignore[reportPrivateUsage]
+    body = {
+        "CDCResponse": [
+            {"QueryResponse": [{"Vendor": [{"Id": "1"}]}, {"BillPayment": [{"Id": "2"}]}]}
+        ]
+    }
+    entities = quickbooks_online._cdc_entities(json.dumps(body).encode())  # pyright: ignore[reportPrivateUsage] -- the CDC parser under test
     assert entities == {"Vendor", "BillPayment"}
 
 

@@ -171,7 +171,11 @@ export function AnalyticsLayout({
               options={[...AUDIENCES]}
               active={audience ?? "Preparer"}
               {...(onAudience
-                ? { onChange: (a: string) => { onAudience(a as (typeof AUDIENCES)[number]); } }
+                ? {
+                    onChange: (a: string) => {
+                      onAudience(a as (typeof AUDIENCES)[number]);
+                    },
+                  }
                 : {})}
             />
             {milestone}

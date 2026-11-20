@@ -226,6 +226,7 @@ from abacus.modules.assurance.phase import SUBSCRIPTIONS as PHASE_SUBSCRIPTIONS
 from abacus.modules.assurance.planning_contract import router as planning_router
 from abacus.modules.assurance.planning_gate import g4_facts
 from abacus.modules.assurance.post_issuance_contract import post_issuance_router
+from abacus.modules.assurance.post_issuance_reissue import register as _reissue_register
 from abacus.modules.assurance.post_release import ACTIVITIES as POST_RELEASE_ACTIVITIES
 from abacus.modules.assurance.post_release import SUBSCRIPTIONS as POST_RELEASE_SUBSCRIPTIONS
 from abacus.modules.assurance.post_release import WORKFLOWS as POST_RELEASE_WORKFLOWS
@@ -356,7 +357,6 @@ component_auditors_register()
 # A-09-T28 (DEC-5406): the late gate (Today) and the follow-up email template.
 component_late_register()
 # Q-05-T17 (DEC-5828): INB-01's post-issuance source destination.
-from abacus.modules.assurance.post_issuance_reissue import register as _reissue_register  # noqa: E402
 
 _reissue_register()
 # A-09-T30 (DEC-5408): AUD-02's Group band rows and AUD-01's group tags.

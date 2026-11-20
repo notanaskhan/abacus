@@ -483,8 +483,8 @@ def _asset_row(facts: object, computed: object, asset: object) -> TaxDepthAssetR
     return TaxDepthAssetRowOut(
         asset_id=a.id, description=a.description, property_key=a.property_key,
         placed_in_service=a.placed_in_service_on, cost=a.cost,
-        recovery_class=cast(Any, cls), method=cast(Any, a.method),
-        convention=cast(Any, a.convention),
+        recovery_class=cast(Any, cls), method=cast(Any, a.method),  # Any: a row value
+        convention=cast(Any, a.convention),  # Any: a row value
         bonus_pct=a.bonus_pct, prior=prior, current=current, accumulated=prior + current,
         bonus_check=c.bonus.get(str(a.id), "not_eligible"),
         flags=1 if a.status == "flag" else 0, cell_ref=f.cells.get(a.asset_no),
@@ -622,7 +622,7 @@ async def _decide(
     await _human(ctx, _D, "fixed_asset.approve_change")
     from abacus.modules.tax import fixed_assets_service as fa
 
-    done = await fa.decide(ctx, return_id, change_id, approve=approve, reason=reason)
+    done = await fa.settle_change(ctx, return_id, change_id, approve=approve, reason=reason)
     return TaxDepthChangeDecidedOut(
         proposal_id=done.request_id, decision=done.decision, current=Decimal(done.current),
         checkpoint_id=done.checkpoint_id,
@@ -723,7 +723,7 @@ async def basis_route(
     action="decision.raise",
     response_model=TaxDepthDecisionOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def raise_decision_route(
     return_id: UUID, body: TaxDepthDecisionCardIn, ctx: Ctx
@@ -742,7 +742,7 @@ async def raise_decision_route(
     "/decision-cards/{card_id}/send-to-client",
     action="decision.send_to_client",
     response_model=TaxDepthDecisionOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def send_decision_route(
     card_id: UUID, body: TaxDepthSendToClientIn, ctx: Ctx, idempotency_key: IdempotencyKey
@@ -772,7 +772,7 @@ async def states_route(
         view=view,
         states=[_state_out(r) for r in found.states],
         apportionment_tally=found.tally,
-        sourcing=cast(Any, found.sourcing),
+        sourcing=cast(Any, found.sourcing),  # Any: a row value
         paid_count=found.paid_count,
         payable_count=found.payable_count,
         base=found.states[0].denominator if found.states else None,
@@ -795,7 +795,7 @@ async def states_route(
 
 
 def _state_out(r: object) -> TaxDepthStateOut:
-    row = cast(Any, r)
+    row = cast(Any, r)  # Any: a row value
     return TaxDepthStateOut(
         state=row.state, apportionment_pct=row.share, ptet=row.ptet, ptet_paid=row.paid,
         ptet_paid_on=row.paid_on, mapped=row.mapped, nexus_conclusion=row.nexus,
@@ -810,7 +810,7 @@ def _state_out(r: object) -> TaxDepthStateOut:
     action="sourcing.propose",
     response_model=TaxDepthProposalOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def sourcing_propose_route(return_id: UUID, ctx: Ctx) -> TaxDepthProposalOut:
     """A person's sourcing position; the TXP-10 review point is raised once (T-06-T36)."""
@@ -830,10 +830,10 @@ async def sourcing_propose_route(return_id: UUID, ctx: Ctx) -> TaxDepthProposalO
 async def sourcing_approve_route(return_id: UUID, ctx: Ctx) -> TaxDepthProposalOut:
     """A reviewer's approval; the review point resolves once (T-06-T36, DEC-5836)."""
     await _human(ctx, _D, "sourcing.approve")
-    from abacus.modules.tax.states_service import _latest, approve_sourcing
+    from abacus.modules.tax.states_service import approve_sourcing, latest_sourcing
 
     await approve_sourcing(ctx, return_id)
-    latest = await _latest(ctx.tenant, return_id)
+    latest = await latest_sourcing(ctx.tenant, return_id)
     return TaxDepthProposalOut(proposal_id=latest.id, kind="sourcing_position", version=2)
 
 
@@ -841,18 +841,18 @@ async def sourcing_approve_route(return_id: UUID, ctx: Ctx) -> TaxDepthProposalO
     f"{_R}/states/sourcing/undo",
     action="sourcing.approve",
     response_model=TaxDepthProposalOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def sourcing_undo_route(
     return_id: UUID, body: TaxDepthUndoIn, ctx: Ctx
 ) -> TaxDepthProposalOut:
     """`sourcing.undone` inside the 10-second window (DEC-24); 409 `undo_window_closed`."""
     await _human(ctx, _D, "sourcing.approve")
-    from abacus.modules.tax.states_service import _latest, undo_sourcing
+    from abacus.modules.tax.states_service import latest_sourcing, undo_sourcing
 
     del body
     await undo_sourcing(ctx, return_id)
-    latest = await _latest(ctx.tenant, return_id)
+    latest = await latest_sourcing(ctx.tenant, return_id)
     return TaxDepthProposalOut(proposal_id=latest.id, kind="sourcing_position", version=3)
 
 
@@ -860,7 +860,7 @@ async def sourcing_undo_route(
     f"{_R}/states/{{state}}/ptet",
     action="ptet.update",
     response_model=TaxDepthStateOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def ptet_route(
     return_id: UUID, state: str, body: TaxDepthPtetIn, ctx: Ctx

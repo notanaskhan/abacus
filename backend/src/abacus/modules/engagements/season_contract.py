@@ -366,17 +366,19 @@ _ASKS = (
     "SELECT id, row_ids, question_code, options, recommended_option, source, suggestion_id, "
     "answered_option, answered_by FROM season_asks WHERE manifest_id = :m"
 )
+_ASKS_ORDERED = _ASKS + " ORDER BY id"  # constants only: the statements are fixed (SQL-001)
+_ASK_ONE = _ASKS.replace("manifest_id = :m", "id = :m")
 
 
 def _one_ask(r: object, people: dict[UUID, SeasonPersonOut]) -> SeasonAskOut:
-    row = cast(Any, r)
+    row = cast(Any, r)  # Any: a row value
     return SeasonAskOut(
         ask_id=row.id,
         question_code=row.question_code,
         row_ids=list(row.row_ids),
         options=[
             SeasonAskOptionOut(code=str(o.get("key")), label=str(o.get("key")))
-            for o in (row.options or [])
+            for o in cast(list[dict[str, object]], row.options or [])
         ],
         recommended_option=row.recommended_option,
         source=row.source,
@@ -393,7 +395,7 @@ async def _asks_out(ctx: AuthContext, manifest_id: UUID) -> list[SeasonAskOut]:
     from abacus.kernel.db import tenant_session
 
     async with tenant_session(ctx.tenant) as session:
-        rows = (await session.execute(text(_ASKS + " ORDER BY id"), {"m": manifest_id})).all()
+        rows = (await session.execute(text(_ASKS_ORDERED), {"m": manifest_id})).all()
     people = await _people({r.answered_by for r in rows if r.answered_by is not None})
     return [_one_ask(r, people) for r in rows]
 
@@ -405,11 +407,7 @@ async def _ask_out(ctx: AuthContext, ask_id: UUID) -> SeasonAskOut:
     from abacus.kernel.errors import NotFound
 
     async with tenant_session(ctx.tenant) as session:
-        row = (
-            await session.execute(
-                text(_ASKS.replace("manifest_id = :m", "id = :m")), {"m": ask_id}
-            )
-        ).first()
+        row = (await session.execute(text(_ASK_ONE), {"m": ask_id})).first()
     if row is None:
         raise NotFound("season_ask")
     people = await _people({row.answered_by} if row.answered_by is not None else set())

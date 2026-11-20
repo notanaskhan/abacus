@@ -232,19 +232,21 @@ async def retention_policy_versions_route(
 
 async def _version_out(v: object) -> RecordsPolicyVersionOut:
     from abacus.modules.evidence.retention import PolicyVersion
-
     from abacus.modules.identity.api import display_names
 
     found = cast(PolicyVersion, v)
     user = UUID(found.changed_by.removeprefix("user:"))
     name = (await display_names([user])).get(user, "")
     return RecordsPolicyVersionOut(
-        version_id=found.version_id, version_no=found.version_no,
-        retention_years=int(found.retention_years), legal_minimum_years=int(found.legal_minimum_years),
-        policy_text=found.policy_text, effective_from=found.effective_from,
+        version_id=found.version_id,
+        version_no=found.version_no,
+        retention_years=int(found.retention_years),
+        legal_minimum_years=int(found.legal_minimum_years),
+        policy_text=found.policy_text,
+        effective_from=found.effective_from,
         created_by=RecordsPersonOut(user_id=user, name=name),
         created_at=found.changed_at,
-    )  # fmt: skip
+    )
 
 
 @records_governance_router.post(
@@ -264,8 +266,11 @@ async def retention_policy_create_route(
     del key
     return await _version_out(
         await retention.create_override(
-            ctx, record_type=body.record_type, service_line=body.service_line,
-            retention_years=body.retention_years, policy_text=body.policy_text,
+            ctx,
+            record_type=body.record_type,
+            service_line=body.service_line,
+            retention_years=body.retention_years,
+            policy_text=body.policy_text,
             effective_from=body.effective_from,
         )
     )
@@ -365,11 +370,13 @@ async def destruction_certificate_route(certificate_id: UUID, ctx: Ctx) -> Recor
     await _on(ctx)
     row = await destruction_execute.certificate(ctx.tenant, certificate_id)
     return RecordsCertificateOut(
-        certificate_id=cast(UUID, row["id"]), ref=str(row["ref"]), batch_id=cast(UUID, row["batch_id"]),
+        certificate_id=cast(UUID, row["id"]),
+        ref=str(row["ref"]),
+        batch_id=cast(UUID, row["batch_id"]),
         destroyed_count=int(cast(int, row["destroyed_count"])),
         excluded_count=int(cast(int, row["held_excluded_count"])),
         manifest_sha256=str(row["manifest_sha256"]),
         audit_checkpoint_root=str(row["audit_checkpoint_root"]),
         generated_at=cast(datetime, row["generated_at"]),
         document_version_id=certificate_id,
-    )  # fmt: skip
+    )

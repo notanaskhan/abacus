@@ -3,6 +3,7 @@
 // foot 24 + 16 = 40 rows and 3,286,400.00 + 412,300.00 = 3,698,700.00; the status-bar conclusions
 // 31 + 8 + 1 + 0 = 40 (SHT-01 spec). sheets-sh1.foot.test.ts re-adds them (ADR-050).
 import type { AgentColumnOut, SheetRowOut, SheetVmOut } from "@abacus/api-client";
+import { amount } from "@abacus/ui";
 import { SURL_SHEET } from "./granite-peak-fy2026-surl-sheet";
 import { stableId } from "./prng";
 
@@ -35,7 +36,7 @@ const COLUMNS: SheetVmOut["columns"] = [
   options: [],
 }));
 
-const money = (n: number): string => n.toLocaleString("en-US", { minimumFractionDigits: 2 });
+const money = (n: number): string => amount(n, "cents").text;
 
 export type SheetVariant = "default" | "empty" | "filled" | "running" | "locked";
 

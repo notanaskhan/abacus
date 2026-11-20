@@ -49,7 +49,7 @@ def test_ac_letter_consents_and_8879f(monkeypatch: pytest.MonkeyPatch) -> None:
         _env("consent_7216", date(2026, 9, 23)),
         _env("form_8879_f", date(2026, 9, 28)),
     ]
-    monkeypatch.setattr(sig, "tenant_session", lambda _t: _S(rows))
+    monkeypatch.setattr(sig, "tenant_session", lambda _t: _S(rows))  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType] -- a monkeypatched double
     facts = asyncio.run(
         sig.envelope_deadlines(
             TenantContext(uuid.uuid4(), "system", "t"),
@@ -65,8 +65,6 @@ def test_ac_letter_consents_and_8879f(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_both_kinds_registered() -> None:
-    import abacus.modules.organisations.api  # noqa: F401 -- registration at import
-    import abacus.modules.signatures.api  # noqa: F401
     from abacus.modules.platform.api import filing_deadline_source_kinds
 
     assert {"envelope", "consent"} <= set(filing_deadline_source_kinds())

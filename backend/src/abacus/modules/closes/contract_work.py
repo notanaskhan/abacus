@@ -452,7 +452,7 @@ class CloseIssueOut(BaseModel):
     title: Annotated[str, Confidential]
     severity: Annotated[Severity, Internal]
     issue_class: Annotated[
-        Literal["bank_rec", "schedule", "flux", "recategorize", "intake"], Internal
+        Literal["bank_rec", "schedule", "flux", "recategorize", "intake", "posting"], Internal
     ]
     status: Annotated[IssueStatus, Internal]  # P-04's issue words (DEC-5018)
     waiting_on_client: Annotated[bool, Internal] = False

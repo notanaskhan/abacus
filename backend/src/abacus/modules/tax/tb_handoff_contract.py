@@ -267,7 +267,10 @@ async def tb_handoff_route(handoff_id: UUID, ctx: Ctx) -> TbHandoffOut:
     await _on(ctx)
     from abacus.modules.tax.tb_handoff_landing import authorise_read, issue_count
 
-    found = cast(Any, await authorise_read(ctx, handoff_id))
+    found = cast(
+        Any,  # Any: the hand-off record, as ledger returns it
+        await authorise_read(ctx, handoff_id),
+    )  # Any: a row value
     counts = found.counts
     return TbHandoffOut(
         handoff_id=found.id,

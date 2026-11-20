@@ -28,6 +28,8 @@ TABLES: frozenset[str] = frozenset(
     | {"reference_sets", "reference_set_versions", "reference_set_publications"}
     # P-10-T06 (0684, ADR-148): agent-minute metering.
     | {"agent_minute_ledger", "engagement_agent_budgets", "usage_month_rollups"}
+    # F-08-T13 (1001, DEC-5845): presence heartbeats, UNLOGGED and ephemeral (kernel.ephemeral).
+    | {"presence_heartbeats"}
     # P-02-T05 (0840, ADR-241): the firm search index and the people's recents (C15 v1).
     | {"search_documents", "search_recents"}
     # G-04-T04 (0920, DEC-5204): plan & usage and support (tenant), and the console's global
@@ -170,3 +172,8 @@ _G04_UPDATES = {
 }
 INSERT_COLUMNS.update({table: frozenset(cols.split()) for table, cols in _G04_INSERTS.items()})
 UPDATE_COLUMNS.update({table: frozenset(cols.split()) for table, cols in _G04_UPDATES.items()})
+# F-08-T13 (DEC-5845): one row per person and object, replaced by each heartbeat.
+INSERT_COLUMNS["presence_heartbeats"] = frozenset(
+    {"tenant_id", "user_id", "object_kind", "object_id", "anchor_kind", "anchor_key", "seen_at"}
+)
+UPDATE_COLUMNS["presence_heartbeats"] = frozenset({"anchor_kind", "anchor_key", "seen_at"})

@@ -23,9 +23,9 @@ suggests an eligible person for each exception row that needs one. Code has the 
 from __future__ import annotations
 
 import json
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Final, Literal, cast
+from typing import TYPE_CHECKING, Annotated, Any, Final, Literal, cast
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -163,6 +163,29 @@ class KeptAsk:
     phrase_key: str
 
 
+# The agents runtime fills this slot at import (ADR-106; ADR-008): engagements is imported by
+# agents, so it never imports agents back. `agents.api` registers its spec reader and the inline
+# capability-run pair; a planner call with nothing registered is a wiring fault and raises.
+@dataclass(frozen=True)
+class PlannerRuns:
+    spec_v2: Callable[[str], Any]  # Any: the agents module's compiled v2 spec
+    start: Callable[..., Awaitable[Any]]  # Any: the run's AgentContext
+    end: Callable[..., Awaitable[None]]
+
+
+_PLANNER_RUNS: list[PlannerRuns] = []
+
+
+def register_planner_runs(runs: PlannerRuns) -> None:
+    _PLANNER_RUNS[:] = [runs]
+
+
+def _runs() -> PlannerRuns:
+    if not _PLANNER_RUNS:
+        raise RuntimeError("season planner: the agents runtime registered no capability runs")
+    return _PLANNER_RUNS[0]
+
+
 def code_asks(rows: Sequence[FlaggedRow]) -> dict[str, tuple[UUID, ...]]:
     """Code's asks: one per ambiguity rule, over every row it flags."""
     out: dict[str, list[UUID]] = {}
@@ -185,9 +208,9 @@ def model_input(
     ref_of: dict[UUID, str] = {}
     planner_rows: list[PlannerRow] = []
     for r in rows:
-        role = next((NEEDS_PERSON[c] for c in r.codes if c in NEEDS_PERSON), None)
+        needs: Role | None = next((NEEDS_PERSON[c] for c in r.codes if c in NEEDS_PERSON), None)
         refs: list[EligibleRef] = []
-        for user_id, name in eligible.get(r.row_id, []) if role is not None else []:
+        for user_id, name in eligible.get(r.row_id, []) if needs is not None else []:
             ref = ref_of.setdefault(user_id, f"u{len(ref_of) + 1}")
             people[ref] = user_id
             refs.append(EligibleRef(user_ref=ref, name=name))
@@ -197,7 +220,7 @@ def model_input(
                 codes=list(r.codes),
                 office=r.office,
                 segment=r.segment,
-                role=role,
+                role=needs,
                 eligible=refs,
             )
         )
@@ -254,9 +277,8 @@ def settle(answer: SeasonPlannerOutput | None, given: Given) -> list[KeptAsk]:
 
 async def _judge(agent: AgentContext, given: SeasonPlannerInput) -> SeasonPlannerOutput | None:
     from abacus.ai_gateway import Attribution, ContextBuilder, GatewayCall, call
-    from abacus.modules.agents.api import spec_v2
 
-    spec = spec_v2(CAPABILITY)
+    spec = _runs().spec_v2(CAPABILITY)
     context = ContextBuilder().task(given.model_dump(), untrusted=("rows",)).build()
     try:
         result = await call(
@@ -300,8 +322,9 @@ async def plan(person: AuthContext, manifest_id: UUID) -> int:
     """After a build: the planner's kept asks written once (code's asks alone when the call is
     refused or the firm is not synthetic). Answers the asks written."""
     from abacus.ai_gateway import is_synthetic
-    from abacus.modules.agents.api import end_capability_run, start_capability_run
     from abacus.modules.identity.api import display_names
+
+    runs = _runs()
 
     async with tenant_session(person.tenant) as session:
         if await session.scalar(
@@ -340,10 +363,10 @@ async def plan(person: AuthContext, manifest_id: UUID) -> int:
     given = model_input(rows, await _eligible(person.tenant, rows, pool))
     answer = None
     if await is_synthetic(person.tenant):
-        agent = await start_capability_run(person, CAPABILITY, None)
+        agent = await runs.start(person, CAPABILITY, None)
         if agent is not None:
             answer = await _judge(agent, given.model)
-            await end_capability_run(
+            await runs.end(
                 agent,
                 status="succeeded" if answer is not None else "escalated",
                 output={"asks": len(given.ask_rows)},
@@ -381,7 +404,7 @@ async def answer(person: AuthContext, ask_id: UUID, option: str) -> None:
     from abacus.kernel.errors import DomainConflict, NotFound
     from abacus.modules.identity.api import Forbidden
 
-    if person.client or person.tenant.actor_kind != "human" or person.is_support:
+    if person.tenant.actor_kind != "human" or person.client or person.is_support:
         raise Forbidden("season_setup.prepare", "role")
     async with tenant_session(person.tenant) as session:
         row = (

@@ -28,4 +28,8 @@ def test_the_risk_score_is_deterministic() -> None:
 
 def test_the_evaluation_card_has_three_fixed_options() -> None:
     assert s.EVALUATION_KIND == "qm_annual_evaluation"
-    assert [o["key"] for o in s.EVALUATION_OPTIONS] == ["reasonable_assurance", "except_for", "does_not"]
+    assert [o["key"] for o in s.EVALUATION_OPTIONS] == [
+        "reasonable_assurance",
+        "except_for",
+        "does_not",
+    ]

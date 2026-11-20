@@ -102,6 +102,8 @@ export interface KpiTileProps extends ChartBase {
     improvement?: boolean;
   };
   spark?: readonly number[];
+  /** The tile's one-line caption under the value (T21, TPL-23: "62 completed · 95.4%"). */
+  caption?: string;
 }
 
 export interface ChartCardProps extends ChartBase {

@@ -52,18 +52,20 @@ export function dashboard(state: Adm11State) {
 
 export function register() {
   return {
-    objectives: COMPONENTS.map(([component, , objectives, risks, responses, health, owner], n) => ({
-      objective_id: stableId(`qm-objective:${component}`),
-      component,
-      ref: `QO-${String(n + 1).padStart(2, "0")}`,
-      title: LABELS[component] ?? component,
-      owner: { user_id: stableId(`user:${owner}`), name: owner },
-      health_flag: health === "at_risk" ? "at_risk" : null,
-      risks,
-      responses,
-      version: 1,
-      objectives,
-    })),
+    objectives: COMPONENTS.map(
+      ([component, , objectives, risks, responses, health, owner], n) => ({
+        objective_id: stableId(`qm-objective:${component}`),
+        component,
+        ref: `QO-${String(n + 1).padStart(2, "0")}`,
+        title: LABELS[component] ?? component,
+        owner: { user_id: stableId(`user:${owner}`), name: owner },
+        health_flag: health === "at_risk" ? "at_risk" : null,
+        risks,
+        responses,
+        version: 1,
+        objectives,
+      }),
+    ),
     risks: 38,
     responses: 58,
   };
@@ -110,19 +112,54 @@ export function consultationsLog() {
       ["C-01", "2026-09-09T10:00:00-05:00", "MO"],
       ["C-05", "2026-09-10T10:00:00-05:00", "CM"],
     ].map(([ref, created_at, ep]) => ({
-      consultation_id: stableId(`consultation:${ref}`), ref, created_at, status: "open",
-      engagement_id: stableId(`engagement:${ref}`), raised_by_name: ep,
+      consultation_id: stableId(`consultation:${ref ?? ""}`), ref, created_at, status: "open",
+      engagement_id: stableId(`engagement:${ref ?? ""}`), raised_by_name: ep,
       consulted_with_name: null, consulted_with_user_id: null,
     })), // prettier-ignore
   };
 }
 
 const FINDINGS = [
-  ["QM-F-02", "SOC 1 bridge letter not obtained for Oct–Dec", "inspection", "INS-26-02 Bayside 401(k)", "MO", "2026-09-30"],
-  ["QM-F-01", "Going-concern evaluation not documented before the report date", "inspection", "INS-26-01 Meridian", "HL", "2026-10-31"],
-  ["QM-F-03", "Checklist item C-22 marked N/A without a reason", "inspection", "INS-26-04 Cedar Hollow Farms", "IM", "2026-10-15"],
-  ["QM-F-04", "EBP Audit Workpapers override rate 9.0%", "agent_monitoring", null, "HL", "2026-10-15"],
-  ["QM-F-05", "K-1 Reconciliation Workpaper override rate 9.1%", "agent_monitoring", null, "SI", "2026-10-15"],
+  [
+    "QM-F-02",
+    "SOC 1 bridge letter not obtained for Oct–Dec",
+    "inspection",
+    "INS-26-02 Bayside 401(k)",
+    "MO",
+    "2026-09-30",
+  ],
+  [
+    "QM-F-01",
+    "Going-concern evaluation not documented before the report date",
+    "inspection",
+    "INS-26-01 Meridian",
+    "HL",
+    "2026-10-31",
+  ],
+  [
+    "QM-F-03",
+    "Checklist item C-22 marked N/A without a reason",
+    "inspection",
+    "INS-26-04 Cedar Hollow Farms",
+    "IM",
+    "2026-10-15",
+  ],
+  [
+    "QM-F-04",
+    "EBP Audit Workpapers override rate 9.0%",
+    "agent_monitoring",
+    null,
+    "HL",
+    "2026-10-15",
+  ],
+  [
+    "QM-F-05",
+    "K-1 Reconciliation Workpaper override rate 9.1%",
+    "agent_monitoring",
+    null,
+    "SI",
+    "2026-10-15",
+  ],
 ] as const;
 
 export function findings(state: Adm11State) {

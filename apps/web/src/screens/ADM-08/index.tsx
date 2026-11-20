@@ -24,7 +24,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useEffect, useMemo, useState } from "react";
 import { useOpenHref, useOpenOverlay } from "../../app-core/open";
 import { hrefOf, ov, to } from "../../routes/to";
-import { ConfirmItsYou, isForbidden } from "../../shell/mfa";
+import { ConfirmItsYou, isForbidden } from "../../app-core/mfa";
 import { GROUPS } from "../ADM-01/copy";
 import { COPY } from "./copy";
 import { integrationOverlay } from "./links";
@@ -344,7 +344,10 @@ function Ledgers({
     <section aria-label={COPY.ledgers.title} className="rounded-[12px] bg-card shadow-e1">
       <Band title={COPY.ledgers.title} />
       {gl.data !== undefined && (
-        <PostingSwitch enabled={gl.data.w1_enabled ?? false} released={gl.data.w1_released ?? false} />
+        <PostingSwitch
+          enabled={gl.data.w1_enabled ?? false}
+          released={gl.data.w1_released ?? false}
+        />
       )}
       {(
         [
@@ -405,7 +408,13 @@ function Ledgers({
 
 /** C-02-T27: ADR-344's firm switch for W1, a security admin's act with a fresh MFA; the server
  * refuses everyone else, and 409 while the registry has not released W1. */
-function PostingSwitch({ enabled, released }: { enabled: boolean; released: boolean }): JSX.Element {
+function PostingSwitch({
+  enabled,
+  released,
+}: {
+  enabled: boolean;
+  released: boolean;
+}): JSX.Element {
   const client = useQueryClient();
   const [asking, setAsking] = useState(false);
   const [mfa, setMfa] = useState(false);
@@ -413,13 +422,13 @@ function PostingSwitch({ enabled, released }: { enabled: boolean; released: bool
   const done = (on: boolean, by: string | null | undefined): void => {
     setAsking(false);
     setChangedBy(on ? (by ?? null) : null);
-    toast(on ? COPY.ledgers.w1.enabledToast : COPY.ledgers.w1.disabledToast);
+    toast.show(on ? COPY.ledgers.w1.enabledToast : COPY.ledgers.w1.disabledToast);
     void client.invalidateQueries({ queryKey: glPostingSettingsQueryKey() });
   };
   const failed = (error: unknown): void => {
     setAsking(false);
     if (isForbidden(error)) setMfa(true);
-    else toast(COPY.ledgers.w1.notReleasedToast);
+    else toast.show(COPY.ledgers.w1.notReleasedToast);
   };
   const enable = useMutation({
     ...enableCapabilityMutation(),
@@ -442,7 +451,11 @@ function PostingSwitch({ enabled, released }: { enabled: boolean; released: bool
     >
       <span className="flex items-center gap-[8px]">
         <Pill variant={enabled ? "green-tint" : "neutral"}>
-          {enabled ? COPY.ledgers.w1.on : released ? COPY.ledgers.w1.off : COPY.ledgers.w1.notReleased}
+          {enabled
+            ? COPY.ledgers.w1.on
+            : released
+              ? COPY.ledgers.w1.off
+              : COPY.ledgers.w1.notReleased}
         </Pill>
         {enabled ? (
           <Button

@@ -1,3 +1,12 @@
+---
+id: RB-100
+title: "Destruction role: staging proof (Q-05-T14)"
+owner: builder
+owning_epic: Q-05
+alarms: []
+last_rehearsed: never
+rehearse_by: 2028-10-27
+---
 # RB-100 · Destruction role: staging proof (Q-05-T14; ADR-179 / OQ-1; DEC-5823)
 
 **Who:** a security admin with staging AWS access (two people for the apply: one plans, the other

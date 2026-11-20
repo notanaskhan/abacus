@@ -860,8 +860,6 @@ def register_kind_source(
 
 
 TEMPLATES: Final[dict[str, str]] = {
-    # K-03-T06 (DEC-5848): a published template version this engagement may move to (SHL-22).
-    "template_update_available": "A template update is available for {subject}.",
     "agent_run.needs_input": "A run on {subject} is waiting for your input.",
     "agent_run.ready_for_review": "A run on {subject} is ready for review.",
     "agent_run.failed_v2": "A run on {subject} failed.",

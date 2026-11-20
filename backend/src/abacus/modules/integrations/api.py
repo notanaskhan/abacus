@@ -282,14 +282,14 @@ from abacus.modules.integrations.firm_health import register as _register_firm_h
 _register_firm_health()
 
 # C-02-T02 (DEC-5501): the posting, W1 and delivery error codes, declared before their services.
+# C-02-T25 (DEC-5817): ADR-344's switches and the client-visible write log.
+from abacus.modules.integrations import w1_switches as _w1_switches  # noqa: E402
 from abacus.modules.integrations import write_errors as write_errors  # noqa: E402
 
 # C-02-T12 (DEC-5621): the engagement posting switch, for adjustments' close approvals.
 from abacus.modules.integrations.posting_settings import (  # noqa: E402
     posting_enabled_for as posting_enabled_for,
 )
-# C-02-T25 (DEC-5817): ADR-344's switches and the client-visible write log.
-from abacus.modules.integrations import w1_switches as _w1_switches  # noqa: E402
 from abacus.modules.integrations.w1_switches import memo_prefix_of as memo_prefix_of  # noqa: E402
 
 _w1_switches.register()

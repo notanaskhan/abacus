@@ -23,6 +23,7 @@ from abacus.modules.connections.auto_retrieval import (
     on_connection_created,
     on_item_classified,
 )
+from abacus.modules.connections.connect import LogEntry, register_access_log_writes
 from abacus.modules.connections.connector import (
     Capabilities,
     Connector,
@@ -33,14 +34,7 @@ from abacus.modules.connections.connector import (
     RawPayload,
     Unavailable,
 )
-from abacus.modules.connections.connect import LogEntry, register_access_log_writes
 from abacus.modules.connections.connectors import quickbooks_online
-from abacus.modules.connections.qbo_format import (
-    QboVendor,
-    QboVendorPayment,
-    parse_qbo_vendor_payments,
-    parse_qbo_vendors,
-)
 from abacus.modules.connections.coverage import cover_entities, covers
 from abacus.modules.connections.entity import (
     ActivityLine,
@@ -116,6 +110,12 @@ from abacus.modules.connections.pipeline import (
 )
 from abacus.modules.connections.pulls import check_pull as check_ledger_pull
 from abacus.modules.connections.pulls import pull as pull_ledger
+from abacus.modules.connections.qbo_format import (
+    QboVendor,
+    QboVendorPayment,
+    parse_qbo_vendor_payments,
+    parse_qbo_vendors,
+)
 from abacus.modules.connections.reconnect import (
     ReconnectRequested,
     reconnect_todo_count,
@@ -214,12 +214,6 @@ register_engagement_owners(AUDIT_KINDS - {"connection"}, audit_owners)
 register_entity_owners({"connection"}, audit_entities)
 
 __all__ = [
-    "LogEntry",
-    "register_access_log_writes",
-    "QboVendor",
-    "QboVendorPayment",
-    "parse_qbo_vendor_payments",
-    "parse_qbo_vendors",
     "ACTIVITIES",
     "CONNECTORS",
     "FIRM_APP_DISABLED",
@@ -261,11 +255,14 @@ __all__ = [
     "LedgerSyncInput",
     "LedgerSyncStatusOut",  # C-01-T07: C9 v2.1 sync facts
     "LedgerSyncWorkflow",
+    "LogEntry",
     "NoConnection",
     "NotSupported",
     "Period",
     "PlanTickInput",
     "PlanTickResult",
+    "QboVendor",
+    "QboVendorPayment",
     "RawPayload",
     "ReconnectRequested",
     "RetrievalInput",
@@ -303,6 +300,8 @@ __all__ = [
     "is_retryable",
     "load_system_context",
     "normalise_raw",
+    "parse_qbo_vendor_payments",
+    "parse_qbo_vendors",
     "parse_trial_balance",
     "provider_client_companies",
     "pull_ledger",
@@ -310,6 +309,7 @@ __all__ = [
     "qbo_app",
     "quickbooks_online",
     "reconnect_todo_count",
+    "register_access_log_writes",
     "render",
     "request_reconnect",
     "retrieval_status",

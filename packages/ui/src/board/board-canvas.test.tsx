@@ -48,7 +48,7 @@ async function moveVia(
       {...extra}
     />,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Move to… Cash" }));
+  fireEvent.keyDown(screen.getByRole("button", { name: "Move to… Cash" }), { key: "ArrowDown" });
   await act(() => {
     fireEvent.click(screen.getByRole("menuitem", { name: menu }));
     return Promise.resolve();
@@ -99,7 +99,7 @@ describe("BoardCanvas (F-08-T18)", () => {
 
   it("a non-accepting column is disabled in the menu", () => {
     render(<BoardCanvas label="Board" columns={COLUMNS} cards={CARDS} onMoveIntent={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Move to… Cash" }));
+    fireEvent.keyDown(screen.getByRole("button", { name: "Move to… Cash" }), { key: "ArrowDown" });
     expect(screen.getByRole("menuitem", { name: "Archived" }).getAttribute("aria-disabled")).toBe(
       "true",
     );

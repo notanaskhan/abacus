@@ -3,8 +3,8 @@
 Row acceptance: "Saving the 8879 policy at 2 years answers 422 below_floor, Victor Hammond can
 place a hold while Samuel Ito cannot, and the FIL-02g drawer lists every version." Here: the
 database's floor check stays the 422 (`BelowFloor`), an override under its type's policy is 422
-`below_type_policy`; placing a hold is firm_admin, security_admin or a partner with fresh MFA, never
-agent or system (matrix); the hold request takes document classes and until-released; the
+`below_type_policy`; placing a hold is firm_admin, security_admin or a partner with fresh MFA,
+never agent or system (matrix); the hold request takes document classes and until-released; the
 versions trigger copies the policy text (migration 0994).
 """
 
@@ -26,7 +26,9 @@ def test_ac_below_floor_and_below_type_policy_are_422_codes() -> None:
 
 
 def test_ac_who_may_place_a_hold() -> None:
-    actions = yaml.safe_load((REPO / "docs/architecture/permission-matrix/evidence.yaml").read_text())["actions"]
+    actions = yaml.safe_load(
+        (REPO / "docs/architecture/permission-matrix/evidence.yaml").read_text()
+    )["actions"]
     row = actions["legal_hold.place"]
     assert {row["firm_admin"], row["security_admin"], row["firm_partner"]} == {"allow"}
     assert row["agent"] == "deny" and row["system"] == "deny" and row["mfa_recent"] == "required"

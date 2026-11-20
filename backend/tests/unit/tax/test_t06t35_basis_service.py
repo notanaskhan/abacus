@@ -19,8 +19,8 @@ from abacus.modules.identity.api import Forbidden
 from abacus.modules.tax import basis_service as bs
 
 
-def _request(contact_user: uuid.UUID) -> bs._Request:
-    return bs._Request(
+def _request(contact_user: uuid.UUID) -> bs._Request:  # pyright: ignore[reportPrivateUsage] -- the unit under test
+    return bs._Request(  # pyright: ignore[reportPrivateUsage] -- the unit under test
         uuid.uuid4(), uuid.uuid4(), uuid.uuid4(), uuid.uuid4(), None, contact_user,
         uuid.uuid4(), datetime.now(UTC), None, None,
     )  # fmt: skip
@@ -30,9 +30,9 @@ def test_ac_only_the_named_contact_sees_it() -> None:
     owen = uuid.uuid4()
     r = _request(owen)
     tenant = uuid.uuid4()
-    assert bs._viewer_is_contact(TenantContext(tenant, "human", str(owen)), r)
+    assert bs._viewer_is_contact(TenantContext(tenant, "human", str(owen)), r)  # pyright: ignore[reportPrivateUsage] -- the unit under test
     other = TenantContext(tenant, "human", str(uuid.uuid4()))
-    assert not bs._viewer_is_contact(other, r)
+    assert not bs._viewer_is_contact(other, r)  # pyright: ignore[reportPrivateUsage] -- the unit under test
 
 
 def test_owner_grant_decides() -> None:
@@ -84,7 +84,7 @@ def test_ac_second_send_is_decision_already_sent(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr(orgs, "contact_portal_facts", portal)
     monkeypatch.setattr(bs, "_loaded", loaded)
     monkeypatch.setattr(bs, "authorise", authorise)
-    monkeypatch.setattr(bs, "tenant_session", lambda _t: _S())
+    monkeypatch.setattr(bs, "tenant_session", lambda _t: _S())  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType] -- a monkeypatched double
     person = SimpleNamespace(
         client=False, is_support=False, tenant=TenantContext(uuid.uuid4(), "human", "u"),
         user_id=uuid.uuid4(), tenant_id=uuid.uuid4(),
@@ -94,7 +94,6 @@ def test_ac_second_send_is_decision_already_sent(monkeypatch: pytest.MonkeyPatch
 
 
 def test_provider_registered() -> None:
-    import abacus.modules.tax.api  # noqa: F401 -- registration at import
     from abacus.modules.engagements.api import client_approval_provider
 
     assert client_approval_provider("section_754") is bs.PROVIDER

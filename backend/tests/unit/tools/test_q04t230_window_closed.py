@@ -18,7 +18,7 @@ def _raw() -> dict[str, Any]:  # Any: a YAML document, edited per test
     return yaml.safe_load(rw.WINDOWS_FILE.read_text(encoding="utf-8"))
 
 
-def _autumn_2028(doc: dict[str, Any]) -> dict[str, Any]:
+def _autumn_2028(doc: dict[str, Any]) -> dict[str, Any]:  # Any: YAML entries
     return next(w for w in doc["windows"] if w["id"] == "autumn-2028")
 
 

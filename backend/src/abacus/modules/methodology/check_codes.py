@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Final
+from typing import Final, cast
 
 _CODES: dict[str, CheckCode] = {}
 COLUMN: Final = "check_code"
@@ -46,8 +46,8 @@ def unknown_items(payload: Mapping[str, object]) -> list[int]:
     if not isinstance(items, list):
         return []
     out: list[int] = []
-    for i, item in enumerate(items):
-        code = item.get(COLUMN) if isinstance(item, dict) else None
+    for i, item in enumerate(cast(list[object], items)):
+        code = cast(dict[str, object], item).get(COLUMN) if isinstance(item, dict) else None
         if isinstance(code, str) and code.strip() and code.strip() not in _CODES:
             out.append(i)
     return out
@@ -58,8 +58,9 @@ def bound_count(payload: Mapping[str, object]) -> tuple[int, int]:
     items = payload.get("items")
     if not isinstance(items, list):
         return 0, 0
-    bound = sum(1 for i in items if isinstance(i, dict) and i.get(COLUMN))
-    return bound, len(items) - bound
+    rows = cast(list[object], items)
+    bound = sum(1 for i in rows if isinstance(i, dict) and cast(dict[str, object], i).get(COLUMN))
+    return bound, len(rows) - bound
 
 
 __all__ = [

@@ -88,6 +88,21 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    # S52 (K-03 TV-1/SH-1 stubs, T-06 depth): holds, previews, estimates, a stop, publish and
+    # deprecate, rollout start and the reviewer's decisions act on existing records, 200.
+    "/v1/engagements/{engagement_id}/template-hold",
+    "/v1/engagements/{engagement_id}/template-hold/release",
+    "/v1/sheets/{sheet_id}/columns/{column_id}/agent/estimate",
+    "/v1/sheets/{sheet_id}/columns/{column_id}/agent/preview",
+    "/v1/sheets/{sheet_id}/columns/{column_id}/agent/runs/{run_id}/stop",
+    "/v1/tax-returns/{return_id}/fixed-asset-changes/{change_id}:approve",
+    "/v1/tax-returns/{return_id}/fixed-asset-changes/{change_id}:reject",
+    "/v1/tax-returns/{return_id}/states/sourcing:approve",
+    "/v1/template-versions/{version_id}/deprecate",
+    "/v1/template-versions/{version_id}/preview",
+    "/v1/template-versions/{version_id}/publish",
+    "/v1/template-versions/{version_id}/rollout/start",
+    "/v1/template-versions/{version_id}/scoping-rules/preview",
     # S50 (T-08, Q-05 stubs): status moves, decisions and confirmations on existing records, 200.
     "/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/reopen-for-reissue",
     "/v1/destruction-batches/{batch_id}/cancel",
@@ -697,6 +712,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/mapping-sets/{mapping_set_id}/suggestions",
         "/v1/platform/tenants",
         "/v1/platform/tenants/{tenant_code}/sandbox",
+        # S52 (K-03): applying a template update and an agent-column run start work, so 202.
+        "/v1/engagements/{engagement_id}/template-update",
+        "/v1/sheets/{sheet_id}/columns/{column_id}/agent/runs",
         # S50 (T-08, Q-05 stubs): a manifest build, a standards run, a draft or an analysis
         # starts work, so 202.
         "/v1/aars/{aar_id}/recommendation:draft",
@@ -720,6 +738,16 @@ def test_ac20_creating_routes_answer_201() -> None:
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
     decisions = "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/"
     assert created == {
+        # S52 (K-03 TV-1/SH-1 stubs, C-02-T24): a version, a column, rows, a view, a sheet, an
+        # imported skill and a reversing entry each insert a new row, 201.
+        "/v1/engagement-templates/{template_id}/versions",
+        "/v1/proposed-entries/{entry_id}/reverse",
+        "/v1/sheets/{sheet_id}/columns",
+        "/v1/sheets/{sheet_id}/rows",
+        "/v1/sheets/{sheet_id}/rows/from-sample",
+        "/v1/sheets/{sheet_id}/views",
+        "/v1/skills/import",
+        "/v1/work-items/{work_item_id}/sheets",
         # C-01-T04, T05, T07 and T-07-T05 (S44 stubs): each inserts a new row, 201.
         "/v1/clients/{client_id}/close-plan/drafts",
         "/v1/clients/{client_id}/close-plan/drafts/{version}/request-templates",

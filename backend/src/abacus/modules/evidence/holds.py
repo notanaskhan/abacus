@@ -54,8 +54,13 @@ from abacus.modules.identity.api import (
 
 ScopeKind = Literal["client", "client_tax_year", "engagement", "work_item"]
 ReasonCode = Literal[
-    "irs_examination", "litigation", "regulatory_inquiry", "subpoena", "other",
-    "state_controversy", "client_dispute",  # Q-05-T13 (0964 widened the CHECK)
+    "irs_examination",
+    "litigation",
+    "regulatory_inquiry",
+    "subpoena",
+    "other",
+    "state_controversy",
+    "client_dispute",  # Q-05-T13 (0964 widened the CHECK)
 ]
 HoldStatus = Literal["applying", "active", "releasing", "released"]
 OPEN: Final = ("applying", "active")  # holds that cover new versions

@@ -49,7 +49,7 @@ export function canvasNodes(g: RelationshipGraphOut): GraphCanvasNode[] {
     id: n.node_id,
     kind: nodeKind(n),
     name: n.label,
-    line: n.external ? COPY.external : (n.sublabel ?? ""),
+    line: n.sublabel ?? "", // an external party's line ("Not a … client") is the server's
     ...(n.return_state ? { state: { label: n.return_state, variant: "neutral" as const } } : {}),
   }));
 }
@@ -110,7 +110,7 @@ export function inspectorOf(g: RelationshipGraphOut, id: string | null): GraphIn
   const kind = nodeKind(n);
   return {
     title: n.label,
-    sub: n.external ? COPY.external : (n.sublabel ?? "").replace(TIN, "").replace(/ · $/u, ""),
+    sub: (n.sublabel ?? "").replace(TIN, "").replace(/ · $/u, ""),
     icon: kind === "person" ? "user" : kind === "return" ? "file-text" : "building-2",
     tin: (n.sublabel ?? "").match(TIN)?.[0] ?? null,
     kv: roles.length ? [{ key: "roles", label: COPY.roles, lines: roles }] : [],
@@ -189,7 +189,14 @@ export function CLI03({
         }}
         subbar={
           selected !== null && mine.length > 0 ? (
-            <Button variant="ghost" size="sm" opensDialog onClick={() => setSheet("edit")}>
+            <Button
+              variant="ghost"
+              size="sm"
+              opensDialog
+              onClick={() => {
+                setSheet("edit");
+              }}
+            >
               {COPY.edit}
             </Button>
           ) : undefined
@@ -208,7 +215,9 @@ export function CLI03({
       />
       <SheetModal
         open={sheet === "add"}
-        onOpenChange={(o) => setSheet(o ? "add" : null)}
+        onOpenChange={(o) => {
+          setSheet(o ? "add" : null);
+        }}
         title={COPY.add}
         action={
           <Button
@@ -228,16 +237,20 @@ export function CLI03({
           <Picker
             label={COPY.kind}
             value={kind}
-            onChange={(v) => setKind(v as keyof typeof COPY.kinds)}
+            onChange={(v) => {
+              setKind(v as keyof typeof COPY.kinds);
+            }}
             options={Object.entries(COPY.kinds).map(([value, label]) => ({ value, label }))}
           />
-          <Picker label={COPY.to} value={to} onChange={setTo} options={people} />
+          <Picker label={COPY.toPerson} value={to} onChange={setTo} options={people} />
           <label className="flex flex-col gap-[4px] text-dense text-ink-2">
             {COPY.percent}
             <input
               inputMode="decimal"
               value={percent}
-              onChange={(e) => setPercent(e.target.value)}
+              onChange={(e) => {
+                setPercent(e.target.value);
+              }}
               className="h-[32px] rounded-[8px] bg-card px-[8px] text-body text-ink shadow-e1"
             />
           </label>
@@ -246,7 +259,9 @@ export function CLI03({
             <input
               type="date"
               value={effectiveFrom}
-              onChange={(e) => setEffectiveFrom(e.target.value)}
+              onChange={(e) => {
+                setEffectiveFrom(e.target.value);
+              }}
               className="h-[32px] rounded-[8px] bg-card px-[8px] text-body text-ink shadow-e1"
             />
           </label>
@@ -254,10 +269,17 @@ export function CLI03({
       </SheetModal>
       <SheetModal
         open={sheet === "edit"}
-        onOpenChange={(o) => setSheet(o ? "edit" : null)}
+        onOpenChange={(o) => {
+          setSheet(o ? "edit" : null);
+        }}
         title={COPY.edit}
         action={
-          <Button variant="primary" onClick={() => setSheet(null)}>
+          <Button
+            variant="primary"
+            onClick={() => {
+              setSheet(null);
+            }}
+          >
             {COPY.close}
           </Button>
         }
@@ -266,7 +288,9 @@ export function CLI03({
           {COPY.reason}
           <input
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
+            onChange={(e) => {
+              setReason(e.target.value);
+            }}
             className="h-[32px] rounded-[8px] bg-card px-[8px] text-body text-ink shadow-e1"
           />
         </label>

@@ -607,7 +607,9 @@ def _run_out(r: object) -> TaxPracticeRunOut:
     run = cast(RunView, r)
     items = [
         TaxPracticeRunItemOut(
-            work_item_id=i.work_item_id, client_name=i.client_name, status=cast(Any, i.status),
+            work_item_id=i.work_item_id,
+            client_name=i.client_name,
+            status=cast(Any, i.status),  # Any: a row value
             checks_total=i.checks_total, checks_passed=i.checks_passed, exceptions=i.exceptions,
             linked_issues=i.linked, created_issues=i.created,
             issue_count=i.linked + i.created,
@@ -616,8 +618,10 @@ def _run_out(r: object) -> TaxPracticeRunOut:
     ]  # fmt: skip
     return TaxPracticeRunOut(
         run_id=run.run_id, standard_version_id=run.version_id, standard_label=run.label,
-        form=run.form, status=cast(Any, run.status), started_at=cast(Any, run.started_at),
-        completed_at=cast(Any, run.completed_at),
+        form=run.form,
+        status=cast(Any, run.status),  # Any: a row value
+        started_at=cast(Any, run.started_at),  # Any: a row value
+        completed_at=cast(Any, run.completed_at),  # Any: a row value
         tiles=TaxPracticeRunTilesOut(
             selected=len(items),
             running=sum(1 for i in items if i.status == "running"),
@@ -663,10 +667,11 @@ async def standards_run_checks_route(
         out.append(
             TaxPracticeCheckOut(
                 result_id=cast(UUID, c["id"]), check_key=key, display_code=key.split("/")[-1],
-                title=key.split("/")[-1], outcome=cast(Any, c["confirmed"] or c["outcome"]),
-                difference=cast(Any, c["difference"]),
-                linked_issue_id=cast(Any, c["linked_issue_id"]),
-                created_issue_id=cast(Any, c["created_issue_id"]),
+                title=key.split("/")[-1],
+                outcome=cast(Any, c["confirmed"] or c["outcome"]),  # Any: a row value
+                difference=cast(Any, c["difference"]),  # Any: a row value
+                linked_issue_id=cast(Any, c["linked_issue_id"]),  # Any: a row value
+                created_issue_id=cast(Any, c["created_issue_id"]),  # Any: a row value
                 allowed_actions=(
                     ["confirm"] if c["outcome"] == "manual_pending" and not c["confirmed"] else []
                 ),

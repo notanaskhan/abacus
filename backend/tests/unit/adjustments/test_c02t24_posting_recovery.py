@@ -17,7 +17,9 @@ from pathlib import Path
 
 from abacus.modules.adjustments import posting_recovery
 from abacus.modules.adjustments.posting_types import PostingInput
-from abacus.modules.closes.registrations import _next_period  # pyright: ignore[reportPrivateUsage]
+from abacus.modules.closes.registrations import (
+    _next_period,  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
+)
 from abacus.modules.integrations.api import (
     FakeQboTransport,
     JournalEntry,
@@ -35,6 +37,8 @@ AJE_03 = JournalEntry(
     ),
 )
 
+CONFLICT_ID = __import__("uuid").uuid4()  # the conflict row the INSERT returns
+
 
 async def test_ac_inactive_account_fails_then_posts_once_on_retry() -> None:
     fake = FakeQboTransport(accounts={"1090": True, "1595": False})
@@ -45,7 +49,9 @@ async def test_ac_inactive_account_fails_then_posts_once_on_retry() -> None:
     second = await writer.post(AJE_03, "batch:aje-03")
     again = await writer.post(AJE_03, "batch:aje-03")  # a replayed retry: the same answer
     assert second.verified and again.external_ref == second.external_ref
-    assert [w for w in fake.writes if w[0] == "POST JournalEntry"] == [("POST JournalEntry", "AJE-03")]
+    assert [w for w in fake.writes if w[0] == "POST JournalEntry"] == [
+        ("POST JournalEntry", "AJE-03")
+    ]
 
 
 async def test_ac_closing_date_failure_is_a_conflict_not_an_issue() -> None:
@@ -59,7 +65,7 @@ async def test_ac_closing_date_failure_is_a_conflict_not_an_issue() -> None:
 
             class _S:
                 async def scalar(self, *_: object, **__: object) -> object:
-                    return "c-1"
+                    return CONFLICT_ID  # the conflict row the INSERT returns
 
             self.session = _S()
 

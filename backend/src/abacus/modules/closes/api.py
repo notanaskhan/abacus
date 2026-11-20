@@ -132,6 +132,7 @@ SUBSCRIPTIONS: dict[str, Handler] = {
     **REGISTRATION_SUBSCRIPTIONS,  # C-01-T26: close runs and answered questions (C16)
 }
 from abacus.modules.closes.package_render import ACTIVITIES as _PACKAGE_ACTIVITIES  # noqa: E402
+from abacus.modules.closes.package_render import FINISH as PACKAGE_FINISH  # noqa: E402
 from abacus.modules.closes.package_render import PackageAssemblyWorkflow  # noqa: E402
 from abacus.modules.closes.release import register as _register_release  # noqa: E402
 
@@ -151,6 +152,7 @@ __all__ = [
     "ACTIVITIES",
     "AGENT_TOOLS",
     "CLOSE_TARGET",
+    "PACKAGE_FINISH",
     "PUBLISH_REQUESTS",
     "RECOMPUTE_REQUESTS",
     "REQUESTS_SECONDS_UNTIL",
@@ -160,13 +162,13 @@ __all__ = [
     "AssigneesIn",
     "CloseFacts",
     "CloseTemplateImportIn",
+    "PackageAssemblyWorkflow",
     "PlanDraftIn",
     "PlanRowIn",
     "PlanRowPatchIn",
     "PublishIn",
     "PublishInput",
     "PublishResult",
-    "PackageAssemblyWorkflow",
     "RequestPublishWorkflow",
     "RequestTemplateIn",
     "StatusGuard",

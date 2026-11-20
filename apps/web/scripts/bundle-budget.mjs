@@ -72,7 +72,7 @@ export function budgetLines(manifest, size) {
     // add to the portal's initial load, not to nothing.
     if (firm === undefined) initial = portalInitial;
   }
-  for (const [key, chunk] of Object.entries(manifest)) {
+  for (const chunk of Object.values(manifest)) {
     const engine = ENGINE_BUDGETS[chunk.name ?? ""];
     if (engine !== undefined && chunk.file.endsWith(".js")) {
       lines.push({ name: `engine ${chunk.name}`, bytes: size(chunk.file), budget: engine });

@@ -64,6 +64,12 @@ _ROWS = {
     "instrument_interpretation": text(
         "SELECT id, engagement_id FROM instrument_interpretations WHERE id = ANY(:ids)"
     ),
+    # S52 end pass: T-06-T36's PTET election and T-08-T14's check results, each its return's.
+    "ptet_election": text("SELECT id, engagement_id FROM ptet_elections WHERE id = ANY(:ids)"),
+    "standards_check_result": text(
+        "SELECT c.id, i.engagement_id FROM standards_check_results c "
+        "JOIN standards_run_items i ON i.id = c.run_item_id WHERE c.id = ANY(:ids)"
+    ),
     "instrument_determination": text(
         "SELECT d.id, i.engagement_id FROM instrument_determinations d "
         "JOIN instrument_interpretations i ON i.id = d.interpretation_id WHERE d.id = ANY(:ids)"

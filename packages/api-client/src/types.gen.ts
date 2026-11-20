@@ -10465,7 +10465,7 @@ export type CloseIssueOut = {
     /**
      * Issue Class
      */
-    issue_class: 'bank_rec' | 'schedule' | 'flux' | 'recategorize' | 'intake';
+    issue_class: 'bank_rec' | 'schedule' | 'flux' | 'recategorize' | 'intake' | 'posting';
     /**
      * Issue Id
      */
@@ -14420,7 +14420,7 @@ export type ConsultationLinkIn = {
     /**
      * Kind
      */
-    kind: 'finding' | 'issue' | 'document' | 'workpaper' | 'post_issuance_case';
+    kind: 'finding' | 'issue' | 'document' | 'workpaper' | 'post_issuance_case' | 'decision_card';
     /**
      * Target Id
      */
@@ -14438,7 +14438,7 @@ export type ConsultationLinkOut = {
     /**
      * Kind
      */
-    kind: 'finding' | 'issue' | 'document' | 'workpaper' | 'post_issuance_case';
+    kind: 'finding' | 'issue' | 'document' | 'workpaper' | 'post_issuance_case' | 'decision_card';
     /**
      * Linked By Name
      */
@@ -58978,15 +58978,15 @@ export type SheetStatusOut = {
  */
 export type SheetViewIn = {
     /**
+     * Columns Off
+     */
+    columns_off?: Array<string>;
+    /**
      * Filters
      */
     filters?: Array<{
         [key: string]: string;
     }>;
-    /**
-     * Hidden
-     */
-    hidden?: Array<string>;
     /**
      * Name
      */
@@ -59014,15 +59014,15 @@ export type SheetViewListOut = {
  */
 export type SheetViewOut = {
     /**
+     * Columns Off
+     */
+    columns_off?: Array<string>;
+    /**
      * Filters
      */
     filters?: Array<{
         [key: string]: string;
     }>;
-    /**
-     * Hidden
-     */
-    hidden?: Array<string>;
     /**
      * Name
      */
@@ -67728,6 +67728,22 @@ export type TemplatePreviewIn = {
 };
 
 /**
+ * TemplatePreviewOut
+ *
+ * A SAMPLE-watermarked render from the version's synthetic sample data; never evidence.
+ */
+export type TemplatePreviewOut = {
+    /**
+     * Expires At
+     */
+    expires_at: string;
+    /**
+     * Pages
+     */
+    pages: Array<PreviewPageOut>;
+};
+
+/**
  * TemplateRefOut
  */
 export type TemplateRefOut = {
@@ -67852,6 +67868,20 @@ export type TemplateVersionOut = {
      * Version Id
      */
     version_id: string;
+};
+
+/**
+ * TemplateVersionPreviewOut
+ *
+ * KNW-06b's dock: 38 steps · 14 sheets · 47 requests · 2 triggers · 3 report templates ·
+ * 5 skills.
+ */
+export type TemplateVersionPreviewOut = {
+    rail: RailCountsOut;
+    /**
+     * Skipped Steps
+     */
+    skipped_steps?: number;
 };
 
 /**
@@ -76010,20 +76040,6 @@ export type AbacusModulesMethodologyContractStepOut = {
 };
 
 /**
- * TemplatePreviewOut
- *
- * KNW-06b's dock: 38 steps · 14 sheets · 47 requests · 2 triggers · 3 report templates ·
- * 5 skills.
- */
-export type AbacusModulesMethodologyTemplatesV2ContractTemplatePreviewOut = {
-    /**
-     * Hidden Steps
-     */
-    hidden_steps?: number;
-    rail: RailCountsOut;
-};
-
-/**
  * TemplatePublishIn
  */
 export type AbacusModulesMethodologyTemplatesV2ContractTemplatePublishIn = {
@@ -76049,22 +76065,6 @@ export type AbacusModulesReportingContractApprovalOut = {
      * By
      */
     by: string;
-};
-
-/**
- * TemplatePreviewOut
- *
- * A SAMPLE-watermarked render from the version's synthetic sample data; never evidence.
- */
-export type AbacusModulesReportingContractTemplatePreviewOut = {
-    /**
-     * Expires At
-     */
-    expires_at: string;
-    /**
-     * Pages
-     */
-    pages: Array<PreviewPageOut>;
 };
 
 /**
@@ -100417,10 +100417,6 @@ export type SendDecisionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SendDecisionError = SendDecisionErrors[keyof SendDecisionErrors];
@@ -157357,7 +157353,7 @@ export type PreviewReportTemplateResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesReportingContractTemplatePreviewOut;
+    200: TemplatePreviewOut;
 };
 
 export type PreviewReportTemplateResponse = PreviewReportTemplateResponses[keyof PreviewReportTemplateResponses];
@@ -165073,10 +165069,6 @@ export type RaiseDecisionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RaiseDecisionError = RaiseDecisionErrors[keyof RaiseDecisionErrors];
@@ -168589,10 +168581,6 @@ export type SourcingUndoErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SourcingUndoError = SourcingUndoErrors[keyof SourcingUndoErrors];
@@ -168705,10 +168693,6 @@ export type SourcingProposeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SourcingProposeError = SourcingProposeErrors[keyof SourcingProposeErrors];
@@ -168769,10 +168753,6 @@ export type PtetErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PtetError = PtetErrors[keyof PtetErrors];
@@ -174657,7 +174637,7 @@ export type PreviewResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesMethodologyTemplatesV2ContractTemplatePreviewOut;
+    200: TemplateVersionPreviewOut;
 };
 
 export type PreviewResponse = PreviewResponses[keyof PreviewResponses];

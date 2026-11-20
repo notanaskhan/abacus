@@ -247,6 +247,9 @@ SUBSCRIPTIONS["residency_determination.confirmed"] = _residency_confirmed
 from abacus.modules.tax import standards_runs as _standards_runs  # noqa: E402
 
 _standards_runs.register()
+StandardsRunWorkflow = _standards_runs.StandardsRunWorkflow  # T-08-T14, for the replay recorder
+STANDARDS_ITEM_ACTIVITY = _standards_runs.ITEM_ACTIVITY
+STANDARDS_FINISH_ACTIVITY = _standards_runs.FINISH_ACTIVITY
 WORKFLOWS: dict[type, str] = {
     **k1_release.WORKFLOWS,
     **_schedule_jobs.WORKFLOWS,
@@ -344,6 +347,8 @@ __all__ = [
     "FORM_FOR_RULES",
     "ROUTERS",
     "SCHEDULES",
+    "STANDARDS_FINISH_ACTIVITY",
+    "STANDARDS_ITEM_ACTIVITY",
     "SUBSCRIPTIONS",
     "TRANSITIONS",
     "WORKFLOWS",
@@ -379,6 +384,7 @@ __all__ = [
     "SeedSection",
     "SeedWorksheet",
     "StaleReturn",
+    "StandardsRunWorkflow",
     "TaxCalendarSweepWorkflow",
     "TransitionRefused",
     "WorkbookFixChange",

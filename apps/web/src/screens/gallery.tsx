@@ -4370,7 +4370,11 @@ function ADM11Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   if (ready !== state) return null;
   return (
     <div data-artboard={state}>
-      <ADM11 {...(state === "b" ? { office: "Denver" } : {})} {...(state === "c" ? { expandedAgent: "ebp_audit_workpapers" } : {})} readOnly={state === "e"} />
+      <ADM11
+        {...(state === "b" ? { office: "Denver" } : {})}
+        {...(state === "c" ? { expandedAgent: "ebp_audit_workpapers" } : {})}
+        readOnly={state === "e"}
+      />
     </div>
   );
 }
@@ -4396,7 +4400,14 @@ function AUD28Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   if (ready !== state) return null;
   return (
     <div data-artboard={state}>
-      <AUD28 selectedRef={({ a: "C-03", b: "C-04", c: "C-01", d: "C-03", e: null, f: "C-03", g: "C-01" } as const)[state]} initial={state === "f" ? "new" : state === "g" ? "conclude" : undefined} />
+      <AUD28
+        selectedRef={
+          ({ a: "C-03", b: "C-04", c: "C-01", d: "C-03", e: null, f: "C-03", g: "C-01" } as const)[
+            state
+          ]
+        }
+        initial={state === "f" ? "new" : state === "g" ? "conclude" : undefined}
+      />
     </div>
   );
 }
@@ -4422,7 +4433,20 @@ function FIL02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   if (ready !== state) return null;
   return (
     <div data-artboard={state}>
-      <FIL02 tab={state === "b" || state === "h" ? "holds" : ["c", "d", "e", "i"].includes(state) ? "destruction" : "policies"} readOnly={state === "f"} initial={state === "d" ? "approve" : state === "g" ? "drawer" : state === "h" ? "hold" : undefined} drawerPolicyId={state === "g" ? "00000000-0000-4000-8000-000000000001" : undefined} />
+      <FIL02
+        tab={
+          state === "b" || state === "h"
+            ? "holds"
+            : ["c", "d", "e", "i"].includes(state)
+              ? "destruction"
+              : "policies"
+        }
+        readOnly={state === "f"}
+        initial={
+          state === "d" ? "approve" : state === "g" ? "drawer" : state === "h" ? "hold" : undefined
+        }
+        drawerPolicyId={state === "g" ? "00000000-0000-4000-8000-000000000001" : undefined}
+      />
     </div>
   );
 }

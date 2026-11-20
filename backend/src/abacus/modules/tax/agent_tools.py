@@ -6,10 +6,9 @@ T-04-T19's tools are declared in `tools.py`, so this imports it (registration ha
 
 from __future__ import annotations
 
-from abacus.modules.tax import tools  # registers the tax.* tools at import
-
 # T-06-T38 (DEC-5831): `ledger.tb_mapper` mode `tax_lines`'s propose tool (tax.suggest_tax_lines).
-from abacus.modules.tax import tb_mapper_tools as tb_mapper_tools  # noqa: E402
+from abacus.modules.tax import tb_mapper_tools as tb_mapper_tools
+from abacus.modules.tax import tools  # registers the tax.* tools at import
 
 __all__ = ["tools"]
 # T-07-T14: the instrument reader's tools (tax.read_instrument_clauses, tax.read_trust_facts,

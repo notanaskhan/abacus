@@ -3,7 +3,7 @@
 // conclusion and the implemented toggle are set."
 import { client } from "@abacus/api-client/client";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { installFixtureMode } from "../../app-core/fixture-mode";
 import { CONSULTEES, ENGAGEMENT_NAMES, SELECTED } from "../../fixtures/seed/aud28";
@@ -27,7 +27,12 @@ function show(state: Aud28ScenarioState, props: Partial<AUD28Props> = {}): void 
   restore = installFixtureMode(scenarios[state]);
   render(
     <QueryClientProvider client={newQueryClient()}>
-      <AUD28 selectedRef={SELECTED[state]} consultees={PEOPLE} engagementNames={ENGAGEMENT_NAMES} {...props} />
+      <AUD28
+        selectedRef={SELECTED[state]}
+        consultees={PEOPLE}
+        engagementNames={ENGAGEMENT_NAMES}
+        {...props}
+      />
     </QueryClientProvider>,
   );
 }
@@ -63,8 +68,10 @@ describe("AUD-28 · Consultations log", () => {
 
   it("f · the consultee picker lists partners and specialists only", async () => {
     show("f", { initial: "new" });
-    const picker = await screen.findByRole("combobox");
-    const names = within(picker).getAllByRole("option").map((o) => o.textContent ?? "");
+    const trigger = await screen.findByRole("button", { name: COPY.sheet.consultee });
+    fireEvent.keyDown(trigger, { key: "ArrowDown" });
+    const names = (await screen.findAllByRole("menuitemradio")).map((o) => o.textContent);
+    expect(names.length).toBeGreaterThan(0);
     expect(names.some((n) => /Agent/u.test(n))).toBe(false);
   });
 
@@ -72,7 +79,9 @@ describe("AUD-28 · Consultations log", () => {
     show("g", { initial: "conclude" });
     const save = await screen.findByRole("button", { name: COPY.conclude.save });
     expect((save as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Not a going-concern indicator." } });
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "Not a going-concern indicator." },
+    });
     expect((save as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(screen.getByRole("switch", { name: COPY.conclude.implemented }));
     expect((save as HTMLButtonElement).disabled).toBe(false);

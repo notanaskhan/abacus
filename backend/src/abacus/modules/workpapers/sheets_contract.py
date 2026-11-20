@@ -177,7 +177,7 @@ class SheetViewOut(BaseModel):
     name: Annotated[str, Field(max_length=80), Internal]
     filters: Annotated[list[dict[str, str]], Internal] = []
     sort: Annotated[list[dict[str, str]], Internal] = []
-    hidden: Annotated[list[str], Internal] = []
+    columns_off: Annotated[list[str], Internal] = []  # DEC-43: no "hidden" field names
 
 
 class SheetViewListOut(BaseModel):
@@ -192,7 +192,7 @@ class SheetViewIn(BaseModel):
     name: Annotated[str, Field(min_length=1, max_length=80), Internal]
     filters: Annotated[list[dict[str, str]], Internal] = []
     sort: Annotated[list[dict[str, str]], Internal] = []
-    hidden: Annotated[list[str], Internal] = []
+    columns_off: Annotated[list[str], Internal] = []  # DEC-43: no "hidden" field names
 
 
 class SheetColumnIn(BaseModel):

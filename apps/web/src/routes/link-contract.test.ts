@@ -145,9 +145,18 @@ describe("route registry against HANDOFF_VERSION", () => {
     }).not.toThrow();
   });
 
+  // T-06-T40 (DEC-5838): CLI-03 is built from TPL-14 and its row with no handoff board (gaps.md
+  // "CLI-03 — no board"); it is the one manifest screen the handoff does not list.
+  const NO_BOARD = new Set(["CLI-03"]);
+
   it("the manifest holds exactly the handoff's screen IDs", () => {
     const handoff = GRAPH.screens.map((s) => s.id).sort();
-    expect(Object.keys(ENTRIES).sort()).toEqual(handoff);
+    expect(
+      Object.keys(ENTRIES)
+        .filter((id) => !NO_BOARD.has(id))
+        .sort(),
+    ).toEqual(handoff);
+    expect([...NO_BOARD].filter((id) => handoff.includes(id))).toEqual([]);
   });
 
   it("the never-targeted list matches the link graph", () => {

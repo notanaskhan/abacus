@@ -496,6 +496,19 @@ def workflow_id(tenant_id: UUID, work_item_id: UUID, grant_id: UUID) -> str:
     return f"release:{tenant_id}:{work_item_id}:{grant_id}"
 
 
+async def reissue_of(tenant: TenantContext, work_item_id: UUID) -> UUID | None:
+    """Q-05-T17: the original release the report's current draft reissues, or None."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT v.reissue_of_release_id FROM audit_reports r JOIN audit_report_versions v "
+                "ON v.id = r.current_version_id WHERE r.work_item_id = :wi"
+            ),
+            {"wi": work_item_id},
+        )
+    return None if found is None else UUID(str(found))
+
+
 async def request_release(
     ctx: AuthContext, work_item_id: UUID, seen_gate_hash: str, idempotency_key: str
 ) -> ReleaseRequest | ReleasedFacts:
@@ -513,13 +526,8 @@ async def request_release(
         if await release_mode(ctx.tenant) != "in_app":
             raise ReleaseModeExternal(facts={"mode": "external"})
         done = await released(ctx.tenant, work_item_id)
-        reissuing = await tx.session.scalar(
-            text(
-                "SELECT v.reissue_of_release_id FROM audit_reports r JOIN audit_report_versions v "
-                "ON v.id = r.current_version_id WHERE r.work_item_id = :wi"
-            ),
-            {"wi": work_item_id},
-        )  # Q-05-T17: a reissue draft releases as kind reissue, never replaying the original
+        # Q-05-T17: a reissue draft releases as kind reissue, never replaying the original.
+        reissuing = await reissue_of(ctx.tenant, work_item_id)
         if done is not None and reissuing is None:
             if done.idempotency_key == idempotency_key:
                 tx.record(
@@ -726,9 +734,12 @@ async def record_in_app_release(
                     "gate_snapshot, gate_snapshot_sha256, final_document_version_id, "
                     "deliverable_ids, approval_grant_id, idempotency_key, actor_kind, actor_id, "
                     "released_at) "
-                    "VALUES (:tenant, :engagement, :wi, CASE WHEN (SELECT reissue_of_release_id FROM "
+                    "VALUES (:tenant, :engagement, :wi, CASE WHEN (SELECT reissue_of_release_id "
+                    "FROM "
                     "audit_report_versions WHERE id = :version) IS NULL THEN 'original' ELSE "
-                    "'reissue' END, (SELECT reissue_of_release_id FROM audit_report_versions WHERE "
+                    "'reissue' END, (SELECT reissue_of_release_id FROM audit_report_versions "
+                    "WHERE "
+                    ""
                     "id = :version), :version, :version_hash, "
                     ":by, :report_date, :city, CAST(:snapshot AS jsonb), :snapshot_sha, :final, "
                     ":deliverables, :grant, :key, 'human', :actor, :released_at) RETURNING id"

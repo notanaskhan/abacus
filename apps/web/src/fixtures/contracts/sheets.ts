@@ -1,7 +1,9 @@
 // F-08-T02 (DEC-5617): draft view-model types for the T18 Sheet kit (F-08 §5 "View models"),
 // typed against by the wave-5 seed slices until K-03's sheets contract lands, which deletes this
 // file (chapter 04 §6.5). Cell status words are the generated `sheet_cell` codes (F-08-T04).
-export type { SheetCellState } from "@abacus/ui";
+import type { SheetCellState } from "@abacus/ui";
+
+export type { SheetCellState };
 export type SurlConclusion = "properly_included" | "improperly_excluded" | "properly_excluded";
 
 export interface SheetSectionDraft {

@@ -289,7 +289,7 @@ def m2_as_drafted(values: Values) -> M2:
 
 
 def m2_with_fix(values: Values, rows: Sequence[CapitalRow]) -> M2:
-    """The M-2 rebuilt from the partners' capital rows: what an approved fix writes (T-05-T50)."""
+    """The M-2 rebuilt from the partners' capital rows: what an approved fix sets (T-05-T50)."""
     t = capital_totals(rows)
     drafted = {n: dec(values, f"07!B{n}") for n, _l in M2_LINES}
     drafted.update({1: t.beginning, 2: t.contributions, 3: t.income, 6: t.distributions})

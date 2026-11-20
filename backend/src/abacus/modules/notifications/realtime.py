@@ -292,6 +292,13 @@ def register() -> None:
                 event_type.split(".")[0], ref_field, (("engagement", "engagement_id"),)
             ),
         )
+    # T-08-T14 (DEC-5840): TAX-14's run tiles, registered here as well as by tax for the same
+    # import-order reason (identical entries).
+    if realtime.invalidation_of("standards_run.progressed") is None:
+        realtime.register_invalidation(
+            "standards_run.progressed",
+            realtime.Invalidation("standards_run", "run_id", (("work_item", "work_item_id"),)),
+        )
     # TASK-7325: a session's items, on its own topic (the workbench registers who may subscribe).
     realtime.register_invalidation(
         "session.items_changed",

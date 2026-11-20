@@ -201,8 +201,10 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
 }
 
 # S46: A-08-T15 (0893) link principals.
-TABLES: frozenset[str] = _TABLES | frozenset({"inspection_access_grants"}) | frozenset(
-    {"link_page_credentials", "link_principal_challenges", "link_principals"}
+TABLES: frozenset[str] = (
+    _TABLES
+    | frozenset({"inspection_access_grants"})
+    | frozenset({"link_page_credentials", "link_principal_challenges", "link_principals"})
 )
 INSERT_ONLY: frozenset[str] = _INSERT_ONLY | frozenset(
     {"link_page_credentials", "link_principal_challenges"}

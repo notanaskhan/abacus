@@ -32,3 +32,13 @@ gradients in product UI, emoji, saturated blue, heavy shadows, invented colours,
 ## Walls and agent
 - Walled users: 404, absent from lists, no hidden counts (INV-3, DEC-43).
 - The agent never publishes, applies, holds, adopts, signs or raises an exception here (INV-1); attribution "‹person› via Agent" (INV-5).
+
+## Links
+
+The designed links of the handoff link graph (link-contract rule 5); each is wired when its screen task builds the screen (K-03-T11/T12).
+
+| From | To | Status |
+|---|---|---|
+| tooltip or toast inside kits/SHT02 Column | SHT-04 | designed (handoff link graph) |
+| tooltip or toast inside kits/SHT02 Column | SHL-18 | designed (handoff link graph) |
+| tooltip or toast inside kits/SHT02 Column | KNW-06 | designed (handoff link graph) |

@@ -421,7 +421,9 @@ async def create_override(
     anchor = cast(Anchor, base.clock_start_event if base is not None else "period_end")
     version = await set_policy(
         ctx,
-        PolicyChange(record_type, cast(ServiceLineOrAny, service_line), Decimal(retention_years), anchor),
+        PolicyChange(
+            record_type, cast(ServiceLineOrAny, service_line), Decimal(retention_years), anchor
+        ),
     )
     async with uow(ctx.tenant) as tx:
         await tx.session.execute(
@@ -460,24 +462,36 @@ async def policy_versions(
         )
     return [
         PolicyVersion(
-            r.id, int(r.version), Decimal(r.firm_years), Decimal(r.floor), r.policy_text,
-            r.effective_from, str(r.changed_by), r.changed_at,
-        )  # fmt: skip
+            r.id,
+            int(r.version),
+            Decimal(r.firm_years),
+            Decimal(r.floor),
+            r.policy_text,
+            r.effective_from,
+            str(r.changed_by),
+            r.changed_at,
+        )
         for r in rows
     ]
 
 
-async def versions_of_policy(tenant: TenantContext, version_id: UUID) -> tuple[str, str, list[PolicyVersion]]:
+async def versions_of_policy(
+    tenant: TenantContext, version_id: UUID
+) -> tuple[str, str, list[PolicyVersion]]:
     """The policy one of its versions names (the route's `policy_id`), and all its versions."""
     async with tenant_session(tenant) as session:
         row = (
             await session.execute(
-                text("SELECT record_type, service_line FROM retention_policy_versions WHERE id = :v"),
+                text(
+                    "SELECT record_type, service_line FROM retention_policy_versions WHERE id = :v"
+                ),
                 {"v": version_id},
             )
         ).first()
     if row is None:
         raise NotFound("retention_policy")
-    return str(row.record_type), str(row.service_line), await policy_versions(
-        tenant, str(row.record_type), str(row.service_line)
+    return (
+        str(row.record_type),
+        str(row.service_line),
+        await policy_versions(tenant, str(row.record_type), str(row.service_line)),
     )

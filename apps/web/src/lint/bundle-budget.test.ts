@@ -130,8 +130,8 @@ describe("F-05-T17 bundle budgets", () => {
 describe("F-08-T12 engine chunk budgets", () => {
   const engines: Record<string, Chunk & { name?: string }> = {
     "index.html": { file: "assets/index.js", isEntry: true },
-    "_engine-dnd.js": { file: "assets/engine-dnd.js", name: "engine-dnd" } as Chunk,
-    "_engine-editor.js": { file: "assets/engine-editor.js", name: "engine-editor" } as Chunk,
+    "_engine-dnd.js": { file: "assets/engine-dnd.js", name: "engine-dnd" },
+    "_engine-editor.js": { file: "assets/engine-editor.js", name: "engine-editor" },
   };
   it("holds engine-dnd to 40 KB and engine-editor to 180 KB", () => {
     const sizes: Record<string, number> = {

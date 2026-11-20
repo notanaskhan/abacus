@@ -41,7 +41,12 @@ def upgrade() -> None:
         "(tenant_id, object_kind, object_id, seen_at DESC)"
     )
     tenant_table(op, "presence_heartbeats")
-    op.execute("GRANT SELECT, INSERT, UPDATE, DELETE ON presence_heartbeats TO abacus_app")
+    op.execute("REVOKE UPDATE ON presence_heartbeats FROM abacus_app")
+    op.execute("GRANT SELECT, INSERT, DELETE ON presence_heartbeats TO abacus_app")
+    # The heartbeat's upsert moves only the anchor and the time (platform registry).
+    op.execute(
+        "GRANT UPDATE (anchor_kind, anchor_key, seen_at) ON presence_heartbeats TO abacus_app"
+    )
 
 
 def downgrade() -> None:

@@ -302,13 +302,18 @@ class HttpQboTransport:
         # Intuit's `requestid` (≤ 50 characters) makes the create idempotent: a retry answers
         # the first entry. Ours is a digest of `{batch}:{entry}`, so it never collides.
         rid = request_id_of(request_id)
-        created = await self._post(f"/journalentry?requestid={rid}&minorversion=75", journal_body(entry))
+        created = await self._post(
+            f"/journalentry?requestid={rid}&minorversion=75", journal_body(entry)
+        )
         return str(cast(dict[str, object], created["JournalEntry"])["Id"])
 
     async def read_journal_entry(self, external_ref: str) -> tuple[JournalLine, ...]:
         if not _QBO_ID.fullmatch(external_ref):
             raise ValueError("external_ref")
-        found = cast(dict[str, object], (await self._get(f"/journalentry/{external_ref}?minorversion=75"))["JournalEntry"])
+        found = cast(
+            dict[str, object],
+            (await self._get(f"/journalentry/{external_ref}?minorversion=75"))["JournalEntry"],
+        )
         lines: list[JournalLine] = []
         for raw in cast(list[dict[str, object]], found.get("Line", [])):
             detail = cast(dict[str, object], raw.get("JournalEntryLineDetail", {}))

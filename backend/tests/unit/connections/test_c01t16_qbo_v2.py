@@ -115,7 +115,8 @@ async def test_ac_a_full_accounts_page_returns_the_next_cursor() -> None:
 async def test_ac_changes_since_names_the_datasets_to_pull_again() -> None:
     connector = _connector(Recorder(), _held())
     changed = await connector.changes_since(datetime(2026, 9, 14, 13, 0, tzinfo=UTC))
-    assert changed == ("gl_detail", "trial_balance_month")  # a Purchase changed; no Account
+    # a Purchase changed (a transaction and, since C-02-T26, a vendor payment); no Account
+    assert changed == ("gl_detail", "trial_balance_month", "vendor_payments")
     assert CDC.exists()
 
 

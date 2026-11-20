@@ -143,7 +143,7 @@ _CREDITS: Final = text(
 )
 
 
-async def _loaded(ctx: AuthContext, return_id: UUID) -> tuple[UUID, Any]:
+async def _loaded(ctx: AuthContext, return_id: UUID) -> tuple[UUID, Any]:  # Any: a row value
     from abacus.modules.tax.overview import load_return, return_resource
 
     loaded = await load_return(ctx, return_id)
@@ -151,7 +151,7 @@ async def _loaded(ctx: AuthContext, return_id: UUID) -> tuple[UUID, Any]:
 
 
 def _human(ctx: AuthContext, action: str) -> None:
-    if ctx.client or ctx.tenant.actor_kind != "human" or ctx.is_support:
+    if ctx.tenant.actor_kind != "human" or ctx.client or ctx.is_support:
         raise Forbidden(action, "role")
 
 
@@ -282,7 +282,7 @@ async def propose_sourcing(ctx: AuthContext, return_id: UUID) -> UUID:
     return UUID(str(row_id))
 
 
-async def _latest(tenant: TenantContext, return_id: UUID) -> Any:  # noqa: ANN401 -- a text row
+async def latest_sourcing(tenant: TenantContext, return_id: UUID) -> Any:  # noqa: ANN401 -- a text row
     async with tenant_session(tenant) as session:
         return (await session.execute(_SOURCING, {"r": return_id})).first()
 
@@ -292,7 +292,7 @@ async def approve_sourcing(ctx: AuthContext, return_id: UUID) -> list[UUID]:
     _human(ctx, APPROVE)
     engagement_id, resource = await _loaded(ctx, return_id)
     await authorise(ctx, APPROVE, resource)
-    latest = await _latest(ctx.tenant, return_id)
+    latest = await latest_sourcing(ctx.tenant, return_id)
     if latest is None or str(latest.status) != "proposed":
         raise SourcingNotPending(facts={"work_item_id": str(return_id)})
     async with uow(ctx.tenant) as tx:
@@ -318,7 +318,7 @@ async def undo_sourcing(ctx: AuthContext, return_id: UUID) -> None:
     _human(ctx, APPROVE)
     engagement_id, resource = await _loaded(ctx, return_id)
     await authorise(ctx, APPROVE, resource)
-    latest = await _latest(ctx.tenant, return_id)
+    latest = await latest_sourcing(ctx.tenant, return_id)
     if latest is None or str(latest.status) != "approved" or latest.decided_at is None:
         raise SourcingNotPending(facts={"work_item_id": str(return_id)})
     if await now(ctx.tenant) - latest.decided_at > UNDO_WINDOW:

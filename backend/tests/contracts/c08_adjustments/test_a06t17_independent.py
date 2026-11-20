@@ -59,7 +59,15 @@ CONSOLIDATION_LAYER = {"eliminations.py": ("posted",)}
 # C-02-T18 (ADR-344 W1; DEC-5704; S51 rows end pass DEC-5734): the one client-ledger write path,
 # dark behind write-capabilities.yaml `enabled: false`, marks an entry posted or failed after the
 # provider answers; `reversed` stays banned everywhere, and no route names a post (test above).
-W1_POSTING = {"posting.py": ("posted", "failed_post")}
+W1_POSTING = {
+    "posting.py": ("posted", "failed_post"),
+    # C-02-T24 (S52): the retry and closing-date path of the same W1 write, under the batch's
+    # grant (POST-001 names it); it marks the batch posted once every entry has.
+    "posting_recovery.py": ("posted", "failed_post"),
+    # C-02-T31 (S52): CLS-07 compares an entry's status to offer Retry; it never writes one.
+    "close_approvals.py": ("posted", "failed_post"),
+    "posting_contract.py": ("failed_post",),
+}
 MIGRATION_0896 = (BACKEND / "migrations/versions/0896_adjustments_eliminations.py").read_text()
 
 

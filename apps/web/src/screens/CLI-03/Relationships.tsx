@@ -11,6 +11,7 @@ import {
 import type { GraphView } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
+import { todayIso } from "../../app-core/clock";
 import { CLI03 } from "./index";
 
 export function Relationships({ clientId }: { clientId: string }): JSX.Element {
@@ -57,7 +58,7 @@ export function Relationships({ clientId }: { clientId: string }): JSX.Element {
       onEnd={(edgeId, reason) => {
         end.mutate({
           path: { rel_id: edgeId },
-          body: { reason, effective_to: new Date().toISOString().slice(0, 10) },
+          body: { reason, effective_to: todayIso() },
         });
       }}
     />

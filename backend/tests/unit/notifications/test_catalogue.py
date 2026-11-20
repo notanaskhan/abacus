@@ -44,6 +44,8 @@ def test_the_realtime_invalidations_subscribe_apart_from_the_catalogue() -> None
     # S42 (T-05-T52, DEC-4906; I-02-T13): an applied fix and a stale memo move TXP-04/TXP-11; a
     # built brief refetches the Today panel.
     realtime |= {"workbook.fix_applied", "tax_memo.went_stale", "daily_briefing.built"}
+    # T-08-T14 (DEC-5840): each finished return moves TAX-14's run tiles on every open tab.
+    realtime |= {"standards_run.progressed"}
     assert set(INVALIDATIONS) == realtime
 
 

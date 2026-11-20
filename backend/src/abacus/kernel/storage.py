@@ -10,7 +10,7 @@ or SES.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 import boto3
 from botocore.config import Config
@@ -109,15 +109,16 @@ AwsError = (ClientError, BotoCoreError)
 def destruction_s3_client(role_arn: str, batch_ref: str, *, region: str | None = None) -> object:
     """Q-05-T15 (ADR-179 / OQ-1): an S3 client under the destruction role, assumed with the
     batch's `destruction_batch` session tag (the role's trust refuses an untagged assumption)."""
-    sts = boto3.client("sts", region_name=region, config=_service_config())  # pyright: ignore[reportUnknownMemberType] -- see s3_client
-    found = sts.assume_role(  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+    client = boto3.client("sts", region_name=region, config=_service_config())  # pyright: ignore[reportUnknownMemberType] -- boto3 is untyped
+    sts = cast(Any, client)  # Any: boto3's untyped STS client
+    found = sts.assume_role(
         RoleArn=role_arn,
         RoleSessionName=f"destruction-{batch_ref}"[:64],
         Tags=[{"Key": "destruction_batch", "Value": batch_ref}],
         DurationSeconds=3600,
     )
-    creds = found["Credentials"]  # pyright: ignore[reportUnknownVariableType]
-    return boto3.client(  # pyright: ignore[reportUnknownMemberType]
+    creds = found["Credentials"]
+    return boto3.client(  # pyright: ignore[reportUnknownMemberType] -- boto3 is untyped
         "s3",
         region_name=region,
         aws_access_key_id=creds["AccessKeyId"],

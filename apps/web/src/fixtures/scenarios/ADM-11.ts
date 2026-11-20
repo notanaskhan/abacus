@@ -32,5 +32,11 @@ function at(state: Adm11State): Scenario {
   };
 }
 
-export const scenarios = defineScenarios({ a: at("a"), b: at("b"), c: at("c"), d: at("d"), e: at("e") });
+export const scenarios = defineScenarios({
+  a: at("a"),
+  b: at("b"),
+  c: at("c"),
+  d: at("d"),
+  e: at("e"),
+});
 export type Adm11ScenarioState = keyof typeof scenarios;

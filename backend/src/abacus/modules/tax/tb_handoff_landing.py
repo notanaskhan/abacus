@@ -24,7 +24,7 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
-from typing import Final, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -32,6 +32,9 @@ from sqlalchemy import text
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import OutboxEvent, Scope, Target, uow
+
+if TYPE_CHECKING:
+    from abacus.modules.identity.api import AuthContext
 
 TARGET: Final = "tax_return"
 LANDING: Final = "tax_handoff_landing"
@@ -80,7 +83,8 @@ def draft_mapping(choices: list[object]) -> list[dict[str, object]]:
     """The draft tax-line mapping seeded from the person's choices: code and source per account.
     A draft: nothing maps until the tax team adopts it on the return."""
     out: list[dict[str, object]] = []
-    for c in choices:
+    for choice in choices:
+        c = cast(Any, choice)  # Any: ledger's TaxLineChoice, read by attribute
         out.append(
             {
                 "account_no": c.account_no,
@@ -189,16 +193,14 @@ def source_label(kind: str, period_end_year: int | None) -> str:
     return f"FY{period_end_year} {words}" if period_end_year is not None else words.capitalize()
 
 
-async def _may_open(ctx: object, engagement_id: UUID) -> bool:
-    from abacus.modules.identity.api import AuthContext, authorise, engagement_resource
+async def _allowed(ctx: AuthContext, action: str, engagement_id: UUID) -> bool:
+    """`action` on the engagement, as a person: False only on Forbidden (a wall or no
+    membership); any other error propagates, never read as a denial."""
+    from abacus.modules.identity.api import Forbidden, authorise, engagement_resource
 
-    if not isinstance(ctx, AuthContext):
-        return False
     try:
-        await authorise(
-            ctx, "engagement.read_metadata", await engagement_resource(ctx.tenant, engagement_id)
-        )
-    except Exception:  # a wall or no membership: the link is absent
+        await authorise(ctx, action, await engagement_resource(ctx.tenant, engagement_id))
+    except Forbidden:
         return False
     return True
 
@@ -227,7 +229,9 @@ async def landing(ctx: object, return_id: UUID) -> Landing | None:
         source_label=source_label(found.source_kind, None if end is None else end.year),
         handed_off_at=found.handed_off_at,
         handed_off_by=names.get(found.handed_off_by),
-        source_link_allowed=await _may_open(ctx, found.source_engagement_id),
+        source_link_allowed=await _allowed(
+            ctx, "engagement.read_metadata", found.source_engagement_id
+        ),
         superseded=found.superseded,
         book_income=dict(found.book_income),
         issues_created=0 if landed is None else len(landed.issue_ids or []),
@@ -239,7 +243,7 @@ async def landing(ctx: object, return_id: UUID) -> Landing | None:
 async def authorise_read(ctx: object, handoff_id: UUID) -> object:
     """`tb_handoff.read`: the source engagement's members, or the target return's team."""
     from abacus.modules.engagements.api import work_item_engagement
-    from abacus.modules.identity.api import AuthContext, authorise, engagement_resource
+    from abacus.modules.identity.api import AuthContext
     from abacus.modules.ledger.api import tb_handoff
 
     if not isinstance(ctx, AuthContext):
@@ -249,15 +253,8 @@ async def authorise_read(ctx: object, handoff_id: UUID) -> object:
         raise NotFound("tb_handoff")
     target_engagement = await work_item_engagement(ctx.tenant, found.target_work_item_id)
     for engagement_id in (found.source_engagement_id, target_engagement):
-        if engagement_id is None:
-            continue
-        try:
-            await authorise(
-                ctx, "tb_handoff.read", await engagement_resource(ctx.tenant, engagement_id)
-            )
-        except Exception:  # noqa: S112 -- not a member of this side: try the other
-            continue
-        return found
+        if engagement_id is not None and await _allowed(ctx, "tb_handoff.read", engagement_id):
+            return found
     raise NotFound("tb_handoff")  # neither side: the hand-off is absent, never forbidden
 
 

@@ -33,11 +33,14 @@ function show(state: Adm11ScenarioState, props: ADM11Props = {}): void {
 describe("ADM-11 · Quality management dashboard", () => {
   it("a · six tiles, the totals and the override pane", async () => {
     show("a");
-    expect(await screen.findByText("6.0%")).toBeTruthy();
+    // the tile and the agent row both read 6.0% (DEC-96: the firm rate and the agent's)
+    expect((await screen.findAllByText("6.0%")).length).toBeGreaterThan(0);
     expect(screen.getByText("96.8%")).toBeTruthy();
     expect(screen.getByText(COPY.totalsAtRisk(2))).toBeTruthy();
     await waitFor(() => {
-      expect(document.querySelector("[data-adm11='override-total']")?.textContent).toContain("3,410");
+      expect(document.querySelector("[data-adm11='override-total']")?.textContent).toContain(
+        "3,410",
+      );
     });
     expect(screen.getByText(COPY.unrated(9))).toBeTruthy();
   });
@@ -51,7 +54,9 @@ describe("ADM-11 · Quality management dashboard", () => {
 
   it("c · the agent row expands to its reasons (37 = 21 + 9 + 7)", async () => {
     show("c", { expandedAgent: "ebp_audit_workpapers" });
-    expect(await screen.findByText("Census column misread for rehired participants 21")).toBeTruthy();
+    expect(
+      await screen.findByText("Census column misread for rehired participants 21"),
+    ).toBeTruthy();
     expect(screen.getByText(COPY.openFinding("QM-F-04"))).toBeTruthy();
     expect(screen.getByText(COPY.openLearned)).toBeTruthy();
   });
@@ -63,7 +68,9 @@ describe("ADM-11 · Quality management dashboard", () => {
 
   it("e · read-only for the Monitoring reviewer", async () => {
     show("e", { readOnly: true });
-    await screen.findByText("6.0%");
-    expect(document.querySelector("[data-screen='ADM-11']")?.getAttribute("data-readonly")).toBe("true");
+    await screen.findAllByText("6.0%");
+    expect(document.querySelector("[data-screen='ADM-11']")?.getAttribute("data-readonly")).toBe(
+      "true",
+    );
   });
 });

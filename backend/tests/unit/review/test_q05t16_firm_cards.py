@@ -19,7 +19,9 @@ REPO = Path(__file__).resolve().parents[4]
 
 
 def test_ac_only_the_qm_owner_decides_at_the_matrix() -> None:
-    actions = yaml.safe_load((REPO / "docs/architecture/permission-matrix/practice.yaml").read_text())["actions"]
+    actions = yaml.safe_load(
+        (REPO / "docs/architecture/permission-matrix/practice.yaml").read_text()
+    )["actions"]
     row = actions["quality_evaluation.decide"]
     assert row["quality_partner"] == "allow" and row["firm_admin"] == "deny"
     assert row["agent"] == "deny" and row["system"] == "deny" and row["mfa_recent"] == "required"

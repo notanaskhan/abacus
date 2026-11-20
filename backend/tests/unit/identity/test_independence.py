@@ -149,6 +149,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "adjustment.approve",  # SPEC-301 (TASK-302)
         "adjustment.propose",
         "adjustment.record_response",
+        "agent_column.run",  # K-03-T06 (DEC-5848)
         "agent_run.answer",  # S29
         "agent_run.approve_plan",  # S29
         "agent_run.control",  # S29
@@ -317,6 +318,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "finding.request_decision",
         "finding.resolve",
         "finding.update",
+        "fixed_asset.approve_change",  # T-06-T33 (DEC-5833)
         "fixed_asset.create",  # S49 (C-02, T-06, A-09 bundles)
         "fixed_asset.propose_change",  # S49 (C-02, T-06, A-09 bundles)
         "fixed_asset.read",  # S49 (C-02, T-06, A-09 bundles)
@@ -458,10 +460,15 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "sample_set.export",  # A-03-T01 (DEC-1550)
         "sample_set.generate_requests",  # A-03-T01 (DEC-1550)
         "sample_set.read",  # A-03-T01 (DEC-1550)
+        "scoping.read",  # K-03-T06 (DEC-5848)
         "screening.feedback",  # P-06-T15 (SHL-20 f)
         "screening.request",
         "service_org.edit",
         "service_org.read",
+        "sheet.configure",  # K-03-T06 (DEC-5848)
+        "sheet.edit",  # K-03-T06 (DEC-5848)
+        "sheet.export",  # K-03-T06 (DEC-5848)
+        "sheet.read",  # K-03-T06 (DEC-5848)
         "sign_off.bulk",  # P-04-T07 (TASK-413)
         "sign_off.create",  # P-04-T07 (TASK-413)
         "sign_off.eqr",  # SPEC-308 (TASK-319)
@@ -497,6 +504,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "tb_handoff.create",  # S49 (C-02, T-06, A-09 bundles)
         "tb_handoff.preview",  # S49 (C-02, T-06, A-09 bundles)
         "tb_handoff.read",  # S49 (C-02, T-06, A-09 bundles)
+        "template.apply_update",  # K-03-T06 (DEC-5848)
+        "template_update.read",  # K-03-T06 (DEC-5848)
         "test.adopt",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "test.create",
         "test.export",  # S45 (A-08-T03, A-09-T02, W-01-T02)

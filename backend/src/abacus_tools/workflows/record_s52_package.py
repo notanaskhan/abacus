@@ -17,8 +17,8 @@ from temporalio.client import Client
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
+from abacus.modules.closes.api import PACKAGE_FINISH as FINISH
 from abacus.modules.closes.api import PackageAssemblyWorkflow
-from abacus.modules.closes.package_render import FINISH
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed
 from abacus_tools.workflows.record_retrieval import refuse_overwrite

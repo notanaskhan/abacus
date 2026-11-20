@@ -36,14 +36,13 @@ def test_no_model_anywhere() -> None:
 
 
 def test_tie_out_checks_registered() -> None:
-    import abacus.modules.tax.api  # noqa: F401 -- registration at import
     from abacus.modules.methodology.check_codes import known_codes
 
     assert set(sr.TIE_OUT_CHECKS) <= known_codes()
 
 
 def test_check_result_defaults() -> None:
-    r = sr.CheckResult(
+    r = sr.TieOutResult(
         "exception", Decimal("6200"), {"sheet": "07", "range": "B9"}, "tie_out:item_l_m2"
     )
     assert r.issue_ref == "tie_out:item_l_m2" and uuid.UUID(int=0)

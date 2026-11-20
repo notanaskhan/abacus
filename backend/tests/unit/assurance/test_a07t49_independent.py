@@ -208,6 +208,11 @@ def _request_world(
     monkeypatch.setattr(rel, "release_mode", in_app)
     monkeypatch.setattr(rel, "snapshot", current)
     monkeypatch.setattr(rel, "released", released)
+
+    async def no_reissue(*_a: object) -> None:
+        return None  # Q-05-T17: the current draft is not a reissue
+
+    monkeypatch.setattr(rel, "reissue_of", no_reissue)
     monkeypatch.setattr(rel, "lock_assurance_item", _none)
 
 

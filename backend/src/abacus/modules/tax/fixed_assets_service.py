@@ -166,7 +166,7 @@ _PENDING: Final = text(
 
 
 def _record(raw: object) -> AssetRecord:
-    r = cast(Any, raw)
+    r = cast(Any, raw)  # Any: a row value
     return AssetRecord(
         UUID(str(r.id)), int(r.asset_no), str(r.description),
         None if r.property_id is None else UUID(str(r.property_id)), str(r.pkey),
@@ -296,7 +296,7 @@ def _defaults(recovery_class: str) -> tuple[str, str]:
 
 
 def _human(ctx: AuthContext, action: str) -> None:
-    if ctx.client or ctx.tenant.actor_kind != "human" or ctx.is_support:
+    if ctx.tenant.actor_kind != "human" or ctx.client or ctx.is_support:
         raise Forbidden(action, "role")
 
 
@@ -489,7 +489,7 @@ class Decided:
     checkpoint_id: UUID | None
 
 
-async def decide(
+async def settle_change(
     ctx: AuthContext,
     return_id: UUID,
     request_id: UUID,
@@ -521,7 +521,7 @@ async def decide(
     if req.decided is not None:
         raise ChangeAlreadyDecided(facts={"request_id": str(request_id)})
     if UUID(str(req.requested_by)) == ctx.user_id:
-        raise Forbidden(APPROVE, "segregation")  # the requester never decides their own change
+        raise Forbidden(APPROVE, "condition")  # the requester never decides their own change
     if not approve and not (reason or "").strip():
         raise ProposalChanged(facts={"reason": "required"})
     asset = next((a for a in facts.assets if a.id == UUID(str(req.asset_id))), None)
@@ -617,11 +617,11 @@ __all__ = [
     "ProposalChanged",
     "compute",
     "create",
-    "decide",
     "facts_of",
     "open_flags",
     "propose_change",
     "read",
     "register",
+    "settle_change",
     "tallies",
 ]

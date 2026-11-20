@@ -71,16 +71,15 @@ from abacus.modules.evidence.deliverable_serving import (
 from abacus.modules.evidence.deliverable_serving import (
     open_deliverable_download as open_deliverable_download,
 )
-from abacus.modules.evidence.destruction_jobs import ACTIVITIES as DESTRUCTION_ACTIVITIES
-from abacus.modules.evidence.destruction_jobs import SCHEDULES as DESTRUCTION_SCHEDULES
 from abacus.modules.evidence.destruction_execute import ACTIVITIES as _DESTROY_ACTIVITIES
+from abacus.modules.evidence.destruction_execute import EXECUTE as DESTRUCTION_EXECUTE
 from abacus.modules.evidence.destruction_execute import DestructionExecuteWorkflow
 from abacus.modules.evidence.destruction_execute import (
     register_derived_store as register_derived_store,
 )
+from abacus.modules.evidence.destruction_jobs import ACTIVITIES as DESTRUCTION_ACTIVITIES
+from abacus.modules.evidence.destruction_jobs import SCHEDULES as DESTRUCTION_SCHEDULES
 from abacus.modules.evidence.destruction_jobs import WORKFLOWS as DESTRUCTION_WORKFLOWS
-
-_DESTROY_WORKFLOWS: dict[type, str] = {DestructionExecuteWorkflow: "batch"}
 from abacus.modules.evidence.drops import drop_batch
 from abacus.modules.evidence.drops_contract import drops_router, void_router
 from abacus.modules.evidence.duplicates import PendingDuplicate, pending_duplicates
@@ -478,6 +477,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # P-06-T19 (ADR-162 §7): the withdrawal purge, started by `evidence_version.withdrawn`.
 # A-01-T19: the engagement export, started by `engagement_export.requested`.
 # Q-02-T21: the daily audit-chain anchor to the records bucket, on its Schedule.
+_DESTROY_WORKFLOWS: dict[type, str] = {DestructionExecuteWorkflow: "batch"}
 WORKFLOWS: dict[type, str] = {
     **UPLOAD_WORKFLOWS,
     **HOLD_WORKFLOWS,
@@ -586,6 +586,7 @@ __all__ = [
     "DAILY_PAGE_CAP",
     "DEBIT_COLUMN",
     "DESTRUCTION_ASSEMBLE_ACTIVITY",
+    "DESTRUCTION_EXECUTE",
     "EXPORT_EXPIRY_ID",
     "EXPORT_FORMAT_VERSION",
     "EXPORT_SCHEMA_FILE",
@@ -622,6 +623,7 @@ __all__ = [
     "ComponentUpload",  # S48 rest: POR-23 links a drop to its deliverable
     "ContentTooLarge",
     "DestructionAssembleWorkflow",
+    "DestructionExecuteWorkflow",
     "DocumentDownload",  # G-02-T20: the WISP pack's documents",
     "EffectivePolicy",
     "EngagementArchived",

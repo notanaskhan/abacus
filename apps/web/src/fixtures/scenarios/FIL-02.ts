@@ -1,7 +1,15 @@
 // FIL-02 fixture scenarios (Q-05-T21, TASK-8827; docs/screens/FIL-02.md).
 import { type Scenario, defineScenarios, json } from "../../app-core/fixture-mode";
 import { seedScenario } from "../scenario";
-import { type Fil02State, PERSONA, batch, holds, policies, summary, versions } from "../seed/fil02";
+import {
+  type Fil02State,
+  PERSONA,
+  batch,
+  holds,
+  policies,
+  summary,
+  versions,
+} from "../seed/fil02";
 
 const E0 = seedScenario();
 
@@ -25,6 +33,14 @@ function at(state: Fil02State): Scenario {
 }
 
 export const scenarios = defineScenarios({
-  a: at("a"), b: at("b"), c: at("c"), d: at("d"), e: at("e"), f: at("f"), g: at("g"), h: at("h"), i: at("i"),
+  a: at("a"),
+  b: at("b"),
+  c: at("c"),
+  d: at("d"),
+  e: at("e"),
+  f: at("f"),
+  g: at("g"),
+  h: at("h"),
+  i: at("i"),
 });
 export type Fil02ScenarioState = keyof typeof scenarios;

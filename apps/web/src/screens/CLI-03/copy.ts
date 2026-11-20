@@ -6,7 +6,7 @@ export const COPY = {
   add: "Add relationship",
   edit: "Edit relationships…",
   from: "From",
-  to: "To",
+  toPerson: "To",
   kind: "Relationship",
   percent: "Percent",
   effectiveFrom: "Effective from",
@@ -30,5 +30,4 @@ export const COPY = {
   source: { person: "Added by the firm", intake: "From intake", k1_package: "K-1 package" },
   roles: "Roles",
   linked: "Linked work",
-  external: "Not a Brightwater Hale client",
 } as const;

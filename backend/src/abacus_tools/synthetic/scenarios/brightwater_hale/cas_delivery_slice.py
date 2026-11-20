@@ -387,15 +387,26 @@ def copperleaf_vendor_recordings() -> dict[str, bytes]:
                     "TxnDate": when, "TotalAmt": float(amount), "PayType": "Check",
                 })  # fmt: skip
             else:
-                purchases.append({
-                    "Id": str(txn), "EntityRef": {"value": vid, "name": vendor.name, "type": "Vendor"},
-                    "TxnDate": when, "TotalAmt": float(amount),
-                    "PaymentType": "CreditCard" if paid_by == "card" else "Cash",
-                    **({"PaymentMethodRef": {"value": "7", "name": "ACH"}} if paid_by == "ach" else {}),
-                })  # fmt: skip
+                purchases.append(
+                    {
+                        "Id": str(txn),
+                        "EntityRef": {"value": vid, "name": vendor.name, "type": "Vendor"},
+                        "TxnDate": when,
+                        "TotalAmt": float(amount),
+                        "PaymentType": "CreditCard" if paid_by == "card" else "Cash",
+                        **(
+                            {"PaymentMethodRef": {"value": "7", "name": "ACH"}}
+                            if paid_by == "ach"
+                            else {}
+                        ),
+                    }
+                )
             txn += 1
     start, end = (d.isoformat() for d in YEAR_TO_DATE)
-    dump = lambda body: json.dumps(body, sort_keys=True).encode()  # noqa: E731
+
+    def dump(body: object) -> bytes:
+        return json.dumps(body, sort_keys=True).encode()
+
     return {
         "qbo-vendors.json": dump({"QueryResponse": {"Vendor": vendors}}),
         f"qbo-vendor_payments-BillPayment-{start}_{end}.json": dump(

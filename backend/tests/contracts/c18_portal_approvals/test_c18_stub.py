@@ -7,9 +7,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from types import SimpleNamespace
 from typing import cast
-from uuid import uuid4
 
 import pytest
 import yaml
@@ -21,7 +19,6 @@ from abacus.modules.engagements.api import (
     ApprovalKindNotRegistered,
     client_approval_provider,
 )
-from abacus.modules.portal import approvals_contract
 
 REPO = Path(__file__).resolve().parents[4]
 BASE = "/v1/portal/approvals"
@@ -45,8 +42,16 @@ def _doc() -> dict[str, object]:
 # R-02-T11 (DEC-3009): adjustments registers `proposed_entry` and reporting `fs_draft`; the
 # other two kinds still fail closed until R-02-T15 (assurance) and C-02 or A-08 register them.
 # R-02-T15 (S33) registered `uncorrected_misstatements`; `fs_package` waits for C-02 or A-08.
-UNREGISTERED = ("fs_package",)
-REGISTERED = ("proposed_entry", "fs_draft", "uncorrected_misstatements")
+# C-02-T29 (S52, DEC-5815) registered `fs_package` (the close package) and T-06-T35 `section_754`:
+# every kind now has its owner, and an unknown kind still fails closed.
+UNREGISTERED: tuple[str, ...] = ()
+REGISTERED = (
+    "proposed_entry",
+    "fs_draft",
+    "uncorrected_misstatements",
+    "fs_package",
+    "section_754",
+)
 
 
 def test_unregistered_kind_fails_closed() -> None:
@@ -62,22 +67,12 @@ def test_unregistered_kind_fails_closed() -> None:
         client_approval_provider(kind)
 
 
-async def test_package_decide_is_409_until_a_provider_registers(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    # R-02-T14 (DEC-3112): the route checks `portal.approvals` first; with it on, the kind's slot
-    # answers 409 before any service call.
-    async def on(*_a: object) -> bool:
-        return True
+def test_the_package_kind_is_owned_by_closes() -> None:
+    """C-02-T29: `fs_package` (the package decide route's kind) is registered by closes."""
+    import abacus.api.app  # noqa: F401  # pyright: ignore[reportUnusedImport] -- every module's registrations
 
-    monkeypatch.setattr(approvals_contract, "flag_enabled", on)
-    with pytest.raises(ApprovalKindNotRegistered):
-        await approvals_contract.decide_package_route(
-            uuid4(),
-            approvals_contract.PackageDecideIn(decision="approve", seen_hash="h"),
-            cast("approvals_contract.AuthContext", SimpleNamespace(tenant=None)),
-            "key",
-        )
+    provider = client_approval_provider("fs_package")
+    assert type(provider).__module__ == "abacus.modules.closes.release"
 
 
 @pytest.mark.parametrize("path", sorted(DECIDE))

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import inspect
 import uuid
+from typing import cast
 
 from abacus.modules.engagements import season_planner as sp
 
@@ -65,8 +66,8 @@ def test_ac_writes_nothing_and_no_tri() -> None:
     from abacus.modules.agents.specs._specs_v2 import SPECS_V2
 
     spec = SPECS_V2[sp.CAPABILITY]
-    assert spec["tools"] == {} and "tri" not in spec["data_classes"]
-    assert ".subjects(" not in inspect.getsource(sp._judge)
+    assert spec["tools"] == {} and "tri" not in cast(list[str], spec["data_classes"])
+    assert ".subjects(" not in inspect.getsource(sp._judge)  # pyright: ignore[reportPrivateUsage] -- the unit under test
     for model in (sp.SeasonPlannerInput, sp.PlannerRow, sp.EligibleRef, sp.PlannerAsk):
         for f in model.model_fields.values():
             assert not any(getattr(m, "tri", False) for m in f.metadata)

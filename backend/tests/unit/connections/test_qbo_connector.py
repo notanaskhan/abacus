@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from pathlib import Path
 from typing import cast
+from urllib.parse import unquote
 
 import pytest
 
@@ -28,6 +29,7 @@ from abacus.modules.connections.connectors import quickbooks_online as qbo
 from abacus.modules.connections.qbo_format import parse_qbo_trial_balance
 from abacus.modules.integrations.api import egress_allowlist, egress_read_posts
 from abacus.modules.ledger.api import NormaliseError
+from abacus_tools.synthetic.scenarios.brightwater_hale import cas_delivery_slice as cas
 
 from .conformance import Check, Harness, HarnessFactory, conformance_params, run_check
 
@@ -78,12 +80,30 @@ class Recorder:
         if "/reports/GeneralLedger" in url:
             return EgressResponse(200, {}, GENERAL_LEDGER.read_bytes())
         if "/query?" in url:
-            return EgressResponse(200, {}, ACCOUNTS.read_bytes())
+            return EgressResponse(200, {}, _query_answer(unquote(url)))
         if "/cdc?" in url:
             return EgressResponse(200, {}, CDC.read_bytes())
         if "/companyinfo/" in url:
             return EgressResponse(200, {}, b'{"CompanyInfo": {"Id": "1"}}')
         return EgressResponse(404, {}, b"")
+
+
+# C-02-T26: the vendor list and the two vendor-payment entities answer Copperleaf's recordings.
+_VENDOR_RECORDINGS = cas.copperleaf_vendor_recordings()
+VENDORS = _VENDOR_RECORDINGS["qbo-vendors.json"]
+BILL_PAYMENTS = _VENDOR_RECORDINGS["qbo-vendor_payments-BillPayment-2026-01-01_2026-08-31.json"]
+PURCHASES = _VENDOR_RECORDINGS["qbo-vendor_payments-Purchase-2026-01-01_2026-08-31.json"]
+
+
+def _query_answer(url: str) -> bytes:
+    query = url.lower()
+    if "from vendor " in query:
+        return VENDORS
+    if "from billpayment " in query:
+        return BILL_PAYMENTS
+    if "from purchase " in query:
+        return PURCHASES
+    return ACCOUNTS.read_bytes()
 
 
 def _held(expires_in: timedelta = timedelta(hours=1)) -> bytes:
@@ -110,6 +130,8 @@ def qbo_harness(scratch: Path) -> Harness:
             "trial_balance_month": (MONTH, FIXTURE.read_bytes()),
             "gl_detail": (MONTH, GENERAL_LEDGER.read_bytes()),
             "accounts": (MONTH, ACCOUNTS.read_bytes()),
+            "vendors": (PERIOD, VENDORS),
+            "vendor_payments": (PERIOD, BILL_PAYMENTS),  # the first page: BillPayment
         },
     )
 

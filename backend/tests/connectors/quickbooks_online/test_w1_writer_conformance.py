@@ -59,7 +59,7 @@ async def _sandbox() -> HttpQboTransport | None:
     read = targets.sandbox()
     connector = read.connector()
     await connector.refresh()
-    held = connector._held()  # pyright: ignore[reportPrivateUsage]
+    held = connector._held()  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
     configure_egress(frozenset({SANDBOX_HOST}))
     configure_write_egress(frozenset({(SANDBOX_HOST, f"/v3/company/{held.realm_id}/")}))
     return HttpQboTransport(EgressClient(), SANDBOX_HOST, held.realm_id, held.access_token)
@@ -72,7 +72,7 @@ async def target(request: pytest.FixtureRequest) -> AsyncIterator[tuple[str, obj
         return
     live = await _sandbox()
     if live is None:
-        pytest.skip("QuickBooks sandbox secrets are not set (the nightly job sets them)")
+        pytest.skip("QuickBooks sandbox secrets are not set; the nightly job sets them (#2416)")
     yield "sandbox", live
     configure_write_egress(frozenset())
 
@@ -82,7 +82,7 @@ def _report(name: str, case: str, outcome: str) -> None:
     if not path:
         return
     file = Path(path)
-    data = json.loads(file.read_text()) if file.exists() else {}
+    data: dict[str, dict[str, object]] = json.loads(file.read_text()) if file.exists() else {}
     data.setdefault(name, {})[case] = outcome
     file.write_text(json.dumps(data, sort_keys=True, indent=2))
 
@@ -95,7 +95,7 @@ def test_the_request_body_is_golden() -> None:
 
 async def test_create_then_read_back_line_for_line(target: tuple[str, object]) -> None:
     name, transport = target
-    writer = QuickBooksOnlineWriter(transport)  # type: ignore[arg-type]
+    writer = QuickBooksOnlineWriter(transport)  # type: ignore[arg-type] -- a test double or a typed-dict narrowing
     posted = await writer.post(AJE_01, f"conformance:{name}:create")
     again = await writer.post(AJE_01, f"conformance:{name}:create")
     assert posted.verified and again.external_ref == posted.external_ref
@@ -104,7 +104,7 @@ async def test_create_then_read_back_line_for_line(target: tuple[str, object]) -
 
 async def test_the_closing_date_is_set_and_read(target: tuple[str, object]) -> None:
     name, transport = target
-    writer = QuickBooksOnlineWriter(transport)  # type: ignore[arg-type]
+    writer = QuickBooksOnlineWriter(transport)  # type: ignore[arg-type] -- a test double or a typed-dict narrowing
     assert await writer.set_book_close_date(date(2026, 8, 31), f"conformance:{name}:close") is None
     assert await writer.book_close_date() == date(2026, 8, 31)
     _report(name, "book_close_date", "set")
@@ -115,16 +115,18 @@ async def test_an_inactive_account_is_refused_before_a_write(target: tuple[str, 
     entry = JournalEntry("AJE-99", date(2026, 9, 15), (
         JournalLine("64", "Debit", Decimal("1.00")), JournalLine("90", "Credit", Decimal("1.00")),
     ))  # fmt: skip
-    posted = await QuickBooksOnlineWriter(transport).post(entry, f"conformance:{name}:inactive")  # type: ignore[arg-type]
+    posted = await QuickBooksOnlineWriter(transport).post(entry, f"conformance:{name}:inactive")  # type: ignore[arg-type] -- a test double or a typed-dict narrowing
     assert posted.error == "inactive_account" and not posted.verified
     if isinstance(transport, FakeQboTransport):
         assert ("POST JournalEntry", "AJE-99") not in transport.writes
     _report(name, "inactive_account", "inactive_account")
 
 
-@pytest.mark.parametrize(("scripted", "code"), [("rate_limited", "rate_limited"), ("needs_reauth", "needs_reauth")])
+@pytest.mark.parametrize(
+    ("scripted", "code"), [("rate_limited", "rate_limited"), ("needs_reauth", "needs_reauth")]
+)
 async def test_429_and_401_map_to_codes_on_the_fake(scripted: str, code: str) -> None:
-    fake = FakeQboTransport(accounts={"64": True, "33": True}, script=[scripted])  # type: ignore[list-item]
+    fake = FakeQboTransport(accounts={"64": True, "33": True}, script=[scripted])  # type: ignore[list-item] -- a test double
     posted = await QuickBooksOnlineWriter(fake).post(AJE_01, f"conformance:fake:{code}")
     assert posted.error == code
     _report("fake", f"status_{code}", code)
@@ -146,6 +148,8 @@ async def test_the_lane_refuses_a_write_it_does_not_declare() -> None:
     configure_egress(frozenset({SANDBOX_HOST}))
     configure_write_egress(frozenset())
     with pytest.raises(EgressRefused):
-        await EgressClient().write(f"https://{SANDBOX_HOST}/v3/company/1/journalentry", content=b"{}")
+        await EgressClient().write(
+            f"https://{SANDBOX_HOST}/v3/company/1/journalentry", content=b"{}"
+        )
     with pytest.raises(QboError):
         raise QboError("rate_limited")

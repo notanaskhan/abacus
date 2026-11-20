@@ -96,6 +96,16 @@ FIRM_LEVEL: Final = frozenset(
         "destruction_batch",  # Q-05-T11: a quarter's batch spans former clients (counts only)
         "qm_finding",  # Q-05-T08: a firm's QM finding (agent monitoring names an agent, no client)
         "season_manifest",  # T-08-T09: the firm's season manifest (rows are placed by client)
+        # S52 end pass: firm-level records with no one engagement.
+        "season_ask",  # T-08-T17: an ask on the firm's manifest (row ids only)
+        "destruction_batch_item",  # Q-05-T15: a batch's item (the batch spans former clients)
+        "inspection",  # Q-05-T18: the firm's QM inspection (its engagement is its subject)
+        "inspection_access_grant",  # Q-05-T16: an inspector's read-only grant (identity)
+        "qm_cycle",  # Q-05-T18: the firm's monitoring cycle
+        "qm_objective",  # Q-05 sweep: the firm's quality objectives register
+        "qm_register_import",  # Q-05 sweep: an imported register workbook
+        "qm_risk_review",  # Q-05 sweep: the firm's risk-assessment review
+        "write_capability",  # C-02-T25: the firm's W1 switch (no client data)
     }
 )
 # Kinds whose rows may belong to no engagement (a notification about the firm): then firm-level.

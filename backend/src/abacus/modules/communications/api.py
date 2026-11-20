@@ -90,6 +90,7 @@ from abacus.modules.communications.intake_purge_workflow import (
 )
 from abacus.modules.communications.invitations import deliver_invitation, deliver_staff_invitation
 from abacus.modules.communications.link_codes import deliver_link_code
+from abacus.modules.communications.message_times import message_created_at
 from abacus.modules.communications.notification_email import (
     NotificationMail,
     send_notification_email,
@@ -401,6 +402,7 @@ __all__ = [
     "issue_secure_link",
     "limit_reached_today",
     "lint_values",
+    "message_created_at",
     "next_send_at",
     "next_send_on",
     "next_sequence_by_policy",

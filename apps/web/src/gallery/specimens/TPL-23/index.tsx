@@ -15,6 +15,8 @@ import {
   Line,
   LockedName,
   Pill,
+  count,
+  pct,
 } from "@abacus/ui";
 import type { JSX } from "react";
 import {
@@ -41,7 +43,7 @@ const TABS = [
   "Requests",
   "Time",
 ];
-const n = (v: number): string => v.toLocaleString("en-US");
+const n = (v: number): string => count(v);
 const table = (rows: { key: string; label: string; value: number }[]) => ({
   columns: [{ key: "v", header: "Requests" }],
   rows: rows.map((r) => ({ key: r.key, label: r.label, values: { v: r.value } })),
@@ -58,7 +60,7 @@ function props(state: State): AnalyticsLayoutProps {
       key: "past_due",
       label: "Past due now",
       value: due.pastDue,
-      share: `${((due.pastDue / due.due) * 100).toFixed(1)}% of ${n(due.due)} due`,
+      share: `${pct(due.pastDue / due.due, { decimals: 1 })} of ${n(due.due)} due`,
       intent: "Open in request tracker ›",
     },
   ];
@@ -77,6 +79,7 @@ function props(state: State): AnalyticsLayoutProps {
     tiles: (granite ? GRANITE_TILES : FIRM_TILES).map((t) => ({
       label: t.label,
       comparisonBasis: t.basis,
+      caption: t.basis,
       value: t.value,
       ...(t.delta ? { delta: t.delta } : {}),
     })),

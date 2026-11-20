@@ -16,10 +16,16 @@ from abacus.modules.evidence.api import WORKFLOWS
 
 def _body(excluded: list[tuple[str, str]]) -> bytes:
     return d.certificate_body(
-        ref="2026-Q3", scope="Records past retention · Q3 2026", eligible=1204, destroyed=1201,
-        excluded=excluded, approvers=[("u-felix", "firm_admin"), ("u-victor", "security_admin")],
-        hold_recheck_at="2026-10-02T09:00:00+00:00", manifest_sha256="a" * 64, checkpoint_root="b" * 64,
-    )  # fmt: skip
+        ref="2026-Q3",
+        scope="Records past retention · Q3 2026",
+        eligible=1204,
+        destroyed=1201,
+        excluded=excluded,
+        approvers=[("u-felix", "firm_admin"), ("u-victor", "security_admin")],
+        hold_recheck_at="2026-10-02T09:00:00+00:00",
+        manifest_sha256="a" * 64,
+        checkpoint_root="b" * 64,
+    )
 
 
 def test_ac_the_certificate_is_byte_identical_on_re_render() -> None:
@@ -45,5 +51,5 @@ def test_the_workflow_runs_in_the_batch_class_and_stores_register() -> None:
         return 0
 
     d.register_derived_store("test_store", purge)
-    assert "test_store" in d._derived  # pyright: ignore[reportPrivateUsage]
-    del d._derived["test_store"]  # pyright: ignore[reportPrivateUsage]
+    assert "test_store" in d._derived  # pyright: ignore[reportPrivateUsage] -- the derived-store registry under test
+    del d._derived["test_store"]  # pyright: ignore[reportPrivateUsage] -- the derived-store registry under test

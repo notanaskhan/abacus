@@ -47,7 +47,7 @@ export const COPY = {
   cancel: "Cancel",
   accepted: "Fix approved · checkpoint saved",
   openCheckpoint: "Open checkpoint",
-  rerun: "Run 3 re-runs the capital and K-1 tasks.",
+  rerun: "Run 3 re-runs the capital and K-1 steps.", // glossary: "task" is a close word
   openIssue: "Open the issue",
   table: (title: string) => `${title} lines`,
 } as const;

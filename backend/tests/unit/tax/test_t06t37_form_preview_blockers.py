@@ -81,7 +81,7 @@ def _patch(monkeypatch: pytest.MonkeyPatch, *, errors: int, values: V, cards: in
     async def awaiting(*_a: object) -> list[SimpleNamespace]:
         return [SimpleNamespace(card_id=uuid.uuid4()) for _ in range(cards)]
 
-    monkeypatch.setattr(fp, "tenant_session", lambda _t: _Session(ids))
+    monkeypatch.setattr(fp, "tenant_session", lambda _t: _Session(ids))  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType] -- a monkeypatched double
     monkeypatch.setattr(entity_schedules, "workbook_values", wb)
     monkeypatch.setattr(review_api, "awaiting_cards", awaiting)
 
@@ -148,6 +148,5 @@ def test_failed_provider_answers_blocking_diagnostics(monkeypatch: pytest.Monkey
 
 
 def test_ac_provider_registered() -> None:
-    import abacus.modules.tax.api  # noqa: F401 -- registration happens at the api's import
 
     assert fp.KIND in approval._PROVIDERS  # pyright: ignore[reportPrivateUsage] -- the registry is the thing tested

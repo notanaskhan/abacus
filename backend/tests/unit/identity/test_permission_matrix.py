@@ -163,6 +163,11 @@ def engagement(monkeypatch: pytest.MonkeyPatch) -> EngagementRoles:
 
     monkeypatch.setattr(authz, "_partner_level", not_a_partner)
 
+    async def no_inspection_grant(*args: object) -> bool:
+        return False  # Q-05-T16: no live inspection grant (the grant table is DB-only)
+
+    monkeypatch.setattr(authz, "inspector_of", no_inspection_grant)
+
     async def every_function(*args: object) -> frozenset[str]:
         return frozenset(FUNCTIONS)  # function_in rows: the person holds them (P-04-T15)
 
