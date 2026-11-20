@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, cast
+from typing import Annotated, Any, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -23,7 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import ENGAGEMENTS_SEASON_SETUP
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
 
@@ -362,6 +362,60 @@ def _cohort_out(c: object, people: dict[UUID, SeasonPersonOut]) -> SeasonCohortO
     )
 
 
+_ASKS = (
+    "SELECT id, row_ids, question_code, options, recommended_option, source, suggestion_id, "
+    "answered_option, answered_by FROM season_asks WHERE manifest_id = :m"
+)
+
+
+def _one_ask(r: object, people: dict[UUID, SeasonPersonOut]) -> SeasonAskOut:
+    row = cast(Any, r)
+    return SeasonAskOut(
+        ask_id=row.id,
+        question_code=row.question_code,
+        row_ids=list(row.row_ids),
+        options=[
+            SeasonAskOptionOut(code=str(o.get("key")), label=str(o.get("key")))
+            for o in (row.options or [])
+        ],
+        recommended_option=row.recommended_option,
+        source=row.source,
+        suggestion_id=row.suggestion_id,
+        answered_option=row.answered_option,
+        answered_by=None if row.answered_by is None else people.get(row.answered_by),
+    )
+
+
+async def _asks_out(ctx: AuthContext, manifest_id: UUID) -> list[SeasonAskOut]:
+    """T-08-T17: the manifest's asks (code's, phrased by the planner), oldest first."""
+    from sqlalchemy import text
+
+    from abacus.kernel.db import tenant_session
+
+    async with tenant_session(ctx.tenant) as session:
+        rows = (await session.execute(text(_ASKS + " ORDER BY id"), {"m": manifest_id})).all()
+    people = await _people({r.answered_by for r in rows if r.answered_by is not None})
+    return [_one_ask(r, people) for r in rows]
+
+
+async def _ask_out(ctx: AuthContext, ask_id: UUID) -> SeasonAskOut:
+    from sqlalchemy import text
+
+    from abacus.kernel.db import tenant_session
+    from abacus.kernel.errors import NotFound
+
+    async with tenant_session(ctx.tenant) as session:
+        row = (
+            await session.execute(
+                text(_ASKS.replace("manifest_id = :m", "id = :m")), {"m": ask_id}
+            )
+        ).first()
+    if row is None:
+        raise NotFound("season_ask")
+    people = await _people({row.answered_by} if row.answered_by is not None else set())
+    return _one_ask(row, people)
+
+
 async def _manifest_out(ctx: AuthContext, tax_year: int, manifest_id: UUID) -> SeasonManifestOut:
     from abacus.modules.engagements.season_service import manifest
 
@@ -396,7 +450,8 @@ async def _manifest_out(ctx: AuthContext, tax_year: int, manifest_id: UUID) -> S
             for o, (name, n) in offices.items()
         ],
         cohorts=cohorts,
-        planner_available=False,
+        planner_available=True,  # T-08-T17: the planner step runs after each build
+        asks=await _asks_out(ctx, m.manifest_id),
     )
 
 
@@ -441,6 +496,9 @@ async def season_manifest_build_route(
     from abacus.modules.engagements.season_service import build_manifest
 
     made = await build_manifest(ctx, tax_year, rebuild=body.rebuild)
+    from abacus.modules.engagements.season_planner import plan
+
+    await plan(ctx, made)  # T-08-T17: code's asks, phrased by the planner on synthetic firms
     return await _manifest_out(ctx, tax_year, made)
 
 
@@ -534,7 +592,11 @@ async def season_ask_answer_route(
 ) -> SeasonAskOut:
     """A person's answer, stored with `answered_by`; the planner never answers (INV-1)."""
     await _human(ctx, "season_setup.prepare")
-    raise NotImplementedYet
+    from abacus.modules.engagements.season_planner import answer
+
+    del key
+    await answer(ctx, ask_id, body.option)
+    return await _ask_out(ctx, ask_id)
 
 
 @season_router.post(

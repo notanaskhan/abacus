@@ -1,0 +1,37 @@
+# engagements.season_planner v1 (T-08-T17; TASK-8840; T-08 §6, chapter 05 library #20; SPEC-710;
+# ENG-07 d, e; DEC-5842). The season roll-forward's asks and exception suggestions:
+# `modules/engagements/season_planner.py` gives the model the manifest's flagged rows as metadata
+# (exception codes, office, segment, the role to fill and the code-checked eligible staff), never a
+# count, a figure or tax return information; code keeps an ask only for a code-detected ambiguity and
+# a reassignment only to a listed eligible person, and writes the kept ones as `season_asks`
+# (`source: agent`). The planner has no tools and writes nothing; a person answers; a manager
+# approves the cohort. Source of truth: compiled into ../_specs_v2.py by
+# `python -m abacus_tools.codegen.agent_specs_v2`.
+id: engagements.season_planner
+version: 1
+purpose: Phrase the season roll-forward's code-detected asks and suggest an eligible assignee for each exception row, for a person to answer.
+shape: workflow
+prompt: engagements.season_planner@v1
+tier: small
+escalation_tier: small
+input_schema: SeasonPlannerInput
+output_schema: SeasonPlannerOutput
+tools: {}
+task_scope:
+  - season.read
+limits:
+  max_output_tokens: 4000
+  max_cost_usd: "0.40"
+  max_steps: 3
+  max_seconds: 90
+  max_tool_calls: 1
+plan: never
+autonomy: propose
+data_classes: [confidential]
+untrusted_inputs: [rows]
+evaluation_suite: evals/season_planner
+work_class: background
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]
+client_data: none
