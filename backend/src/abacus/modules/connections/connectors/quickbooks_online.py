@@ -82,12 +82,17 @@ _REAUTH_ERRORS: Final = frozenset({"invalid_grant"})
 # CDC entities name what a sync must pull again.
 PAGE_SIZE: Final = 1000
 _ACCOUNT_ENTITIES: Final = ("Account",)
+# C-02-T26: the vendor list and the two vendor-payment entities CLS-13 reads (read-only).
+_VENDOR_ENTITIES: Final = ("Vendor",)
+_PAYMENT_ENTITIES: Final = ("BillPayment", "Purchase")
 _TXN_ENTITIES: Final = (
     "JournalEntry", "Purchase", "Deposit", "Transfer", "Bill", "BillPayment", "Payment",
     "SalesReceipt", "Invoice", "RefundReceipt", "VendorCredit", "CreditMemo",
 )  # fmt: skip
-_CDC_ENTITIES: Final = ",".join(_ACCOUNT_ENTITIES + _TXN_ENTITIES)
+_CDC_ENTITIES: Final = ",".join(_ACCOUNT_ENTITIES + _VENDOR_ENTITIES + _TXN_ENTITIES)
 _CURSOR: Final = re.compile(r"[1-9][0-9]{0,6}")
+# vendor_payments pages through BillPayment then Purchase: "<entity>:<position>".
+_PAYMENT_CURSOR: Final = re.compile(r"(BillPayment|Purchase):([1-9][0-9]{0,6})")
 # The GL detail's columns, by Intuit's column keys (the report is read only for these).
 GL_COLUMNS: Final = "tx_date,txn_type,doc_num,name,memo,split_acc,subt_nat_amount"
 
@@ -246,7 +251,10 @@ class QuickBooksOnlineConnector(Connector):
 
     def capabilities(self) -> Capabilities:
         return Capabilities(
-            datasets=frozenset({"trial_balance", "accounts", "gl_detail", "trial_balance_month"}),
+            datasets=frozenset(
+                {"trial_balance", "accounts", "gl_detail", "trial_balance_month"}
+                | {"vendors", "vendor_payments"}
+            ),
             oauth=True,
             incremental=True,
             attachments=False,
@@ -473,24 +481,63 @@ class QuickBooksOnlineConnector(Connector):
             )
             request = f"gl_detail {start}..{end}"
             return RawPayload(response.content, MEDIA_TYPE, PROVIDER, system_now(), request)
+        if dataset == "vendor_payments":
+            return await self._vendor_payments(period, cursor)
         position = 1
         if cursor is not None:
             if not _CURSOR.fullmatch(cursor):
                 raise ConnectorError("invalid_cursor")
             position = int(cursor)
+        entity = "Vendor" if dataset == "vendors" else "Account"
         # Intuit query language over integers the connector computes, never caller text.
         query = " ".join(
-            ("select * from Account startposition", str(position), "maxresults", str(PAGE_SIZE))
+            ("select * from", entity, "startposition", str(position), "maxresults", str(PAGE_SIZE))
         )
         response = await self._get(
             f"/query?query={_percent(query)}&minorversion={MINOR_VERSION}", dataset
         )
-        returned = _account_count(response.content)
+        returned = _row_count(response.content, entity)
         following = str(position + PAGE_SIZE) if returned == PAGE_SIZE else None
         return RawPayload(
             response.content, MEDIA_TYPE, PROVIDER, system_now(),
-            f"accounts from {position}", next_cursor=following,
+            f"{dataset} from {position}", next_cursor=following,
         )  # fmt: skip
+
+    async def _vendor_payments(self, period: Period, cursor: str | None) -> RawPayload:
+        """C-02-T26: one page of the period's BillPayment rows, then of its Purchase rows (checks,
+        cash and card purchases carry `PaymentType` and `PaymentMethodRef`). Dates and integers
+        only, computed here; never caller text."""
+        entity, position = "BillPayment", 1
+        if cursor is not None:
+            match = _PAYMENT_CURSOR.fullmatch(cursor)
+            if match is None:
+                raise ConnectorError("invalid_cursor")
+            entity, position = match.group(1), int(match.group(2))
+        query = " ".join(
+            (
+                "select * from", entity,
+                f"where TxnDate >= '{period.start.isoformat()}'",
+                f"and TxnDate <= '{period.end.isoformat()}'",
+                "startposition", str(position), "maxresults", str(PAGE_SIZE),
+            )
+        )  # fmt: skip
+        response = await self._get(
+            f"/query?query={_percent(query)}&minorversion={MINOR_VERSION}", "vendor_payments"
+        )
+        returned = _row_count(response.content, entity)
+        following: str | None
+        if returned == PAGE_SIZE:
+            following = f"{entity}:{position + PAGE_SIZE}"
+        elif entity == "BillPayment":
+            following = "Purchase:1"
+        else:
+            following = None
+        return RawPayload(
+            response.content, MEDIA_TYPE, PROVIDER, system_now(),
+            f"vendor_payments {entity} {period.start.isoformat()}..{period.end.isoformat()} "
+            f"from {position}",
+            next_cursor=following,
+        )
 
     async def changes_since(self, since: datetime) -> Sequence[str]:
         """Which datasets changed since `since` (Intuit's CDC; at most 30 days back): `accounts`
@@ -508,6 +555,10 @@ class QuickBooksOnlineConnector(Connector):
             changed.append("accounts")
         if entities & set(_TXN_ENTITIES):
             changed.extend(("gl_detail", "trial_balance_month"))
+        if entities & set(_VENDOR_ENTITIES):
+            changed.append("vendors")
+        if entities & set(_PAYMENT_ENTITIES):
+            changed.append("vendor_payments")
         return tuple(changed)
 
     async def fetch_attachment(self, ref: str) -> RawPayload:
@@ -521,8 +572,8 @@ class QuickBooksOnlineConnector(Connector):
         return True
 
 
-def _account_count(content: bytes) -> int:
-    """How many accounts a query page returned (0 for anything unreadable: no next page)."""
+def _row_count(content: bytes, entity: str) -> int:
+    """How many `entity` rows a query page returned (0 for anything unreadable: no next page)."""
     try:
         raw: object = json.loads(content)
     except ValueError:
@@ -532,8 +583,8 @@ def _account_count(content: bytes) -> int:
     response = cast(dict[str, object], raw).get("QueryResponse")
     if not isinstance(response, dict):
         return 0
-    accounts = cast(dict[str, object], response).get("Account")
-    return len(cast(list[object], accounts)) if isinstance(accounts, list) else 0
+    rows = cast(dict[str, object], response).get(entity)
+    return len(cast(list[object], rows)) if isinstance(rows, list) else 0
 
 
 def _cdc_entities(content: bytes) -> set[str]:
@@ -543,7 +594,7 @@ def _cdc_entities(content: bytes) -> set[str]:
     except ValueError:
         raise ConnectorError("provider_error") from None
     found: set[str] = set()
-    known = set(_ACCOUNT_ENTITIES + _TXN_ENTITIES)
+    known = set(_ACCOUNT_ENTITIES + _VENDOR_ENTITIES + _TXN_ENTITIES)
     blocks = cast(dict[str, object], raw).get("CDCResponse") if isinstance(raw, dict) else None
     for block in cast(list[object], blocks) if isinstance(blocks, list) else []:
         responses = (
