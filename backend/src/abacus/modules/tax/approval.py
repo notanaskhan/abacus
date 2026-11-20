@@ -10,7 +10,9 @@ SPEC-501 AC-45 to AC-50). RED: the single owner of the L4 `final_approval` sign-
   `issue_blocks_final_approval` (an open issue whose `blocks` name final approval),
   `import_pending_approval` (an engine import checkpoint a person has not decided),
   `no_checkpoint` (nothing saved to approve), and whatever the registered providers add
-  (`register_final_approval_blocker`: T-02's draft K-1, T-01-T19's error diagnostics).
+  (`register_final_approval_blocker`: T-02's draft K-1, T-05's entity guards and T-06-T37's
+  form-preview diagnostics, which answer 409 `blocking_diagnostics` rather than
+  `final_approval_blocked`).
 - **Approve** (`POST …/final-approval`): five layers keep it a person's (INV-1): the matrix (agent
   and system deny), the route's live-human check, this service's check, the status machine
   (`final_approved` is a human event) and the database (sign-offs carry `signed_by`, a person).
@@ -116,6 +118,13 @@ BLOCKER_WORDS: Final[dict[str, str]] = {
     ),
     "workbook_run_in_progress": "A workbook run is still in progress.",
     "entity_return": "The entity return's checks could not be read.",
+    # T-06-T37 (DEC-5830): the form-preview diagnostics TAX-11 shows on the disabled button.
+    "engine_diagnostic_error": "The tax engine reports an error diagnostic on the return.",
+    "item_l_schedule_l_off": (
+        "The partners' ending capital (K-1 Item L) does not equal Schedule L line 21."
+    ),
+    "section_754_statement_pending": "The §754 election decision is still open.",
+    "form_preview_diagnostics": "The return's form diagnostics could not be read.",
 }
 
 
@@ -268,6 +277,18 @@ async def approve(
         raise ContentChanged(facts={"work_item_id": str(return_id)})
     content_hash = cast(str, found.content_hash)  # signed as the checkpoint stores it
     if found.blockers:
+        from abacus.modules.tax.entity_depth_errors import BlockingDiagnostics
+        from abacus.modules.tax.form_preview_blockers import DIAGNOSTIC_CODES
+
+        diagnostics = [b for b in found.blockers if b.kind in DIAGNOSTIC_CODES]
+        if diagnostics:  # T-06-T37: the diagnostics answer their own code (TAX-11)
+            raise BlockingDiagnostics(
+                facts={
+                    "work_item_id": str(return_id),
+                    "blocking": len(diagnostics),
+                    "first_blocker": diagnostics[0].kind,
+                }
+            )
         raise FinalApprovalBlocked(
             facts={
                 "work_item_id": str(return_id),
