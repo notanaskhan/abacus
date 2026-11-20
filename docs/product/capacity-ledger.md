@@ -238,3 +238,15 @@ stay partial on clauses outside the repo: N-01-T26 (provider-terms entry and Bed
 for matcher v3, `docs/plan/status/n01-t26-matcher-v3-clearance.md`), N-01-T27 (the journey legs on
 staging or production) and N-01-T29 (per-firm flips wait on pilot firms; pen-test findings are
 deferred, DEC-1389). Contracts frozen: C5 v1.2 intake half (`firm-intake.md`) and Files browser v1.
+## Extension-season 2028 retro (Q-04-T231; 2026-11-20, synthetic)
+
+Rehearsed on PF-X1 and reported as synthetic (DEC-1530, DEC-2081, DEC-4100); no pilot firm is
+live, so every firm figure is zero or no data. Retro: `docs/ops/pilot/retros/ext-season-2028-retro.md`.
+
+| Figure | Value |
+|---|---|
+| Support hours, S48 to S52 | 0, 0, 0, 0, 0 against reserves of 37.50, 46.50, 43.50, 43.50 and 18 hours; RK-07 does not fire |
+| W4 to W8 for PF-X1, Sep 4 – Oct 16, 2028 | no data (no snapshots; dossier at shadow) |
+| W9, W10 | not platform-measured (F-09) |
+| Flips executed and rolled back in the window | 0 and 0 (A-08's five flips are Oct 24, after the close) |
+| Escaped defects in the season | none |
