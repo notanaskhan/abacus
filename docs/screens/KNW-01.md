@@ -43,8 +43,15 @@ the providers through `visible()`; the agent proposes nothing on this screen.
 Locked with KNW-03 by K-01-T17 (TASK-2615). The current tier and diff are in the visual report.
 
 ## Deviations
-- **g and h** (the Oct 1 counts and the engagement templates) are K-03's and later providers'; they
-  are not built here.
+- **g and h** (the Oct 1 counts and the engagement templates) are K-03's (artboard-level carry,
+  DEC-5810): K-03 registers the Engagement templates catalogue provider and counter and is their
+  parity owner (lock in K-03-T59).
+
+## K-03 artboards (K-03-T04, TASK-8803)
+| Letter | Artboard | Persona | Clock (CT) | Figures | Build | Owner |
+|---|---|---|---|---|---|---|
+| g | Counts · Thu Oct 1, 11:30 AM | Margaret Okonkwo | Thu Oct 1, 11:30 AM (README header: Mon 14 Sep 9:24 AM is the canvas render clock; the artboard title wins) | 107 items; FS v6 published | planned | AY |
+| h | Engagement templates category | Margaret Okonkwo | Thu Oct 1, 11:30 AM | BH Audit Methodology · FS v6 live, FS v5 Deprecated for new work | planned | AY |
 
 ## Open gaps
 Manifest stays `fixture` until the screen is walked on staging (DEC-195).
