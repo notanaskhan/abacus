@@ -573,6 +573,20 @@ async def card_decision(tenant: TenantContext, card_id: UUID) -> str | None:
     return str(found) if found is not None else None
 
 
+async def card_subject(tenant: TenantContext, card_id: UUID) -> tuple[str, UUID | None] | None:
+    """T-06-T35 (DEC-5835): a card's kind and work item, for the owner that holds its id (the
+    §754 send names the card only); None outside the tenant."""
+    async with tenant_session(tenant) as session:
+        found = (
+            await session.execute(
+                select(DecisionCard.kind, DecisionCard.work_item_id).where(
+                    DecisionCard.id == card_id
+                )
+            )
+        ).first()
+    return None if found is None else (str(found.kind), found.work_item_id)
+
+
 async def decided_cards(
     tenant: TenantContext, engagement_id: UUID, reserved_role: str = "engagement_partner"
 ) -> list[DecidedCard]:

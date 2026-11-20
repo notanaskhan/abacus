@@ -1934,6 +1934,21 @@ INSERT_COLUMNS["fixed_asset_change_decisions"] = frozenset(
     {"tenant_id", "request_id", "decision", "reason", "decided_by"}
 )
 
+# T-06-T35 (1000, DEC-5835): a §754 decision sent to the client's owner and the client's answer.
+T06T35_TABLES: frozenset[str] = frozenset({"tax_decision_requests", "tax_decision_answers"})
+INSERT_COLUMNS["tax_decision_requests"] = frozenset(
+    {"tenant_id", "engagement_id", "work_item_id", "card_id", "kind", "subject_partner_id",
+     "contact_id", "contact_user_id", "issue_id", "sent_by"}
+)  # fmt: skip
+INSERT_COLUMNS["tax_decision_answers"] = frozenset(
+    {"tenant_id", "request_id", "decision", "contact_id", "user_id", "grant_id",
+     "designation_basis"}
+)  # fmt: skip
+
 # The tables this module owns and its insert-only tables, after S50 (one definition each).
-TABLES: frozenset[str] = _TABLES_PRE_S50 | T08T06_TABLES | T06T14_TABLES | T06T39_TABLES | T06T33_TABLES
-INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1 | T06T39_TABLES | T06T33_TABLES
+TABLES: frozenset[str] = (
+    _TABLES_PRE_S50 | T08T06_TABLES | T06T14_TABLES | T06T39_TABLES | T06T33_TABLES | T06T35_TABLES
+)
+INSERT_ONLY: frozenset[str] = (
+    _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1 | T06T39_TABLES | T06T33_TABLES | T06T35_TABLES
+)

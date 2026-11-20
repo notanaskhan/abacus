@@ -40,7 +40,7 @@ from abacus.modules.identity.api import ScopeFacts, active_grants, scope_facts
 from abacus.modules.organisations.api import contacts_of_user
 
 ClientApprovalKind = Literal[
-    "proposed_entry", "uncorrected_misstatements", "fs_draft", "fs_package"
+    "proposed_entry", "uncorrected_misstatements", "fs_draft", "fs_package", "section_754"
 ]
 ClientDecisionWord = Literal["accept", "decline", "approve", "acknowledge"]
 DeclineReason = Literal["number_looks_wrong", "something_missing", "other"]
@@ -67,6 +67,8 @@ DECIDER_RULES: Final[Mapping[ClientApprovalKind, DeciderRule]] = {
     "uncorrected_misstatements": DeciderRule(_OWNER_OR_AOR),
     "fs_draft": DeciderRule(_OWNER_OR_AOR),
     "fs_package": DeciderRule(_OWNER_OR_AOR, frozenset[DesignationBasis]({"ske_designee"})),
+    # T-06-T35 (DEC-5835): a partnership's §754 election is its owner's to make.
+    "section_754": DeciderRule(frozenset[DesignationBasis]({"owner"})),
 }
 
 
