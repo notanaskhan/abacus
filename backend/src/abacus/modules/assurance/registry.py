@@ -1648,7 +1648,7 @@ Q05T12_TABLES: frozenset[str] = frozenset(
     | {"post_issuance_sources"}  # Q-05-T17 (0997)
 )
 Q05T12_INSERT_ONLY: frozenset[str] = frozenset(
-    {"post_issuance_comparisons", "post_issuance_evaluations"}
+    {"post_issuance_comparisons", "post_issuance_evaluations", "post_issuance_sources"}
 )
 INSERT_COLUMNS["post_issuance_events"] = frozenset(
     {"tenant_id", "engagement_id", "work_item_id", "ref", "type", "standard", "source_kind",
