@@ -236,6 +236,7 @@ import {
 import { HOME01 } from "./HOME-01";
 import { HOME05 } from "./HOME-05";
 import { scenarios as home05Scenarios } from "../fixtures/scenarios/HOME-05";
+import { TXP04_REVIEW } from "../fixtures/scenarios/TXP-04";
 import {
   type Home01State,
   OFFICE as HOME01_OFFICE,
@@ -1638,7 +1639,17 @@ registerScreen("TXP-12", { title: "K-1 package", Component: Txp12Artboard });
 // route's entity dispatch (TXP-00's EntityReturn) over the Ridgeline 1065, so parity, axe, the
 // grammar and Tier D read the screens the routes draw. TXP-06 is O4 over Schedule K.
 const ENTITY_SCREENS: Readonly<
-  Record<string, { title: string; slug: EntitySlug; review?: string; sheet?: boolean }>
+  Record<
+    string,
+    {
+      title: string;
+      slug: EntitySlug;
+      review?: string;
+      /** A state's own Group B frame, where one screen ID draws two (TXP-04). */
+      reviewOf?: Readonly<Record<string, string>>;
+      sheet?: boolean;
+    }
+  >
 > = {
   "TXP-00": { title: "Return › Agent · entity returns", slug: "agent" },
   "TXP-01": { title: "Review › Summary", slug: "review", review: "summary" },
@@ -1648,6 +1659,13 @@ const ENTITY_SCREENS: Readonly<
     title: "Review › Fixed Assets · Ridgeline depreciation register",
     slug: "review",
     review: "fixed-assets",
+  },
+  // T-06-T30: one screen ID, two Group B frames (a, a′ on M-1/M-3; b–d on Schedule M-2).
+  "TXP-04": {
+    title: "Review › M-1/M-3 and Schedule M-2 · Ridgeline",
+    slug: "review",
+    review: "m1-m3",
+    reviewOf: TXP04_REVIEW,
   },
   "TXP-05": { title: "Review › Schedule K", slug: "review", review: "schedule-k" },
   "TXP-06": {
@@ -1685,7 +1703,9 @@ function EntityFrame({
         <EntityReturn
           returnId={RIDGELINE_RETURN_ID}
           slug={screen?.slug ?? "agent"}
-          {...(screen?.review === undefined ? {} : { review: screen.review })}
+          {...((screen?.reviewOf?.[state] ?? screen?.review) === undefined
+            ? {}
+            : { review: screen?.reviewOf?.[state] ?? screen?.review ?? "" })}
           overview={<></>}
           onOpen={() => undefined}
           onComposer={() => undefined}

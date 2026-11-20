@@ -5,12 +5,17 @@ import { type FixtureHandler, json } from "../../app-core/fixture-mode";
 import { taxEntityHandlers } from "./tax-entity";
 import type { Snapshot } from "../seed/tax-entity";
 import { type AssetView, type AssetsVariant, fixedAssets, rowsOf } from "../seed/tax-depth-assets";
+import { type BookTaxVariant, M1, M3, m2 } from "../seed/tax-depth-booktax";
+import type { IssuesState } from "../seed/tax-entity-issues";
 
 const R = "/v1/tax-returns/{return_id}";
 const notYet = () => json({ detail: "not_implemented" }, 501);
 
 export interface DepthOptions {
   assets?: AssetsVariant;
+  bookTax?: BookTaxVariant;
+  /** The T-05 issue queue's state (TXP-10; d: the M-2 fix applied). */
+  issues?: IssuesState;
 }
 
 const VIEWS: readonly AssetView[] = ["register", "by_property", "dispositions"];
@@ -31,8 +36,13 @@ export function taxDepthHandlers(
   options: DepthOptions = {},
 ): Record<string, FixtureHandler> {
   const assets = options.assets ?? "e0";
+  const bookTax = options.bookTax ?? "e0";
   return {
-    ...taxEntityHandlers(snapshot),
+    ...taxEntityHandlers(snapshot, options.issues === undefined ? {} : { issues: options.issues }),
+    [`GET ${R}/schedules/m3`]: () => json(M3),
+    [`GET ${R}/schedules/m1`]: () => json(M1),
+    [`GET ${R}/schedules/m2`]: (req) =>
+      json(m2(req.query.get("variant") === "with_fix" ? "with_fix" : "as_drafted", bookTax)),
     [`GET ${R}/sections`]: () =>
       json({
         items: [
