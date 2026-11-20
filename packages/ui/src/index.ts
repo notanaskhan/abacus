@@ -478,3 +478,6 @@ export {
 } from "./connect/connection-tile";
 // F-08-T05: the T18 Sheet kit (gallery-only until K-03; tree-shaken from production chunks).
 export * from "./sheet";
+
+// ChartKit C-36 (F-08-T10)
+export * from "./charts";
