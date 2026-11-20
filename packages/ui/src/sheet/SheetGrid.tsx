@@ -7,20 +7,37 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import { cn } from "../cn";
 import { ErrorRow } from "../components/states";
 import { useRowWindow } from "../data/row-window";
+import { AgentFilledCell } from "./AgentFilledCell";
 import { COLUMN_GLYPHS } from "./glyphs";
 import type {
+  AgentUnavailable,
   SheetCellEdit,
   SheetColumnIntent,
   SheetEditConflict,
   SheetGridColumn,
   SheetGridProps,
   SheetGridRow,
+  SheetRunSource,
+  SheetRunState,
   SheetSection,
 } from "./types";
+
+/** F-08-T07: the DF-04 reasons on the agent column header, verbatim (F-08 §6; SHL-23 copy). */
+export const AGENT_UNAVAILABLE: Record<AgentUnavailable, string> = {
+  real_client_data: "AI isn't available for real client data yet",
+  consent_7216: "Agents are off for this taxpayer — §7216 consent isn't on file",
+};
+
+const IDLE: SheetRunState = { running: false };
+const NO_RUN: SheetRunSource = {
+  subscribe: () => () => undefined,
+  getSnapshot: () => IDLE,
+};
 
 /** T18g's tooltip, verbatim (handoff T18 spec, States). */
 export const LOCKED_TOOLTIP =
@@ -112,7 +129,7 @@ function HeaderCell({
     { label: "Sort descending", intent: { kind: "sort", dir: "desc" } },
     { label: "Filter", intent: { kind: "filter" } },
     { label: "Hide column", intent: { kind: "hide" } },
-    ...(column.type === "agent"
+    ...(column.type === "agent" && column.agent?.unavailable === undefined
       ? [
           { label: "Edit agent column…", intent: { kind: "edit_agent_column" } as const },
           { label: "Run on empty rows", intent: { kind: "run_on_empty_rows" } as const },
@@ -133,6 +150,11 @@ function HeaderCell({
       <span className="flex items-center gap-[6px]">
         <Glyph aria-hidden className="size-[12px] shrink-0 text-ink-3" />
         <span className="truncate">{column.label}</span>
+        {column.agent?.unavailable !== undefined && (
+          <span className="truncate text-meta text-ink-3" data-agent-unavailable="">
+            {AGENT_UNAVAILABLE[column.agent.unavailable]}
+          </span>
+        )}
         <button
           type="button"
           aria-label={`${column.label} column menu`}
@@ -184,7 +206,14 @@ export function SheetGrid({
   filterRow = false,
   height = 560,
   onCellEdit,
+  viewer,
+  onAdopt,
+  onEditAgentValue,
+  onOpenRow,
+  run = NO_RUN,
 }: SheetGridProps): JSX.Element {
+  const runState = useSyncExternalStore(run.subscribe, run.getSnapshot, run.getSnapshot);
+  const agentRunning = runState.running || status.agentRunning === true;
   const scroller = useRef<HTMLDivElement | null>(null);
   const table = useRef<HTMLTableElement | null>(null);
   const list = useMemo(() => items(sections, rows), [sections, rows]);
@@ -508,6 +537,39 @@ export function SheetGrid({
                               );
                             }}
                           />
+                        ) : c.type === "agent" ? (
+                          <AgentFilledCell
+                            value={cell?.value ?? ""}
+                            state={agentState(cell?.state)}
+                            citations={cell?.citations}
+                            by={cell?.by}
+                            at={cell?.at}
+                            was={cell?.was}
+                            exception={cell?.exception}
+                            running={
+                              runState.running &&
+                              (runState.pendingRowKeys === undefined ||
+                                runState.pendingRowKeys.has(row.key))
+                            }
+                            viewer={viewer ?? { kind: "system" }}
+                            onAdopt={
+                              onAdopt === undefined ? undefined : () => onAdopt(row.key, c.key)
+                            }
+                            onEdit={
+                              onEditAgentValue === undefined
+                                ? undefined
+                                : () => {
+                                    onEditAgentValue(row.key, c.key);
+                                  }
+                            }
+                            onOpenRow={
+                              onOpenRow === undefined
+                                ? undefined
+                                : () => {
+                                    onOpenRow(row.key);
+                                  }
+                            }
+                          />
                         ) : (
                           <span className="line-clamp-3 flex items-start gap-[4px]">
                             {isKey && row.locked && (
@@ -549,7 +611,7 @@ export function SheetGrid({
         className="flex h-[30px] items-center gap-[12px] border-t border-hair bg-band-hd px-[10px] text-meta text-ink-3"
       >
         <span>{`${String(status.rows)} rows · ${String(status.exceptions)} exception${status.exceptions === 1 ? "" : "s"} · View: ${status.view}`}</span>
-        {status.agentRunning === true && <span className="text-ink-2">Agent column running</span>}
+        {agentRunning && <span className="text-ink-2">Agent column running</span>}
       </div>
     </div>
   );
@@ -624,4 +686,12 @@ function CellEditor({
       }}
     />
   );
+}
+
+/** An agent cell's state: a human value in an agent column reads as adopted. */
+function agentState(
+  state: SheetGridRow["cells"][string]["state"] | undefined,
+): "empty" | "suggested" | "adopted" | "edited" {
+  if (state === undefined || state === "empty") return "empty";
+  return state === "human" ? "adopted" : state;
 }

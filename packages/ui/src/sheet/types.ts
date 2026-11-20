@@ -1,3 +1,6 @@
+import type { Actor } from "../attribution/actor";
+import type { CitationView } from "../tracing/types";
+
 // T18 Sheet kit view model (F-08-T05; F-08 §5 "View models"; chapter 03 §3.6). The kit's public
 // contract: no API types. Status words stay kit-local drafts until the DF-31 PR (F-08-T04).
 
@@ -24,7 +27,11 @@ export interface SheetGridColumn {
   width: number;
   /** The Key column is frozen with the select column (A1). */
   frozen?: boolean;
-  agent?: { name: string };
+  agent?: {
+    name: string;
+    /** F-08-T07 (DF-04): agents can't run here; the header shows why and offers no run intent. */
+    unavailable?: AgentUnavailable;
+  };
   /** F-08-T06: the choices of a single select or person column (value is what onCellEdit gets). */
   options?: readonly { value: string; label: string }[];
 }
@@ -35,6 +42,31 @@ export interface SheetCell {
   state: SheetCellState;
   /** F-08-T06: the editor's starting value when it differs from the display (an ISO date). */
   raw?: string;
+  /** F-08-T07, agent cells: who adopted or edited the value, and when ("Oct 1"). */
+  by?: Actor;
+  at?: string;
+  /** F-08-T07, an edited agent cell: the agent's value before the edit. */
+  was?: string;
+  /** F-08-T07: the citations, from typed C4 locators only (INV-2); never parsed from text. */
+  citations?: readonly CitationView[];
+  /** F-08-T07: an exception value carries the red flag (C-31). */
+  exception?: boolean;
+}
+
+/** F-08-T07 (DF-04): why the agent column can't run. */
+export type AgentUnavailable = "real_client_data" | "consent_7216";
+
+/** F-08-T07: what the agent column's run shows (adapted from the consumer's E6 RunSource, C6). */
+export interface SheetRunState {
+  running: boolean;
+  /** The rows whose agent cells are still being filled; absent: every empty agent cell. */
+  pendingRowKeys?: ReadonlySet<string>;
+}
+
+/** A store the grid reads with useSyncExternalStore; the consumer adapts its RunStore to it. */
+export interface SheetRunSource {
+  subscribe: (listener: () => void) => () => void;
+  getSnapshot: () => SheetRunState;
 }
 
 export interface SheetSection {
@@ -99,4 +131,13 @@ export interface SheetGridProps {
   height?: number;
   /** F-08-T06: committing an edit; a rejection with a 409/412 shape shows the conflict row. */
   onCellEdit?: (edit: SheetCellEdit) => Promise<void>;
+  /** F-08-T07: the signed-in person; Adopt and Edit render only for a named person (INV-1). */
+  viewer?: Actor;
+  /** F-08-T07: adopt an agent value (P-35 `suggestion.resolve`); never optimistic (DEC-24). */
+  onAdopt?: (rowKey: string, colKey: string) => Promise<void>;
+  /** F-08-T07: the consumer opens its editor for an agent value. */
+  onEditAgentValue?: (rowKey: string, colKey: string) => void;
+  onOpenRow?: (rowKey: string) => void;
+  /** F-08-T07: the agent column's run (spinners and "Agent column running"). */
+  run?: SheetRunSource;
 }
