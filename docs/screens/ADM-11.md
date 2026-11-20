@@ -47,3 +47,11 @@ The designed links of the handoff link graph (link-contract rule 5); each is wir
 | Opens AUD-28 · Consultations log | AUD-28 | designed (handoff link graph) |
 | Opens CLI-08 · Independence & conflicts · Ana Cruz · Northwind 401(k) | CLI-08 | designed (handoff link graph) |
 | Opens WB-08 · run history · EBP Audit Workpapers | WB-08 | designed (handoff link graph) |
+
+## Q-05-T19 (TASK-8825): built
+States a–e build from `fixtures/scenarios/ADM-11.ts` (seed `fixtures/seed/adm11.ts`) and render in
+the gallery; the live reads are `GET /v1/quality/dashboard`, `/register`, `/agent-overrides` (+
+`/{agent_key}/reasons`), `/findings` and `GET /v1/audits/consultations`.
+- **Deviation:** the consultations band reads the log's ref, date and EP (the question text lives on
+  AUD-28's detail; the log row has no question). The R2 links (AI adoption, Insights →, Open
+  learned context) are href links to INS-02 and WB-13.

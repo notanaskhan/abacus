@@ -315,6 +315,8 @@ import { POR23 } from "./POR-23";
 import { POR17 } from "./POR-17";
 import { POR17_SUMMIT_TRAIL } from "../fixtures/seed/fieldwork";
 import { ADM14 } from "./ADM-14";
+import { ADM11 } from "./ADM-11";
+import { scenarios as adm11Scenarios } from "./ADM-11/scenarios";
 import { scenarios as adm14Scenarios } from "./ADM-14/scenarios";
 import { STATES as POR23_STATES, scenarios as por23Scenarios } from "./POR-23/scenarios";
 import { scenarios as por11Scenarios } from "./POR-11/scenarios";
@@ -4344,3 +4346,29 @@ registerScreen("POR-15", {
     ),
   ),
 });
+
+// S52 (ADM-11): artboards a, b, c, d, e on each state's scenario.
+const ADM11_STATES = ["a", "b", "c", "d", "e"] as const;
+function ADM11Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state = ADM11_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      adm11Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div data-artboard={state}>
+      <ADM11 {...(state === "b" ? { office: "Denver" } : {})} {...(state === "c" ? { expandedAgent: "ebp_audit_workpapers" } : {})} readOnly={state === "e"} />
+    </div>
+  );
+}
+
+registerScreen("ADM-11", { title: "Quality management dashboard", Component: ADM11Artboard });
