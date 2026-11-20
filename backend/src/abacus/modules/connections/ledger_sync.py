@@ -89,6 +89,8 @@ from abacus.modules.connections.qbo_format import (
     parse_qbo_accounts,
     parse_qbo_general_ledger,
     parse_qbo_trial_balance,
+    parse_qbo_vendor_payments,
+    parse_qbo_vendors,
 )
 from abacus.modules.connections.repository import LIVE, live_connection_for, set_connection
 from abacus.modules.connections.service import connector_for
@@ -110,6 +112,10 @@ from abacus.modules.ledger.api import (
 ACTOR: Final = "connections:ledger_sync"
 PROVIDER_METER: Final = "intuit"
 DATASETS: Final[tuple[Dataset, ...]] = ("accounts", "trial_balance_month", "gl_detail")
+# C-02-T26: vendor datasets ride the month's set when the connector reads them (QuickBooks), so
+# their runs end at the month's snapshot like every succeeded run (0900). Paged like accounts.
+VENDOR_DATASETS: Final[tuple[Dataset, ...]] = ("vendors", "vendor_payments")
+_PAGED: Final[frozenset[Dataset]] = frozenset({"accounts", "vendors", "vendor_payments"})
 TICK: Final = timedelta(hours=1)
 MIN_WAIT: Final = 60
 MAX_WAIT: Final = 3600
@@ -410,8 +416,9 @@ def _tb(payload: RawPayload) -> NormalisedTrialBalance:
 
 
 async def _pull(connector: Connector, dataset: Dataset, period: Period) -> list[RawPayload]:
-    """One dataset for one month; the chart of accounts a page at a time."""
-    if dataset != "accounts":
+    """One dataset for one month; the chart of accounts, vendors and vendor payments a page at a
+    time."""
+    if dataset not in _PAGED:
         return [await connector.pull(dataset, period, None)]
     pages: list[RawPayload] = []
     cursor: str | None = None
@@ -611,8 +618,10 @@ async def sync_entity(
     snapshots = 0
     changed: tuple[str, ...]
     try:
+        supported = connector.capabilities().datasets
+        every = DATASETS + tuple(d for d in VENDOR_DATASETS if d in supported)
         if schedule.cdc_cursor is None or at - schedule.cdc_cursor > CDC_LOOKBACK:
-            changed = DATASETS
+            changed = every
         else:
             changed = tuple(await connector.changes_since(schedule.cdc_cursor))
         recorded: list[tuple[UUID, str]] = []
@@ -621,8 +630,12 @@ async def sync_entity(
             span = Period(start, end)
             first = await _first_set(tenant, connection.client_entity_id, period)
             wanted: tuple[Dataset, ...] = (
-                DATASETS if first else tuple(d for d in DATASETS if d in changed)
+                every if first else tuple(d for d in every if d in changed)
             )
+            if wanted and not set(wanted) & set(DATASETS):
+                # Only vendor data changed: the month's trial balance rides along so the runs end
+                # at a snapshot (usually the unchanged one).
+                wanted = ("trial_balance_month", *wanted)
             if not wanted:
                 continue
             pulled: list[_Pulled] = []
@@ -744,6 +757,12 @@ async def _record_set(
     tb = _tb(by["trial_balance_month"][0]) if "trial_balance_month" in by else None
     accounts = _accounts(by["accounts"]) if "accounts" in by else None
     register = _register(by["gl_detail"][0]) if "gl_detail" in by else None
+    # C-02-T26: vendor pages are checked as hostile content before their bytes are kept (a bad
+    # page fails the sync like a bad trial balance); CLS-13 parses them again on read.
+    for page in by.get("vendors", []):
+        parse_qbo_vendors(page.content)
+    for page in by.get("vendor_payments", []):
+        parse_qbo_vendor_payments(page.content)
     pulled_at = max(p.payload.pulled_at for p in pulled)
     run_ids = await _record_runs(
         tenant, connection, scope, period, pulled, trigger, started_by, first_run_id

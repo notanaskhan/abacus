@@ -34,6 +34,12 @@ from abacus.modules.connections.connector import (
     Unavailable,
 )
 from abacus.modules.connections.connectors import quickbooks_online
+from abacus.modules.connections.qbo_format import (
+    QboVendor,
+    QboVendorPayment,
+    parse_qbo_vendor_payments,
+    parse_qbo_vendors,
+)
 from abacus.modules.connections.coverage import cover_entities, covers
 from abacus.modules.connections.entity import (
     ActivityLine,
@@ -207,6 +213,10 @@ register_engagement_owners(AUDIT_KINDS - {"connection"}, audit_owners)
 register_entity_owners({"connection"}, audit_entities)
 
 __all__ = [
+    "QboVendor",
+    "QboVendorPayment",
+    "parse_qbo_vendor_payments",
+    "parse_qbo_vendors",
     "ACTIVITIES",
     "CONNECTORS",
     "FIRM_APP_DISABLED",

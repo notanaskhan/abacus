@@ -20,7 +20,7 @@ import unicodedata
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
-from typing import Final, cast
+from typing import Final, Literal, cast
 
 from abacus.modules.connections.fake_format import MAX_LINES, MAX_PAYLOAD_BYTES, MAX_TEXT
 from abacus.modules.ledger.api import LedgerLine, NormalisedTrialBalance, NormaliseError
@@ -328,4 +328,137 @@ def parse_qbo_general_ledger(content: bytes) -> tuple[QboRegisterLine, ...]:
             )
 
     walk(document.get("Rows"), None, 0)
+    return tuple(out)
+
+
+# --- C-02-T26: vendors and vendor payments for the CLS-13 1099 / W-9 tracker (read-only) ---------
+
+PaymentMethod = Literal["check", "ach", "card", "cash", "other"]
+# A tax id as Intuit returns it is masked ("XXX-XX-1234", "XX-XXX1234") [verify against the live
+# sandbox]; only the last four digits ever leave this parser, and a full nine-digit id is refused
+# rather than stored (C-02-T33 seals TINs; ADR P-12).
+_TAX_ID_TAIL: Final = re.compile(r"[Xx*\-\s]*([0-9]{4})")
+_FULL_TAX_ID: Final = re.compile(r"[0-9]{3}-?[0-9]{2}-?[0-9]{4}|[0-9]{2}-?[0-9]{7}")
+
+
+@dataclass(frozen=True)
+class QboVendor:
+    """One vendor: Intuit's id, the display name (hostile text, checked), the 1099 flag and the
+    last four digits of a masked tax id."""
+
+    external_id: str
+    name: str
+    is_1099: bool
+    tin_last4: str | None
+    active: bool
+
+
+@dataclass(frozen=True)
+class QboVendorPayment:
+    """One payment to a vendor: a BillPayment or a Purchase (check, cash or card), its method by
+    code (`PayType`, `PaymentType` and the payment method's name), amount as Intuit prints it."""
+
+    external_id: str
+    entity: Literal["BillPayment", "Purchase"]
+    vendor_external_id: str
+    txn_date: date
+    amount: Decimal
+    method: PaymentMethod
+
+
+def _amount(value: object) -> Decimal:
+    """Intuit's `TotalAmt` is a JSON number; it goes through its shortest text form, never float
+    arithmetic, then the same plain-decimal check as report cells."""
+    if isinstance(value, bool):
+        raise NormaliseError("malformed_payload")
+    if isinstance(value, int | float):
+        return _signed(repr(value))
+    return _signed(value)
+
+
+def _tin_last4(value: object) -> str | None:
+    if value is None or value == "":
+        return None
+    text = _text(value)
+    if _FULL_TAX_ID.fullmatch(text):
+        raise NormaliseError("unmasked_tax_id")
+    match = _TAX_ID_TAIL.fullmatch(text)
+    if match is None:
+        raise NormaliseError("malformed_payload")
+    return match.group(1)
+
+
+def _flag(value: object, default: bool) -> bool:
+    if value is None:
+        return default
+    if not isinstance(value, bool):
+        raise NormaliseError("malformed_payload")
+    return value
+
+
+def parse_qbo_vendors(content: bytes) -> tuple[QboVendor, ...]:
+    """A page of `select * from Vendor` (`QueryResponse.Vendor[]`)."""
+    response = _object(_load(content).get("QueryResponse"))
+    raw = response.get("Vendor", [])
+    if not isinstance(raw, list) or len(cast(list[object], raw)) > MAX_LINES:
+        raise NormaliseError("malformed_payload")
+    out: list[QboVendor] = []
+    for item in cast(list[object], raw):
+        vendor = _object(item)
+        out.append(
+            QboVendor(
+                external_id=_identifier(vendor.get("Id")),
+                name=_text(vendor.get("DisplayName")),
+                is_1099=_flag(vendor.get("Vendor1099"), False),
+                tin_last4=_tin_last4(vendor.get("TaxIdentifier")),
+                active=_flag(vendor.get("Active"), True),
+            )
+        )
+    return tuple(out)
+
+
+def _method(entity: str, row: dict[str, object]) -> PaymentMethod:
+    """The payment method by code: a card is a card whatever its name; ACH is named by the
+    payment method (QuickBooks has no ACH pay type) [verify]."""
+    named = row.get("PaymentMethodRef")
+    name = _text(_object(named).get("name")).lower() if isinstance(named, dict) else ""
+    kind = _text(row.get("PayType" if entity == "BillPayment" else "PaymentType"))
+    if kind == "CreditCard":
+        return "card"
+    if "ach" in name.split() or name in {"ach", "eft", "direct deposit"}:
+        return "ach"
+    if kind == "Check":
+        return "check"
+    if kind == "Cash":
+        return "cash"
+    return "other"
+
+
+def parse_qbo_vendor_payments(content: bytes) -> tuple[QboVendorPayment, ...]:
+    """A page of BillPayment or Purchase rows. Purchases paid to anyone but a vendor (an employee,
+    a customer) are left out by code."""
+    response = _object(_load(content).get("QueryResponse"))
+    entity = "BillPayment" if "BillPayment" in response else "Purchase"
+    raw = response.get(entity, [])
+    if not isinstance(raw, list) or len(cast(list[object], raw)) > MAX_LINES:
+        raise NormaliseError("malformed_payload")
+    out: list[QboVendorPayment] = []
+    for item in cast(list[object], raw):
+        row = _object(item)
+        if entity == "BillPayment":
+            ref = _object(row.get("VendorRef"))
+        else:
+            ref = _object(row.get("EntityRef"))
+            if _optional_text(ref.get("type")) != "Vendor":
+                continue
+        out.append(
+            QboVendorPayment(
+                external_id=_identifier(row.get("Id")),
+                entity=cast(Literal["BillPayment", "Purchase"], entity),
+                vendor_external_id=_identifier(ref.get("value")),
+                txn_date=_date(row.get("TxnDate")),
+                amount=_amount(row.get("TotalAmt")),
+                method=_method(entity, row),
+            )
+        )
     return tuple(out)

@@ -8,6 +8,9 @@ which reach no host (`connections.is_networkless`). Refused outside local, test 
   Its requests are answered from `<dir>/<connection_id>/qbo-trial_balance-<start>_<end>.json`
   (a TrialBalance report) and its OAuth calls with synthetic tokens, so the real connector's
   code, normaliser and pipeline dispatch run end to end.
+  C-02-T26: vendor queries answer from `qbo-vendors.json` and
+  `qbo-vendor_payments-<BillPayment|Purchase>-<start>_<end>.json` (written by
+  `copperleaf_vendor_recordings`).
 - `fake_netsuite`: serves a NetSuite trial balance CSV export from
   `<dir>/<connection_id>/netsuite-trial_balance-<start>_<end>.csv`, parsed by the import
   format `netsuite_tb_csv` (the SPEC-028 pipeline).
@@ -19,10 +22,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 from typing import ClassVar, Final, cast
+from urllib.parse import unquote
 from uuid import UUID
 
 from abacus.kernel.clock import system_now
@@ -78,6 +83,8 @@ class RecordedQbo:
             return EgressResponse(200, {}, json.dumps(tokens).encode())
         if "/companyinfo/" in url:
             return EgressResponse(200, {}, b'{"CompanyInfo": {"Id": "1"}}')
+        if "/query?" in url and method.upper() == "GET":
+            return await self._query(url)
         if "/reports/TrialBalance" in url and method.upper() == "GET":
             query = dict(p.split("=", 1) for p in url.split("?", 1)[1].split("&"))
             period = Period(
@@ -90,6 +97,31 @@ class RecordedQbo:
             except FileNotFoundError:
                 return EgressResponse(404, {}, b"")
         return EgressResponse(404, {}, b"")
+
+    async def _query(self, url: str) -> EgressResponse:
+        """C-02-T26: the vendor reads. `select * from Vendor` answers from `qbo-vendors.json`;
+        a BillPayment or Purchase query for a period from
+        `qbo-vendor_payments-<Entity>-<start>_<end>.json`. Other queries are not recorded."""
+        query = unquote(dict(p.split("=", 1) for p in url.split("?", 1)[1].split("&"))["query"])
+        folder = self._directory / str(self._connection_id)
+        match = re.fullmatch(
+            r"select \* from (Vendor|BillPayment|Purchase)"
+            r"(?: where TxnDate >= '([0-9-]{10})' and TxnDate <= '([0-9-]{10})')?"
+            r" startposition 1 maxresults [0-9]+",
+            query,
+        )
+        if match is None:
+            return EgressResponse(404, {}, b"")
+        entity, start, end = match.groups()
+        name = (
+            "qbo-vendors.json"
+            if entity == "Vendor"
+            else f"qbo-vendor_payments-{entity}-{start}_{end}.json"
+        )
+        try:
+            return EgressResponse(200, {}, await asyncio.to_thread((folder / name).read_bytes))
+        except FileNotFoundError:
+            return EgressResponse(200, {}, json.dumps({"QueryResponse": {}}).encode())
 
 
 class FakeNetSuiteConnector(Connector):

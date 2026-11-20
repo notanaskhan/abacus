@@ -331,6 +331,82 @@ def reportable(vendor: Vendor) -> bool:
     return vendor.amount >= THRESHOLD_2026
 
 
+# --- C-02-T26: the Copperleaf QuickBooks sandbox's vendor recordings (fake_quickbooks_online) ----
+
+PaidBy = Literal["check", "ach", "card"]
+# How each vendor was paid Jan 1 - Aug 31, 2026 (DF note: the handoff names the card vendor only;
+# rent, the firm's fee, insurance and bank charges are ACH, the rest by check).
+PAID_BY: Final[dict[str, PaidBy]] = {
+    "Larimer Street Properties, LLC": "ach",
+    "Brightwater Hale LLP": "ach",
+    "Cedar Mutual Insurance Co.": "ach",
+    "Front Range Bank": "ach",
+    "Cascade Coffee Importers, Inc.": "card",
+}
+YEAR_TO_DATE: Final = (date(2026, 1, 1), date(2026, 8, 31))
+
+
+def _vendor_id(index: int) -> str:
+    return str(56 + index)
+
+
+def copperleaf_vendor_recordings() -> dict[str, bytes]:
+    """The recorded Intuit answers for Copperleaf's 12 vendors and their year-to-date payments:
+    file name to bytes, for `fake_quickbooks_online`'s connection folder. Rent and the firm's fee
+    are paid monthly (8 payments each); every other vendor once. Tax ids are masked as Intuit
+    masks them; amounts foot to the CLS-13 seed."""
+    import json
+
+    vendors: list[dict[str, object]] = []
+    bill_payments: list[dict[str, object]] = []
+    purchases: list[dict[str, object]] = []
+    txn = 9001
+    for index, vendor in enumerate(VENDORS):
+        vid = _vendor_id(index)
+        row: dict[str, object] = {
+            "Id": vid,
+            "DisplayName": vendor.name,
+            "Vendor1099": vendor.form is not None,
+            "Active": True,
+        }
+        if vendor.tin_last4 is not None:
+            row["TaxIdentifier"] = f"XXX-XX-{vendor.tin_last4}"
+        vendors.append(row)
+        paid_by = PAID_BY.get(vendor.name, "check")
+        if vendor.name == "Larimer Street Properties, LLC":
+            amounts = [MONTHLY_RENT] * MONTHS_PAID
+        elif vendor.name == "Brightwater Hale LLP":
+            amounts = [MONTHLY_FIRM_FEE] * MONTHS_PAID
+        else:
+            amounts = [vendor.amount]
+        for month, amount in enumerate(amounts, start=1):
+            when = date(2026, month if len(amounts) > 1 else 6, 15).isoformat()
+            if paid_by == "check":
+                bill_payments.append({
+                    "Id": str(txn), "VendorRef": {"value": vid, "name": vendor.name},
+                    "TxnDate": when, "TotalAmt": float(amount), "PayType": "Check",
+                })  # fmt: skip
+            else:
+                purchases.append({
+                    "Id": str(txn), "EntityRef": {"value": vid, "name": vendor.name, "type": "Vendor"},
+                    "TxnDate": when, "TotalAmt": float(amount),
+                    "PaymentType": "CreditCard" if paid_by == "card" else "Cash",
+                    **({"PaymentMethodRef": {"value": "7", "name": "ACH"}} if paid_by == "ach" else {}),
+                })  # fmt: skip
+            txn += 1
+    start, end = (d.isoformat() for d in YEAR_TO_DATE)
+    dump = lambda body: json.dumps(body, sort_keys=True).encode()  # noqa: E731
+    return {
+        "qbo-vendors.json": dump({"QueryResponse": {"Vendor": vendors}}),
+        f"qbo-vendor_payments-BillPayment-{start}_{end}.json": dump(
+            {"QueryResponse": {"BillPayment": bill_payments}}
+        ),
+        f"qbo-vendor_payments-Purchase-{start}_{end}.json": dump(
+            {"QueryResponse": {"Purchase": purchases}}
+        ),
+    }
+
+
 # --- C-02-T23: CLS-08's package rows (statement lines with subtotals, computed here by code) ----
 
 _BS_TOTALS: Final = {

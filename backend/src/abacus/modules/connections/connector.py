@@ -22,7 +22,11 @@ from typing import ClassVar, Literal
 
 # C-01-T16 (C9 v2.1; migration 0882's `sync_runs.dataset`): the chart of accounts, a month's trial
 # balance and the general-ledger detail join the year's trial balance. Additive only.
-Dataset = Literal["trial_balance", "accounts", "gl_detail", "trial_balance_month"]
+# C-02-T26 (migration 0991): QuickBooks vendors (the 1099 flag, a masked tax id) and vendor
+# payments (BillPayment and Purchase with the payment method) for the CLS-13 tracker.
+Dataset = Literal[
+    "trial_balance", "accounts", "gl_detail", "trial_balance_month", "vendors", "vendor_payments"
+]
 # A provider's credentials as the connector serialises them: opaque to everything else, sealed
 # with the tenant's key at rest (ADR-035; SPEC-020 TASK-036 D2).
 Credentials = bytes
