@@ -20,8 +20,11 @@ updates:
       interval: weekly
       day: monday
     groups:
+      # Q-03-T360 (DEC-5853): minor and patch only; a major (typescript 7, jsdom 31) arrives as
+      # its own pull request so the weekly group stays mergeable without it.
       javascript:
         patterns: ["*"]
+        update-types: [minor, patch]
     open-pull-requests-limit: 5
 
   - package-ecosystem: github-actions
