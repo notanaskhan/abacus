@@ -131,9 +131,18 @@ SUBSCRIPTIONS: dict[str, Handler] = {
     **RECONCILIATION_SUBSCRIPTIONS,  # C-01-T23
     **REGISTRATION_SUBSCRIPTIONS,  # C-01-T26: close runs and answered questions (C16)
 }
-WORKFLOWS: dict[type, WorkClass] = {RequestPublishWorkflow: "background"}
+from abacus.modules.closes.package_render import ACTIVITIES as _PACKAGE_ACTIVITIES  # noqa: E402
+from abacus.modules.closes.package_render import PackageAssemblyWorkflow  # noqa: E402
+
+WORKFLOWS: dict[type, WorkClass] = {
+    RequestPublishWorkflow: "background",
+    PackageAssemblyWorkflow: "background",  # C-02-T28: CLS-08's render, then the DET run's end
+}
 register_work_classes(WORKFLOWS)
-ACTIVITIES: tuple[Callable[..., Any], ...] = INTAKE_ACTIVITIES  # Any: Temporal activities
+ACTIVITIES: tuple[Callable[..., Any], ...] = (  # Any: Temporal activities
+    *INTAKE_ACTIVITIES,
+    *_PACKAGE_ACTIVITIES,  # type: ignore[arg-type] -- activity functions
+)
 
 __all__ = [
     "ACTIVITIES",
@@ -154,6 +163,7 @@ __all__ = [
     "PublishIn",
     "PublishInput",
     "PublishResult",
+    "PackageAssemblyWorkflow",
     "RequestPublishWorkflow",
     "RequestTemplateIn",
     "StatusGuard",

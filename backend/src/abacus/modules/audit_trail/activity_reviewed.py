@@ -1178,6 +1178,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         # sentence in the firm's activity feed.
         "close_package.edited",
         "close_package.commentary_edited",
+        "close_package.generated",  # C-02-T28 (TASK-8814): CLS-08's version line
+        "close_package.assembled",
+        "close_package.exported",
         "consultation.difference_resolved",
         "consultation.linked",
         "consultation.position_recorded",
