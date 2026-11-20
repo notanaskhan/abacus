@@ -210,7 +210,8 @@ async def live_connection_for(
     session: AsyncSession, client_entity_id: UUID, *, lock: bool = False
 ) -> Connection | None:
     """The entity's live ledger connection (active or needing attention), if any; at most one
-    exists (`connections_one_live_ledger`). A-02-T16: the legacy engagement routes (SPEC-020)
+    exists: `connection_coverage_one_live` on the connection's own-entity coverage row (0897; the
+    old `connections_one_live_ledger` index was dropped in 0990, Q-03-T353). A-02-T16: the legacy engagement routes (SPEC-020)
     read the entity's ledger; bank, card and sales feeds may now sit beside it."""
     query = select(Connection).where(
         Connection.client_entity_id == client_entity_id,
