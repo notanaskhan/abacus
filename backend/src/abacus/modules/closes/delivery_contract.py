@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, cast
+from typing import Annotated, Any, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Response
@@ -479,9 +479,13 @@ async def package_xlsx_route(close_id: UUID, ctx: Ctx) -> Response:
 async def close_package_release_route(
     close_id: UUID, body: DeliveryReleaseIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> DeliveryPackageOut:
-    """Partner only, live, fresh MFA; 409 `release_preconditions_unmet` (C-02-T23)."""
+    """Partner only, live, fresh MFA; 409 `release_preconditions_unmet` (C-02-T29)."""
+    from abacus.modules.closes import release
+    from abacus.modules.closes.package_service import get_package
+
     await _human(ctx, CLOSES_DELIVERY, "close_package.release")
-    raise NotImplementedYet
+    await release.release(ctx, close_id, seen_version=body.seen_version)
+    return await get_package(ctx, close_id)
 
 
 @delivery_router.post(
@@ -489,16 +493,24 @@ async def close_package_release_route(
 )
 async def lock_route(close_id: UUID, ctx: Ctx) -> DeliveryCloseStateOut:
     """409 `client_approval_required` before the client approves."""
+    from abacus.modules.closes import release
+
     await _human(ctx, CLOSES_DELIVERY, "close.lock")
-    raise NotImplementedYet
+    await release.lock(ctx, close_id)
+    status, version = await release.state_of(ctx.tenant, close_id)
+    return DeliveryCloseStateOut(close_id=close_id, status=cast(Any, status), version=version)
 
 
 @delivery_router.post(
     f"{_C}/reopen", action="close.reopen", response_model=DeliveryCloseStateOut, errors=(409, 501)
 )
 async def reopen_route(close_id: UUID, body: DeliveryReopenIn, ctx: Ctx) -> DeliveryCloseStateOut:
+    from abacus.modules.closes import release
+
     await _human(ctx, CLOSES_DELIVERY, "close.reopen")
-    raise NotImplementedYet
+    await release.reopen(ctx, close_id, body.reason)
+    status, version = await release.state_of(ctx.tenant, close_id)
+    return DeliveryCloseStateOut(close_id=close_id, status=cast(Any, status), version=version)
 
 
 @delivery_router.get(

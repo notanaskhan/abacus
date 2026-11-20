@@ -119,8 +119,11 @@ async def _no_values(_owner: object, _scope: object) -> dict[str, str]:
     return {}
 
 
-async def _no_approval(_ref: object) -> tuple[UUID, str] | None:
-    return None  # the final render is C-02-T29's release, with the partner's approval
+async def _release_approval(ref: object) -> tuple[UUID, str] | None:
+    """The final render is C-02-T29's release only, with the partner's approval."""
+    from abacus.modules.closes.release import release_approval
+
+    return await release_approval(ref)
 
 
 def ensure_kind() -> None:
@@ -134,7 +137,7 @@ def ensure_kind() -> None:
                 kind=KIND,
                 layout="financial_statements",
                 variables_provider=_no_values,
-                approval_provider=_no_approval,
+                approval_provider=_release_approval,
                 retention_record_type=RECORD_TYPE,
                 formats=("pdf",),
                 body_provider=_body,
@@ -291,8 +294,15 @@ async def export_xlsx(ctx: AuthContext, close_id: UUID) -> bytes:
 
 @activity.defn(name=FINISH)
 async def finish_activity(given: list[str]) -> str:
-    tenant_id, close_id, run_id, document_id, version_no = given
-    return await finish(UUID(tenant_id), UUID(close_id), UUID(run_id), UUID(document_id), int(version_no))
+    """Draft: end the DET run. Release (C-02-T29, a sixth item "release"): end the run, then
+    publish, open the C18 item, send the email and deliver."""
+    tenant_id, close_id, run_id, document_id, version_no = given[:5]
+    status = await finish(UUID(tenant_id), UUID(close_id), UUID(run_id), UUID(document_id), int(version_no))
+    if len(given) > 5 and given[5] == "release" and status == "succeeded":
+        from abacus.modules.closes.release import deliver
+
+        return await deliver(UUID(tenant_id), UUID(close_id), UUID(document_id), int(version_no))
+    return status
 
 
 @workflow.defn(name="PackageAssemblyWorkflow")
@@ -320,15 +330,19 @@ class PackageAssemblyWorkflow:
         )
 
 
-async def start_assembly(tenant_id: UUID, close_id: UUID, run_id: UUID, document_id: UUID, version_no: int) -> None:
+async def start_assembly(
+    tenant_id: UUID, close_id: UUID, run_id: UUID, document_id: UUID, version_no: int,
+    *, mode: str = "draft",
+) -> None:
     from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
     from abacus.kernel.dispatch import dispatch
 
     await dispatch(
         PackageAssemblyWorkflow,
-        [str(tenant_id), str(close_id), str(run_id), str(document_id), str(version_no)],
-        id=f"close_package:{tenant_id}:{close_id}:{version_no}",
+        [str(tenant_id), str(close_id), str(run_id), str(document_id), str(version_no)]
+        + (["release"] if mode == "release" else []),
+        id=f"close_package:{tenant_id}:{close_id}:{version_no}:{mode}",
         id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
         id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
     )
