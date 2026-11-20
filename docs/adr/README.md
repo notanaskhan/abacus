@@ -164,6 +164,7 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-187](ADR-187-policy-principal-dormant.md) | Policy principal (dormant): the `policy` actor kind designed, stored off and locked, rendered in fixture mode only | red | accepted |
 | [ADR-190](ADR-190-status-fields-bare-codes.md) | API status fields carry the bare code; the label context is the screen's, a server-known discriminator its own field (amends ADR-138) | amber | accepted |
 | [ADR-210](ADR-210-firm-intake-channel-agnostic.md) | Firm intake is channel-agnostic, read by an intake scope, and filed only by people (P-60 part 1) | red | accepted |
+| [ADR-213](ADR-213-templates-v2.md) | Templates v2: gated template updates through engagement template links, one publish flow, content in the DB (P-41) | amber | accepted |
 | [ADR-230](ADR-230-structured-agent-output.md) | Structured agent output (AgentBlocks): a closed block schema, numbers by reference, no model markup (amends ADR-065) | red | accepted |
 | [ADR-231](ADR-231-tax-computation-boundary.md) | Tax computation boundary: the engine of record computes tax, credits and filed forms; Accrued shows engine values only from approved imports | amber | accepted |
 | [ADR-232](ADR-232-real-time-via-sse.md) | Real time via SSE: identifier-only events through AbacusRouter, polling as the permanent fallback (extends ADR-013, ADR-023) | amber | proposed |
@@ -181,4 +182,5 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-342](ADR-342-e-signature-provider-docuseal.md) | E-signature provider: DocuSeal (cloud) replaces DocuSign behind the EsignProvider port; record mode first; 8879 KBA only once confirmed in writing and accepted by counsel (P-26) | red | accepted |
 | [ADR-343](ADR-343-citation-kind-instrument-clause.md) | Citation v2 amendment: `instrument_clause` as the eleventh kind, ids, regions and a quote hash only, verified from the sealed layer, moved on a superseding instrument (P-48 amendment) | red | accepted |
 | [ADR-344](ADR-344-client-ledger-writes-w1.md) | Client-ledger writes (W1): human-approved, idempotent, verified posting batches to QuickBooks Online under five switches; never for an attest client; export instead stays (P-16) | red | accepted |
+| [ADR-345](ADR-345-firm-authored-instructions-as-context.md) | Firm-authored instructions as delimited, semi-trusted context after the registered prompt, bounded by tools (P-52) | red | accepted |
 | [ADR-400](ADR-400-document-extracted-ledger-snapshots.md) | Document-extracted ledger snapshots and GL journal-entry fields: provenance on the snapshot, verified and footing lines only, human adoption; JE fields where exports carry them (P-58) | red | accepted |

@@ -1,6 +1,6 @@
 # Contract register
 
-The register of the plan's 21 cross-module contracts, C1 to C21. Source: `docs/plan/01-strategy-roadmap.md` §1.3.2 (register) and `docs/plan/epics/F-03.md` §8.1 and §3.10. One file per contract: `docs/contracts/<name>.md`, from `_TEMPLATE.md`. Consumer contract tests live in `backend/tests/contracts/<name>/`.
+The register of the plan's 21 cross-module contracts, C1 to C21, plus C22 and C23 registered by K-03-T01 (2026-11-20). Source: `docs/plan/01-strategy-roadmap.md` §1.3.2 (register) and `docs/plan/epics/F-03.md` §8.1 and §3.10. One file per contract: `docs/contracts/<name>.md`, from `_TEMPLATE.md`. Consumer contract tests live in `backend/tests/contracts/<name>/`.
 
 Sprint dates: Sn starts Mon 2026-10-19 + 14n days (S0 2026-10-19, S1 2026-11-02, S3 2026-11-30 ...). The freeze date is the start of the freeze sprint.
 
@@ -32,6 +32,8 @@ Status values: `planned` (no stub), `stub` (models, 501 routes, matrix actions, 
 | C20 | Integration framework and write-capability registry (firm, personal and client connections; W entries) | `c20-integrations.md` | A-02, W-01 | POR-16, TAX-09, CLS-11, ATT-09, ADM-08 | framework S10, catalogue S45 | 2027-03-08, 2028-07-10 | v1 | stub (POR-16 family, reconnect requests, pulls, `IntegrationAdapter` and the write-capability registry schema: A-02-T06, 2026-10-26); v2.1 W1 stub (C-02-T06, 2026-11-17; frozen Fri Sep 15, 2028) |
 | C-02 delivery | CAS package, release, lock; close-to-tax hand-off; 1099 / W-9 information returns | `closes-delivery.md` | C-02 | CLS-08, CLS-12, CLS-13, POR-08/09, R-02, T-06 | S49 | 2028-09-15 | v1 | stub (C-02-T07, 2026-11-17) |
 | C21 | Effective-dated rules tables (due dates, holidays, form sets and tolerances, thresholds, retention floors) | `rules-tables.md` | K-02 | T-01, T-02, T-03, T-08, C-02, Q-05 | S17 | 2027-06-14 | v1 | stub (K-02-T02, 2026-10-29) |
+| C22 | Templates v2 (TV-1): template versions, components, checks, change list, preview, scoping rules, publish and deprecate, rollout, links, update and hold (ADR-213) | `templates-v2.md` | K-03 | K-04, K-05, X-01, A-11 | stub S52, v1 S56 | 2028-10-27 | v0 | registered 2026-11-20 (K-03-T01, Q5); stub K-03-T08 |
+| C23 | Sheets v1 (SH-1): SheetVM, rows, cells with version, views, columns and usage, agent-column config, preview, estimate, runs and stop, export | `sheets.md` | K-03 | K-04, X-01, X-03, A-11, W-04 | stub S52, v1 S58 | 2028-10-27 | v0 | registered 2026-11-20 (K-03-T01, Q5); stub K-03-T09 |
 
 **T-02's additive contracts (T-02-T35, 2026-11-01, DEC-1674).** Three contracts additive to C1 and C5 sit beside the register rather than in it: `tax-returns.md` (C1 additive) and `k1-packages.md` (C5 additive) are **frozen at v1** and live behind `tax.returns_v1` and `tax.k1_release`; `questionnaires.md` (C5 additive) is **live** behind `questionnaires.v1` and stays unfrozen while A-04 and A-08 add inquiry kinds. K-1 deliverables move to C10 when R-02 lands it.
 
