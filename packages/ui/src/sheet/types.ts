@@ -25,12 +25,16 @@ export interface SheetGridColumn {
   /** The Key column is frozen with the select column (A1). */
   frozen?: boolean;
   agent?: { name: string };
+  /** F-08-T06: the choices of a single select or person column (value is what onCellEdit gets). */
+  options?: readonly { value: string; label: string }[];
 }
 
 export interface SheetCell {
   /** Display text, already formatted by the consumer (whole numbers, no "$"). */
   value: string;
   state: SheetCellState;
+  /** F-08-T06: the editor's starting value when it differs from the display (an ISO date). */
+  raw?: string;
 }
 
 export interface SheetSection {
@@ -45,8 +49,25 @@ export interface SheetSection {
 export interface SheetGridRow {
   key: string;
   sectionKey: string;
+  /** Derived by the consumer from sign-off state only (never presence). */
   locked: boolean;
   cells: Record<string, SheetCell>;
+  /** F-08-T06: the row version an edit is made against (412/409 when it moved). */
+  version?: number;
+}
+
+/** F-08-T06: one committed edit; the consumer saves it (optimistic edits are the consumer's). */
+export interface SheetCellEdit {
+  rowKey: string;
+  colKey: string;
+  value: string;
+  version: number | undefined;
+}
+
+/** What `onCellEdit` rejects with when the row moved under the edit (409/412 conflict grammar). */
+export interface SheetEditConflict {
+  status: 409 | 412;
+  changedBy?: string;
 }
 
 export interface SheetStatus {
@@ -76,4 +97,6 @@ export interface SheetGridProps {
   filterRow?: boolean;
   /** Scroll viewport height; rows virtualise from 200 (E4). */
   height?: number;
+  /** F-08-T06: committing an edit; a rejection with a 409/412 shape shows the conflict row. */
+  onCellEdit?: (edit: SheetCellEdit) => Promise<void>;
 }
