@@ -1222,6 +1222,32 @@ async def je_risk_criteria_version(
     return ref, JeRiskCriteriaPayload.model_validate(dict(version.payload))
 
 
+async def checklist_version(
+    tenant: TenantContext, version_id: UUID
+) -> tuple[str, int, dict[str, object]] | None:
+    """T-08-T14 (DEC-5840): a published `review_checklist` version by id as (form, version number,
+    payload), for a standards run the caller authorised. None for an unknown, draft or other-kind
+    version."""
+    family = _family("review_checklist")
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                select(family.version)
+                .join(family.parent, family.version.parent_id == family.parent.id)
+                .where(
+                    family.version.id == version_id,
+                    family.parent.kind == "review_checklist",
+                    family.version.status == "published",
+                )
+            )
+        ).scalar_one_or_none()
+    if row is None:
+        return None
+    payload = dict(row.payload)
+    applies = cast(Mapping[str, object], payload.get("applies_to") or {})
+    return str(applies.get("form", "")), int(row.version), payload
+
+
 _HUNDRED: Final = Decimal(100)
 
 

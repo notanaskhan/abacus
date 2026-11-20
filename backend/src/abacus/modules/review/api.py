@@ -109,6 +109,7 @@ from abacus.modules.review.issues import (
     issue_row,
     list_issues,  # T-04-T23: TAX-06 counts and the CSV export
     open_issue_counts,  # C-01-T14: CLS-01 and CLS-02 open counts
+    open_issue_for_ref,
     open_issues_among,  # C-01-T14: an open item's issue blocks the reconciled count
     read_issue,
     record_engine_issue,  # T-01-T26: engine diagnostics
@@ -366,6 +367,7 @@ __all__ = [
     "note_states",
     "notes_for",
     "open_issue_counts",
+    "open_issue_for_ref",
     "open_issues_among",
     "open_note_counts",
     "open_notes",

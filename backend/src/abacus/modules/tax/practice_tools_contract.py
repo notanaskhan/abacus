@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Literal, cast
+from typing import Annotated, Any, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -592,8 +592,41 @@ async def standards_runs_route(
     form: Annotated[str | None, Query(max_length=10)] = None,
     status: RunStatus | None = None,
 ) -> TaxPracticeRunListOut:
+    """TAX-14's runs (T-08-T14)."""
     await _on(ctx, _S)
-    raise NotImplementedYet
+    from abacus.modules.tax.standards_runs import runs
+
+    return TaxPracticeRunListOut(
+        items=[_run_out(r) for r in await runs(ctx, None, form, status)], next_cursor=None
+    )
+
+
+def _run_out(r: object) -> TaxPracticeRunOut:
+    from abacus.modules.tax.standards_runs import RunView
+
+    run = cast(RunView, r)
+    items = [
+        TaxPracticeRunItemOut(
+            work_item_id=i.work_item_id, client_name=i.client_name, status=cast(Any, i.status),
+            checks_total=i.checks_total, checks_passed=i.checks_passed, exceptions=i.exceptions,
+            linked_issues=i.linked, created_issues=i.created,
+            issue_count=i.linked + i.created,
+        )
+        for i in run.items
+    ]  # fmt: skip
+    return TaxPracticeRunOut(
+        run_id=run.run_id, standard_version_id=run.version_id, standard_label=run.label,
+        form=run.form, status=cast(Any, run.status), started_at=cast(Any, run.started_at),
+        completed_at=cast(Any, run.completed_at),
+        tiles=TaxPracticeRunTilesOut(
+            selected=len(items),
+            running=sum(1 for i in items if i.status == "running"),
+            passed=sum(1 for i in items if i.status == "passed"),
+            exceptions=sum(1 for i in items if i.status == "exceptions"),
+            queued=sum(1 for i in items if i.status == "queued"),
+        ),
+        items=items, allowed_actions=["rerun"],
+    )  # fmt: skip
 
 
 @practice_tools_router.get(
@@ -604,7 +637,12 @@ async def standards_runs_route(
 )
 async def standards_run_route(run_id: UUID, ctx: Ctx) -> TaxPracticeRunOut:
     await _on(ctx, _S)
-    raise NotImplementedYet
+    from abacus.modules.tax.standards_runs import runs
+
+    found = await runs(ctx, run_id)
+    if not found:
+        raise NotFound("standards_run")
+    return _run_out(found[0])
 
 
 @practice_tools_router.get(
@@ -617,7 +655,24 @@ async def standards_run_checks_route(
     run_id: UUID, work_item_id: UUID, ctx: Ctx
 ) -> TaxPracticeCheckListOut:
     await _on(ctx, _S)
-    raise NotImplementedYet
+    from abacus.modules.tax.standards_runs import checks
+
+    out: list[TaxPracticeCheckOut] = []
+    for c in await checks(ctx, run_id, work_item_id):
+        key = str(c["check_key"])
+        out.append(
+            TaxPracticeCheckOut(
+                result_id=cast(UUID, c["id"]), check_key=key, display_code=key.split("/")[-1],
+                title=key.split("/")[-1], outcome=cast(Any, c["confirmed"] or c["outcome"]),
+                difference=cast(Any, c["difference"]),
+                linked_issue_id=cast(Any, c["linked_issue_id"]),
+                created_issue_id=cast(Any, c["created_issue_id"]),
+                allowed_actions=(
+                    ["confirm"] if c["outcome"] == "manual_pending" and not c["confirmed"] else []
+                ),
+            )
+        )  # fmt: skip
+    return TaxPracticeCheckListOut(items=out)
 
 
 @practice_tools_router.post(
@@ -632,7 +687,11 @@ async def standards_run_start_route(
 ) -> TaxPracticeRunOut:
     """Pins the K-02 version; no model is called anywhere in TAX-14 (OQ-3)."""
     await _human(ctx, _S, "standards_run.start")
-    raise NotImplementedYet
+    from abacus.modules.tax.standards_runs import start
+
+    del key  # the run is keyed by its id; a retried POST starts a new run (TAX-14 allows it)
+    run_id = await start(ctx, body.standard_version_id, list(body.return_ids))
+    return await standards_run_route(run_id, ctx)
 
 
 @practice_tools_router.post(
@@ -646,7 +705,11 @@ async def standards_run_rerun_route(
     run_id: UUID, body: TaxPracticeRerunIn, ctx: Ctx, key: IdempotencyKey
 ) -> TaxPracticeRunOut:
     await _human(ctx, _S, "standards_run.start")
-    raise NotImplementedYet
+    from abacus.modules.tax.standards_runs import rerun
+
+    del key
+    new_id = await rerun(ctx, run_id, list(body.return_ids))
+    return await standards_run_route(new_id, ctx)
 
 
 @practice_tools_router.post(
@@ -658,8 +721,15 @@ async def standards_run_rerun_route(
 async def standards_check_confirm_route(
     result_id: UUID, body: TaxPracticeConfirmIn, ctx: Ctx, key: IdempotencyKey
 ) -> TaxPracticeCheckOut:
+    """A reviewer's confirmation of a manual item, once (409 `check_already_confirmed`)."""
     await _human(ctx, _S, "standards_check.confirm")
-    raise NotImplementedYet
+    from abacus.modules.tax.standards_runs import confirm
+
+    del key
+    await confirm(ctx, result_id, body.outcome, body.note)
+    return TaxPracticeCheckOut(
+        result_id=result_id, check_key="", display_code="", title="", outcome=body.outcome
+    )
 
 
 @practice_tools_router.get(
