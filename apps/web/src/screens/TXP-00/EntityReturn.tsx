@@ -28,11 +28,12 @@ import { Summary } from "../TXP-01/Summary";
 import { Issues } from "../TXP-10/Issues";
 import { CapitalAccounts } from "../TXP-07/CapitalAccounts";
 import { FixedAssets } from "../TXP-03/FixedAssets";
+import { BookTax } from "../TXP-04/BookTax";
 import { COPY } from "./copy";
 import { TXP00, frameOf } from "./index";
 
 /** T-06's review sections built so far (T-06-T29 to T31). */
-const DEPTH_BUILT: ReadonlySet<ReviewTab> = new Set<ReviewTab>(["fixed-assets"]);
+const DEPTH_BUILT: ReadonlySet<ReviewTab> = new Set<ReviewTab>(["fixed-assets", "m1-m3"]);
 
 export type EntitySlug = "agent" | "issues" | "workpaper" | "activity" | "review";
 
@@ -116,6 +117,13 @@ export function EntityReturn({
         <ScheduleK returnId={returnId} onOpen={onOpen} />
       ) : section.review === "fixed-assets" && depthOn ? (
         <FixedAssets returnId={returnId} {...(search === undefined ? {} : { search })} />
+      ) : (section.review === "m1-m3" || section.review === "schedule-m2") && depthOn ? (
+        <BookTax
+          returnId={returnId}
+          frame={section.review}
+          onOpen={onOpen}
+          {...(search === undefined ? {} : { search })}
+        />
       ) : section.review === "capital" ? (
         <CapitalAccounts returnId={returnId} />
       ) : section.review === "summary" ? (

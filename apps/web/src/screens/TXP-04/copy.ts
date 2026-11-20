@@ -1,0 +1,53 @@
+// TXP-04 · Review › M-1/M-3 and Schedule M-2 words (T-06-T30; docs/screens/TXP-04.md; T-06 §2 row
+// TXP-04 and §3 F2). The handoff folder is not on this machine: words follow the epic, the form's
+// line captions and the TXP-07 grammar (TASK-8752 deviations).
+export const COPY = {
+  m3Title: "Schedule M-3",
+  m2Title: "Schedule M-2",
+  partI: "Part I · Financial information",
+  partII: "Parts II–III · Reconciliation of income (loss)",
+  kv: {
+    totalAssets: "Total assets",
+    bookIncome: "Net income (loss) per income statement",
+    required: "Schedule M-3 required",
+    requiredYes: "Yes · total assets of $10 million or more (Item J)",
+  },
+  columns: {
+    line: "Line",
+    item: "Income (loss) item",
+    a: "(a) Per income statement",
+    b: "(b) Temporary difference",
+    c: "(c) Permanent difference",
+    d: "(d) Per tax return",
+    amount: "Amount",
+  },
+  m1Toggle: "Show M-1 reference",
+  m1Banner:
+    "Total assets are under $50 million, so Schedule M-1 may replace M-3 Parts II and III. Reference only · not filed.",
+  m1Title: "Schedule M-1 · reference",
+  notFiled: "Not filed",
+  filed: "Filed",
+  variants: "M-2 view",
+  asDrafted: "As drafted",
+  withFix: "With proposed fix",
+  tally: "Schedule M-2 checks",
+  cards: { line9: "M-2 line 9", schL: "Schedule L line 21", ties: "M-2 ties to Schedule L" },
+  proposed: (amount: string) => `${amount} proposed`,
+  accept: "Accept…",
+  reject: "Reject…",
+  rejectTitle: "Reject the proposed fix",
+  reason: "Reason",
+  reasons: {
+    wrong_treatment: "Wrong treatment",
+    unsupported_value: "Value not supported",
+    needs_client_input: "Needs client input",
+    other: "Other",
+  },
+  rejectConfirm: "Reject",
+  cancel: "Cancel",
+  accepted: "Fix approved · checkpoint saved",
+  openCheckpoint: "Open checkpoint",
+  rerun: "Run 3 re-runs the capital and K-1 tasks.",
+  openIssue: "Open the issue",
+  table: (title: string) => `${title} lines`,
+} as const;
