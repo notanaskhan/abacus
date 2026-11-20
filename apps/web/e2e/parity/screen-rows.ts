@@ -111,6 +111,10 @@ export function statusesFromSource(
  * to.<ID>() builder for SHL-14 (DEC-195); A-01-T28 measures them all the same. AUD-06 (inside the
  * AUD-02 cockpit) and POR-16 (portal entry) likewise; A-02-T31 measures them (DEC-832). */
 export const BUILT_PLANNED: readonly string[] = [
+  // G-04-T21: PLT-01 is the console entry's (no firm path) and ADM-14 a settings path; both are
+  // built on fixtures and stay `planned` in the firm registry; the suites measure them all the same.
+  "PLT-01",
+  "ADM-14",
   "POR-03",
   "POR-04",
   "POR-14",

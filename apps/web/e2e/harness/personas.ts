@@ -45,6 +45,8 @@ export const PERSONAS = {
   "raj-malhotra": staff("Raj Malhotra"),
   "grace-holloway": staff("Grace Holloway"),
   "felix-andersen": staff("Felix Andersen"),
+  // G-04-T21: Accrued's platform admin on the console (PLT-01; j01 1), never a firm seat.
+  "rowan-achebe": staff("Rowan Achebe"),
   "cole-hart": staff("Cole Hart"),
   "dina-sato": staff("Dina Sato"), // F-06-T02: TPL-16e names her; the E6 preparer
   "laura-kemp": staff("Laura Kemp"), // ENG-13 a, b and e (P-07-T62)

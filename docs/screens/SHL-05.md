@@ -39,6 +39,12 @@ Fixture scenarios: `apps/web/src/fixtures/scenarios/support.ts` (G-04-T13) from 
 
 `docs/contracts/support.md`: `GET /v1/support/conversation`, `POST …/messages`, `GET /v1/help/articles?context=&q=`, `GET /v1/help/articles/{slug}`, `GET /v1/status`; `GET /v1/support-sessions`, `POST …/{id}/decline` and `…/revoke` (SPEC-681). Actions `support.chat` (OWN), `help.read`, `status.read`, `support_session.*`.
 
+## Parity
+| Artboard | Tier (A/B/C/D) | Diff % | Notes |
+|---|---|---|---|
+| a–f, d2 | C (locked in G-04-T21) | not run (handoff baselines not on this machine; axe in `e2e/screens/SHL-05.spec.ts`) | the reply-time chip is masked (computed median) |
+| host | D | — | drawer 420, header 48, tabs 44, composer 38 |
+
 ## Links
 
 | From | To | Status |

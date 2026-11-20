@@ -103,6 +103,7 @@ import { scenarios as txp06 } from "./scenarios/TXP-06";
 import { scenarios as txp07 } from "./scenarios/TXP-07";
 import { scenarios as txp10 } from "./scenarios/TXP-10";
 import { TXP03_OPENS, scenarios as t06txp03 } from "./scenarios/TXP-03";
+import { scenarios as adm14 } from "./scenarios/ADM-14";
 import { PARKING_ID } from "./seed/tax-depth-assets";
 import { TXP04_OPENS, scenarios as t06txp04 } from "./scenarios/TXP-04";
 import { TXP08_OPENS, scenarios as t06txp08 } from "./scenarios/TXP-08";
@@ -446,6 +447,8 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
     opens: {},
     ids: Object.fromEntries(Object.keys(tax09).map((s) => [s, { returnId: FELD_RETURN_ID }])),
   },
+  // G-04-T21: ADM-14 Plan & usage for j01 A4 and j27 2 (`/settings/plan`, `ADM-14:<state>`).
+  "ADM-14": { scenarios: adm14, opens: {} },
   // T-06-T23 (DEC-5636): the eight T-06 screens, one state per contract artboard (44).
   "TXP-03": {
     scenarios: onE0(t06txp03, [
