@@ -2105,6 +2105,28 @@ objects:
       dry_run:   {label: "Dry run", variant: neutral, terminal: false, derived: false}
       published: {label: "Published", variant: green, terminal: true, derived: false}
 
+  # --- F-08-T04 (DF-31; DEC-5813): engine kits. statement_document, sign_off_slot and card_overlay already exist (A-06, P-04, addendum 3.2).
+  sheet_cell:   # a sheet cell's value state (T18; SHT-01 a, e, f); stored on sheet_cells.value_state (K-03); "empty" and "human" are not statuses and carry no pill
+    source: "DF-31 (sheet cell suggested, adopted, edited); SHT-01 a, e, f"
+    codes:
+      suggested: {label: "Suggested", variant: null, disc: atom, terminal: false, derived: false}   # ink-2 value with the atom until adopted
+      adopted:   {label: "Adopted by {initials}", variant: null, disc: check_olive, terminal: false, derived: false}
+      edited:    {label: "Edited by {initials}", variant: null, terminal: false, derived: false, context_labels: {was: "Edited by {initials} · was {value}"}}
+
+  board_drop:   # the result of a Board drop (T19 BoardCanvas; F-08-T18); returned by the move endpoint, never stored
+    source: "DF-31 (board drop result moved, dispatched, guarded); T19 a-g"
+    codes:
+      moved:      {label: "Moved", variant: neutral, terminal: true, derived: true, context_labels: {to: "Moved to {column}"}}
+      dispatched: {label: "Dispatched", variant: state, terminal: true, derived: true}
+      guarded:    {label: "Needs sign-off", variant: amber, terminal: true, derived: true}   # springs back; copy "Moving to {column} needs a reviewer sign-off. Open sign-off..."
+
+  addin_sync:   # the add-in pane's sync state (T22 AddinPane; F-08-T17)
+    source: "DF-31 (add-in Synced, Offline, Changes waiting); T22 a-g"
+    codes:
+      synced:          {label: "Synced", variant: green-tint, terminal: false, derived: true, context_labels: {at: "Synced {time}"}}
+      offline:         {label: "Offline", variant: muted, terminal: false, derived: true}
+      changes_waiting: {label: "Changes waiting", variant: amber, terminal: false, derived: true, context_labels: {n: "{n} changes waiting"}}
+
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---
   "request_item.open":             {replacement: ["request.draft", "request.requested"], note: "draft while firm-only; requested once sent to the client"}

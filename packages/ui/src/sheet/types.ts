@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
 import type { Actor } from "../attribution/actor";
 import type { CitationView } from "../tracing/types";
+import type { StoredCode } from "../status";
 
 // T18 Sheet kit view model (F-08-T05; F-08 §5 "View models"; chapter 03 §3.6). The kit's public
-// contract: no API types. Status words stay kit-local drafts until the DF-31 PR (F-08-T04).
+// contract: no API types. Cell status words are the generated `sheet_cell` codes (DF-31, F-08-T04);
+// "empty" and "human" are not statuses and carry no pill.
 
 /** The 11 column types (chapter 03 §3.6). */
 export type SheetColumnType =
@@ -19,7 +21,7 @@ export type SheetColumnType =
   | "sign_off"
   | "agent";
 
-export type SheetCellState = "empty" | "human" | "suggested" | "adopted" | "edited";
+export type SheetCellState = "empty" | "human" | StoredCode<"sheet_cell">;
 
 export interface SheetGridColumn {
   key: string;

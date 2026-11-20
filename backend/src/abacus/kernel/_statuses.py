@@ -1734,6 +1734,22 @@ class QualityImportStatus(StrEnum):
     PUBLISHED = "published"
 
 
+class SheetCellStatus(StrEnum):
+    SUGGESTED = "suggested"
+    ADOPTED = "adopted"
+    EDITED = "edited"
+
+
+class BoardDropStatus(StrEnum):
+    pass
+    # derived, never stored: moved, dispatched, guarded
+
+
+class AddinSyncStatus(StrEnum):
+    pass
+    # derived, never stored: synced, offline, changes_waiting
+
+
 # Each object's stored codes, and their SQL CHECK list.
 STORED: dict[str, tuple[str, ...]] = {
     "engagement": (
@@ -3135,6 +3151,15 @@ STORED: dict[str, tuple[str, ...]] = {
     "quality_import": (
         "dry_run",
         "published",
+    ),
+    "sheet_cell": (
+        "suggested",
+        "adopted",
+        "edited",
+    ),
+    "board_drop": (
+    ),
+    "addin_sync": (
     ),
 }
 CHECKS: dict[str, str] = {
