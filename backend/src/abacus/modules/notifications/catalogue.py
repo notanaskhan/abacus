@@ -860,6 +860,8 @@ def register_kind_source(
 
 
 TEMPLATES: Final[dict[str, str]] = {
+    # K-03-T06 (DEC-5848): a published template version this engagement may move to (SHL-22).
+    "template_update_available": "A template update is available for {subject}.",
     "agent_run.needs_input": "A run on {subject} is waiting for your input.",
     "agent_run.ready_for_review": "A run on {subject} is ready for review.",
     "agent_run.failed_v2": "A run on {subject} failed.",
@@ -1072,6 +1074,7 @@ TEMPLATES: Final[dict[str, str]] = {
 # P-01-T06 (C16): the SPEC-013 kinds in the kind registry, with their tabs and glyphs. Their
 # owners add facts and pending resolvers through `notifications.api` as their screens need them.
 _REGISTERED: Final[tuple[NotificationKind, ...]] = (
+    NotificationKind("template_update_available", "other", "RefreshCw"),  # K-03-T06 (SHL-22)
     NotificationKind("support_session.requested", "system", "LifeBuoy"),
     NotificationKind("support_session_declined", "system", "LifeBuoy"),  # G-04-T05
     # T-01-T16: a signed §7216 consent 30 days from expiry; K-02-T12: a platform rules table.

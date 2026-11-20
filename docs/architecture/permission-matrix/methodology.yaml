@@ -28,4 +28,10 @@ actions:
   # --- Statement note templates (A-06-T25, DEC-2389): firm content, the same way.
   statement_note_template.import:  {firm_admin: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # POST /v1/methodology/statement-note-templates:import
   statement_note_template.publish: {quality_partner: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, mfa_recent: required}   # POST …/{id}/versions/{v}/publish
-
+  # --- K-03 templates v2 (K-03-T06; DEC-5848; K-03 §4.4) ---
+  template.read:            {quality_partner: allow, practice_leader: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, client_admin: deny, client_contributor: deny, agent: task_scope, system: deny}   # drafts readable only by quality_partner, practice_leader, engagement_partner, manager and senior (the service); the agent reads published only
+  template.edit:            {quality_partner: allow, agent: deny, system: deny}   # draft only (DB trigger on published components)
+  template.publish:         {quality_partner: allow, agent: deny, system: deny, mfa_recent: required}   # a person's act, fresh MFA (INV-1)
+  template.rollout:         {quality_partner: allow, agent: deny, system: deny}   # Update now / On rollover / Hold with reasons
+  scoping_rule.edit:        {quality_partner: allow, agent: deny, system: deny}   # draft only; managers pending K-03 Q1
+  skill.import:             {quality_partner: allow, agent: deny, system: deny, mfa_recent: required}

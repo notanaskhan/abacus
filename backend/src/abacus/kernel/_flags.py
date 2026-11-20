@@ -11,6 +11,11 @@ ADJUSTMENTS_POSTING = Flag(
     kind="boolean",
     default="false",
 )
+AGENT_COLUMNS_ENABLED = Flag(
+    name="agent_columns.enabled",
+    kind="boolean",
+    default="false",
+)
 AGENT_DOCK_ENABLED = Flag(
     name="agent_dock.enabled",
     kind="boolean",
@@ -645,6 +650,11 @@ SECURITY_CENTER_V1 = Flag(
     kind="boolean",
     default="false",
 )
+SHEETS_ENABLED = Flag(
+    name="sheets.enabled",
+    kind="boolean",
+    default="false",
+)
 SIGNATURES_ENVELOPES = Flag(
     name="signatures.envelopes",
     kind="boolean",
@@ -755,6 +765,11 @@ TAX_AGENTS_ENABLED = Flag(
     kind="boolean",
     default="false",
 )
+TEMPLATES_V2_ENABLED = Flag(
+    name="templates_v2.enabled",
+    kind="boolean",
+    default="false",
+)
 TODAY_BRIEF_ENABLED = Flag(
     name="today_brief.enabled",
     kind="boolean",
@@ -793,6 +808,7 @@ WORKPAPERS_DRAFTING = Flag(
 
 FLAGS: dict[str, Flag] = {
     "adjustments.posting": ADJUSTMENTS_POSTING,
+    "agent_columns.enabled": AGENT_COLUMNS_ENABLED,
     "agent_dock.enabled": AGENT_DOCK_ENABLED,
     "agent_runtime.v2": AGENT_RUNTIME_V2,
     "agents.client_data_optin": AGENTS_CLIENT_DATA_OPTIN,
@@ -914,6 +930,7 @@ FLAGS: dict[str, Flag] = {
     "search.agent_mode": SEARCH_AGENT_MODE,
     "search.palette": SEARCH_PALETTE,
     "security_center.v1": SECURITY_CENTER_V1,
+    "sheets.enabled": SHEETS_ENABLED,
     "signatures.envelopes": SIGNATURES_ENVELOPES,
     "signatures.esign_provider": SIGNATURES_ESIGN_PROVIDER,
     "support.panel_v2": SUPPORT_PANEL_V2,
@@ -936,6 +953,7 @@ FLAGS: dict[str, Flag] = {
     "tax.two_year": TAX_TWO_YEAR,
     "tax.workbook_run": TAX_WORKBOOK_RUN,
     "tax_agents.enabled": TAX_AGENTS_ENABLED,
+    "templates_v2.enabled": TEMPLATES_V2_ENABLED,
     "today_brief.enabled": TODAY_BRIEF_ENABLED,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,

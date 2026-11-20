@@ -52,3 +52,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: templates_v2.enabled
+    description: 'K-03 templates v2 (KNW-06, KNW-07, SHT-03, SHL-22 routes and the link-based pin path). Off: 404 and the SPEC-008 pin path is unchanged. On: 501 not_implemented until each K-03 build task. K-03-T06, DEC-5848.'
+    owner: notanaskhan
+    created: 2026-11-20
+    expires: 2027-02-18
+    override: DEC-137
+    kind: boolean
+    default: false

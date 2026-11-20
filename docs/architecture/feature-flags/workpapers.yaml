@@ -18,3 +18,19 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: sheets.enabled
+    description: 'K-03 sheets (SHT-01, SHT-02 and the AUD-02 rail entries for sheet-linked procedures). Off: 404. On: 501 not_implemented until each K-03 build task. K-03-T06, DEC-5848.'
+    owner: notanaskhan
+    created: 2026-11-20
+    expires: 2027-02-18
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: agent_columns.enabled
+    description: 'K-03 agent columns (SHT-04; preview, estimate and run routes). Model-backed: synthetic tenants only until G-1 to G-6 clear. Off: 404 and the column editor is absent. K-03-T06, DEC-5848.'
+    owner: notanaskhan
+    created: 2026-11-20
+    expires: 2027-02-18
+    override: DEC-137
+    kind: boolean
+    default: false
