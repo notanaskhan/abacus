@@ -29,6 +29,7 @@ import argparse
 import asyncio
 import json
 import random
+import re
 import sys
 import time
 import uuid
@@ -36,6 +37,7 @@ from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from string import Formatter
+from typing import cast
 
 import httpx
 from temporalio.client import Client
@@ -93,11 +95,30 @@ def _fill(path: str, variables: Mapping[str, str]) -> str:
     return path.format_map(dict(variables))
 
 
+def _fill_body(value: object, variables: Mapping[str, str]) -> object:
+    """`json_body` placeholders (Q-03-T359): a string that is exactly `{name}` takes the var, read
+    as JSON when it starts with `[` or `{` (a list of entry ids, a map of seen versions); any other
+    string is formatted like a path. Numbers, booleans and null pass through."""
+    if isinstance(value, dict):
+        return {k: _fill_body(v, variables) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_fill_body(v, variables) for v in value]
+    if isinstance(value, str):
+        whole = re.fullmatch(r"\{([a-z_]+)\}", value)
+        filled = _fill(value, variables)
+        if whole and filled[:1] in ("[", "{"):
+            return cast(object, json.loads(filled))
+        return filled
+    return value
+
+
 def _paths(scenario: Scenario, variables: Mapping[str, str]) -> None:
     """Every placeholder has a value before anything runs."""
     for group in scenario.groups:
         for step in group.steps:
             _fill(step.path, variables)
+            if step.json_body is not None:
+                _fill_body(step.json_body, variables)
     for stream in scenario.streams:
         _fill(stream.path, variables)
 
@@ -184,22 +205,24 @@ async def run(
                     body = bodies[step.body]
                     content = body.content
                     headers["Content-Type"] = body.content_type
-                start = time.perf_counter()
-                try:
-                    response = await client.request(
-                        step.method,
-                        _fill(step.path, given),
-                        json=step.json_body,
-                        content=content,
-                        headers=headers,
-                    )
-                except httpx.HTTPError as exc:
-                    samples[group.name].failed(type(exc).__name__, _ms(start))
-                    continue
-                if response.status_code in step.expect:
-                    samples[group.name].ok(_ms(start))
-                else:
-                    samples[group.name].failed(str(response.status_code), _ms(start))
+                json_body = None if step.json_body is None else _fill_body(step.json_body, given)
+                for _ in range(1 + step.replays):  # a replay keeps the key (Q-03-T359)
+                    start = time.perf_counter()
+                    try:
+                        response = await client.request(
+                            step.method,
+                            _fill(step.path, given),
+                            json=json_body,
+                            content=content,
+                            headers=headers,
+                        )
+                    except httpx.HTTPError as exc:
+                        samples[group.name].failed(type(exc).__name__, _ms(start))
+                        continue
+                    if response.status_code in step.expect:
+                        samples[group.name].ok(_ms(start))
+                    else:
+                        samples[group.name].failed(str(response.status_code), _ms(start))
             if scenario.think_ms:
                 await asyncio.sleep(scenario.think_ms / 1000)
 
