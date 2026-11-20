@@ -8,7 +8,8 @@ release (`review_release`, OQ-4) or a locked December close (`close_lock`). The 
 references the source snapshot and never copies it (P-40); nothing ever posts back to the source.
 
 Every route answers, in order: a client principal 404; `tax.tb_handoff` off 404; a create that is
-not a live person's 403 (INV-1); then 501 until T-06-T20 (service) and T39 (landing). Fixture
+not a live person's 403 (INV-1). The reads and the landing are live (T-06-T39); targets, preview
+and create answer 501 until their assembly lands (T-06-T20 rest). Fixture
 mode serves AUD-38 meanwhile.
 
 Classification (ADR-031): account names and amounts are `confidential` (the TB moves into a
@@ -20,7 +21,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Literal, Self
+from typing import Annotated, Any, Literal, Self, cast
 from uuid import UUID
 
 from fastapi import Depends, Header
@@ -262,8 +263,22 @@ async def handoff_create_route(
     errors=(501,),
 )  # fmt: skip
 async def tb_handoff_route(handoff_id: UUID, ctx: Ctx) -> TbHandoffOut:
+    """One hand-off version (T-06-T39): source members or the target return's team."""
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.tax.tb_handoff_landing import authorise_read, issue_count
+
+    found = cast(Any, await authorise_read(ctx, handoff_id))
+    counts = found.counts
+    return TbHandoffOut(
+        handoff_id=found.id,
+        version_no=found.version_no,
+        source_kind=found.source_kind,
+        status=TbHandoffStatus.SUPERSEDED if found.superseded else TbHandoffStatus.HANDED_OFF,
+        handed_off_at=found.handed_off_at,
+        tax_issues_created=await issue_count(ctx.tenant, found.id),
+        accounts_to_map=int(counts.get("suggested", 0)) + int(counts.get("blank", 0)),
+        supersedes_id=None,
+    )
 
 
 @tb_handoff_router.get(
@@ -273,9 +288,24 @@ async def tb_handoff_route(handoff_id: UUID, ctx: Ctx) -> TbHandoffOut:
     errors=(501,),
 )  # fmt: skip
 async def handoff_mappings_route(handoff_id: UUID, ctx: Ctx) -> TbHandoffMappingsOut:
-    """The O4 128-row table."""
+    """The O4 128-row table (T-06-T39)."""
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.ledger.api import tb_handoff
+    from abacus.modules.tax.tb_handoff_landing import authorise_read, mapping_source
+
+    await authorise_read(ctx, handoff_id)
+    rows = await tb_handoff.choices_of(ctx.tenant, handoff_id)
+    items = [
+        TbHandoffMappingRowOut(
+            account_ref=r.account_no,
+            account_name=r.account_name,
+            balance=r.balance,
+            tax_line=r.tax_line_code,
+            source=mapping_source(r.travel),
+        )
+        for r in rows
+    ]
+    return TbHandoffMappingsOut(items=items, total=len(items))
 
 
 @tb_handoff_router.get(
@@ -285,6 +315,32 @@ async def handoff_mappings_route(handoff_id: UUID, ctx: Ctx) -> TbHandoffMapping
     errors=(501,),
 )  # fmt: skip
 async def return_handoff_route(return_id: UUID, ctx: Ctx) -> TbHandoffLandingOut:
-    """The landing banner and M-1 starting point (TXP-13 d, TXP-02; T-06-T39)."""
+    """The landing banner and M-1 starting point (TXP-13 d, TXP-02; T-06-T39). A return with no
+    hand-off answers an empty landing (every field null)."""
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.identity.api import authorise
+    from abacus.modules.tax.overview import load_return, return_resource
+    from abacus.modules.tax.tb_handoff_landing import landing
+
+    await authorise(
+        ctx, "tax_return.read", await return_resource(ctx, await load_return(ctx, return_id))
+    )
+    found = await landing(ctx, return_id)
+    if found is None:
+        return TbHandoffLandingOut()
+    book = found.book_income
+    before = Decimal(book.get("before_tax", "0"))
+    expense = Decimal(book.get("income_tax_expense", "0"))
+    return TbHandoffLandingOut(
+        handoff_id=found.handoff_id,
+        source_kind=cast(SourceKind, found.source_kind),
+        locked_close_id=found.source_work_item_id if found.source_kind == "close_lock" else None,
+        source_label=found.source_label,
+        handed_off_at=found.handed_off_at,
+        handed_off_by=found.handed_off_by,
+        source_link_allowed=found.source_link_allowed,
+        superseded=found.superseded,
+        book_income=TbHandoffBookIncomeOut(
+            pretax=before, income_tax_expense=expense, net_income=before - expense
+        ),
+    )

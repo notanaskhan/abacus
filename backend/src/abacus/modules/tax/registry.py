@@ -1915,6 +1915,13 @@ UPDATE_COLUMNS["form_diagnostics"] = frozenset(
     }
 )
 
+# T-06-T39 (0998, DEC-5832): a TB hand-off's landing on its return, insert-only.
+T06T39_TABLES: frozenset[str] = frozenset({"tax_handoff_landings"})
+INSERT_COLUMNS["tax_handoff_landings"] = frozenset(
+    {"tenant_id", "return_id", "handoff_id", "event_id", "version_no", "source_snapshot_id",
+     "draft_mapping", "issue_ids", "items_not_raised"}
+)  # fmt: skip
+
 # The tables this module owns and its insert-only tables, after S50 (one definition each).
-TABLES: frozenset[str] = _TABLES_PRE_S50 | T08T06_TABLES | T06T14_TABLES
-INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1
+TABLES: frozenset[str] = _TABLES_PRE_S50 | T08T06_TABLES | T06T14_TABLES | T06T39_TABLES
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1 | T06T39_TABLES
