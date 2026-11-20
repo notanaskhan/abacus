@@ -270,3 +270,21 @@ variable "console_allow_ipv4_cidrs" {
   type        = list(string)
   default     = []
 }
+
+variable "destruction_role_enabled" {
+  description = "Q-05-T14: create the records-destruction role (RB-100 proves it on staging first)."
+  type        = bool
+  default     = false
+}
+
+variable "evidence_replica_bucket_arn" {
+  description = "Q-05-T14: the us-west-2 replica of the evidence bucket, once it exists."
+  type        = string
+  default     = null
+}
+
+variable "oncall_topic_arn" {
+  description = "Q-05-T14: the SNS topic that pages on-call."
+  type        = string
+  default     = ""
+}
