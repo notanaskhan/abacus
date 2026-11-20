@@ -203,7 +203,28 @@ const clientTaxProfileRoute = createRoute({
   },
 });
 
+// CLI-03 (T-06-T40): the client's relationship graph, firm-only, behind `clients.relationship_map`.
+const Relationships = lazyScreen(
+  async () => (await import("../../screens/CLI-03/Relationships")).Relationships,
+);
+
+const clientRelationshipsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/clients/$clientId/relationships",
+  component: function ClientRelationshipsPage(): JSX.Element {
+    const clientId = useParam("clientId");
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FeatureGate flag="clients.relationship_map" fallback={null}>
+          <Relationships clientId={clientId} />
+        </FeatureGate>
+      </div>
+    );
+  },
+});
+
 export const clientRoutes = [
+  clientRelationshipsRoute,
   clientTaxProfileRoute,
   clientsRoute,
   clientRoute,

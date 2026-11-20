@@ -66,5 +66,14 @@ export const cliScreens = {
     path: "/clients/$clientId/independence/$engagementId",
     navArea: "Clients",
   },
+  // T-06-T40 built a–f on fixtures at /clients/$clientId/relationships behind
+  // `clients.relationship_map`, from TPL-14 a–f (no CLI-03 board: T-06-T68; DEC-32, DF-02).
+  // Planned for CLI-02's reason: CLI-02 → CLI-03 is a tooltip-only link until CLI-02's tab lands.
+  "CLI-03": {
+    name: "Relationships & household map",
+    status: "planned",
+    path: "/clients/$clientId/relationships",
+    navArea: "Clients",
+  },
   // seed-manifest: new screens are added above this line
 } as const satisfies Manifest;
