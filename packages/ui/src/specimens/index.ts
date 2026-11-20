@@ -1,4 +1,5 @@
 import { AgentBlocksSpecimen } from "./agent-blocks";
+import { ChartKitSpecimen } from "./charts";
 import {
   ConsolidationWorksheetSpecimen,
   CoverageBarSpecimen,
@@ -468,6 +469,8 @@ export const SPECIMENS: readonly Specimen[] = [
     title: "WorkbookGrid",
     Component: WorkbookGridSpecimen,
   },
+  // ChartKit (F-08-T10): C-36
+  { id: "c-36-chart-kit", kit: "C-36", title: "ChartKit", Component: ChartKitSpecimen },
   // Toasts E3 (F-05-T21): C-21
   { id: "c-21-toast-kinds", kit: "C-21", title: "Toast kinds", Component: ToastKindsSpecimen },
   { id: "c-21-toast-live", kit: "C-21", title: "Toast live stack", Component: ToastLiveSpecimen },
