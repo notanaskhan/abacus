@@ -601,20 +601,40 @@ async def fixed_asset_change_reject_route(
 
 
 @entity_depth_router.get(
-    f"{_R}/schedules/m3", action="book_tax.read", response_model=TaxDepthScheduleOut, errors=(501,)
+    f"{_R}/schedules/m3", action="book_tax.read", response_model=TaxDepthScheduleOut, errors=()
 )
 async def m3_route(return_id: UUID, ctx: Ctx) -> TaxDepthScheduleOut:
+    """TXP-04 a (T-06-T34): Parts II and III from E4; filed when required."""
     await _on(ctx, _D)
-    raise NotImplementedYet
+    return await _schedule(ctx, return_id, "m3")
+
+
+async def _schedule(
+    ctx: AuthContext, return_id: UUID, which: Literal["m3", "m1"]
+) -> TaxDepthScheduleOut:
+    from abacus.modules.tax.book_tax_service import schedule
+
+    found = await schedule(ctx, return_id, which)
+    return TaxDepthScheduleOut(
+        schedule=found.schedule, required=found.required, total_assets=found.total_assets,
+        book_income=found.book_income, filed=found.filed,
+        rows=[
+            TaxDepthM3RowOut(
+                line=r.line[:20], label=r.label, income_per_books=r.a, temporary=r.b,
+                permanent=r.c, per_return=r.d,
+            )
+            for r in found.rows
+        ],
+    )  # fmt: skip
 
 
 @entity_depth_router.get(
-    f"{_R}/schedules/m1", action="book_tax.read", response_model=TaxDepthScheduleOut, errors=(501,)
+    f"{_R}/schedules/m1", action="book_tax.read", response_model=TaxDepthScheduleOut, errors=()
 )
 async def m1_route(return_id: UUID, ctx: Ctx) -> TaxDepthScheduleOut:
-    """The M-1 reference: never filed beside an M-3."""
+    """The M-1 reference: never filed beside an M-3 (T-06-T34)."""
     await _on(ctx, _D)
-    raise NotImplementedYet
+    return await _schedule(ctx, return_id, "m1")
 
 
 @entity_depth_router.get(
