@@ -28,11 +28,12 @@ import json
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 from decimal import Decimal
-from typing import Final, Literal
+from typing import Annotated, Final, Literal
 from uuid import UUID
 
 from sqlalchemy import text
 
+from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import DomainEvent, Scope, Target, UnitOfWork, uow
 from abacus.modules.ledger.handoff_errors import HandoffNotAvailable, PreviewChanged
@@ -62,15 +63,15 @@ async def source_released(tenant: TenantContext, kind: str, source_work_item_id:
 
 class TbHandoffCreated(DomainEvent):
     event_type = "tb_handoff.created"
-    tb_handoff_id: UUID
-    tax_return_id: UUID
-    version_no: int
+    tb_handoff_id: Annotated[UUID, classified("internal")]
+    tax_return_id: Annotated[UUID, classified("internal")]
+    version_no: Annotated[int, classified("internal")]
 
 
 class TbHandoffSuperseded(DomainEvent):
     event_type = "tb_handoff.superseded"
-    tb_handoff_id: UUID
-    tax_return_id: UUID
+    tb_handoff_id: Annotated[UUID, classified("internal")]
+    tax_return_id: Annotated[UUID, classified("internal")]
 
 
 @dataclass(frozen=True)

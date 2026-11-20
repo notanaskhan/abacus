@@ -56,13 +56,17 @@ def _string_constants(source: str) -> list[str]:
 # consolidation layer, never a client ledger. That file alone may name `posted`, never
 # `failed_post` or `reversed`, and the database admits it only for that kind and target (below).
 CONSOLIDATION_LAYER = {"eliminations.py": ("posted",)}
+# C-02-T18 (ADR-344 W1; DEC-5704; S51 rows end pass DEC-5734): the one client-ledger write path,
+# dark behind write-capabilities.yaml `enabled: false`, marks an entry posted or failed after the
+# provider answers; `reversed` stays banned everywhere, and no route names a post (test above).
+W1_POSTING = {"posting.py": ("posted", "failed_post")}
 MIGRATION_0896 = (BACKEND / "migrations/versions/0896_adjustments_eliminations.py").read_text()
 
 
 @pytest.mark.parametrize("path", sorted(MODULE.glob("*.py")), ids=lambda p: p.name)
 def test_no_service_sets_a_posting_status(path: Path) -> None:
     """No string the module writes is a posting status, alone or in SQL ("status = 'posted'")."""
-    allowed = CONSOLIDATION_LAYER.get(path.name, ())
+    allowed = CONSOLIDATION_LAYER.get(path.name, ()) + W1_POSTING.get(path.name, ())
     for text in _string_constants(path.read_text()):
         lowered = text.lower()
         for status in POSTING:

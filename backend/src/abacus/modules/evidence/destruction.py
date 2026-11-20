@@ -17,12 +17,13 @@ import csv
 import io
 from collections.abc import Awaitable, Callable, Sequence
 from datetime import date, datetime, time
-from typing import Any, ClassVar, Final, cast
+from typing import Annotated, Any, ClassVar, Final, cast
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import text
 
+from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import DomainEvent, Ref, Target, uow
@@ -43,9 +44,9 @@ class DestructionBatchAssembled(DomainEvent):
 
     event_type: ClassVar[str] = "destruction_batch.assembled"
 
-    destruction_batch_id: UUID
-    ref: str
-    eligible_count: int
+    destruction_batch_id: Annotated[UUID, classified("internal")]
+    ref: Annotated[str, classified("internal")]
+    eligible_count: Annotated[int, classified("internal")]
 
 
 ArchiveReader = Callable[[TenantContext, Sequence[UUID]], Awaitable[frozenset[UUID]]]

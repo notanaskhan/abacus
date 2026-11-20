@@ -97,7 +97,7 @@ class QualityDashboardOut(BaseModel):
     cycle_year: Annotated[int, Field(ge=2020, le=2100), Internal]
     office_id: Annotated[UUID | None, Internal] = None
     objectives_firm_wide: Annotated[bool, Internal]
-    tiles: QualityTilesOut
+    tiles: Annotated[QualityTilesOut, classified("internal")]
     components: Annotated[list[QualityComponentOut], Internal]
     allowed_actions: Annotated[list[str], Internal] = []
 
@@ -109,7 +109,7 @@ class QualityObjectiveOut(BaseModel):
     component: Annotated[Component, Internal]
     ref: Ref
     title: Annotated[str, Field(max_length=300), Confidential]
-    owner: QualityPersonOut | None = None
+    owner: Annotated[QualityPersonOut | None, classified("confidential")] = None
     health_flag: Annotated[Literal["at_risk"] | None, Internal] = None
     risks: Count
     responses: Count
@@ -163,7 +163,7 @@ class QualityRiskReviewOut(BaseModel):
 
     review_id: Annotated[UUID, Internal]
     reviewed_on: Annotated[date, Internal]
-    reviewed_by: QualityPersonOut
+    reviewed_by: Annotated[QualityPersonOut, classified("confidential")]
 
 
 class QualityAgentRowOut(BaseModel):
@@ -246,7 +246,7 @@ class QualityInspectionOut(BaseModel):
     engagement_name: Annotated[str, Field(max_length=200), Confidential]
     kind: Annotated[InspectionKind, Internal]
     basis: Annotated[Literal["sqms1", "firm_policy_c230_10_36"], Internal]
-    inspector: QualityPersonOut
+    inspector: Annotated[QualityPersonOut, classified("confidential")]
     status: Annotated[InspectionStatus, Internal]
     due_on: Annotated[date | None, Internal] = None
     allowed_actions: Annotated[list[str], Internal] = []
@@ -300,7 +300,7 @@ class QualityFindingOut(BaseModel):
     status: Annotated[FindingStatus, Internal]
     evaluation: Annotated[Evaluation | None, Internal] = None
     root_cause_category: Annotated[RootCause | None, Internal] = None
-    owner: QualityPersonOut | None = None
+    owner: Annotated[QualityPersonOut | None, classified("confidential")] = None
     due_on: Annotated[date | None, Internal] = None
     raised_by_kind: Annotated[Literal["human", "system"], Internal]
     version: Annotated[int, Field(ge=1), Internal]
@@ -372,7 +372,7 @@ class QualityAnnualEvaluationOut(BaseModel):
 
     year: Annotated[int, Field(ge=2020, le=2100), Internal]
     status: Annotated[Literal["not_started", "concluded"], Internal]
-    responsible: QualityPersonOut
+    responsible: Annotated[QualityPersonOut, classified("confidential")]
     decision_card_id: Annotated[UUID | None, Internal] = None
     concluded_at: Annotated[datetime | None, Internal] = None
     checklist: Annotated[dict[str, bool], Internal] = {}

@@ -71,7 +71,7 @@ class RecordsPolicyVersionOut(BaseModel):
     legal_minimum_years: Annotated[int, Field(ge=0, le=100), Internal]
     policy_text: Annotated[str | None, Field(max_length=4000), Internal] = None
     effective_from: Annotated[date | None, Internal] = None
-    created_by: RecordsPersonOut
+    created_by: Annotated[RecordsPersonOut, classified("confidential")]
     created_at: Annotated[datetime, Internal]
 
 
@@ -98,7 +98,7 @@ class RecordsPolicyCreateIn(BaseModel):
 class RecordsApprovalOut(BaseModel):
     model_config = _cfg()
 
-    approver: RecordsPersonOut
+    approver: Annotated[RecordsPersonOut, classified("confidential")]
     approver_role: Annotated[ApproverRole, Internal]
     approved_at: Annotated[datetime, Internal]
 

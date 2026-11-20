@@ -82,7 +82,7 @@ class PostIssuanceCaseOut(BaseModel):
     description: Annotated[str, Field(max_length=2000), Confidential]
     status: Annotated[CaseStatus, Internal]
     comparison: Annotated[list[PostIssuanceComparisonLineOut], Internal] = []
-    evaluation: PostIssuanceEvaluationOut | None = None
+    evaluation: Annotated[PostIssuanceEvaluationOut | None, classified("internal")] = None
     analysis_run_id: Annotated[UUID | None, Internal] = None
     decision_card_id: Annotated[UUID | None, Internal] = None
     allowed_actions: Annotated[list[str], Internal] = []
@@ -124,6 +124,7 @@ class PostIssuanceComparisonIn(BaseModel):
     corrected: Annotated[
         dict[Annotated[str, Field(pattern=r"^[a-z0-9_.-]{1,80}$")], Money],
         Field(min_length=1, max_length=200),
+        Confidential,
     ]
     disclosure_affected: Annotated[bool, Internal] = False
 
