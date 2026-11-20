@@ -99,6 +99,12 @@ from abacus.modules.identity.repository import (
     walled_clients,
 )
 from abacus.modules.identity.slots import consent_given
+from abacus.modules.identity.inspection_grants import (
+    INSPECTION_READS,
+    INSPECTOR,
+    inspector_of,
+    inspector_reach,
+)
 
 MFA_RECENT = timedelta(minutes=15)
 # Ethical walls (ADR-026; SPEC-002) are enforced below, before roles: the API may start in
@@ -447,6 +453,12 @@ async def _roles(ctx: Actor, resource: Resource, rule: Rule) -> set[str]:
             roles.add(role)
         elif await _line_reader(ctx, rule, resource.engagement_id):
             roles.add(SERVICE_LINE_READER)  # G-01-T12 (DEC-380): no team role here
+        elif (
+            not ctx.is_support
+            and not ctx.client
+            and await inspector_of(ctx.tenant, ctx.user_id, resource.engagement_id, rule.action)
+        ):
+            roles.add(INSPECTOR)  # Q-05-T16 (OQ-6): a live, read-only inspection grant
     elif (
         rule.reads
         and not rule.scope_only
@@ -495,6 +507,8 @@ def _line_reader_cell(rule: Rule) -> Decision | None:
 def _cell(rule: Rule, role: str) -> Decision | None:
     if role == SERVICE_LINE_READER:
         return _line_reader_cell(rule)
+    if role == INSPECTOR:  # added only for an INSPECTION_READS action under a live grant
+        return "allow" if rule.action in INSPECTION_READS else "deny"
     return rule.decisions.get(role)
 
 
@@ -1253,10 +1267,16 @@ def _visible_by_role(
         if line is not None:
             reach.append(line)
         return or_(*reach) if reach else false()
+    inspector = (
+        inspector_reach(ctx.user_id, action, engagement_id)
+        if not ctx.is_support and not ctx.client
+        else None
+    )  # Q-05-T16: a live inspection grant (walls are applied by the caller)
+    reach = [r for r in (line, inspector) if r is not None]
     if not staff and not client:
-        return line if line is not None else false()
+        return or_(*reach) if reach else false()
     member = _member_of(ctx, engagement_id, staff + client)
-    return or_(member, line) if line is not None else member
+    return or_(member, *reach) if reach else member
 
 
 def _line_reach(

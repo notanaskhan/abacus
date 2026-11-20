@@ -1191,6 +1191,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "consultation.position_recorded",
         "consultation.reopened",
         "destruction_batch.assembled",
+        "inspection_grant.issued",  # Q-05-T16 (TASK-8820): ADM-12 e's grant line
+        "inspection_grant.revoked",
+        "inspection_grant.expired",
         "destruction_batch.first_approval",  # Q-05-T15 (TASK-8819): FIL-02 c, d, i
         "destruction_batch.approved",
         "destruction_batch.cancelled",

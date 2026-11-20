@@ -201,7 +201,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
 }
 
 # S46: A-08-T15 (0893) link principals.
-TABLES: frozenset[str] = _TABLES | frozenset(
+TABLES: frozenset[str] = _TABLES | frozenset({"inspection_access_grants"}) | frozenset(
     {"link_page_credentials", "link_principal_challenges", "link_principals"}
 )
 INSERT_ONLY: frozenset[str] = _INSERT_ONLY | frozenset(
@@ -220,3 +220,5 @@ INSERT_COLUMNS["link_principals"] = frozenset(
     }
 )
 UPDATE_COLUMNS["link_principals"] = frozenset({"revoked_at"})
+# Q-05-T16 (0995): an inspector's grant ends by revocation only.
+UPDATE_COLUMNS["inspection_access_grants"] = frozenset({"revoked_at", "revoked_by"})

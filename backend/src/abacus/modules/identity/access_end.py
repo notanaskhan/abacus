@@ -185,8 +185,12 @@ async def _notice(tenant_id: UUID, ends: date, members: int) -> bool:
 
 
 async def sweep_firm(tenant_id: UUID) -> tuple[int, int]:
-    """One firm's pass: (members ended, notices sent)."""
+    """One firm's pass: (members ended, notices sent). Q-05-T16: expired inspection grants end
+    in the same pass (hourly, so a grant never outlives its expiry by more than an hour)."""
+    from abacus.modules.identity.inspection_grants import sweep as sweep_inspection_grants
+
     system = TenantContext(tenant_id, "system", _ACTOR)
+    await sweep_inspection_grants(system)
     async with tenant_session(system) as session:
         rows = [
             (cast(UUID, r[0]), cast(date, r[1])) for r in (await session.execute(_ENDING)).all()
