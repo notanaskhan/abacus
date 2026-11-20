@@ -73,7 +73,14 @@ from abacus.modules.evidence.deliverable_serving import (
 )
 from abacus.modules.evidence.destruction_jobs import ACTIVITIES as DESTRUCTION_ACTIVITIES
 from abacus.modules.evidence.destruction_jobs import SCHEDULES as DESTRUCTION_SCHEDULES
+from abacus.modules.evidence.destruction_execute import ACTIVITIES as _DESTROY_ACTIVITIES
+from abacus.modules.evidence.destruction_execute import DestructionExecuteWorkflow
+from abacus.modules.evidence.destruction_execute import (
+    register_derived_store as register_derived_store,
+)
 from abacus.modules.evidence.destruction_jobs import WORKFLOWS as DESTRUCTION_WORKFLOWS
+
+_DESTROY_WORKFLOWS: dict[type, str] = {DestructionExecuteWorkflow: "batch"}
 from abacus.modules.evidence.drops import drop_batch
 from abacus.modules.evidence.drops_contract import drops_router, void_router
 from abacus.modules.evidence.duplicates import PendingDuplicate, pending_duplicates
@@ -481,6 +488,7 @@ WORKFLOWS: dict[type, str] = {
     **SCHEDULE_WORKFLOWS,  # G-02-T19: the firm export's monthly run, on the firm's Schedule
     **FIRM_EXPORT_WORKFLOWS,  # Q-02-T43: the firm export, started by `firm_export.approved`
     **DESTRUCTION_WORKFLOWS,  # Q-05-T11: the quarter's destruction batch (dark)
+    **_DESTROY_WORKFLOWS,  # Q-05-T15: DestructionExecuteWorkflow (batch class)
 }
 ACTIVITIES: tuple[object, ...] = (
     *UPLOAD_ACTIVITIES,
@@ -492,6 +500,7 @@ ACTIVITIES: tuple[object, ...] = (
     *SCHEDULE_ACTIVITIES,  # G-02-T19
     *FIRM_EXPORT_ACTIVITIES,  # Q-02-T43
     *DESTRUCTION_ACTIVITIES,  # Q-05-T11
+    *_DESTROY_ACTIVITIES,  # Q-05-T15
 )
 
 

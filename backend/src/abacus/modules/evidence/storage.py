@@ -36,7 +36,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 from uuid import UUID
 
 from abacus.kernel.clock import system_now
@@ -50,6 +50,7 @@ from abacus.kernel.crypto import (
     seal_detached,
     seal_under,
 )
+from abacus.kernel.errors import ServiceUnavailable
 from abacus.kernel.storage import StorageError, error_code, s3_client
 
 if TYPE_CHECKING:
@@ -448,3 +449,51 @@ async def check_ready() -> None:
     )
     if lock.get("ObjectLockConfiguration", {}).get("ObjectLockEnabled") != "Enabled":
         raise RuntimeError("the evidence bucket must have Object Lock enabled")
+
+
+# --- Q-05-T15 (ADR-179 / OQ-1): version deletion under the destruction role --------------------
+
+DestructionClient = Callable[[str], Awaitable[Any]]  # Any: a boto3 S3 client for a batch
+_destruction_clients: list[DestructionClient] = []
+
+
+async def _default_destruction_client(batch_ref: str) -> Any:  # Any: a boto3 S3 client
+    """In AWS, the destruction role with the batch's tag; in local and test runs (no role), the
+    configured client; anywhere else without a role, refused (fail closed)."""
+    from abacus.kernel.config import SYNTHETIC_ENVIRONMENTS
+    from abacus.kernel.storage import destruction_s3_client
+
+    role = settings().destruction_role_arn
+    if role:
+        return await asyncio.to_thread(destruction_s3_client, role, batch_ref, region=settings().s3_region)
+    if settings().environment in SYNTHETIC_ENVIRONMENTS:
+        return _storage().client
+    raise ServiceUnavailable
+
+
+def register_destruction_client(factory: DestructionClient) -> None:
+    """The process's way to an S3 client under `abacus-<env>-destruction` with the batch's session
+    tag (worker start-up in AWS; the configured client in local and test runs)."""
+    _destruction_clients.clear()
+    _destruction_clients.append(factory)
+
+
+async def delete_version(batch_ref: str, key: str, version_id: str, *, replica: bool = False) -> bool:
+    """Delete one object version as the destruction role. S3 still refuses a version under
+    retention or legal hold (AccessDenied answers False); a missing version answers True."""
+    client = await (_destruction_clients[0] if _destruction_clients else _default_destruction_client)(
+        batch_ref
+    )
+    target = _storage()
+    bucket = target.bucket if not replica else settings().evidence_replica_bucket or ""
+    if not bucket:
+        return True  # no replica configured in this environment
+    try:
+        await asyncio.to_thread(client.delete_object, Bucket=bucket, Key=key, VersionId=version_id)
+    except StorageError as exc:
+        if error_code(exc) in ("NoSuchVersion", "NoSuchKey"):
+            return True
+        if error_code(exc) == "AccessDenied":
+            return False
+        raise
+    return True

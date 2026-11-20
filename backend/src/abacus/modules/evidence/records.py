@@ -39,11 +39,13 @@ RecordClass = Literal[
     "signature_evidence",
     "addition_manifest",
     "ledger_write_evidence",
+    "destruction_certificate",
 ]
 RECORD_CLASSES: Final = frozenset(
     {"chain_anchor", "seal_manifest", "consent_evidence", "signature_evidence"}
     | {"addition_manifest"}  # A-07-T42: a post-lock addition's appended manifest
     | {"ledger_write_evidence"}  # C-02-T19: a W1 write's request, response and read-back
+    | {"destruction_certificate"}  # Q-05-T15: a destruction batch's certificate (7 years, OQ-10)
 )
 _RACE: Final = ("PreconditionFailed", "ConditionalRequestConflict")
 

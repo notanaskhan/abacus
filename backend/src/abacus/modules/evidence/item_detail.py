@@ -177,6 +177,14 @@ async def download(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> D
     if version is None or item is None or version.engagement_id != engagement_id:
         raise NotFound("evidence_version")
     await _firm_side(ctx, engagement_id)
+    from abacus.kernel.errors import DomainGone
+    from abacus.modules.evidence.destruction_execute import destroyed_reference
+
+    destroyed = await destroyed_reference(ctx.tenant, version_id)  # Q-05-T15
+    if destroyed is not None:
+        engagement_ref = await get_ref(ctx, engagement_id)
+        await authorise(ctx, "evidence.read", engagement_ref.resource())  # 404 before 410
+        raise DomainGone(facts={"certificate": destroyed})
     # DEC-52 (TASK-1207 review): the original is unmasked; an offshore member is refused it at
     # the condition layer, after the authorise that answers 404 for a wall or an unknown version.
     engagement = await get_ref(ctx, engagement_id)
