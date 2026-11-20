@@ -99,6 +99,43 @@ resource "aws_wafv2_web_acl" "this" {
     }
   }
 
+  # G-04-T22 end pass: paths another host serves (the console's /v1/platform/ on the firm and
+  # portal edges) are blocked here, so the console allowlist cannot be gone around.
+  dynamic "rule" {
+    for_each = length(var.block_path_prefixes) > 0 ? [1] : []
+    content {
+      name     = "blocked-paths"
+      priority = 5
+
+      action {
+        block {}
+      }
+
+      statement {
+        regex_match_statement {
+          regex_string = "^(?:${join("|", var.block_path_prefixes)})"
+          field_to_match {
+            uri_path {}
+          }
+          text_transformation {
+            priority = 0
+            type     = "URL_DECODE"
+          }
+          text_transformation {
+            priority = 1
+            type     = "LOWERCASE"
+          }
+        }
+      }
+
+      visibility_config {
+        cloudwatch_metrics_enabled = true
+        metric_name                = "${var.name}-blocked-paths"
+        sampled_requests_enabled   = true
+      }
+    }
+  }
+
   rule {
     name     = "auth-and-code-rate"
     priority = 0

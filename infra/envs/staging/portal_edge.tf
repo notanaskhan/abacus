@@ -14,6 +14,7 @@ module "portal_waf" {
   count  = local.portal_edge ? 1 : 0
 
   name                 = "abacus-staging-portal"
+  block_path_prefixes  = local.console_edge ? ["/v1/platform/"] : [] # G-04-T22: once the console host exists, staff routes answer only there
   managed_rules_action = var.portal_managed_rules_action
 }
 

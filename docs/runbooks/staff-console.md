@@ -18,6 +18,7 @@ rehearse_by: 2028-11-07
 - **Where:** `console.<domain>`, a CloudFront distribution serving `console.html` (the console build, `vite build --mode console`) with its own WebACL.
 - **Who:** Accrued staff on the staff issuer (WorkOS, separate from firm users), MFA required; the BFF refuses a session without it.
 - **From where:** only the IPv4 CIDRs in the untracked `terraform.tfvars` (`console_allow_ipv4_cidrs`). Any other source gets a WAF block before any other rule.
+- **Staff routes:** once the console edge is applied, the firm and portal WebACLs block `/v1/platform/` (`block_path_prefixes`), so staff routes answer only on the console host; until then staff reach them on the firm host (the template-import runbooks).
 
 ### Change the allowlist
 1. Ticket with the CIDR, whose network it is and until when.

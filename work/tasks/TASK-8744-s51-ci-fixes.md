@@ -2,7 +2,7 @@
 id: TASK-8744
 title: "S51-CI: Main CI reds after the S51 partials batches"
 spec: SPEC-000
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review
 branch: s51r-fixes
