@@ -627,6 +627,7 @@ export const ACTIONS = [
   "qm_finding.update",
   "quality.manage",
   "quality.read",
+  "quality_evaluation.decide",
   "questionnaire.ask",
   "questionnaire.create",
   "questionnaire.edit",

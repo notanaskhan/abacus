@@ -246,7 +246,14 @@ from abacus.modules.review.gate_actions import (  # noqa: E402
     register_reassign_hook,
 )
 
+from abacus.modules.review.firm_cards import (  # noqa: E402 -- Q-05-T16 part 2
+    decide_firm_card as decide_firm_card,
+)
+from abacus.modules.review.firm_cards import raise_firm_card as raise_firm_card  # noqa: E402
+
 __all__ = [
+    "decide_firm_card",
+    "raise_firm_card",
     "ACTIVITIES",
     "C13_EVENTS",
     "LEVELS",

@@ -6742,6 +6742,18 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
         "monitoring_reviewer": "required",
     },
+    "quality_evaluation.decide": {
+        "quality_partner": "allow",
+        "firm_admin": "deny",
+        "client_admin": "deny",
+        "client_contributor": "deny",
+        "third_party": "deny",
+        "client_service": "deny",
+        "link_principal": "deny",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+    },
     "questionnaire.ask": {
         "engagement_partner": "allow",
         "manager": "allow",
