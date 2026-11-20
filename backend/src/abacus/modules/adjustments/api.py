@@ -27,6 +27,12 @@ from abacus.modules.adjustments.entries import (
     register_entry_proposed_hook,
 )
 from abacus.modules.adjustments.posting_contract import posting_router
+from abacus.modules.adjustments.posting_recovery import (
+    carry_reversals,
+    failed_entry_facts,
+    failure_line,
+    posted_batches_of,
+)
 from abacus.modules.engagements.api import deliver_proposed_entries, register_client_approval_kind
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.ledger.api import register_adjustment_source
@@ -67,6 +73,10 @@ from abacus.modules.adjustments.entries import adjusted_tb as adjusted_tb  # noq
 from abacus.modules.adjustments.entries import propose as propose_entry  # noqa: E402
 
 __all__ = [
+    "carry_reversals",
+    "failed_entry_facts",
+    "failure_line",
+    "posted_batches_of",
     "ACTIVITIES",
     "POSTING_RUN",
     "ROUTERS",

@@ -19,7 +19,7 @@ from decimal import Decimal
 from typing import Annotated, Literal, cast
 from uuid import UUID
 
-from fastapi import Depends, Header
+from fastapi import Depends, Header, Response
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
@@ -30,7 +30,7 @@ from abacus.kernel._statuses import (
     ProposedEntryStatus,
 )
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.adjustments import close_approvals as _approvals
 from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
@@ -502,9 +502,18 @@ async def reject_close_entry_route(
 async def record_external_route(
     entry_id: UUID, body: PostingRecordExternalIn, ctx: Ctx
 ) -> PostingDecisionOut:
-    """Recorded in ledger / Recorded by <client> (C-02-T22)."""
+    """Recorded in ledger (export path): evidence or a sync match (C-02-T24). Recorded by
+    <client> for an attest client is C-02-T32's."""
+    from abacus.modules.adjustments import posting_recovery
+
     await _human(ctx, "proposed_entry.record_external")
-    raise NotImplementedYet
+    decision_id = await posting_recovery.record_external(
+        ctx, entry_id, evidence_version_id=body.evidence_version_id, match_ref=body.match_ref
+    )
+    return PostingDecisionOut(
+        decision_id=decision_id, entry_id=entry_id,
+        status=cast(EntryStatus, "recorded_externally"),
+    )  # fmt: skip
 
 
 @posting_router.get(
@@ -513,10 +522,16 @@ async def record_external_route(
     response_model=bytes,
     errors=(501,),
 )
-async def entries_export_route(work_item_id: UUID, ctx: Ctx) -> bytes:
+async def entries_export_route(work_item_id: UUID, ctx: Ctx) -> Response:
     """Open in Excel and, without W1, the deterministic JE import file (export instead)."""
+    from abacus.modules.adjustments import posting_recovery
+
     await _human(ctx, "proposed_entry.export")
-    raise NotImplementedYet
+    return Response(
+        content=await posting_recovery.export_file(ctx, work_item_id),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="proposed-entries.xlsx"'},
+    )
 
 
 @posting_router.post(
@@ -602,9 +617,15 @@ async def undo_batch_route(batch_id: UUID, ctx: Ctx) -> PostingBatchOut:
 async def retry_entry_route(
     batch_id: UUID, entry_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> PostingBatchOut:
-    """Re-read by DocNumber and marker, then re-write under the same key (C-02-T19)."""
+    """Re-read through the preflight, then re-write under the same key (C-02-T24)."""
+    from abacus.modules.adjustments import posting, posting_recovery
+
     await _human(ctx, "posting_batch.post")
-    raise NotImplementedYet
+    retried = await posting_recovery.retry_entry(
+        ctx, batch_id, entry_id, idempotency_key=idempotency_key
+    )
+    await posting.start_retry(ctx.tenant_id, retried)
+    return PostingBatchOut.model_validate(await posting.batch_view(ctx.tenant, batch_id))
 
 
 @posting_router.post(
@@ -614,9 +635,11 @@ async def retry_entry_route(
     errors=(409, 501),
 )
 async def ask_client_route(conflict_id: UUID, ctx: Ctx) -> PostingConflictOut:
-    """The firm's "Lift closing date request" template row, sent by a person (C-02-T19)."""
+    """The firm's "Lift closing date request" template row, sent by a person (C-02-T24)."""
+    from abacus.modules.adjustments import posting_recovery
+
     await _human(ctx, "closing_date_conflict.resolve")
-    raise NotImplementedYet
+    return _conflict_out(await posting_recovery.ask_client(ctx, conflict_id))
 
 
 @posting_router.post(
@@ -627,5 +650,55 @@ async def ask_client_route(conflict_id: UUID, ctx: Ctx) -> PostingConflictOut:
 )
 async def redate_route(conflict_id: UUID, body: PostingRedateIn, ctx: Ctx) -> PostingConflictOut:
     """Withdraws the approval and re-dates; the entry is re-approved before it posts."""
+    from abacus.modules.adjustments import posting_recovery
+
     await _human(ctx, "closing_date_conflict.resolve")
-    raise NotImplementedYet
+    return _conflict_out(
+        await posting_recovery.redate(ctx, conflict_id, body.new_date, body.reason)
+    )
+
+
+def _conflict_out(view: object) -> PostingConflictOut:
+    from abacus.modules.adjustments.posting_recovery import ConflictView
+
+    found = cast(ConflictView, view)
+    return PostingConflictOut(
+        conflict_id=found.conflict_id,
+        entry_id=found.entry_id,
+        ledger_closing_date=found.ledger_closing_date,
+        entry_date=found.entry_date,
+        status=cast(ConflictStatus, found.status),
+        client_asked_at=cast(datetime | None, found.client_asked_at),
+    )
+
+
+class PostingReverseIn(BaseModel):
+    model_config = _cfg({"reverse_on": "2026-09-01"})
+
+    reverse_on: Annotated[date | None, Internal] = None
+
+
+class PostingReversalOut(BaseModel):
+    model_config = _cfg()
+
+    entry_id: Annotated[UUID, Internal]
+    reversal_entry_id: Annotated[UUID, Internal]
+
+
+@posting_router.post(
+    "/proposed-entries/{entry_id}/reverse",
+    action="proposed_entry.create",
+    response_model=PostingReversalOut,
+    status_code=201,
+    errors=(409,),
+)
+async def reverse_entry_route(
+    entry_id: UUID, body: PostingReverseIn, ctx: Ctx
+) -> PostingReversalOut:
+    """Manual Reverse (C-02-T24): a posted entry's reversal as a new proposed entry, approved and
+    posted like any other; never a delete."""
+    from abacus.modules.adjustments import posting_recovery
+
+    await _human(ctx, "proposed_entry.create")
+    new_id = await posting_recovery.reverse_entry(ctx, entry_id, body.reverse_on)
+    return PostingReversalOut(entry_id=entry_id, reversal_entry_id=new_id)

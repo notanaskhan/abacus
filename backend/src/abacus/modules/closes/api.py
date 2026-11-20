@@ -118,9 +118,12 @@ ROUTERS = (closes_router, close_work_router, portal_close_router, delivery_route
 
 # C-01-T19: the BD1 publish workflow; the worker reads these (no outbox subscriptions yet).
 async def _on_close_created(event: OutboxEvent) -> None:
+    from abacus.modules.closes.registrations import on_close_for_reversals
+
     close_id = event.payload.get("close_id")
     if isinstance(close_id, str):
         await schedule_publish(event.tenant_id, UUID(close_id))
+        await on_close_for_reversals(event)  # C-02-T24: last month's reversals carry here
 
 
 SUBSCRIPTIONS: dict[str, Handler] = {

@@ -11,6 +11,9 @@ RUN = "adjustments.run_posting_batch"
 class PostingInput:
     tenant_id: str
     batch_id: str
+    # C-02-T24: a retry names one failed entry and its own grant (defaults keep old histories).
+    entry_id: str | None = None
+    grant_id: str | None = None
 
 
 @dataclass(frozen=True)

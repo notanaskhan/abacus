@@ -1192,6 +1192,17 @@ REVIEWED_FALLBACK: Final = frozenset(
         "posting_batch.undone",
         "proposed_entry.post_failed",
         "proposed_entry.posted",
+        # reviewed 2026-11-20 (C-02-T24, TASK-8809): retries, closing-date conflicts, the JE
+        # export, reversal links and Recorded in ledger show on CLS-07 and CLS-11's own logs.
+        "closing_date_conflict.client_asked",
+        "closing_date_conflict.opened",
+        "closing_date_conflict.redated",
+        "posting_batch.failed_post",
+        "posting_batch.posted",
+        "posting_batch.retry_requested",
+        "proposed_entry.exported",
+        "proposed_entry.recorded_externally",
+        "proposed_entry.reversal_linked",
         # reviewed 2026-11-19 (S51 partials end pass, TASK-8738): post-issuance cases show on
         # AUD-30's timeline, monitoring findings on ADM-12, the season manifest's build, export
         # and row changes on ENG-07's own history; none needs a sentence in the firm's feed.

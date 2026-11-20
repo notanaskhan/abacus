@@ -62,7 +62,7 @@ from abacus.modules.review.api import (
 
 CLOSE_TARGET: Final = "close"
 ISSUE_SUBJECT: Final = "issue"
-IssueClass = Literal["bank_rec", "schedule", "flux", "recategorize", "intake"]
+IssueClass = Literal["bank_rec", "schedule", "flux", "recategorize", "intake", "posting"]
 ISSUE_CLASSES: Final[tuple[IssueClass, ...]] = (
     "bank_rec",
     "schedule",
