@@ -54,6 +54,7 @@ export const SCREEN_OF: Readonly<Partial<Record<EntityTab | ReviewTab, string>>>
   activity: "TAX-07",
   summary: "TXP-01",
   financials: "TXP-02",
+  "fixed-assets": "TXP-03",
   "schedule-k": "TXP-05",
   capital: "TXP-07",
 };

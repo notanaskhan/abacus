@@ -11,7 +11,14 @@ import { Navigate, useNavigate } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { useEntitlement, useFlag } from "../../app-core/flags";
 import { useOpenHref } from "../../app-core/open";
-import { SCREEN_OF, type Section, isEntityForm, sectionOf, slugOf } from "../../domain/tax";
+import {
+  type ReviewTab,
+  SCREEN_OF,
+  type Section,
+  isEntityForm,
+  sectionOf,
+  slugOf,
+} from "../../domain/tax";
 import { hrefOf, to } from "../../routes/to";
 import { EntityReturnLayout, NOT_BUILT } from "./EntityReturnLayout";
 import { Financials } from "../TXP-02/Financials";
@@ -20,8 +27,12 @@ import { Workpaper } from "../TXP-11/Workpaper";
 import { Summary } from "../TXP-01/Summary";
 import { Issues } from "../TXP-10/Issues";
 import { CapitalAccounts } from "../TXP-07/CapitalAccounts";
+import { FixedAssets } from "../TXP-03/FixedAssets";
 import { COPY } from "./copy";
 import { TXP00, frameOf } from "./index";
+
+/** T-06's review sections built so far (T-06-T29 to T31). */
+const DEPTH_BUILT: ReadonlySet<ReviewTab> = new Set<ReviewTab>(["fixed-assets"]);
 
 export type EntitySlug = "agent" | "issues" | "workpaper" | "activity" | "review";
 
@@ -38,6 +49,8 @@ export interface EntityReturnProps {
   onOpen: (suffix: string) => void;
   /** The composer hands off to TAX-08 (the route's `?ov=assistant`). */
   onComposer: () => void;
+  /** T-06-T29: the opening search a section reads (`?view=`); default: the page's own. */
+  search?: string;
 }
 
 export function EntityReturn({
@@ -47,9 +60,12 @@ export function EntityReturn({
   overview,
   onOpen,
   onComposer,
+  search,
 }: EntityReturnProps): JSX.Element {
   const navigate = useNavigate();
   const entityOn = useFlag("tax.entity_workspace") === true;
+  // T-06 §0: TXP-03/04/08/09 open behind `tax.entity_depth`; off, the tab stays planned.
+  const depthOn = useFlag("tax.entity_depth") === true;
   // T-05-T66 (AC-13.2): a firm without `tax_entity_returns` keeps the coordination view, locked.
   const entitled = useEntitlement("tax_entity_returns");
   // With the flag off nothing is fetched: the route's own screen draws as before.
@@ -83,6 +99,7 @@ export function EntityReturn({
       title={`${String(record.data.row.tax_year)} Form ${form}`}
       context={record.data.row.client_name}
       section={section}
+      {...(depthOn ? { built: DEPTH_BUILT } : {})}
       onSection={(next) => {
         if (next.tab === "intake") {
           void navigate(to.TAX03({ returnId }));
@@ -97,6 +114,8 @@ export function EntityReturn({
         <Financials returnId={returnId} form={form} taxYear={record.data.row.tax_year} />
       ) : section.review === "schedule-k" ? (
         <ScheduleK returnId={returnId} onOpen={onOpen} />
+      ) : section.review === "fixed-assets" && depthOn ? (
+        <FixedAssets returnId={returnId} {...(search === undefined ? {} : { search })} />
       ) : section.review === "capital" ? (
         <CapitalAccounts returnId={returnId} />
       ) : section.review === "summary" ? (

@@ -624,7 +624,7 @@ import { type CalcScenario, scenarios as txt02Scenarios } from "./TXT-02/scenari
 import { EntityReturn } from "./TXP-00/EntityReturn";
 import { Allocation } from "./TXP-06/Allocation";
 import { RIDGELINE_RETURN_ID } from "../fixtures/seed/tax-entity";
-import { screenScenario } from "../fixtures/screen-scenarios";
+import { screenScenario, withIds } from "../fixtures/screen-scenarios";
 import type { EntitySlug } from "../routes/firm/tax-returns";
 import {
   OPENING as TXP12_OPENING,
@@ -1643,6 +1643,12 @@ const ENTITY_SCREENS: Readonly<
   "TXP-00": { title: "Return › Agent · entity returns", slug: "agent" },
   "TXP-01": { title: "Review › Summary", slug: "review", review: "summary" },
   "TXP-02": { title: "Review › Financials (TB → TTB)", slug: "review", review: "financials" },
+  // T-06-T29: the depth screens on the T-06-T23 scenarios (TXP-03 a, a2, b–e).
+  "TXP-03": {
+    title: "Review › Fixed Assets · Ridgeline depreciation register",
+    slug: "review",
+    review: "fixed-assets",
+  },
   "TXP-05": { title: "Review › Schedule K", slug: "review", review: "schedule-k" },
   "TXP-06": {
     title: "Allocation Structure",
@@ -1655,7 +1661,16 @@ const ENTITY_SCREENS: Readonly<
   "TXP-11": { title: "Workpaper", slug: "workpaper" },
 };
 
-function EntityFrame({ id, state }: { id: string; state: string }): JSX.Element {
+function EntityFrame({
+  id,
+  state,
+  search,
+}: {
+  id: string;
+  state: string;
+  /** The state's opening search (`?view=by_property`), as the route would read it. */
+  search?: string;
+}): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
   const bar = useFirmToolbar({
     at: { pathname: "/tax-returns" },
@@ -1674,6 +1689,7 @@ function EntityFrame({ id, state }: { id: string; state: string }): JSX.Element 
           overview={<></>}
           onOpen={() => undefined}
           onComposer={() => undefined}
+          {...(search === undefined || search === "" ? {} : { search })}
         />
         {screen?.sheet === true ? (
           <Allocation returnId={RIDGELINE_RETURN_ID} onClose={() => undefined} />
@@ -1700,7 +1716,10 @@ function entityArtboard(id: string) {
         restore();
       };
     }, [choice, state, params.as]);
-    return ready === state ? <EntityFrame key={state} id={id} state={state} /> : null;
+    const search = choice === null ? "" : withIds(choice.opens, choice.ids);
+    return ready === state ? (
+      <EntityFrame key={state} id={id} state={state} search={search} />
+    ) : null;
   };
 }
 
