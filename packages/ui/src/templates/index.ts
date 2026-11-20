@@ -182,3 +182,16 @@ export {
   type SignOffLevel,
   TOOLBAR_H,
 } from "./sheet-layout";
+
+// F-08-T14: T21 AnalyticsLayout (home and record variants, scope chips, KPI row, card grid).
+export {
+  ANALYTICS_GEOMETRY,
+  AUDIENCES,
+  type AnalyticsCard,
+  AnalyticsLayout,
+  type AnalyticsLayoutProps,
+  type AnalyticsView,
+  HOME_SEGMENTS,
+  LockedName,
+  type ScopeChip,
+} from "./analytics-layout";

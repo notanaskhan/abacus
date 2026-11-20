@@ -3,6 +3,7 @@
 import { registerScreen } from "../fixture-mode";
 import { T6Artboard } from "./T6";
 import { T18Artboard } from "./T18";
+import { T21Artboard } from "./T21";
 import { T10Artboard } from "./T10";
 import { Tpl01Artboard } from "./TPL-01";
 import { Tpl06Artboard } from "./TPL-06";
@@ -46,6 +47,12 @@ registerScreen("TPL-10", {
 registerScreen("T18", {
   title: "Sheet · template board",
   Component: T18Artboard,
+});
+
+// F-08-T14 (TASK-8846): the T21 Analytics dashboard template board, a to g (placeholder content).
+registerScreen("T21", {
+  title: "Analytics dashboard · template board",
+  Component: T21Artboard,
 });
 
 registerScreen("T6", {
