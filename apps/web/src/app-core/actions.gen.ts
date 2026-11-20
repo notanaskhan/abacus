@@ -370,6 +370,7 @@ export const ACTIONS = [
   "firm_standard.publish",
   "firm_standard.read",
   "fix_instruction.set",
+  "fixed_asset.approve_change",
   "fixed_asset.create",
   "fixed_asset.propose_change",
   "fixed_asset.read",

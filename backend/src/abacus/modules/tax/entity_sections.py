@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Mapping
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Final, Literal
@@ -371,6 +371,19 @@ async def sections_view(
     return out
 
 
+# T-06-T33 (DEC-5833): a section's open flags (TXP-03's flagged assets and undecided changes)
+# need a note at sign-off, as an off tie-out does (409 `open_flags_note_required`).
+FlagCounter = Callable[[TenantContext, UUID], Awaitable[int]]
+_FLAGS: dict[str, FlagCounter] = {}
+
+
+def register_section_flags(key: str, counter: FlagCounter) -> None:
+    known = _FLAGS.get(key)
+    if known is not None and known is not counter:
+        raise RuntimeError(f"section flags for {key!r} are already registered")
+    _FLAGS[key] = counter
+
+
 @dataclass(frozen=True)
 class SignedSection:
     sign_off_id: UUID
@@ -402,13 +415,19 @@ async def sign_section(
     text_note = (note or "").strip()
     if off and not text_note:
         raise TieOutOff(facts={"count": len(off)})
+    counter = _FLAGS.get(key)
+    flags = 0 if counter is None else await counter(ctx.tenant, return_id)
+    if flags and not text_note:
+        from abacus.modules.tax.entity_depth_errors import OpenFlagsNoteRequired
+
+        raise OpenFlagsNoteRequired(facts={"open_flags": flags})
     signed = await sign_target(
         ctx, TARGET, ids[key], level, seen_hash,
         statement_version or STATEMENTS[level].version,
     )  # fmt: skip
     async with uow(ctx.tenant) as tx:
         scope = Scope(engagement_id=engagement_id, work_item_id=return_id)
-        if off:
+        if off or flags:
             digest = hashlib.sha256(text_note.encode()).hexdigest()
             sealed = await seal(
                 ctx.tenant_id, text_note.encode(),
@@ -422,14 +441,14 @@ async def sign_section(
                 ),
                 {
                     "t": ctx.tenant_id, "e": engagement_id, "r": return_id, "s": ids[key],
-                    "so": signed.id, "n": len(off), "sealed": sealed, "sha": digest,
+                    "so": signed.id, "n": len(off) or flags, "sealed": sealed, "sha": digest,
                     "by": ctx.user_id,
                 },
             )  # fmt: skip
             tx.record(
                 "tie_out.off_acknowledged",
                 target=Target(TARGET, ids[key]),
-                after=Ref(sign_off=signed.id, off=len(off), note_sha256=digest),
+                after=Ref(sign_off=signed.id, off=len(off) or flags, note_sha256=digest),
                 scope=scope,
             )
         tx.record(
