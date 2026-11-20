@@ -211,6 +211,7 @@ export function SheetGrid({
   onEditAgentValue,
   onOpenRow,
   run = NO_RUN,
+  trailing,
 }: SheetGridProps): JSX.Element {
   const runState = useSyncExternalStore(run.subscribe, run.getSnapshot, run.getSnapshot);
   const agentRunning = runState.running || status.agentRunning === true;
@@ -360,7 +361,7 @@ export function SheetGrid({
   });
   // Header row(s) count toward aria-rowcount: the column header, then the filter row.
   const headRows = filterRow ? 2 : 1;
-  const span = columns.length + 1;
+  const span = columns.length + 1 + (trailing === undefined ? 0 : 1);
 
   return (
     <div className="flex flex-col border border-hair bg-card">
@@ -392,6 +393,17 @@ export function SheetGrid({
                   onIntent={onColumnIntent}
                 />
               ))}
+              {trailing !== undefined && (
+                <th
+                  role="columnheader"
+                  scope="col"
+                  data-trailing=""
+                  style={{ width: trailing.width, minWidth: trailing.width }}
+                  className="h-[32px] border-b border-hair bg-band-hd px-[8px] text-left text-th font-normal text-ink-2"
+                >
+                  {trailing.label}
+                </th>
+              )}
             </tr>
             {filterRow && (
               <tr role="row" aria-rowindex={2} data-filter-row="">
@@ -414,6 +426,9 @@ export function SheetGrid({
                     />
                   </td>
                 ))}
+                {trailing !== undefined && (
+                  <td className="h-[30px] border-b border-hair bg-card" />
+                )}
               </tr>
             )}
           </thead>
@@ -584,6 +599,16 @@ export function SheetGrid({
                       </td>
                     );
                   })}
+                  {trailing !== undefined && (
+                    <td
+                      role="gridcell"
+                      data-trailing=""
+                      style={{ width: trailing.width, minWidth: trailing.width }}
+                      className="border-b border-hair px-[6px] py-[6px] align-top"
+                    >
+                      {trailing.render(row)}
+                    </td>
+                  )}
                 </tr>
               );
             })}
@@ -612,6 +637,9 @@ export function SheetGrid({
       >
         <span>{`${String(status.rows)} rows · ${String(status.exceptions)} exception${status.exceptions === 1 ? "" : "s"} · View: ${status.view}`}</span>
         {agentRunning && <span className="text-ink-2">Agent column running</span>}
+        {status.agentSummary !== undefined && (
+          <span className="ml-auto text-ink-2">{status.agentSummary}</span>
+        )}
       </div>
     </div>
   );

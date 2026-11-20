@@ -18,4 +18,5 @@ export type {
   SheetRunState,
   SheetSection,
   SheetStatus,
+  SheetTrailingColumn,
 } from "./types";

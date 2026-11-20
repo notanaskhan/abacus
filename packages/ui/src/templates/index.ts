@@ -163,3 +163,22 @@ export {
   type FormThumb,
   type K1ListRow,
 } from "./form-renderer";
+
+// F-08-T08: T18 SheetLayout (full and cockpit) around SheetGrid.
+export {
+  CANVAS_COCKPIT,
+  DRAWER_W,
+  PR_W,
+  ROW_DRAWER_TABS,
+  type RowDrawerTab,
+  SHEET_EMPTY,
+  SheetLayout,
+  type SheetLayoutProps,
+  type SheetLayoutVariant,
+  type SheetLayoutView,
+  type SheetRowDrawer,
+  type SheetRowSignOffs,
+  type SheetToolbar,
+  type SignOffLevel,
+  TOOLBAR_H,
+} from "./sheet-layout";
