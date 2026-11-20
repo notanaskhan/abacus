@@ -1178,6 +1178,10 @@ REVIEWED_FALLBACK: Final = frozenset(
         "fixed_asset.change_rejected",
         "decision_request.sent",  # T-06-T35 (TASK-8833): TXP-08 e and POR-08
         "decision_request.answered",
+        "sourcing.proposed",  # T-06-T36 (TASK-8834): TXP-09 b
+        "sourcing.approved",
+        "sourcing.undone",
+        "ptet.updated",
         "proposed_entry.approval_requested",
         # reviewed 2026-11-19 (S51 end pass, TASK-8728): W1 posting and its evidence show on
         # CLS-08 / the ledger console's posting log (C-02-T18..T20), the package edit on CLS-08's

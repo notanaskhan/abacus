@@ -704,13 +704,32 @@ async def send_decision_route(
 
 
 @entity_depth_router.get(
-    f"{_R}/states", action="states.read", response_model=TaxDepthStatesOut, errors=(501,)
+    f"{_R}/states", action="states.read", response_model=TaxDepthStatesOut, errors=()
 )
 async def states_route(
     return_id: UUID, ctx: Ctx, view: StatesView = "apportionment"
 ) -> TaxDepthStatesOut:
+    """TXP-09 a to c (T-06-T36): apportionment, credits and nexus."""
     await _on(ctx, _D)
-    raise NotImplementedYet
+    from abacus.modules.tax.states_service import view as states_view
+
+    found = await states_view(ctx, return_id)
+    return TaxDepthStatesOut(
+        view=view,
+        states=[_state_out(r) for r in found.states],
+        apportionment_tally=found.tally,
+        sourcing=cast(Any, found.sourcing),
+        paid_count=found.paid_count,
+        payable_count=found.payable_count,
+    )
+
+
+def _state_out(r: object) -> TaxDepthStateOut:
+    row = cast(Any, r)
+    return TaxDepthStateOut(
+        state=row.state, apportionment_pct=row.share, ptet=row.ptet, ptet_paid=row.paid,
+        ptet_paid_on=row.paid_on, mapped=row.mapped, nexus_conclusion=row.nexus,
+    )  # fmt: skip
 
 
 @entity_depth_router.post(
@@ -721,8 +740,28 @@ async def states_route(
     errors=(409, 501),
 )
 async def sourcing_propose_route(return_id: UUID, ctx: Ctx) -> TaxDepthProposalOut:
-    await _on(ctx, _D)
-    raise NotImplementedYet
+    """A person's sourcing position; the TXP-10 review point is raised once (T-06-T36)."""
+    await _human(ctx, _D, "sourcing.propose")
+    from abacus.modules.tax.states_service import propose_sourcing
+
+    row_id = await propose_sourcing(ctx, return_id)
+    return TaxDepthProposalOut(proposal_id=row_id, kind="sourcing_position", version=1)
+
+
+@entity_depth_router.post(
+    f"{_R}/states/sourcing:approve",
+    action="sourcing.approve",
+    response_model=TaxDepthProposalOut,
+    errors=(409,),
+)
+async def sourcing_approve_route(return_id: UUID, ctx: Ctx) -> TaxDepthProposalOut:
+    """A reviewer's approval; the review point resolves once (T-06-T36, DEC-5836)."""
+    await _human(ctx, _D, "sourcing.approve")
+    from abacus.modules.tax.states_service import _latest, approve_sourcing
+
+    await approve_sourcing(ctx, return_id)
+    latest = await _latest(ctx.tenant, return_id)
+    return TaxDepthProposalOut(proposal_id=latest.id, kind="sourcing_position", version=2)
 
 
 @entity_depth_router.post(
@@ -734,9 +773,14 @@ async def sourcing_propose_route(return_id: UUID, ctx: Ctx) -> TaxDepthProposalO
 async def sourcing_undo_route(
     return_id: UUID, body: TaxDepthUndoIn, ctx: Ctx
 ) -> TaxDepthProposalOut:
-    """`sourcing.undone` inside the 10-second window (DEC-24)."""
+    """`sourcing.undone` inside the 10-second window (DEC-24); 409 `undo_window_closed`."""
     await _human(ctx, _D, "sourcing.approve")
-    raise NotImplementedYet
+    from abacus.modules.tax.states_service import _latest, undo_sourcing
+
+    del body
+    await undo_sourcing(ctx, return_id)
+    latest = await _latest(ctx.tenant, return_id)
+    return TaxDepthProposalOut(proposal_id=latest.id, kind="sourcing_position", version=3)
 
 
 @entity_depth_router.patch(
@@ -748,8 +792,21 @@ async def sourcing_undo_route(
 async def ptet_route(
     return_id: UUID, state: str, body: TaxDepthPtetIn, ctx: Ctx
 ) -> TaxDepthStateOut:
+    """The election and a payment on its version (T-06-T36); 409 `ptet_changed`."""
     await _human(ctx, _D, "ptet.update")
-    raise NotImplementedYet
+    from abacus.modules.tax.states_service import update_ptet
+    from abacus.modules.tax.states_service import view as states_view
+
+    await update_ptet(
+        ctx, return_id, state.upper(), election=body.election,
+        payment_amount=body.payment_amount, payment_on=body.payment_on,
+        expected_version=body.expected_version,
+    )  # fmt: skip
+    found = await states_view(ctx, return_id)
+    row = next((r for r in found.states if r.state == state.upper()), None)
+    if row is None:
+        raise NotFound("ptet_election")
+    return _state_out(row)
 
 
 @entity_depth_router.get(
