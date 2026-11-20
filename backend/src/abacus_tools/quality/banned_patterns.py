@@ -2549,6 +2549,8 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_uow_session_rollback.py",
             # Calls the slot ledger's functions as the app, one committed call at a time.
             "tests/integration/agent_tests/test_work_slots_db.py",
+            # S51 CI fixes (DEC-5734): commits the first provision so the second one proceeds.
+            "tests/integration/test_firms_tenant_code_race.py",
         ),
     ),
     Rule(
@@ -2607,6 +2609,11 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_staff_session.py",  # P-01-T09: seeds as the superuser
             # A-09-T26: plants agent and system rows to prove the actor CHECKs (0889, 0897).
             "tests/security/test_a09t26_group_independent.py",
+            # S51 CI fixes (DEC-5734): two firms provisioned at once as abacus_ops, one
+            # transaction held open to prove the second waits on the tenant-code index (0987).
+            "tests/integration/test_firms_tenant_code_race.py",
+            # Q-03-T352: reads the catalogue (privileges, RLS flags, CHECKs) as the owner role.
+            "tests/integration/test_q03t352_catchup_independent.py",
             "tests/integration/test_telemetry_tunnel.py",  # Q-01-T48: seeds as the superuser
             "tests/integration/test_engagements.py",
             "tests/integration/test_engagements_schema.py",
@@ -2812,6 +2819,8 @@ RULES: list[Rule | TreeRule] = [
             # K-02-T04, T-01-T08: the schema tests of 0401 and 0402 act as the app.
             "tests/integration/backfill/test_k02t04_firm_standards.py",
             "tests/integration/backfill/test_t01t08_consents.py",
+            # S51 CI fixes (DEC-5734): names provision_firm's app.tenant_id switch it tests (0987).
+            "tests/integration/test_firms_tenant_code_race.py",
             # A-08-T12: the fixture publishes a criteria version effective from the audit year's
             # start, which the publish route refuses as backdated, so it acts as a person (0401).
             "tests/integration/test_a08t12_je_testing.py",

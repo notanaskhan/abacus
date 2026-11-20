@@ -111,3 +111,14 @@ variable "allow_ipv4_cidrs" {
     error_message = "Each entry is an IPv4 CIDR, for example 203.0.113.0/24."
   }
 }
+
+variable "block_path_prefixes" {
+  description = "G-04-T22 end pass: path prefixes this distribution never serves (the firm and portal edges block the staff console's /v1/platform/, which answers only on the allowlisted console host). Lower case; matched after URL decoding."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for p in var.block_path_prefixes : can(regex("^/[a-z0-9/_-]*$", p))])
+    error_message = "Each prefix is a lower-case path starting with /, using letters, digits, /, _ and - only."
+  }
+}

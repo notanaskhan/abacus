@@ -63,3 +63,18 @@ def test_ac6_the_firm_distribution_keeps_index_html() -> None:
     variables = text(FIRM / "variables.tf")
     assert re.search(r'variable "default_root_object" \{[^}]*default\s+=\s+"index.html"', variables, re.S)
     assert "default_root_object = var.default_root_object" in text(FIRM / "main.tf")
+
+
+def test_ac7_the_firm_and_portal_edges_block_the_staff_routes() -> None:
+    # The staff console's /v1/platform/ answers on the same API: the firm and portal WebACLs
+    # block it, so only the allowlisted console host reaches it.
+    # Only once the console edge exists: until then staff reach their routes on the firm host
+    # (the pilot runbooks' template imports), so blocking them earlier would cut staff off.
+    for env_file in ("edge_security.tf", "portal_edge.tf"):
+        assert 'local.console_edge ? ["/v1/platform/"] : []' in text(STAGING / env_file)
+    console = text(STAGING / "console_edge.tf")
+    assert "block_path_prefixes" not in console
+    main = text(WAF / "main.tf")
+    rule = main[main.index('name     = "blocked-paths"') :]
+    rule = rule[: rule.index("visibility_config")]
+    assert "block {}" in rule and "uri_path" in rule and "URL_DECODE" in rule

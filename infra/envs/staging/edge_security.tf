@@ -16,6 +16,7 @@ module "firm_waf" {
   count  = local.enabled ? 1 : 0
 
   name                 = "abacus-staging-firm"
+  block_path_prefixes  = local.console_edge ? ["/v1/platform/"] : [] # G-04-T22: once the console host exists, staff routes answer only there
   managed_rules_action = var.firm_managed_rules_action
   enable_logging       = true
   log_destination_arn  = module.firm_waf_logs[0].bucket_arn
