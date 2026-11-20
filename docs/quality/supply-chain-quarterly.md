@@ -149,3 +149,34 @@ built images and are not re-run here.
   before Dec 7.
 - **uv.lock refresh and base-image digests**: not done here. Both are protected-manifest PRs that
   need `make check` and the replay histories green.
+
+## 2028 Q4 (Q-03-T360, run 2026-11-20 on the plan's S52)
+Local runs on the S52 stack (main 282d7e367 plus the S52 branches #2403–#2459). CI's
+`security.yml` runs once, on the batch's last merge; Trivy (fs, IaC, image), CodeQL and Inspector
+need CI, built images or the console and are read there.
+- **pip-audit** 2.9.0 on `uv export --locked --no-emit-project` with hashes (security.yml's
+  command): no known vulnerabilities.
+- **bandit**, high severity at medium confidence, `backend/src`: no finding.
+- **pnpm audit --prod** (apps/web): no known vulnerabilities. The three js-yaml advisories of
+  2028 Q2 no longer report.
+- **Base image**: `backend/Dockerfile` already pins `python:3.12-slim@sha256:5e2bdb1b…` (#2273),
+  which is upstream's current index digest on 2026-11-20 (`docker buildx imagetools inspect`).
+  The zlib1g pair (CVE-2026-76844, CVE-2026-85091) stays open in the register until the tip's
+  Trivy image scan reads the new digest clean; then it is closed with that run's id. Due
+  2026-12-07.
+- **uv.lock refresh**: `uv lock --upgrade --dry-run` moves 55 packages, among them `anthropic`
+  1.x → 2.x and `fastapi` 0.142 → 0.165. Too wide for a batch whose tests run once at the end: it
+  goes in its own protected-manifest PR after the S52 batch, with `make check`, the replay
+  histories and the evals' fake-route suite green (DEC-5853). None of the 55 carries a known
+  vulnerability (pip-audit above).
+- **Dependabot**: #2136 (compose images: pgvector digest, versitygw 1.11.0, temporal 1.10.0; dev
+  stack only) and #1518 (CodeQL action 4.39.1 → 4.39.3) ride the S52 batch merge before the tip.
+  #2314 (javascript group, 17 updates) is not merged: it carries two majors, `typescript` 5.9 →
+  7.0 and `jsdom` 30 → 31, which need their own PR with the full web suite. `.github/dependabot.yml`
+  now groups minor and patch only, so majors arrive one per PR and the next weekly group is
+  mergeable on its own; #2314 is closed once the regrouped PR opens.
+- `supply_chain check`: 2 open findings (the zlib1g pair), none past SLA on 2026-11-20.
+
+Acceptance ("no high or critical dependency or image finding older than its SLA at the quarter's
+end") is met as of 2026-11-20. It stays met if the tip's Trivy image scan closes the zlib1g pair
+before Dec 7.

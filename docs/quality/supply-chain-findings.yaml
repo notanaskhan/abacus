@@ -37,13 +37,13 @@ findings:
     severity: high
     package: zlib1g 1:1.3.dfsg+really1.3.1-1+b1 (python:3.12-slim@sha256:4840d514)
     first_seen: 2026-11-07
-    note: Debian fixed in 1:1.3.dfsg+really1.3.1-1+deb13u1; runtime image upgrades zlib1g; base digest not yet rebuilt
+    note: Debian fixed in 1:1.3.dfsg+really1.3.1-1+deb13u1; base digest refreshed to 5e2bdb1b (#2273); close on the tip's Trivy image scan (Q-03-T360)
   - id: CVE-2026-85091
     source: trivy-image
     severity: high
     package: zlib1g 1:1.3.dfsg+really1.3.1-1+b1 (python:3.12-slim@sha256:4840d514)
     first_seen: 2026-11-07
-    note: Debian fixed in 1:1.3.dfsg+really1.3.1-1+deb13u1; runtime image upgrades zlib1g; base digest not yet rebuilt
+    note: Debian fixed in 1:1.3.dfsg+really1.3.1-1+deb13u1; base digest refreshed to 5e2bdb1b (#2273); close on the tip's Trivy image scan (Q-03-T360)
   - id: py/polynomial-redos:alert-21
     source: codeql
     severity: high
