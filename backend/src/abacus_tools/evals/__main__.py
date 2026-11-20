@@ -122,6 +122,10 @@ def main(argv: list[str]) -> int:
         from abacus_tools.evals.close_agent import main as close_main
 
         return close_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
+    if args.agent == "close_vendor_screen":  # C-02-T51 (DEC-5821): frozen before C-02-T34
+        from abacus_tools.evals.close_vendor_screen import main as vendor_main
+
+        return vendor_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
     if args.agent == "post_issuance_analysis":  # Q-05-T10 (DEC-5713): frozen before any prompt
         from abacus_tools.evals.post_issuance_analysis import main as pi_main
 
