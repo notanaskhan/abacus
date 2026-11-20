@@ -1922,6 +1922,18 @@ INSERT_COLUMNS["tax_handoff_landings"] = frozenset(
      "draft_mapping", "issue_ids", "items_not_raised"}
 )  # fmt: skip
 
+# T-06-T33 (0999, DEC-5833): a person's fixed-asset change and its reviewer's decision.
+T06T33_TABLES: frozenset[str] = frozenset(
+    {"fixed_asset_change_requests", "fixed_asset_change_decisions"}
+)
+INSERT_COLUMNS["fixed_asset_change_requests"] = frozenset(
+    {"tenant_id", "engagement_id", "work_item_id", "asset_id", "expected_version", "change",
+     "citation_ids", "requested_by"}
+)  # fmt: skip
+INSERT_COLUMNS["fixed_asset_change_decisions"] = frozenset(
+    {"tenant_id", "request_id", "decision", "reason", "decided_by"}
+)
+
 # The tables this module owns and its insert-only tables, after S50 (one definition each).
-TABLES: frozenset[str] = _TABLES_PRE_S50 | T08T06_TABLES | T06T14_TABLES | T06T39_TABLES
-INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1 | T06T39_TABLES
+TABLES: frozenset[str] = _TABLES_PRE_S50 | T08T06_TABLES | T06T14_TABLES | T06T39_TABLES | T06T33_TABLES
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1 | T06T39_TABLES | T06T33_TABLES

@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header
@@ -418,28 +418,85 @@ _W = TAX_OTHER_ENTITY_WORKPAPERS
 _F = TAX_FORM_PREVIEW
 
 
+def _asset_row(facts: object, computed: object, asset: object) -> TaxDepthAssetRowOut:
+    from abacus.modules.tax import fixed_assets_service as fa
+
+    f, c, a = cast(fa.Facts, facts), cast(fa.Computed, computed), cast(fa.AssetRecord, asset)
+    row = c.by_asset.get(str(a.id))
+    prior = Decimal(row.prior if row else 0)
+    current = Decimal(row.current if row else 0)
+    cls = a.recovery_class if a.recovery_class in _CLASSES else "39"
+    return TaxDepthAssetRowOut(
+        asset_id=a.id, description=a.description, property_key=a.property_key,
+        placed_in_service=a.placed_in_service_on, cost=a.cost,
+        recovery_class=cast(Any, cls), method=cast(Any, a.method),
+        convention=cast(Any, a.convention),
+        bonus_pct=a.bonus_pct, prior=prior, current=current, accumulated=prior + current,
+        bonus_check=c.bonus.get(str(a.id), "not_eligible"),
+        flags=1 if a.status == "flag" else 0, cell_ref=f.cells.get(a.asset_no),
+    )  # fmt: skip
+
+
+_CLASSES = ("3", "5", "7", "10", "15", "20", "27.5", "39")
+
+
 @entity_depth_router.get(
     f"{_R}/fixed-assets",
     action="fixed_asset.read",
     response_model=TaxDepthFixedAssetsOut,
-    errors=(501,),
+    errors=(),
 )
 async def fixed_assets_route(
     return_id: UUID, ctx: Ctx, view: AssetView = "register"
 ) -> TaxDepthFixedAssetsOut:
+    """TXP-03 a, b, d from E3 (T-06-T33): register, by property, dispositions."""
     await _on(ctx, _D)
-    raise NotImplementedYet
+    from abacus.modules.tax import fixed_assets_service as fa
+
+    facts, computed = await fa.read(ctx, return_id)
+    to_tb, book, bonus = fa.tallies(facts, computed)
+    shown = [a for a in facts.assets if a.disposed == (view == "dispositions")]
+    rows = [_asset_row(facts, computed, a) for a in shown if a.recovery_class in _CLASSES]
+    by_property = [
+        TaxDepthPropertyOut(
+            property_key=p.code, name=p.name, land=p.land,
+            depreciation=Decimal(computed.register.by_property.get(p.code, 0)),
+        )
+        for p in facts.properties
+    ]  # fmt: skip
+    return TaxDepthFixedAssetsOut(
+        view=view,
+        rows=[] if view == "by_property" else rows,
+        by_property=by_property if view == "by_property" else [],
+        depreciable_cost=Decimal(computed.register.cost),
+        land=sum((p.land for p in facts.properties), Decimal(0)),
+        current=Decimal(computed.register.current),
+        accumulated=Decimal(computed.register.accumulated),
+        ties_to_tb=to_tb,
+        book_equals_tax=book,
+        bonus_eligibility=bonus,
+        dispositions=sum(1 for a in facts.assets if a.disposed),
+        engine_version=computed.register.engine_version,
+        inputs_hash=computed.inputs_hash,
+    )
 
 
 @entity_depth_router.get(
     f"{_R}/fixed-assets/{{asset_id}}",
     action="fixed_asset.read",
     response_model=TaxDepthAssetRowOut,
-    errors=(501,),
+    errors=(),
 )
 async def fixed_asset_route(return_id: UUID, asset_id: UUID, ctx: Ctx) -> TaxDepthAssetRowOut:
+    """TXP-03 a2's drawer (T-06-T33)."""
     await _on(ctx, _D)
-    raise NotImplementedYet
+    from abacus.modules.tax import fixed_assets_service as fa
+
+    facts, computed = await fa.read(ctx, return_id)
+    asset = next((a for a in facts.assets if a.id == asset_id), None)
+    if asset is None:
+        raise NotFound("fixed_asset")
+    return _asset_row(facts, computed, asset)
 
 
 @entity_depth_router.post(
@@ -447,14 +504,21 @@ async def fixed_asset_route(return_id: UUID, asset_id: UUID, ctx: Ctx) -> TaxDep
     action="fixed_asset.create",
     response_model=TaxDepthAssetRowOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def fixed_asset_create_route(
     return_id: UUID, body: TaxDepthAssetIn, ctx: Ctx
 ) -> TaxDepthAssetRowOut:
     """409 `return_locked` once Accepted."""
     await _human(ctx, _D, "fixed_asset.create")
-    raise NotImplementedYet
+    from abacus.modules.tax import fixed_assets_service as fa
+
+    asset_id = await fa.create(
+        ctx, return_id, description=body.description, property_key=body.property_key,
+        placed_in_service=body.placed_in_service, cost=body.cost,
+        recovery_class=body.recovery_class,
+    )  # fmt: skip
+    return await fixed_asset_route(return_id, asset_id, ctx)
 
 
 @entity_depth_router.post(
@@ -462,14 +526,78 @@ async def fixed_asset_create_route(
     action="fixed_asset.propose_change",
     response_model=TaxDepthProposalOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def fixed_asset_change_route(
     return_id: UUID, asset_id: UUID, body: TaxDepthAssetChangeIn, ctx: Ctx
 ) -> TaxDepthProposalOut:
-    """A ghost value; nothing changes until a reviewer approves (C3)."""
-    await _on(ctx, _D)
-    raise NotImplementedYet
+    """A ghost value; nothing changes until a reviewer approves (T-06-T33, DEC-5833)."""
+    await _human(ctx, _D, "fixed_asset.propose_change")
+    from abacus.modules.tax import fixed_assets_service as fa
+
+    change = body.model_dump(exclude={"citation_ids", "expected_version"})
+    request_id = await fa.propose_change(
+        ctx, return_id, asset_id, change=change, expected_version=body.expected_version,
+        citation_ids=list(body.citation_ids),
+    )  # fmt: skip
+    return TaxDepthProposalOut(
+        proposal_id=request_id, kind="fixed_asset_change", version=body.expected_version + 1
+    )
+
+
+class TaxDepthChangeDecisionIn(BaseModel):
+    """T-06-T33: a reviewer's decision on a person's asset change (reason when rejecting)."""
+
+    model_config = _cfg()
+
+    reason: Annotated[str | None, Field(max_length=500), Tri] = None
+
+
+class TaxDepthChangeDecidedOut(BaseModel):
+    model_config = _cfg()
+
+    proposal_id: Annotated[UUID, Internal]
+    decision: Annotated[Literal["approved", "rejected"], Internal]
+    current: Money  # the register's depreciation after the decision (733,500)
+    checkpoint_id: Annotated[UUID | None, Internal] = None
+
+
+async def _decide(
+    return_id: UUID, change_id: UUID, ctx: AuthContext, approve: bool, reason: str | None
+) -> TaxDepthChangeDecidedOut:
+    await _human(ctx, _D, "fixed_asset.approve_change")
+    from abacus.modules.tax import fixed_assets_service as fa
+
+    done = await fa.decide(ctx, return_id, change_id, approve=approve, reason=reason)
+    return TaxDepthChangeDecidedOut(
+        proposal_id=done.request_id, decision=done.decision, current=Decimal(done.current),
+        checkpoint_id=done.checkpoint_id,
+    )  # fmt: skip
+
+
+@entity_depth_router.post(
+    f"{_R}/fixed-asset-changes/{{change_id}}:approve",
+    action="fixed_asset.approve_change",
+    response_model=TaxDepthChangeDecidedOut,
+    errors=(409,),
+)
+async def fixed_asset_change_approve_route(
+    return_id: UUID, change_id: UUID, ctx: Ctx
+) -> TaxDepthChangeDecidedOut:
+    """A reviewer other than the requester; 409 `proposal_changed` when the asset moved."""
+    return await _decide(return_id, change_id, ctx, True, None)
+
+
+@entity_depth_router.post(
+    f"{_R}/fixed-asset-changes/{{change_id}}:reject",
+    action="fixed_asset.approve_change",
+    response_model=TaxDepthChangeDecidedOut,
+    errors=(409,),
+)
+async def fixed_asset_change_reject_route(
+    return_id: UUID, change_id: UUID, body: TaxDepthChangeDecisionIn, ctx: Ctx
+) -> TaxDepthChangeDecidedOut:
+    return await _decide(return_id, change_id, ctx, False, body.reason)
 
 
 @entity_depth_router.get(

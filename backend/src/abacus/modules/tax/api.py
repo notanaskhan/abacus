@@ -554,6 +554,10 @@ _tb_mapper_tax_lines.register()
 from abacus.modules.tax import tb_handoff_landing as _tb_handoff_landing  # noqa: E402
 
 SUBSCRIPTIONS.update(_tb_handoff_landing.SUBSCRIPTIONS)
+# T-06-T33 (DEC-5833): TXP-03's open flags join the Fixed Assets section's sign-off.
+from abacus.modules.tax import fixed_assets_service as _fixed_assets_service  # noqa: E402
+
+_fixed_assets_service.register()
 
 # T-05-T54 (DEC-4909, DEC-4910): the preparer memo service (the memo as a P-04 reviewable and its
 # draft run's workflow).
