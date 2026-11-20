@@ -10,7 +10,7 @@ name: abacus
 services:
   db:
     # PostgreSQL 17 with pgvector (ADR-014)
-    image: pgvector/pgvector:0.8.7-pg17-trixie@sha256:7a7e9f22015b67edb4bef5c59daeebcd7e74bfa570df6ce60ae01237c8648a84
+    image: pgvector/pgvector:0.8.7-pg17-trixie@sha256:89947206f52eac3a9df9b663df7e76987cbdc623be6576b3a524953d568700d7
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -30,7 +30,7 @@ services:
 
   s3:
     # S3-compatible storage with Object Lock (ADR-016); MinIO's community image is no longer public
-    image: versity/versitygw:v1.10.0@sha256:89cad13cc981986ee284cbafea4613f9533ce6fd5f37a2c96c4c4fb8adb3a316
+    image: versity/versitygw:v1.11.0@sha256:8319a530d08d537426e2f855bae5280709795dc73a3f0c347973ef915d6343c5
     environment:
       ROOT_ACCESS_KEY: abacus
       ROOT_SECRET_KEY: abacuslocal
@@ -48,7 +48,7 @@ services:
 
   temporal:
     # Temporal dev server (ADR-017); UI on 8233
-    image: temporalio/temporal:1.9.1@sha256:ad4c82c97bd12b417d1ea942610dbcd511afb250c4d5ed26c694009533df447e
+    image: temporalio/temporal:1.10.1@sha256:b228dadf9cdb6c7c02a1394b89dd76f827aac9760e458fce42f0899a10141225
     # In-memory: workflow history is lost on restart, which is fine locally (no root, no volume).
     command: ["server", "start-dev", "--ip", "0.0.0.0"]
     ports:
