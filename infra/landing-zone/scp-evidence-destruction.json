@@ -1,0 +1,20 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "OnlyTheDestructionRoleDeletesEvidenceVersions",
+      "Effect": "Deny",
+      "Action": ["s3:DeleteObjectVersion", "s3:BypassGovernanceRetention"],
+      "Resource": ["arn:aws:s3:::abacus-*-evidence*/*"],
+      "Condition": {
+        "ArnNotLike": {"aws:PrincipalArn": ["arn:aws:iam::*:role/abacus-*-destruction"]}
+      }
+    },
+    {
+      "Sid": "NobodyBypassesGovernance",
+      "Effect": "Deny",
+      "Action": ["s3:BypassGovernanceRetention"],
+      "Resource": ["arn:aws:s3:::abacus-*-evidence*/*"]
+    }
+  ]
+}
