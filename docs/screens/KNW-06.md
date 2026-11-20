@@ -28,6 +28,7 @@ gradients in product UI, emoji, saturated blue, heavy shadows, invented colours,
 - Program steps are edited in KNW-03 (K-01); the builder links there. Skill cells show pins; the KNW-11 editor is K-05.
 - **DF-34 times:** skill BH-SK-430 v2 is published at 9:34 AM, before FS v6 at 9:38 AM; any artboard showing the reverse is wrong. Truth: 9:34 then 9:38.
 - Icon substitutes for layout-template and git-branch (K-03-T05, `icons.md`).
+- Icon map: `docs/design/revisions/K-03-T05/icons.md` (`layout-template` → LayoutGrid, `git-branch` → GitFork).
 
 ## Walls and agent
 - Walled users: 404, absent from lists, no hidden counts (INV-3, DEC-43).

@@ -28,6 +28,7 @@ gradients in product UI, emoji, saturated blue, heavy shadows, invented colours,
 ## Deviations (chosen truth)
 - "Superseded" only for FS v4. No Update button in the dry run; no apply from this screen.
 - Rows filtered by `visible()` with no hidden count (DEC-5806).
+- Icon map: `docs/design/revisions/K-03-T05/icons.md`.
 
 ## Walls and agent
 - Walled users: 404, absent from lists, no hidden counts (INV-3, DEC-43).

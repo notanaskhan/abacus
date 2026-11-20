@@ -27,6 +27,7 @@ gradients in product UI, emoji, saturated blue, heavy shadows, invented colours,
 - Save = Manager+; preview and run = Senior+ (the spec over the catalogue's "Manager+").
 - The text-output mode ships engine-only and dark (Q7, DEC-5809). Plus the two DF-04 unavailable states.
 - Text-output preview block is a design follow-up (K-03-T05, `sht04-text-preview.md`).
+- Design follow-up board **SHT-04f** Text output preview: `docs/design/revisions/K-03-T05/sht04-text-preview.md`.
 
 ## Walls and agent
 - Walled users: 404, absent from lists, no hidden counts (INV-3, DEC-43).
