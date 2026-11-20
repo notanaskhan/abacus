@@ -33,3 +33,11 @@ Locked with KNW-01 by K-01-T17 (TASK-2615). The current tier and diff are in the
 
 ## Open gaps
 Manifest stays `planned` until the screen is walked on staging (DEC-195).
+
+## K-03 artboard g (K-03-T04, TASK-8803; DEC-5810)
+| Letter | Artboard | Persona | Clock (CT) | Figures | Build | Owner |
+|---|---|---|---|---|---|---|
+| g | Rules & skills · FS v6 | Margaret Okonkwo | Thu Oct 1, 10:00 AM | Rules column from SHT-03 (rules 1–3 and 6 act on steps, DF-34); skill cells read the BH-SK-430 v1 pin | planned (rules half K-03; skill-v2 half K-05-T32) | AY |
+
+Rules segment opens SHT-03 read-only (SPEC-720 AC-15). K-05 is the parity owner of the full
+artboard.
