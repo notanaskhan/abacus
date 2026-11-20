@@ -14,7 +14,7 @@ refs, record types and states are `internal`. Nothing here is TRI (record metada
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header
@@ -218,8 +218,33 @@ async def retention_summary_route(ctx: Ctx) -> RecordsSummaryOut:
 async def retention_policy_versions_route(
     policy_id: UUID, ctx: Ctx
 ) -> RecordsPolicyVersionListOut:
+    """FIL-02g: every version of the policy one of its versions names (Q-05-T13)."""
+    from abacus.modules.evidence import retention
+
     await _on(ctx)
-    raise NotImplementedYet
+    record_type, line, versions = await retention.versions_of_policy(ctx.tenant, policy_id)
+    return RecordsPolicyVersionListOut(
+        record_type=record_type,
+        service_line=None if line == "any" else line,
+        items=[await _version_out(v) for v in versions],
+    )
+
+
+async def _version_out(v: object) -> RecordsPolicyVersionOut:
+    from abacus.modules.evidence.retention import PolicyVersion
+
+    from abacus.modules.identity.api import display_names
+
+    found = cast(PolicyVersion, v)
+    user = UUID(found.changed_by.removeprefix("user:"))
+    name = (await display_names([user])).get(user, "")
+    return RecordsPolicyVersionOut(
+        version_id=found.version_id, version_no=found.version_no,
+        retention_years=int(found.retention_years), legal_minimum_years=int(found.legal_minimum_years),
+        policy_text=found.policy_text, effective_from=found.effective_from,
+        created_by=RecordsPersonOut(user_id=user, name=name),
+        created_at=found.changed_at,
+    )  # fmt: skip
 
 
 @records_governance_router.post(
@@ -232,9 +257,18 @@ async def retention_policy_versions_route(
 async def retention_policy_create_route(
     body: RecordsPolicyCreateIn, ctx: Ctx, key: IdempotencyKey
 ) -> RecordsPolicyVersionOut:
-    """A policy below the legal minimum is refused (AC-19); fresh MFA."""
+    """A policy below the legal minimum is refused (AC-19); fresh MFA (Q-05-T13)."""
+    from abacus.modules.evidence import retention
+
     await _human(ctx, "retention_policy.manage")
-    raise NotImplementedYet
+    del key
+    return await _version_out(
+        await retention.create_override(
+            ctx, record_type=body.record_type, service_line=body.service_line,
+            retention_years=body.retention_years, policy_text=body.policy_text,
+            effective_from=body.effective_from,
+        )
+    )
 
 
 @records_governance_router.get(

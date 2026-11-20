@@ -16,9 +16,10 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Final, Literal
+from typing import Final, Literal, cast
+from uuid import UUID
 
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError, IntegrityError
@@ -370,3 +371,113 @@ async def extend_retention_for(
             after=Ref(objects=len(versions), days=(until - anchor_at).days),
         )
     return len(versions)
+
+
+# --- Q-05-T13 (SPEC-711 AC-19, AC-20; ADR-179; DEC-5822): service-line overrides and versions ----
+
+
+class BelowTypePolicy(DomainInvalid):
+    code = "below_type_policy"
+    message = "A service-line override may not be shorter than the record type's policy."
+
+
+@dataclass(frozen=True)
+class PolicyVersion:
+    version_id: UUID
+    version_no: int
+    retention_years: Decimal
+    legal_minimum_years: Decimal
+    policy_text: str | None
+    effective_from: date | None
+    changed_by: str
+    changed_at: datetime
+
+
+async def create_override(
+    ctx: AuthContext,
+    *,
+    record_type: str,
+    service_line: str,
+    retention_years: int,
+    policy_text: str | None,
+    effective_from: date | None,
+) -> PolicyVersion:
+    """`POST /v1/retention/policies` (FIL-02 "+ New policy", OQ-11): a service-line override at or
+    above the record type's own policy (422 `below_type_policy`) and the legal floor (422
+    `below_floor`, the database's check). A new insert-only version carries its text."""
+    await authorise(ctx, "retention_policy.manage", Resource.firm(ctx.tenant_id))
+    async with tenant_session(ctx.tenant) as session:
+        base = (
+            await session.execute(
+                text(
+                    "SELECT firm_years, clock_start_event FROM retention_policies WHERE "
+                    "record_type = :t AND service_line = 'any'"
+                ),
+                {"t": record_type},
+            )
+        ).first()
+    if base is not None and Decimal(retention_years) < Decimal(base.firm_years):
+        raise BelowTypePolicy(facts={"type_policy_years": str(base.firm_years)})
+    anchor = cast(Anchor, base.clock_start_event if base is not None else "period_end")
+    version = await set_policy(
+        ctx,
+        PolicyChange(record_type, cast(ServiceLineOrAny, service_line), Decimal(retention_years), anchor),
+    )
+    async with uow(ctx.tenant) as tx:
+        await tx.session.execute(
+            text(
+                "UPDATE retention_policies SET policy_text = :p, effective_from = :e WHERE "
+                "record_type = :t AND service_line = :l"
+            ),
+            {"p": policy_text, "e": effective_from, "t": record_type, "l": service_line},
+        )
+        tx.record(
+            "retention_policy.text_recorded",
+            target=Target("firm", ctx.tenant_id),
+            after=Ref(version=version),
+        )
+    found = await policy_versions(ctx.tenant, record_type, service_line)
+    return found[-1]
+
+
+async def policy_versions(
+    tenant: TenantContext, record_type: str, service_line: str
+) -> list[PolicyVersion]:
+    """FIL-02g: every insert-only version of one policy, oldest first, with the floor beside it."""
+    async with tenant_session(tenant) as session:
+        rows = list(
+            (
+                await session.execute(
+                    text(
+                        "SELECT id, version, firm_years, policy_text, effective_from, changed_by, "
+                        "changed_at, coalesce(retention_floor_of(record_type, service_line), 0) "
+                        "AS floor FROM retention_policy_versions WHERE record_type = :t AND "
+                        "service_line = :l ORDER BY version"
+                    ),
+                    {"t": record_type, "l": service_line},
+                )
+            ).all()
+        )
+    return [
+        PolicyVersion(
+            r.id, int(r.version), Decimal(r.firm_years), Decimal(r.floor), r.policy_text,
+            r.effective_from, str(r.changed_by), r.changed_at,
+        )  # fmt: skip
+        for r in rows
+    ]
+
+
+async def versions_of_policy(tenant: TenantContext, version_id: UUID) -> tuple[str, str, list[PolicyVersion]]:
+    """The policy one of its versions names (the route's `policy_id`), and all its versions."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text("SELECT record_type, service_line FROM retention_policy_versions WHERE id = :v"),
+                {"v": version_id},
+            )
+        ).first()
+    if row is None:
+        raise NotFound("retention_policy")
+    return str(row.record_type), str(row.service_line), await policy_versions(
+        tenant, str(row.record_type), str(row.service_line)
+    )

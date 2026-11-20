@@ -210,6 +210,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
     "retention_policies": frozenset(  # Q-02-T23: version and history are the trigger's
         {"firm_years", "clock_start_event", "lock", "basis", "updated_by", "updated_at"}
+        | {"policy_text", "effective_from"}  # Q-05-T13 (0994): copied to the versions
     ),
     # Q-02-T29: status forward only; `released_by` bound to the session's person (trigger).
     "legal_holds": frozenset(
