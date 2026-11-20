@@ -1191,6 +1191,16 @@ REVIEWED_FALLBACK: Final = frozenset(
         "consultation.position_recorded",
         "consultation.reopened",
         "destruction_batch.assembled",
+        "inspection.planned",  # Q-05-T18 (TASK-8822): ADM-12's own history
+        "inspection.started",
+        "inspection.concluded",
+        "qm_finding.recorded",
+        "qm_finding.updated",
+        "qm_finding.evaluated",
+        "qm_finding.remediated",
+        "qm_finding.linked",
+        "qm_evaluation.checklist_saved",
+        "qm_evaluation.conclusion_requested",
         "inspection_grant.issued",  # Q-05-T16 (TASK-8820): ADM-12 e's grant line
         "inspection_grant.revoked",
         "inspection_grant.expired",

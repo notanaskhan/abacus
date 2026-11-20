@@ -102,6 +102,7 @@ from abacus.modules.engagements.hold_scope import (
     engagement_hold_facts,
     engagement_retention_facts,
     engagements_in_hold_scope,
+    inspectable_work_items,
     work_item_engagement,
     work_item_period,
     work_item_titles,

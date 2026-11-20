@@ -542,7 +542,20 @@ SCHEDULES: tuple[PlatformSchedule, ...] = (
     ),
 )
 
+from abacus.modules.identity.inspection_grants import (  # noqa: E402 -- Q-05-T16/T18
+    expiry as inspection_grant_expiry,
+)
+from abacus.modules.identity.inspection_grants import (  # noqa: E402
+    issue as issue_inspection_grants,
+)
+from abacus.modules.identity.inspection_grants import (  # noqa: E402
+    revoke_for_inspection as revoke_inspection_grants,
+)
+
 __all__ = [
+    "inspection_grant_expiry",
+    "issue_inspection_grants",
+    "revoke_inspection_grants",
     "ACCESS_END_ID",
     "ACTION_KEY",
     "ACTIVITIES",
