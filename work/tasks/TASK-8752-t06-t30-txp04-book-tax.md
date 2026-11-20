@@ -2,7 +2,7 @@
 id: TASK-8752
 title: "T-06-T30: TXP-04 states a, a-prime, b, c and d in fixture mode: M-1/M-3 and Schedule M-2 tab frames, M-3 row selection and no-difference collapse, M-1 reference banner, As drafted and With proposed fix toggle, ghost chip with Accept to SHL-10 and Reject with reason, accepted state with checkpoint link"
 spec: SPEC-702
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 branch: s51-t06t30

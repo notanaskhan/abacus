@@ -2,7 +2,7 @@
 id: TASK-8749
 title: "F-08-T10: ChartKit C-36: hand-rolled SVG donut, bar, stacked, line, box plot, KPI tile, sparkline, ChartTooltip, View as table and CSV"
 spec: SPEC-000
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 branch: s51-f08t10

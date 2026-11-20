@@ -2,7 +2,7 @@
 id: TASK-8753
 title: "T-06-T31: TXP-08 states a-e in fixture mode: partner picker, basis cards and reconciliation tile, Pell Street II off tile, inline section 754 DecisionCard with Send to client and Request more analysis, section 752 shares toggle"
 spec: SPEC-702
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 branch: s51-t06t31

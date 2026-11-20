@@ -2,7 +2,7 @@
 id: TASK-8746
 title: "F-08-T07: Agent-column cells: AgentFilledCell suggested/adopted/edited states, citation tooltip, running spinners, agents-unavailable states"
 spec: SPEC-000
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review
 branch: s51-f08t07

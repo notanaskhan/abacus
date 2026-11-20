@@ -2,7 +2,7 @@
 id: TASK-8751
 title: "T-06-T29: TXP-03 states a, a2, b, c, d and e in fixture mode on T6: Register, By property and Dispositions segments, tally strip, DataTable statement with property group rows, Flag and Check chips, Asset detail O2 drawer with class and bonus pickers producing a ghost value, section sign-off with note"
 spec: SPEC-702
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 branch: s51-t06t29
