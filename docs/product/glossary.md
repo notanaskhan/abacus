@@ -805,3 +805,9 @@ Q-05-T02 (DF-20, DF-31; SPEC-711; DEC-5609). "Consultation" is above (A-06).
 | Destruction certificate | The deterministic record of a destroyed batch. | `destruction_certificates` | — |
 | Tombstone | What remains of a destroyed version: its identity and the certificate that destroyed it. | `evidence_versions.destroyed_at` | deleted |
 
+| Template link | An engagement's link to the engagement-template version it runs on: current, update available, updated or held with a reason (K-03). | `engagement_template_links` | — |
+| Template update | Moving one engagement from its template version to a newer published one, change by change; signed-off rows are kept. | `template_updates`, `template_update_changes` | migration, upgrade |
+| Rollout action | The firm's choice for one live engagement when a template version is published: Update now, On rollover or Hold with a reason. | `template_rollout_actions` | — |
+| Scoping evaluation | The result of one scoping rule for one engagement: Shows, Hides, No change or No answer yet. | `scoping_evaluations` | — |
+| Agent column preview | A trial run of an agent column's instruction on a few rows before it is saved; nothing is written to the sheet. | `agent_column_previews` | dry run |
+| Skill | A firm-authored instruction set an agent column or procedure runs with, versioned and published like a template. | `agent_skills` | prompt, plugin |
