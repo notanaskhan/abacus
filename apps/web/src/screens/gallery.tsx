@@ -315,6 +315,8 @@ import { POR23 } from "./POR-23";
 import { POR17 } from "./POR-17";
 import { POR17_SUMMIT_TRAIL } from "../fixtures/seed/fieldwork";
 import { ADM14 } from "./ADM-14";
+import { FIL02 } from "./FIL-02";
+import { scenarios as fil02Scenarios } from "./FIL-02/scenarios";
 import { AUD28 } from "./AUD-28";
 import { scenarios as aud28Scenarios } from "./AUD-28/scenarios";
 import { ADM11 } from "./ADM-11";
@@ -4400,3 +4402,29 @@ function AUD28Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("AUD-28", { title: "Consultations log", Component: AUD28Artboard });
+
+// S52 (FIL-02): artboards a, b, c, d, e, f, g, h, i on each state's scenario.
+const FIL02_STATES = ["a", "b", "c", "d", "e", "f", "g", "h", "i"] as const;
+function FIL02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state = FIL02_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      fil02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div data-artboard={state}>
+      <FIL02 tab={state === "b" || state === "h" ? "holds" : ["c", "d", "e", "i"].includes(state) ? "destruction" : "policies"} readOnly={state === "f"} initial={state === "d" ? "approve" : state === "g" ? "drawer" : state === "h" ? "hold" : undefined} drawerPolicyId={state === "g" ? "00000000-0000-4000-8000-000000000001" : undefined} />
+    </div>
+  );
+}
+
+registerScreen("FIL-02", { title: "Retention & legal hold", Component: FIL02Artboard });
