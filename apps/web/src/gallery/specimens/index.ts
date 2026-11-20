@@ -2,6 +2,7 @@
 // /components/screens/<ID> like the built screens. Gallery only.
 import { registerScreen } from "../fixture-mode";
 import { T6Artboard } from "./T6";
+import { T18Artboard } from "./T18";
 import { T10Artboard } from "./T10";
 import { Tpl01Artboard } from "./TPL-01";
 import { Tpl06Artboard } from "./TPL-06";
@@ -41,6 +42,12 @@ registerScreen("TPL-10", {
 });
 
 // F-06-T18: the T6 template board, a (ties), b (off) and c (building).
+// F-08-T08 carry (TASK-8843): the T18 Sheet template board, a to i (placeholder content).
+registerScreen("T18", {
+  title: "Sheet · template board",
+  Component: T18Artboard,
+});
+
 registerScreen("T6", {
   title: "Workbook / schedule grid · Ridgeline capital accounts",
   Component: T6Artboard,
