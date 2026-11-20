@@ -43,6 +43,9 @@ from abacus.modules.methodology.catalog_provider import (
     USAGE_TYPE as METHODOLOGY_USAGE_TYPE,
 )
 from abacus.modules.methodology.catalog_provider import register_methodology_providers
+from abacus.modules.methodology.check_codes import (  # T-08-T13 (DEC-5839): the check-code slot
+    register_check_code as register_check_code,
+)
 from abacus.modules.methodology.contract import (
     knowledge_router,
     methodology_lifecycle_router,
@@ -165,6 +168,7 @@ from abacus.modules.methodology.standards import (
     aje_classification_for,
     assigned_review_levels,
     attribute_sample_size,
+    checklist_version,
     current_version,
     current_version_of_kind,
     je_risk_criteria_version,
@@ -362,6 +366,7 @@ __all__ = [
     "assign_flags",
     "assigned_review_levels",
     "attribute_sample_size",
+    "checklist_version",
     "classify_entry",
     "confidence_hold",
     "consent_expiry_months",
@@ -409,6 +414,7 @@ __all__ = [
     "published_notes",
     "record_progress",
     "register_catalog_provider",
+    "register_check_code",
     "register_document_importer",
     "register_standard_examples",
     "register_template_library",
@@ -471,3 +477,6 @@ async def disclosure_template_items(
                 )
             ).scalar_one()
         )
+
+
+# T-08-T13 (DEC-5839): the review checklist's check-code registration slot.

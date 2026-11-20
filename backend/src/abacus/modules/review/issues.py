@@ -675,6 +675,22 @@ async def record_rule_issue(
 SELF_CHECK_OPEN: Final = ("open", "in_progress", "reopened")
 
 
+async def open_issue_for_ref(
+    tenant: TenantContext, work_item_id: UUID, source_ref: str
+) -> UUID | None:
+    """T-08-T14 (DEC-5840): the work item's open issue raised under `source_ref`, if any, read by
+    its owner so a standards run links it rather than raising a second (OWN-001)."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT id FROM issues WHERE work_item_id = :w AND source_ref = :s "
+                "AND status IN ('open', 'in_progress', 'reopened', 'under_evaluation') LIMIT 1"
+            ),
+            {"w": work_item_id, "s": source_ref},
+        )
+    return None if found is None else UUID(str(found))
+
+
 async def record_self_check_issue(
     system: TenantContext,
     *,

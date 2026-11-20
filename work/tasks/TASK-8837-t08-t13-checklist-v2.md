@@ -1,7 +1,7 @@
 ---
 id: TASK-8837
 title: "T-08-T13: review_checklist payload v2 with check codes"
-spec: SPEC-705
+spec: SPEC-710
 acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review

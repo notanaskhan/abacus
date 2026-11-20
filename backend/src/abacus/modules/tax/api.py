@@ -243,6 +243,10 @@ async def _residency_confirmed(event: OutboxEvent) -> None:
 
 SUBSCRIPTIONS["residency_determination.confirmed"] = _residency_confirmed
 # T-02-T21: `K1ReleaseWorkflow` and its activities (the worker composes every module's parts).
+# T-08-T14 (DEC-5840): TAX-14's standards runs (code only, no model).
+from abacus.modules.tax import standards_runs as _standards_runs  # noqa: E402
+
+_standards_runs.register()
 WORKFLOWS: dict[type, str] = {
     **k1_release.WORKFLOWS,
     **_schedule_jobs.WORKFLOWS,
@@ -250,6 +254,7 @@ WORKFLOWS: dict[type, str] = {
     **_fix_runner.WORKFLOWS,  # T-04-T31: FixRunWorkflow
     **_explain.WORKFLOWS,  # T-04-T31: IssueExplainWorkflow
     **_analyst_modes.WORKFLOWS,  # T-04-T38: AnalystModeWorkflow
+    **_standards_runs.WORKFLOWS,  # T-08-T14: StandardsRunWorkflow
 }
 ACTIVITIES: tuple[object, ...] = (
     *k1_release.ACTIVITIES,
@@ -258,6 +263,7 @@ ACTIVITIES: tuple[object, ...] = (
     *_fix_runner.ACTIVITIES,
     *_explain.ACTIVITIES,
     *_analyst_modes.ACTIVITIES,
+    *_standards_runs.ACTIVITIES,
 )
 start_draft = _drafter.start_draft
 # T-04-T49 (DEC-4524): the individual engines' CPA review (`make entitlement` reads it).

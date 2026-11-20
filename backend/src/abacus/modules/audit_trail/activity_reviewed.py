@@ -1182,6 +1182,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "sourcing.approved",
         "sourcing.undone",
         "ptet.updated",
+        "standards_run.started",  # T-08-T14 (TASK-8838): TAX-14 run log
+        "standards_run.running",
+        "standards_run.item_checked",
+        "standards_run.completed",
+        "standards_check.confirmed",
         "proposed_entry.approval_requested",
         # reviewed 2026-11-19 (S51 end pass, TASK-8728): W1 posting and its evidence show on
         # CLS-08 / the ledger console's posting log (C-02-T18..T20), the package edit on CLS-08's
