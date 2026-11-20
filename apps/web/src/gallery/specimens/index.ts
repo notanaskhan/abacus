@@ -11,6 +11,7 @@ import { Tpl10Artboard } from "./TPL-10";
 import { Tpl16Artboard } from "./TPL-16";
 import { Tpl19Artboard } from "./TPL-19";
 import { Tpl20Artboard } from "./TPL-20";
+import { Tpl23Artboard } from "./TPL-23";
 import { T4Artboard, Tpl04Artboard } from "./T4";
 
 registerScreen("TPL-16", {
@@ -53,6 +54,12 @@ registerScreen("T18", {
 registerScreen("T21", {
   title: "Analytics dashboard · template board",
   Component: T21Artboard,
+});
+
+// F-08-T15 (TASK-8847): TPL-23 Insights · Client responsiveness, a to f.
+registerScreen("TPL-23", {
+  title: "Insights · Client responsiveness",
+  Component: Tpl23Artboard,
 });
 
 registerScreen("T6", {
