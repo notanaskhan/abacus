@@ -42,6 +42,7 @@ windows:
     ends: 2028-10-20
     mini_freezes: [[2028-09-08, 2028-09-15], [2028-09-25, 2028-10-02], [2028-10-09, 2028-10-16]]
     deadline_weeks: [[2028-09-11, 2028-09-15], [2028-10-02, 2028-10-06], [2028-10-16, 2028-10-20]]
+    closed: 2028-10-20  # Q-04-T230: no release ran Oct 16-20 (docs/ops/windows/2028-10-16-deadline-week-watch.md)
   - id: season-2029
     kind: season
     starts: 2029-01-01
