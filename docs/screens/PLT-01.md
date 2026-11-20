@@ -37,6 +37,13 @@ Undesigned sections (DEC-32, composed from kits with Ayush's one-day review, G-0
 
 `docs/contracts/platform-console.md`: `GET /v1/platform/tenants*`, `PATCH …/entitlements`, `POST /v1/platform/tenants`, `…/sandbox`, `GET /v1/platform/provisioning/{id}`, `GET /v1/platform/regions`, `GET /v1/platform/support-sessions`, `GET /v1/platform/plan-requests` · `…/mark-applied`; `POST /v1/support/sessions` (SPEC-681). Staff actions (`platform_tenant.*`, `platform_entitlements.update`; DEC-5202) on the staff token; metadata only (AC-2).
 
+## Parity
+| Artboard | Tier (A/B/C/D) | Diff % | Notes |
+|---|---|---|---|
+| a–d, f, g | C (locked in G-04-T21) | not run (handoff baselines not on this machine; axe in `e2e/screens/PLT-01.spec.ts`) | the console's toast and tinted row are masked in g |
+| e | C (report only) | not run | fixture-only (DV-1): Library releases reported from fixture mode, never locked |
+| host | D | — | console toolbar 44; tenants table row 44; drawer 480; O6 wizard; O3 sheet |
+
 ## Links
 
 | From | To | Status |

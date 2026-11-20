@@ -359,3 +359,59 @@ test.describe("J01 connections (W-01)", () => {
     });
   });
 });
+
+// G-04-T21 (G-04 §1, §3.3): J01 step 1 on the console and step A4 on Plan & usage. Fixture mode walks
+// the console's and ADM-14's own artboards; staging walks them with real auth once the console's
+// staff issuer and the platform admin's seat are on staging (G-04-T14 rest; ABACUS_STAGING_URL).
+const G04_LIVE =
+  "G-04 · staging with real auth once the console staff issuer and Rowan Achebe's platform seat are provisioned there (G-04-T14)";
+
+test.describe("J01 console and plan (G-04)", () => {
+  test.beforeEach(({ journey }) => {
+    const hosted = journey.project === "staging" || journey.project === "canary";
+    test.skip(
+      hosted && HOSTED_URL[journey.project] === undefined,
+      `ABACUS_${journey.project.toUpperCase()}_URL is not set`,
+    );
+    test.fixme(journey.project !== "fixture", G04_LIVE);
+  });
+
+  test("j01 1: Rowan provisions Brightwater Hale LLP in PLT-01 (US; Tax, Audit, CAS; 46 seats); tenant.provisioned names the platform admin and the console cannot open firm content", async ({
+    journey,
+  }) => {
+    await journey.as("rowan-achebe", "/components/screens/PLT-01?st=a&frame=1");
+    await journey.step(
+      "J01 step 1: Brightwater Hale's tenant, 46 seats in the US",
+      async (page) => {
+        const row = page.getByRole("row", { name: /^Brightwater Hale LLP tnt_bh01 / });
+        await expect(row).toBeVisible();
+        await expect(row.getByRole("cell", { name: "United States" })).toBeVisible();
+        await expect(row.getByRole("cell", { name: "46 of 46" })).toBeVisible();
+        for (const line of ["Tax", "Audit & assurance", "Client accounting"]) {
+          await expect(row.getByText(line, { exact: true })).toBeVisible();
+        }
+      },
+    );
+    await journey.as("rowan-achebe", "/components/screens/PLT-01?st=g&frame=1");
+    await journey.step(
+      "J01 step 1: the tenant is created and invites go to the first admins",
+      async (page) => {
+        await expect(
+          page.getByText("Tenant created · invites sent to 2 first admins"),
+        ).toBeVisible();
+        // The console reads tenant metadata only: no client, engagement or return opens from it.
+        for (const name of ["Ashford Manufacturing Co.", "Ridgeline Property Partners, LP"]) {
+          await expect(page.getByText(name)).toHaveCount(0);
+        }
+      },
+    );
+  });
+
+  test("j01 A4: Grace sees Plan & usage within plan (ADM-14a)", async ({ journey }) => {
+    await journey.as("grace-holloway", "/settings/plan", { scenario: "ADM-14:a" });
+    await journey.step("J01 step A4: Plan & usage, within plan", async (page) => {
+      await expect(page.getByText("of 20,000 included")).toBeVisible();
+      await expect(page.getByText(/14,920/).first()).toBeVisible();
+    });
+  });
+});

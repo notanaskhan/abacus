@@ -340,3 +340,43 @@ test.describe("J14 integration admin (W-01)", () => {
     },
   );
 });
+
+// G-04-T21 (G-04 §1): J14 step 5 on SHL-05. Grace asks support why the CCH Axcess sync is slow,
+// reads the article and the system status, and support sees no client content until Felix grants
+// a time-boxed session. Fixture mode walks SHL-05's artboards; staging walks it once the support
+// panel's flag is on there (support.panel_v2).
+const SUPPORT_LIVE =
+  "G-04 · staging with real auth once support.panel_v2 is on in staging (G-04-T19); ABACUS_STAGING_URL";
+
+test.describe("J14 support (G-04)", () => {
+  test.beforeEach(({ journey }) => {
+    const hosted = journey.project === "staging" || journey.project === "canary";
+    test.skip(
+      hosted && HOSTED_URL[journey.project] === undefined,
+      `ABACUS_${journey.project.toUpperCase()}_URL is not set`,
+    );
+    test.fixme(journey.project !== "fixture", SUPPORT_LIVE);
+  });
+
+  test("j14 5: Grace asks support why the CCH sync is slow, reads the article and system status, and support sees no client content until Felix grants a 2-hour session on one return", async ({
+    journey,
+  }) => {
+    await journey.as("grace-holloway", "/components/screens/SHL-05?st=a&frame=1");
+    await journey.step("J14 step 5: Grace asks support (SHL-05 a)", async (page) => {
+      await expect(page.getByText(/Online · replies in ~/).first()).toBeVisible();
+    });
+    await journey.as("grace-holloway", "/components/screens/SHL-05?st=d2&frame=1");
+    await journey.step("J14 step 5: the help article (SHL-05 d′)", async (page) => {
+      await expect(page.locator("[data-artboard='d2']")).toBeVisible();
+    });
+    await journey.as("grace-holloway", "/components/screens/SHL-05?st=e&frame=1");
+    await journey.step("J14 step 5: system status, CCH export needs attention", async (page) => {
+      await expect(page.getByText("Needs attention").first()).toBeVisible();
+    });
+    await journey.as("felix-andersen", "/components/screens/SHL-05?st=c&frame=1");
+    await journey.step("J14 step 5: Felix's time-boxed grant", async (page) => {
+      await expect(page.getByText(/Granted by Felix Andersen · until/)).toBeVisible();
+      await expect(page.getByRole("button", { name: "Revoke" })).toBeVisible();
+    });
+  });
+});

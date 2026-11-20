@@ -22,3 +22,23 @@ test.describe("J27 insights · P0 core (P-05-T15)", () => {
     });
   });
 });
+
+// G-04-T21 (G-04 §1): J27 step 2, plan and usage. Margaret, a partner, reads ADM-14 read-only; the
+// INS-02 → ADM-14 hop waits on I-03 (S61–S67).
+test.describe("J27 plan and usage (G-04)", () => {
+  test("j27 2 (plan & usage): Margaret opens ADM-14 read-only and sees 14,920 of 20,000", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", "G-04 · staging with real auth (G-04-T18 live)");
+    await journey.as("margaret-okonkwo", "/settings/plan", { scenario: "ADM-14:a" });
+    await journey.step("J27 step 2: Plan & usage as Margaret", async (page) => {
+      await expect(page.getByText("of 20,000 included")).toBeVisible();
+      await expect(page.getByText(/14,920/).first()).toBeVisible();
+    });
+  });
+
+  test("j27 2: INS-02 opens Plan & usage", async ({ journey }) => {
+    test.fixme(true, "the INS-02 → ADM-14 hop lands with I-03 (S61–S67)");
+    await journey.as("margaret-okonkwo", "/insights");
+  });
+});

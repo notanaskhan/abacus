@@ -312,6 +312,8 @@ import {
   scenarios as shl05Scenarios,
 } from "./SHL-05/scenarios";
 import { POR23 } from "./POR-23";
+import { ADM14 } from "./ADM-14";
+import { scenarios as adm14Scenarios } from "./ADM-14/scenarios";
 import { STATES as POR23_STATES, scenarios as por23Scenarios } from "./POR-23/scenarios";
 import { scenarios as por11Scenarios } from "./POR-11/scenarios";
 import { copperleafPortalQuestions } from "../fixtures/seed/close-book";
@@ -2828,8 +2830,45 @@ registerScreen("AUD-26", {
 });
 registerScreen("PLT-01", {
   title: "Accrued tenant console",
-  Component: ({ params }: { params: FixtureParams }) => <TenantConsole st={params.st} />,
+  // G-04-T21: the artboard wrapper the screen specs and the parity report read.
+  Component: ({ params }: { params: FixtureParams }) => (
+    <div data-artboard={params.st ?? "a"}>
+      <TenantConsole st={params.st} />
+    </div>
+  ),
 });
+
+// G-04-T21 (G-04-T18's screen): ADM-14 Plan & usage, a to f, on each state's scenario (Grace
+// Holloway; e Margaret Okonkwo read-only); d holds the unsaved 100% choice, f the open dialog.
+const ADM14_STATES = ["a", "b", "c", "d", "e", "f"] as const;
+function Adm14Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state = ADM14_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      adm14Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div data-artboard={state}>
+      <ADM14
+        readOnly={state === "e"}
+        initial={
+          state === "d" ? { at100: "pause_scheduled" } : state === "f" ? { requestOpen: true } : {}
+        }
+      />
+    </div>
+  );
+}
+
+registerScreen("ADM-14", { title: "Firm settings › Plan & usage", Component: Adm14Artboard });
 
 // AUD-33 (A-09-T15): the consolidated trial balance, a to g, Omar Haddad at 2:05 PM.
 const AUD33_MODE: Record<Aud33State, Aud33Mode> = {

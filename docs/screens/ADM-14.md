@@ -37,6 +37,12 @@ Fixture scenarios: `apps/web/src/fixtures/scenarios/plan-usage.ts` (G-04-T13) fr
 
 `docs/contracts/plan-usage.md`: `GET /v1/firm/plan`, `PUT …/billing-contact`, `GET · PUT /v1/firm/budget-alerts`, `GET /v1/firm/engagement-budgets?alerting=true`, `GET /v1/firm/billing-rates`, `GET · POST /v1/firm/plan-requests`, `…/approve`, `…/decline`, `…/withdraw`; `GET /v1/firm/usage` (P-10, additive). Actions `plan.read`, `budget_alert.manage` (fresh MFA), `billing_contact.manage`, `plan_request.create`, `plan_request.approve` (partner, fresh MFA, never the requester), `usage.read`.
 
+## Parity
+| Artboard | Tier (A/B/C/D) | Diff % | Notes |
+|---|---|---|---|
+| a–f | C (locked in G-04-T21) | not run (handoff baselines not on this machine; axe in `e2e/screens/ADM-14.spec.ts`) | the meter fill is geometry from the server's integers |
+| host | D | — | settings subbar 42, pane header 46, band 33, value row 34, dialog 440 |
+
 ## Links
 
 | From | To | Status |
