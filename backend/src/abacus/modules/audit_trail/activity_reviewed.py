@@ -1244,6 +1244,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         # AUD-30's timeline, monitoring findings on ADM-12, the season manifest's build, export
         # and row changes on ENG-07's own history; none needs a sentence in the firm's feed.
         "post_issuance.case_opened",
+        "post_issuance.reissue_opened",  # Q-05-T17 (TASK-8823): AUD-30 and AUD-23 g
+        "post_issuance.source_filed",
+        "post_issuance.users_notified_manually",
         "post_issuance.compared",
         "post_issuance.decided",
         "qm_finding.raised",
