@@ -1667,6 +1667,12 @@ const ENTITY_SCREENS: Readonly<
     review: "m1-m3",
     reviewOf: TXP04_REVIEW,
   },
+  // T-06-T31: TXP-08 a–e (the partner, the inline §754 card and §752 are each state's opens).
+  "TXP-08": {
+    title: "Review › Basis · Ridgeline inside / outside basis",
+    slug: "review",
+    review: "basis",
+  },
   "TXP-05": { title: "Review › Schedule K", slug: "review", review: "schedule-k" },
   "TXP-06": {
     title: "Allocation Structure",

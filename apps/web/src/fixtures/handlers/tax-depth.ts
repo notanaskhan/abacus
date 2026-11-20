@@ -7,6 +7,7 @@ import type { Snapshot } from "../seed/tax-entity";
 import { type AssetView, type AssetsVariant, fixedAssets, rowsOf } from "../seed/tax-depth-assets";
 import { type BookTaxVariant, M1, M3, m2 } from "../seed/tax-depth-booktax";
 import type { IssuesState } from "../seed/tax-entity-issues";
+import { basis } from "../seed/tax-depth-basis";
 
 const R = "/v1/tax-returns/{return_id}";
 const notYet = () => json({ detail: "not_implemented" }, 501);
@@ -60,6 +61,10 @@ export function taxDepthHandlers(
       const found = rowsOf(assets).find((r) => r.asset_id === req.params.asset_id);
       return found === undefined ? json({ detail: "not_found" }, 404) : json(found);
     },
+    [`GET ${R}/basis`]: (req) =>
+      json(basis(req.query.get("view") === "s752" ? "s752" : "basis", req.query.get("partner"))),
+    [`POST ${R}/decision-cards`]: notYet,
+    "POST /v1/decision-cards/{card_id}/send-to-client": notYet,
     [`POST ${R}/fixed-assets`]: notYet,
     [`POST ${R}/fixed-assets/{asset_id}/changes`]: notYet,
   };

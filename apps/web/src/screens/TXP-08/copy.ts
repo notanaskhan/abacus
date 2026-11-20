@@ -1,0 +1,42 @@
+// TXP-08 · Review › Basis words (T-06-T31; docs/screens/TXP-08.md; T-06 §2 row TXP-08 and §3 F3).
+// The handoff folder is not on this machine: words follow the epic and the TXP-07 grammar
+// (TASK-8753 deviations). The partners decide §754; the agent only recommends.
+export const COPY = {
+  title: "Basis",
+  views: "Basis view",
+  basis: "Inside / outside basis",
+  s752: "§752 shares",
+  partner: "Partner",
+  allPartners: "All partners",
+  tally: "Basis checks",
+  cards: {
+    reconciled: "Partners reconciled",
+    inside: "Inside basis",
+    outside: "Outside basis",
+    s754: "§754 election",
+  },
+  reconciledOf: (n: number, of: number) => `${String(n)} of ${String(of)}`,
+  s754State: { open: "Open", sent_to_client: "Sent to client", decided: "Decided" },
+  inside: "Inside share",
+  outside: "Outside basis",
+  reconciles: "Reconciles",
+  off: "Off",
+  versus: (inside: string, outside: string) => `${inside} vs ${outside}`,
+  placeholder: "§743(b) placeholder pending §754",
+  review754: "Review §754…",
+  card: {
+    title: "§754 election · Pell Street II LLC's purchase",
+    reserved: "Reserved to the partners. The agent cannot decide.",
+    elect: "Elect",
+    electDetail: "Records the §743(b) adjustment for Pell Street II LLC",
+    doNotElect: "Do not elect",
+    send: "Send to client…",
+    requestMore: "Request more analysis…",
+    fixtureOnly: "Fixture only until T-09",
+  },
+  alreadyWithClient: "Already with the client:",
+  openIssue: "Open the issue",
+  columns: { partner: "Partner", qnr: "Qualified nonrecourse", other: "Other nonrecourse" },
+  s752Note: "Shared by year-end profit % (Treas. Reg. §1.752-3).",
+  table: "§752 shares by partner",
+} as const;
