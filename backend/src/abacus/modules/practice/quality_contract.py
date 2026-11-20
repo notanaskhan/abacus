@@ -26,7 +26,7 @@ from abacus.kernel.classification import classified
 from sqlalchemy import text
 
 from abacus.kernel.db import tenant_session
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
 
@@ -429,7 +429,14 @@ async def quality_register_route(
     ctx: Ctx, component: Component | None = None
 ) -> QualityRegisterOut:
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.practice import quality_register as reg
+
+    found = await reg.register(ctx.tenant, component)
+    return QualityRegisterOut.model_validate({
+        "objectives": [await _objective_out(o, found) for o in found["objectives"]],
+        "risks": len(found["risks"]),
+        "responses": len(found["responses"]),
+    })  # fmt: skip
 
 
 @quality_router.patch(
@@ -442,7 +449,15 @@ async def quality_objective_route(
     objective_id: UUID, body: QualityObjectivePatchIn, ctx: Ctx
 ) -> QualityObjectiveOut:
     await _human(ctx, "quality.manage")
-    raise NotImplementedYet
+    from abacus.modules.practice import quality_register as reg
+
+    await reg.patch_objective(ctx, objective_id, owner_user_id=body.owner_user_id,
+                              health_flag=body.health_flag, note=body.note, version=body.version)  # fmt: skip
+    found = await reg.register(ctx.tenant, None)
+    match = [o for o in found["objectives"] if o["id"] == objective_id]
+    if not match:
+        raise NotFound("qm_objective")
+    return QualityObjectiveOut.model_validate(await _objective_out(match[0], found))
 
 
 @quality_router.post(
@@ -457,7 +472,11 @@ async def quality_import_route(
 ) -> QualityImportOut:
     """A dry run; the register is firm content, never a commit."""
     await _human(ctx, "quality.manage")
-    raise NotImplementedYet
+    from abacus.modules.practice import quality_register as reg
+
+    del key
+    made = await reg.dry_run(ctx, body.kind, body.source_evidence_version_id)
+    return _import_out(await reg.import_row(ctx.tenant, made))
 
 
 @quality_router.post(
@@ -470,7 +489,11 @@ async def quality_import_publish_route(
     import_id: UUID, ctx: Ctx, key: IdempotencyKey
 ) -> QualityImportOut:
     await _human(ctx, "quality.manage")
-    raise NotImplementedYet
+    from abacus.modules.practice import quality_register as reg
+
+    del key
+    made = await reg.publish(ctx, import_id)
+    return _import_out(await reg.import_row(ctx.tenant, made))
 
 
 @quality_router.post(
@@ -484,7 +507,13 @@ async def quality_risk_review_route(
     body: QualityRiskReviewIn, ctx: Ctx, key: IdempotencyKey
 ) -> QualityRiskReviewOut:
     await _human(ctx, "quality.manage")
-    raise NotImplementedYet
+    from abacus.modules.practice import quality_register as reg
+
+    del key
+    review_id = await reg.record_review(ctx, body.reviewed_on, body.note)
+    return QualityRiskReviewOut.model_validate(
+        {"review_id": review_id, "reviewed_on": body.reviewed_on, "reviewed_by": (await _person(ctx.user_id)).model_dump()}
+    )
 
 
 @quality_router.get(
@@ -881,3 +910,23 @@ async def _evaluation_out(ctx: AuthContext, year: int) -> QualityAnnualEvaluatio
         concluded_at=cast(Any, found["concluded_at"]), checklist=cast(dict[str, bool], found["checklist"]),
         inspections_open=int(cast(int, found["inspections_open"])),
     )  # fmt: skip
+
+
+# --- S52 Q-05 sweep (DEC-5829): the register's outs ---------------------------------------------
+
+
+async def _objective_out(o: dict[str, object], found: dict[str, list[dict[str, object]]]) -> dict[str, object]:
+    return {
+        "objective_id": o["id"], "component": o["component"], "ref": o["ref"], "title": o["title"],
+        "owner": None if o["owner_user_id"] is None else (await _person(cast(UUID, o["owner_user_id"]))).model_dump(),
+        "health_flag": o["health_flag"],
+        "risks": sum(1 for r in found["risks"] if r["objective_id"] == o["id"]),
+        "responses": sum(1 for r in found["responses"] if r["objective_id"] == o["id"]),
+        "version": o["version"],
+    }  # fmt: skip
+
+
+def _import_out(row: dict[str, object]) -> QualityImportOut:
+    return QualityImportOut.model_validate(
+        {"import_id": row["id"], "kind": row["kind"], "status": row["status"], "counts": row["counts"]}
+    )

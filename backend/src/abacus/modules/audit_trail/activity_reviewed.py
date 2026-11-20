@@ -1191,6 +1191,10 @@ REVIEWED_FALLBACK: Final = frozenset(
         "consultation.position_recorded",
         "consultation.reopened",
         "destruction_batch.assembled",
+        "quality_import.dry_run",  # S52 Q-05 sweep (TASK-8824): ADM-12 import
+        "quality_import.published",
+        "qm_objective.updated",
+        "qm_risk_review.recorded",
         "inspection.planned",  # Q-05-T18 (TASK-8822): ADM-12's own history
         "inspection.started",
         "inspection.concluded",
