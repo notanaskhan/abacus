@@ -159,15 +159,16 @@ const RIDGELINE_EDGES: readonly E[] = [
 ];
 
 const TRUST_NODES: readonly N[] = [
-  ["calloway-trust", "entity", "Calloway Family Trust", "Form 1041 · ••-•••5520", 428, 150],
-  ["margaret-calloway", "client", "Margaret Calloway", "Trustee · •••-••-1189", 120, 320],
-  ["eli-calloway", "client", "Eli Calloway", "Beneficiary · •••-••-7703", 428, 320],
-  ["nora-calloway", "client", "Nora Calloway", "Beneficiary · •••-••-2246", 736, 320],
+  ["eleanor-calloway", "client", "Eleanor Calloway", "Trustee · •••-••-1188", 120, 150],
+  ["calloway-trust", "entity", "Calloway Family Trust", "Form 1041 · ••-•••5530", 428, 150],
+  ["nora-calloway", "client", "Nora Calloway", "Beneficiary · •••-••-2074", 300, 320],
+  ["theo-calloway", "client", "Theo Calloway", "Beneficiary · •••-••-2091", 556, 320],
+  ["harborline", "entity", "Harborline Trust Company", "Custodian · ••-•••6602", 736, 150],
 ];
 const TRUST_EDGES: readonly E[] = [
   [
     "trustee",
-    "margaret-calloway",
+    "eleanor-calloway",
     "calloway-trust",
     "relationship",
     "Trustee",
@@ -177,24 +178,57 @@ const TRUST_EDGES: readonly E[] = [
     "person",
   ],
   [
-    "ben-eli",
-    "eli-calloway",
+    "nora-b",
     "calloway-trust",
+    "nora-calloway",
     "relationship",
-    "Beneficiary 50%",
+    "Beneficiary · discretionary",
     "beneficiary_of",
-    "50",
+    null,
     "2016-03-01",
     "person",
   ],
   [
-    "ben-nora",
+    "theo-b",
+    "calloway-trust",
+    "theo-calloway",
+    "relationship",
+    "Beneficiary · discretionary",
+    "beneficiary_of",
+    null,
+    "2016-03-01",
+    "person",
+  ],
+  [
+    "nora-k1",
+    "calloway-trust",
     "nora-calloway",
+    "k1",
+    "K-1 (1041) · Prepared",
+    null,
+    null,
+    "2026-09-10",
+    "k1_package",
+  ],
+  [
+    "theo-k1",
+    "calloway-trust",
+    "theo-calloway",
+    "k1",
+    "K-1 (1041) · Prepared",
+    null,
+    null,
+    "2026-09-10",
+    "k1_package",
+  ],
+  [
+    "custodian",
+    "harborline",
     "calloway-trust",
     "relationship",
-    "Beneficiary 50%",
-    "beneficiary_of",
-    "50",
+    "Custodian",
+    "owner_of",
+    null,
     "2016-03-01",
     "person",
   ],
@@ -244,9 +278,16 @@ export function graph(variant: GraphVariant): RelationshipGraphOut {
   }
   if (variant === "single") {
     return {
-      client_id: stableId("client:harlow"),
+      client_id: stableId("client:lakeshore"),
       nodes: [
-        node(["harlow-llc", "entity", "Harlow Supply LLC", "Form 1065 · ••-•••4410", 428, 150]),
+        node([
+          "lakeshore",
+          "entity",
+          "Lakeshore Literacy Alliance",
+          "501(c)(3) · ••-•••4410",
+          428,
+          150,
+        ]),
       ],
       edges: [],
       banner: null,
@@ -259,9 +300,9 @@ export function graph(variant: GraphVariant): RelationshipGraphOut {
     nodes.push(
       node(
         [
-          "northgate-holdings",
+          "pell-street-holdings",
           "external_party",
-          "Northgate Holdings LP",
+          "Pell Street Holdings LP",
           "Not a Brightwater Hale client",
           440,
           24,
@@ -272,11 +313,11 @@ export function graph(variant: GraphVariant): RelationshipGraphOut {
     edges.push(
       edge(
         [
-          "psv-upper",
-          "northgate-holdings",
+          "upper-psv",
+          "pell-street-holdings",
           "pell-street-ventures",
           "relationship",
-          "Upper tier · 100%",
+          "100% member",
           "upper_tier_of",
           "100",
           "2018-01-01",

@@ -1,0 +1,35 @@
+// HOME-03 · Deadlines calendar words (T-08-T16; docs/screens/HOME-03.md), verbatim from the handoff.
+export const COPY = {
+  title: "Deadlines",
+  context: "All offices",
+  home: ["My work", "Approvals 11", "Deadlines", "Capacity"] as const,
+  month: "September 2026",
+  today: "Today",
+  views: { month: "Month", week: "Week", list: "List" },
+  filters: {
+    office: "Office",
+    service: "Service",
+    person: "Person",
+    risk: "Risk",
+    all: "All",
+    anyone: "Anyone",
+  },
+  weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  more: (n: number) => `+${String(n)} more`,
+  listColumns: ["Due", "Client", "Filing", "Rule", "Stage", "Owner", "Risk"],
+  popover: {
+    rule: "Rule",
+    original: "Original due",
+    extended: "Extended due",
+    filed: "Extension filed",
+    stage: "Stage",
+    owner: "Owner",
+    open: "Open return",
+    signs: (initials: string) => `${initials} signs`,
+  },
+  footer:
+    "Dates are computed from the rules table in Knowledge › Standards. Weekend and holiday roll-forward applied. No disaster postponements recorded for September.",
+  emptyFilter: "No deadlines match these filters.",
+  postponedFrom: (d: string) => `Postponed from ${d}`,
+  export: "Export…",
+} as const;

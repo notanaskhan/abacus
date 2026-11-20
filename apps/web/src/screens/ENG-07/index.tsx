@@ -363,7 +363,7 @@ function CohortBand({
     <>
       <tr
         data-cohort={c.position}
-        className={`h-[44px] border-t border-hair ${expanded ? "bg-selected" : "bg-nested"}`}
+        className={`h-[44px] border-t border-hair ${expanded ? "bg-sel-bg" : "bg-nested"}`}
       >
         <td className="px-[8px] text-[13.5px] font-medium text-ink">
           {`C${String(c.position)} ${c.office_name} · ${COPY.segment[c.segment]}`}

@@ -1,6 +1,7 @@
+import { FlagOffState } from "@abacus/ui";
 import { Navigate, createRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { type JSX, Suspense, lazy } from "react";
-import { useFlag } from "../../app-core/flags";
+import { FeatureGate, useFlag } from "../../app-core/flags";
 import { registerOverlay } from "../../app-core/overlays";
 import { appRoute, lazyScreen } from "../root";
 
@@ -61,7 +62,34 @@ export const homeApprovalsRoute = createRoute({
   },
 });
 
-export const homeRoutes = [homeRoute, homeDashboardRoute, homeApprovalsRoute] as const;
+// HOME-03 (T-08-T16): `/home/deadlines` behind `practice.filing_deadlines` (C-20 off state).
+const Deadlines = lazyScreen(
+  async () => (await import("../../screens/HOME-03/Deadlines")).Deadlines,
+);
+
+export const homeDeadlinesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/home/deadlines",
+  component: function HomeDeadlinesPage(): JSX.Element {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FeatureGate
+          flag="practice.filing_deadlines"
+          fallback={<FlagOffState flag="practice.filing_deadlines" label="Deadlines" />}
+        >
+          <Deadlines />
+        </FeatureGate>
+      </div>
+    );
+  },
+});
+
+export const homeRoutes = [
+  homeRoute,
+  homeDashboardRoute,
+  homeApprovalsRoute,
+  homeDeadlinesRoute,
+] as const;
 
 // I-02-T16: `?ov=today`, the Today panel as a left drawer (x10–480, no scrim) over any firm route,
 // from the bell and "Open Today ›". Flag off: the overlay renders nothing.
