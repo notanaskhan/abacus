@@ -546,6 +546,10 @@ _entity_guards.register()
 from abacus.modules.tax import form_preview_blockers as _form_preview_blockers  # noqa: E402
 
 _form_preview_blockers.register()
+# T-06-T38 (DEC-5831): `ledger.tb_mapper` mode `tax_lines` (its tool registers at this import).
+from abacus.modules.tax import tb_mapper_tax_lines as _tb_mapper_tax_lines  # noqa: E402
+
+_tb_mapper_tax_lines.register()
 
 # T-05-T54 (DEC-4909, DEC-4910): the preparer memo service (the memo as a P-04 reviewable and its
 # draft run's workflow).
