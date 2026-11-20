@@ -14175,6 +14175,10 @@ export type ConsultationLogOut = {
  */
 export type ConsultationLogRowOut = {
     /**
+     * Conclusion
+     */
+    conclusion?: string | null;
+    /**
      * Consultation Id
      */
     consultation_id: string;
@@ -14194,6 +14198,10 @@ export type ConsultationLogRowOut = {
      * Engagement Id
      */
     engagement_id: string | null;
+    /**
+     * Question
+     */
+    question?: string | null;
     /**
      * Raised By Name
      */
@@ -27729,7 +27737,7 @@ export type GeneratedDocumentOut = {
     /**
      * Kind
      */
-    kind: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions';
+    kind: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions' | 'close_package';
     /**
      * Out Of Date
      */
@@ -34853,14 +34861,26 @@ export type LegalHoldIn = {
      */
     details?: string | null;
     /**
+     * Display Name
+     */
+    display_name?: string | null;
+    /**
+     * Document Classes
+     */
+    document_classes?: Array<string> | null;
+    /**
      * Notify User Ids
      */
     notify_user_ids?: Array<string>;
     /**
      * Reason Code
      */
-    reason_code: 'irs_examination' | 'litigation' | 'regulatory_inquiry' | 'subpoena' | 'other';
+    reason_code: 'irs_examination' | 'litigation' | 'regulatory_inquiry' | 'subpoena' | 'other' | 'state_controversy' | 'client_dispute';
     scope: LegalHoldScopeIn;
+    /**
+     * Until Released
+     */
+    until_released?: boolean;
 };
 
 /**
@@ -34898,7 +34918,7 @@ export type LegalHoldOut = {
     /**
      * Reason Code
      */
-    reason_code: 'irs_examination' | 'litigation' | 'regulatory_inquiry' | 'subpoena' | 'other';
+    reason_code: 'irs_examination' | 'litigation' | 'regulatory_inquiry' | 'subpoena' | 'other' | 'state_controversy' | 'client_dispute';
     /**
      * Released At
      */
@@ -50046,7 +50066,7 @@ export type ReportTemplateOut = {
     /**
      * Family
      */
-    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions';
+    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions' | 'close_package';
     /**
      * Id
      */
@@ -66022,7 +66042,7 @@ export type TemplateImportIn = {
     /**
      * Family
      */
-    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions';
+    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions' | 'close_package';
     /**
      * Layout Key
      */
@@ -154694,7 +154714,7 @@ export type ListReportTemplatesData = {
         /**
          * Family
          */
-        family?: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions' | null;
+        family?: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions' | 'close_package' | null;
     };
     url: '/v1/report-templates';
 };

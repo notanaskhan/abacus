@@ -3303,7 +3303,7 @@ export const postIssuanceDecisionMutation = (options?: Partial<Options<PostIssua
 /**
  * Post Issuance Reissue Route
  *
- * The EP, fresh MFA; opens AUD-23 g through A-07's release path (AC-18).
+ * The EP, fresh MFA; opens AUD-23 g through A-07's release path (AC-18; Q-05-T17).
  */
 export const postIssuanceReissueMutation = (options?: Partial<Options<PostIssuanceReissueData>>): UseMutationOptions<PostIssuanceReissueResponse, PostIssuanceReissueError, Options<PostIssuanceReissueData>> => {
     const mutationOptions: UseMutationOptions<PostIssuanceReissueResponse, PostIssuanceReissueError, Options<PostIssuanceReissueData>> = {
@@ -6348,6 +6348,9 @@ export const packagePdfQueryKey = (options: Options<PackagePdfData>) => createQu
 
 /**
  * Package Pdf Route
+ *
+ * The latest render's PDF through P-03's audited content route (a redirect, never bytes
+ * copied here).
  */
 export const packagePdfOptions = (options: Options<PackagePdfData>) => queryOptions<PackagePdfResponse, PackagePdfError, PackagePdfResponse, ReturnType<typeof packagePdfQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -6402,7 +6405,7 @@ export const commentaryMutation = (options?: Partial<Options<CommentaryData>>): 
 /**
  * Generate Route
  *
- * A deterministic DET run; regenerate keeps commentary edits.
+ * A deterministic DET run; regenerate keeps commentary edits (C-02-T28).
  */
 export const generateMutation = (options?: Partial<Options<GenerateData>>): UseMutationOptions<GenerateResponse, GenerateError, Options<GenerateData>> => {
     const mutationOptions: UseMutationOptions<GenerateResponse, GenerateError, Options<GenerateData>> = {
@@ -6439,7 +6442,7 @@ export const pageOptions = (options: Options<PageData>) => queryOptions<PageResp
 /**
  * Close Package Release Route
  *
- * Partner only, live, fresh MFA; 409 `release_preconditions_unmet` (C-02-T23).
+ * Partner only, live, fresh MFA; 409 `release_preconditions_unmet` (C-02-T29).
  */
 export const closePackageReleaseMutation = (options?: Partial<Options<ClosePackageReleaseData>>): UseMutationOptions<ClosePackageReleaseResponse, ClosePackageReleaseError, Options<ClosePackageReleaseData>> => {
     const mutationOptions: UseMutationOptions<ClosePackageReleaseResponse, ClosePackageReleaseError, Options<ClosePackageReleaseData>> = {
@@ -28714,7 +28717,7 @@ export const listRetentionPoliciesOptions = (options?: Options<ListRetentionPoli
 /**
  * Retention Policy Create Route
  *
- * A policy below the legal minimum is refused (AC-19); fresh MFA.
+ * A policy below the legal minimum is refused (AC-19); fresh MFA (Q-05-T13).
  */
 export const retentionPolicyCreateMutation = (options?: Partial<Options<RetentionPolicyCreateData>>): UseMutationOptions<RetentionPolicyCreateResponse, RetentionPolicyCreateError, Options<RetentionPolicyCreateData>> => {
     const mutationOptions: UseMutationOptions<RetentionPolicyCreateResponse, RetentionPolicyCreateError, Options<RetentionPolicyCreateData>> = {
@@ -28754,6 +28757,8 @@ export const retentionPolicyVersionsQueryKey = (options: Options<RetentionPolicy
 
 /**
  * Retention Policy Versions Route
+ *
+ * FIL-02g: every version of the policy one of its versions names (Q-05-T13).
  */
 export const retentionPolicyVersionsOptions = (options: Options<RetentionPolicyVersionsData>) => queryOptions<RetentionPolicyVersionsResponse, RetentionPolicyVersionsError, RetentionPolicyVersionsResponse, ReturnType<typeof retentionPolicyVersionsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

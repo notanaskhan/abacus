@@ -30490,6 +30490,19 @@
       "ConsultationLogRowOut": {
         "additionalProperties": false,
         "properties": {
+          "conclusion": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Conclusion"
+          },
           "consultation_id": {
             "cls": "internal",
             "format": "uuid",
@@ -30525,6 +30538,19 @@
             ],
             "cls": "internal",
             "title": "Engagement Id"
+          },
+          "question": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Question"
           },
           "raised_by_name": {
             "cls": "internal",
@@ -59480,7 +59506,8 @@
               "run_trace_export",
               "ebp_supplemental_schedule",
               "client_entries_journal",
-              "component_instructions"
+              "component_instructions",
+              "close_package"
             ],
             "title": "Kind",
             "type": "string"
@@ -74594,6 +74621,37 @@
             "cls": "confidential",
             "title": "Details"
           },
+          "display_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Display Name"
+          },
+          "document_classes": {
+            "anyOf": [
+              {
+                "items": {
+                  "pattern": "^[a-z][a-z_]{1,59}$",
+                  "type": "string"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Document Classes"
+          },
           "notify_user_ids": {
             "cls": "internal",
             "items": {
@@ -74611,7 +74669,9 @@
               "litigation",
               "regulatory_inquiry",
               "subpoena",
-              "other"
+              "other",
+              "state_controversy",
+              "client_dispute"
             ],
             "title": "Reason Code",
             "type": "string"
@@ -74619,6 +74679,12 @@
           "scope": {
             "$ref": "#/components/schemas/LegalHoldScopeIn",
             "cls": "internal"
+          },
+          "until_released": {
+            "cls": "internal",
+            "default": true,
+            "title": "Until Released",
+            "type": "boolean"
           }
         },
         "required": [
@@ -74684,7 +74750,9 @@
               "litigation",
               "regulatory_inquiry",
               "subpoena",
-              "other"
+              "other",
+              "state_controversy",
+              "client_dispute"
             ],
             "title": "Reason Code",
             "type": "string"
@@ -106362,7 +106430,8 @@
               "run_trace_export",
               "ebp_supplemental_schedule",
               "client_entries_journal",
-              "component_instructions"
+              "component_instructions",
+              "close_package"
             ],
             "title": "Family",
             "type": "string"
@@ -140859,7 +140928,8 @@
               "run_trace_export",
               "ebp_supplemental_schedule",
               "client_entries_journal",
-              "component_instructions"
+              "component_instructions",
+              "close_package"
             ],
             "title": "Family",
             "type": "string"
@@ -180561,7 +180631,7 @@
     },
     "/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/reopen-for-reissue": {
       "post": {
-        "description": "The EP, fresh MFA; opens AUD-23 g through A-07's release path (AC-18).",
+        "description": "The EP, fresh MFA; opens AUD-23 g through A-07's release path (AC-18; Q-05-T17).",
         "operationId": "post_issuance_reissue",
         "parameters": [
           {
@@ -198948,6 +199018,7 @@
     },
     "/v1/closes/{close_id}/package.pdf": {
       "get": {
+        "description": "The latest render's PDF through P-03's audited content route (a redirect, never bytes\ncopied here).",
         "operationId": "package_pdf",
         "parameters": [
           {
@@ -199321,7 +199392,7 @@
     },
     "/v1/closes/{close_id}/package/generate": {
       "post": {
-        "description": "A deterministic DET run; regenerate keeps commentary edits.",
+        "description": "A deterministic DET run; regenerate keeps commentary edits (C-02-T28).",
         "operationId": "generate",
         "parameters": [
           {
@@ -199573,7 +199644,7 @@
     },
     "/v1/closes/{close_id}/package/release": {
       "post": {
-        "description": "Partner only, live, fresh MFA; 409 `release_preconditions_unmet` (C-02-T23).",
+        "description": "Partner only, live, fresh MFA; 409 `release_preconditions_unmet` (C-02-T29).",
         "operationId": "close_package_release",
         "parameters": [
           {
@@ -335432,7 +335503,8 @@
                     "run_trace_export",
                     "ebp_supplemental_schedule",
                     "client_entries_journal",
-                    "component_instructions"
+                    "component_instructions",
+                    "close_package"
                   ],
                   "type": "string"
                 },
@@ -336487,7 +336559,7 @@
         "x-abacus-action": "retention_policy.read"
       },
       "post": {
-        "description": "A policy below the legal minimum is refused (AC-19); fresh MFA.",
+        "description": "A policy below the legal minimum is refused (AC-19); fresh MFA (Q-05-T13).",
         "operationId": "retention_policy_create",
         "parameters": [
           {
@@ -336730,6 +336802,7 @@
     },
     "/v1/retention/policies/{policy_id}/versions": {
       "get": {
+        "description": "FIL-02g: every version of the policy one of its versions names (Q-05-T13).",
         "operationId": "retention_policy_versions",
         "parameters": [
           {

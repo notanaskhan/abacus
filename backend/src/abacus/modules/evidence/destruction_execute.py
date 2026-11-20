@@ -36,9 +36,9 @@ from temporalio.common import RetryPolicy
 
 from abacus.kernel import clock
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict, Forbidden, NotFound
+from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.identity.api import AuthContext, Resource, authorise
+from abacus.modules.identity.api import AuthContext, Forbidden, Resource, authorise
 
 MFA_WINDOW: Final = timedelta(minutes=10)
 EXECUTE: Final = "evidence.execute_destruction"

@@ -315,6 +315,8 @@ import { POR23 } from "./POR-23";
 import { POR17 } from "./POR-17";
 import { POR17_SUMMIT_TRAIL } from "../fixtures/seed/fieldwork";
 import { ADM14 } from "./ADM-14";
+import { AUD28 } from "./AUD-28";
+import { scenarios as aud28Scenarios } from "./AUD-28/scenarios";
 import { ADM11 } from "./ADM-11";
 import { scenarios as adm11Scenarios } from "./ADM-11/scenarios";
 import { scenarios as adm14Scenarios } from "./ADM-14/scenarios";
@@ -4372,3 +4374,29 @@ function ADM11Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("ADM-11", { title: "Quality management dashboard", Component: ADM11Artboard });
+
+// S52 (AUD-28): artboards a, b, c, d, e, f, g on each state's scenario.
+const AUD28_STATES = ["a", "b", "c", "d", "e", "f", "g"] as const;
+function AUD28Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state = AUD28_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      aud28Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div data-artboard={state}>
+      <AUD28 selectedRef={({ a: "C-03", b: "C-04", c: "C-01", d: "C-03", e: null, f: "C-03", g: "C-01" } as const)[state]} initial={state === "f" ? "new" : state === "g" ? "conclude" : undefined} />
+    </div>
+  );
+}
+
+registerScreen("AUD-28", { title: "Consultations log", Component: AUD28Artboard });
