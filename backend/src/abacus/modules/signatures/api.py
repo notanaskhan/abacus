@@ -324,3 +324,8 @@ __all__ = [
     "start_envelope",
     "supersede_for_amount_change",
 ]
+
+# T-08-T18 (DEC-5841): this module's due dates join the filing-deadline slot (FD-1, HOME-03).
+from abacus.modules.signatures import deadline_sources as _deadline_sources  # noqa: E402
+
+_deadline_sources.register()

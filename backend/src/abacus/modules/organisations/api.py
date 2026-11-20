@@ -407,6 +407,8 @@ _register_audit_labels()
 
 # P-02-T07 (DEC-4613): the C15 v1 search projection this module owns, registered at import.
 # T-06-T03 (DEC-5511): error codes declared before their services.
+# T-08-T18 (DEC-5841): this module's due dates join the filing-deadline slot (FD-1, HOME-03).
+from abacus.modules.organisations import deadline_sources as _deadline_sources  # noqa: E402
 from abacus.modules.organisations import relationship_errors as relationship_errors  # noqa: E402
 
 # T-06-T21 (DEC-5632): the relationship service (writes, events, annotator slot).
@@ -419,3 +421,5 @@ from abacus.modules.organisations import (  # noqa: E402
 from abacus.modules.organisations import (  # noqa: E402
     search as _search,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
 )
+
+_deadline_sources.register()
