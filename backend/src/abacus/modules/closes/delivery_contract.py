@@ -21,7 +21,7 @@ from decimal import Decimal
 from typing import Annotated, Literal, cast
 from uuid import UUID
 
-from fastapi import Depends, Header
+from fastapi import Depends, Header, Response
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
@@ -419,9 +419,13 @@ async def commentary_route(
     errors=(409, 501),
 )
 async def generate_route(close_id: UUID, ctx: Ctx) -> DeliveryGenerateOut:
-    """A deterministic DET run; regenerate keeps commentary edits."""
+    """A deterministic DET run; regenerate keeps commentary edits (C-02-T28)."""
+    from abacus.modules.closes import package_render
+
     await _human(ctx, CLOSES_DELIVERY, "close_package.generate")
-    raise NotImplementedYet
+    run_id, version_no, document_id = await package_render.generate(ctx, close_id)
+    await package_render.start_assembly(ctx.tenant_id, close_id, run_id, document_id, version_no)
+    return DeliveryGenerateOut(run_id=run_id, version_no=version_no)
 
 
 @delivery_router.get(
@@ -431,24 +435,38 @@ async def generate_route(close_id: UUID, ctx: Ctx) -> DeliveryGenerateOut:
     errors=(501,),
 )
 async def page_route(close_id: UUID, page_no: int, ctx: Ctx) -> DeliveryPageOut:
+    from abacus.modules.closes import package_render
+
     await _on(ctx, CLOSES_DELIVERY)
-    raise NotImplementedYet
+    url, of = await package_render.page_url(ctx, close_id, page_no)
+    return DeliveryPageOut(page_no=page_no, of=of, image_url=url)
 
 
 @delivery_router.get(
     f"{_C}/package.pdf", action="close_package.export", response_model=bytes, errors=(501,)
 )
-async def package_pdf_route(close_id: UUID, ctx: Ctx) -> bytes:
+async def package_pdf_route(close_id: UUID, ctx: Ctx) -> Response:
+    """The latest render's PDF through P-03's audited content route (a redirect, never bytes
+    copied here)."""
+    from abacus.modules.closes import package_render
+
     await _human(ctx, CLOSES_DELIVERY, "close_package.export")
-    raise NotImplementedYet
+    url, _ = await package_render.page_url(ctx, close_id, 1)
+    return Response(status_code=303, headers={"Location": url.rsplit("/pages/", 1)[0] + "/content"})
 
 
 @delivery_router.get(
     f"{_C}/package.xlsx", action="close_package.export", response_model=bytes, errors=(501,)
 )
-async def package_xlsx_route(close_id: UUID, ctx: Ctx) -> bytes:
+async def package_xlsx_route(close_id: UUID, ctx: Ctx) -> Response:
+    from abacus.modules.closes import package_render
+
     await _human(ctx, CLOSES_DELIVERY, "close_package.export")
-    raise NotImplementedYet
+    return Response(
+        content=await package_render.export_xlsx(ctx, close_id),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="close-package.xlsx"'},
+    )
 
 
 @delivery_router.post(
