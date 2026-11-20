@@ -1,7 +1,7 @@
 // F-08-T05 (DEC-5619): SheetGrid core acceptance — 1,000 rows virtualised with Key frozen, glyph
 // headers, hairline grid, no column letters, row numbers or zebra rows; bands and status bar.
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { SheetGrid } from "./SheetGrid";
 import type { SheetGridColumn, SheetGridRow, SheetSection } from "./types";
 
@@ -34,6 +34,8 @@ function rows(n: number): SheetGridRow[] {
     },
   }));
 }
+
+afterEach(cleanup); // each test renders its own grid
 
 describe("SheetGrid", () => {
   it("virtualises 1,000 rows with aria-rowcount and aria-rowindex kept", () => {
@@ -80,6 +82,11 @@ describe("SheetGrid", () => {
   });
 
   it("draws the dark section band with its server total and the light sub-band", () => {
+    // jsdom has no layout: give the virtualised scroller its 560 px viewport so rows render.
+    const viewport = vi.spyOn(Element.prototype, "clientHeight", "get").mockReturnValue(560);
+    onTestFinished(() => {
+      viewport.mockRestore();
+    });
     const { container } = render(
       <SheetGrid
         label="Sheet"

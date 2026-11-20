@@ -1,15 +1,52 @@
 import { Lock, MoreHorizontal } from "lucide-react";
-import { type JSX, useMemo, useRef, useState } from "react";
+import {
+  type ClipboardEvent,
+  type JSX,
+  type KeyboardEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { cn } from "../cn";
+import { ErrorRow } from "../components/states";
 import { useRowWindow } from "../data/row-window";
 import { COLUMN_GLYPHS } from "./glyphs";
 import type {
-  SheetGridColumn,
+  SheetCellEdit,
   SheetColumnIntent,
+  SheetEditConflict,
+  SheetGridColumn,
   SheetGridProps,
   SheetGridRow,
   SheetSection,
 } from "./types";
+
+/** T18g's tooltip, verbatim (handoff T18 spec, States). */
+export const LOCKED_TOOLTIP =
+  "Signed-off rows are locked. Sign-offs are removed only from the sign-off modal.";
+// F-08-T06: the types a person edits here; linked, sign-off and agent cells never are.
+const EDITABLE: ReadonlySet<string> = new Set([
+  "text",
+  "number",
+  "currency",
+  "date",
+  "single_select",
+  "person",
+]);
+const PAGE = 10;
+
+function editable(column: SheetGridColumn): boolean {
+  return EDITABLE.has(column.type) && column.frozen !== true;
+}
+
+function conflictOf(raised: unknown): SheetEditConflict | null {
+  if (typeof raised !== "object" || raised === null) return null;
+  const status = (raised as { status?: unknown }).status;
+  if (status !== 409 && status !== 412) return null;
+  const by = (raised as { changedBy?: unknown }).changedBy;
+  return typeof by === "string" ? { status, changedBy: by } : { status };
+}
 
 // T18 SheetGrid core (F-08-T05; F-08 A1; chapter 03 §3.6). A grid that reads like a workpaper:
 // 11 typed columns with Lucide glyph headers and a "···" menu that only emits intents; the 28 px
@@ -19,8 +56,12 @@ import type {
 // row-window.ts) with `aria-rowcount` / `aria-rowindex` kept exact.
 //
 // Never: column letters, row numbers, zebra rows, coloured headers, blue or green selection,
-// "$" in a cell, a sum computed here (ADR-050). Editing and locks are F-08-T06; agent-cell states
-// and their citations F-08-T07; the toolbar, drawer and sign-off slots ride SheetLayout (T08).
+// "$" in a cell, a sum computed here (ADR-050). F-08-T06: typed editors (Enter or F2 to edit, Esc
+// to cancel, Tab or Enter to commit through onCellEdit with the row's version), a roving focus
+// under role="grid" (arrows, Home/End, PageUp/PageDown, edit mode announced) and locked rows that
+// refuse typing, paste, Delete and Backspace with T18g's tooltip; a 409/412 rejection shows the
+// C-20 ErrorRow "Changed by <name> — reload". Agent-cell states and their citations are F-08-T07;
+// the toolbar, drawer and sign-off slots ride SheetLayout (T08).
 
 const SELECT_W = 28;
 const HEIGHTS = { band: 31, sub: 28, row: 34 } as const;
@@ -142,9 +183,143 @@ export function SheetGrid({
   onColumnIntent,
   filterRow = false,
   height = 560,
+  onCellEdit,
 }: SheetGridProps): JSX.Element {
   const scroller = useRef<HTMLDivElement | null>(null);
+  const table = useRef<HTMLTableElement | null>(null);
   const list = useMemo(() => items(sections, rows), [sections, rows]);
+  const ordered = useMemo(() => list.flatMap((i) => (i.kind === "row" ? [i.row] : [])), [list]);
+  const [active, setActive] = useState({ row: 0, col: 0 });
+  const [editing, setEditing] = useState<{ rowKey: string; colKey: string; draft: string } | null>(
+    null,
+  );
+  const [conflict, setConflict] = useState<{ rowKey: string; by: string } | null>(null);
+  const [announce, setAnnounce] = useState("");
+  const moved = useRef(false);
+  useEffect(() => {
+    if (!moved.current) return;
+    moved.current = false;
+    const r = ordered[active.row];
+    const c = columns[active.col];
+    if (r === undefined || c === undefined) return;
+    table.current
+      ?.querySelector<HTMLElement>(`[data-row-key="${r.key}"] [data-col-key="${c.key}"]`)
+      ?.focus();
+  }, [active, ordered, columns]);
+
+  function moveTo(row: number, col: number): void {
+    moved.current = true;
+    setActive({
+      row: Math.max(0, Math.min(ordered.length - 1, row)),
+      col: Math.max(0, Math.min(columns.length - 1, col)),
+    });
+  }
+
+  function refuse(): void {
+    setAnnounce(LOCKED_TOOLTIP);
+  }
+
+  async function commit(edit: SheetCellEdit, next?: { row: number; col: number }): Promise<void> {
+    setEditing(null);
+    if (next !== undefined) moveTo(next.row, next.col);
+    else moved.current = true;
+    if (onCellEdit === undefined) return;
+    try {
+      await onCellEdit(edit);
+      setConflict(null);
+    } catch (raised: unknown) {
+      const found = conflictOf(raised);
+      if (found === null) throw raised;
+      setConflict({ rowKey: edit.rowKey, by: found.changedBy ?? "someone" });
+    }
+  }
+
+  function onCellKey(
+    e: KeyboardEvent<HTMLElement>,
+    row: SheetGridRow,
+    rowAt: number,
+    column: SheetGridColumn,
+    colAt: number,
+  ): void {
+    if (editing !== null) return;
+    const canEdit = editable(column);
+    switch (e.key) {
+      case "ArrowRight":
+        e.preventDefault();
+        moveTo(rowAt, colAt + 1);
+        return;
+      case "ArrowLeft":
+        e.preventDefault();
+        moveTo(rowAt, colAt - 1);
+        return;
+      case "ArrowDown":
+        e.preventDefault();
+        moveTo(rowAt + 1, colAt);
+        return;
+      case "ArrowUp":
+        e.preventDefault();
+        moveTo(rowAt - 1, colAt);
+        return;
+      case "Home":
+        e.preventDefault();
+        moveTo(rowAt, 0);
+        return;
+      case "End":
+        e.preventDefault();
+        moveTo(rowAt, columns.length - 1);
+        return;
+      case "PageDown":
+        e.preventDefault();
+        moveTo(rowAt + PAGE, colAt);
+        return;
+      case "PageUp":
+        e.preventDefault();
+        moveTo(rowAt - PAGE, colAt);
+        return;
+      default:
+        break;
+    }
+    // Fill down (Ctrl/Cmd+D): the cell takes the value of the cell above it, as one edit.
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d" && canEdit) {
+      e.preventDefault();
+      if (row.locked) {
+        refuse();
+        return;
+      }
+      const above = ordered[rowAt - 1]?.cells[column.key];
+      if (above === undefined) return;
+      void commit({
+        rowKey: row.key,
+        colKey: column.key,
+        value: above.raw ?? above.value,
+        version: row.version,
+      });
+      return;
+    }
+    const typing = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
+    const wants = e.key === "Enter" || e.key === "F2" || e.key === "Delete" ||
+      e.key === "Backspace" || typing; // prettier-ignore
+    if (!wants || !canEdit) return;
+    e.preventDefault();
+    if (row.locked) {
+      refuse();
+      return;
+    }
+    if (e.key === "Delete" || e.key === "Backspace") {
+      void commit({ rowKey: row.key, colKey: column.key, value: "", version: row.version });
+      return;
+    }
+    const cell = row.cells[column.key];
+    const start = typing ? e.key : (cell?.raw ?? cell?.value ?? "");
+    setEditing({ rowKey: row.key, colKey: column.key, draft: start });
+    setAnnounce(`Editing ${column.label}`);
+  }
+
+  function onCellPaste(e: ClipboardEvent<HTMLElement>, row: SheetGridRow): void {
+    if (!row.locked) return;
+    e.preventDefault();
+    refuse();
+  }
   const rowWindow = useRowWindow({
     count: list.length,
     size: (i) => {
@@ -166,6 +341,7 @@ export function SheetGrid({
         style={{ maxHeight: rowWindow.virtual ? height : undefined }}
       >
         <table
+          ref={table}
           role="grid"
           aria-label={label}
           aria-rowcount={list.length + headRows}
@@ -259,6 +435,7 @@ export function SheetGrid({
                   role="row"
                   aria-rowindex={rowIndex}
                   aria-selected={on}
+                  data-row-key={row.key}
                   data-locked={row.locked ? "" : undefined}
                   className={cn(on && "bg-sel-bg")}
                 >
@@ -274,15 +451,31 @@ export function SheetGrid({
                       onChange={(e) => onSelect?.(row.key, e.target.checked)}
                     />
                   </td>
-                  {columns.map((c) => {
+                  {columns.map((c, colAt) => {
                     const cell = row.cells[c.key];
                     const left = frozenLeft(columns, c.key);
                     const isKey = c.frozen === true && left === SELECT_W;
+                    const rowAt = ordered.indexOf(row);
+                    const here = active.row === rowAt && active.col === colAt;
+                    const open = editing?.rowKey === row.key && editing.colKey === c.key;
                     return (
                       <td
                         key={c.key}
                         role="gridcell"
+                        data-col-key={c.key}
                         data-state={cell?.state ?? "empty"}
+                        tabIndex={here ? 0 : -1}
+                        aria-readonly={row.locked || !editable(c) ? "true" : undefined}
+                        title={row.locked ? LOCKED_TOOLTIP : undefined}
+                        onFocus={() => {
+                          if (!here) setActive({ row: rowAt, col: colAt });
+                        }}
+                        onKeyDown={(e) => {
+                          onCellKey(e, row, rowAt, c, colAt);
+                        }}
+                        onPaste={(e) => {
+                          onCellPaste(e, row);
+                        }}
                         style={{ width: c.width, minWidth: c.width, left }}
                         className={cn(
                           "border-b border-r border-hair px-[8px] py-[8px] align-top",
@@ -293,15 +486,39 @@ export function SheetGrid({
                           cell?.state === "suggested" && "text-ink-2",
                         )}
                       >
-                        <span className="line-clamp-3 flex items-start gap-[4px]">
-                          {isKey && row.locked && (
-                            <Lock
-                              aria-label="Locked"
-                              className="mt-[1px] size-[11px] shrink-0 text-ink-3"
-                            />
-                          )}
-                          {cell?.value ?? ""}
-                        </span>
+                        {open ? (
+                          <CellEditor
+                            column={c}
+                            draft={editing.draft}
+                            onDraft={(draft) => {
+                              setEditing({ rowKey: row.key, colKey: c.key, draft });
+                            }}
+                            onCancel={() => {
+                              setEditing(null);
+                              setAnnounce("");
+                              moved.current = true;
+                              setActive({ row: rowAt, col: colAt });
+                            }}
+                            onCommit={(value, how) => {
+                              void commit(
+                                { rowKey: row.key, colKey: c.key, value, version: row.version },
+                                how === "tab"
+                                  ? { row: rowAt, col: colAt + 1 }
+                                  : { row: rowAt, col: colAt },
+                              );
+                            }}
+                          />
+                        ) : (
+                          <span className="line-clamp-3 flex items-start gap-[4px]">
+                            {isKey && row.locked && (
+                              <Lock
+                                aria-label="Locked"
+                                className="mt-[1px] size-[11px] shrink-0 text-ink-3"
+                              />
+                            )}
+                            {cell?.value ?? ""}
+                          </span>
+                        )}
                       </td>
                     );
                   })}
@@ -316,6 +533,17 @@ export function SheetGrid({
           </tbody>
         </table>
       </div>
+      {conflict !== null && (
+        <ErrorRow title={`Changed by ${conflict.by} — reload`} className="border-t border-hair" />
+      )}
+      <p
+        aria-live="polite"
+        aria-atomic="true"
+        data-testid="sheet-announcements"
+        className="sr-only"
+      >
+        {announce}
+      </p>
       <div
         role="status"
         className="flex h-[30px] items-center gap-[12px] border-t border-hair bg-band-hd px-[10px] text-meta text-ink-3"
@@ -324,5 +552,76 @@ export function SheetGrid({
         {status.agentRunning === true && <span className="text-ink-2">Agent column running</span>}
       </div>
     </div>
+  );
+}
+
+function CellEditor({
+  column,
+  draft,
+  onDraft,
+  onCancel,
+  onCommit,
+}: {
+  column: SheetGridColumn;
+  draft: string;
+  onDraft: (draft: string) => void;
+  onCancel: () => void;
+  onCommit: (value: string, how: "enter" | "tab") => void;
+}): JSX.Element {
+  const ref = useRef<HTMLInputElement | HTMLSelectElement | null>(null);
+  useEffect(() => {
+    ref.current?.focus();
+  }, []);
+  function keys(e: KeyboardEvent<HTMLElement>): void {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      onCancel();
+    } else if (e.key === "Enter" || e.key === "Tab") {
+      e.preventDefault();
+      onCommit(draft, e.key === "Tab" ? "tab" : "enter");
+    }
+  }
+  const frame =
+    "h-[22px] w-full rounded-[4px] border border-hair bg-card px-[6px] text-cell text-ink";
+  if (column.type === "single_select" || column.type === "person") {
+    return (
+      <select
+        ref={(el) => {
+          ref.current = el;
+        }}
+        aria-label={column.label}
+        className={frame}
+        value={column.options?.find((o) => o.label === draft)?.value ?? draft}
+        onKeyDown={keys}
+        onChange={(e) => {
+          onCommit(e.target.value, "enter");
+        }}
+      >
+        {(column.options ?? []).map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+  return (
+    <input
+      ref={(el) => {
+        ref.current = el;
+      }}
+      aria-label={column.label}
+      type={column.type === "date" ? "date" : "text"}
+      inputMode={column.type === "number" || column.type === "currency" ? "decimal" : undefined}
+      className={cn(
+        frame,
+        (column.type === "number" || column.type === "currency") && "text-right",
+      )}
+      value={draft}
+      onKeyDown={keys}
+      onChange={(e) => {
+        onDraft(e.target.value);
+      }}
+    />
   );
 }
