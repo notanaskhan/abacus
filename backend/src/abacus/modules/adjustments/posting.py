@@ -24,7 +24,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Annotated, ClassVar, Final, cast
@@ -71,6 +71,7 @@ from abacus.modules.integrations.api import (
     W1Scope,
     WriteError,
     execute_write,
+    memo_prefix_of,
     register_batch_entity,
     register_posting_log,
     w1_ledger,
@@ -533,6 +534,7 @@ async def run_batch(tenant_id: UUID, batch_id: UUID) -> str:
     client_id = ledger.client_id
     scope = W1Scope(client_id, row.client_entity_id, row.connection_id, row.engagement_id)
     writer = QuickBooksOnlineWriter(await transport_for(acting, row.connection_id))
+    memo = f"{await memo_prefix_of(acting)} · batch {row.batch_code}"  # C-02-T25: ADM-08b
     refs: list[str] = []
     failed = 0
     issue_ids: list[UUID] = []  # C-02-T24: failures other than the closing date (CLS-06, C16)
@@ -543,7 +545,7 @@ async def run_batch(tenant_id: UUID, batch_id: UUID) -> str:
         key = f"{batch_id}:{e.id}"
 
         async def post(entry: _Entry = e, request_id: str = key) -> Posted:
-            return await writer.post(_journal(entry, period_end), request_id)
+            return await writer.post(replace(_journal(entry, period_end), memo=memo), request_id)
 
         posted = await execute_write(
             approver_ctx,

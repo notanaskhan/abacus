@@ -85,7 +85,8 @@ C02T05_TABLES: frozenset[str] = frozenset(
         "connection_engagement_settings",
     }
 )
-TABLES: frozenset[str] = _TABLES_BEFORE_S49 | C02T05_TABLES
+# C-02-T25 (0992, DEC-5817): ADM-08b's memo prefix and "Post as" label.
+TABLES: frozenset[str] = _TABLES_BEFORE_S49 | C02T05_TABLES | frozenset({"gl_posting_settings"})
 INSERT_ONLY: frozenset[str] = _INSERT_ONLY_BEFORE_S49 | frozenset(
     {"ledger_write_evidence", "connection_write_grants", "firm_write_capabilities"}
 )
@@ -121,6 +122,12 @@ INSERT_COLUMNS["connection_write_grants"] = frozenset(
 )
 INSERT_COLUMNS["firm_write_capabilities"] = frozenset(
     {"tenant_id", "capability_id", "enabled", "changed_by", "mfa_at", "reason"}
+)
+INSERT_COLUMNS["gl_posting_settings"] = frozenset(
+    {"tenant_id", "memo_prefix", "post_as", "updated_by"}
+)
+UPDATE_COLUMNS["gl_posting_settings"] = frozenset(
+    {"memo_prefix", "post_as", "version", "updated_by", "updated_at"}
 )
 INSERT_COLUMNS["connection_engagement_settings"] = frozenset(
     {
