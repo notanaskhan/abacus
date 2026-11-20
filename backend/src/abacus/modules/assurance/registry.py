@@ -1645,6 +1645,7 @@ INSERT_COLUMNS["consultations"] = INSERT_COLUMNS["consultations"] | frozenset(
 # Q-05-T12 (0984, DEC-5714): post-issuance cases; comparisons and evaluations insert-only.
 Q05T12_TABLES: frozenset[str] = frozenset(
     {"post_issuance_events", "post_issuance_comparisons", "post_issuance_evaluations"}
+    | {"post_issuance_sources"}  # Q-05-T17 (0997)
 )
 Q05T12_INSERT_ONLY: frozenset[str] = frozenset(
     {"post_issuance_comparisons", "post_issuance_evaluations"}
@@ -1654,6 +1655,9 @@ INSERT_COLUMNS["post_issuance_events"] = frozenset(
      "received_at", "description_sealed", "created_by"}
 )  # fmt: skip
 UPDATE_COLUMNS["post_issuance_events"] = frozenset({"status"})
+INSERT_COLUMNS["post_issuance_sources"] = frozenset(
+    {"tenant_id", "case_id", "evidence_version_id", "filed_from", "created_by"}
+)
 # S51 partials (0986, DEC-5724): the source evidence and the EP's decision on the case row.
 INSERT_COLUMNS["post_issuance_events"] = INSERT_COLUMNS["post_issuance_events"] | frozenset(
     {"source_evidence_version_id"}

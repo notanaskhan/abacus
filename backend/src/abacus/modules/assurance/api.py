@@ -355,6 +355,10 @@ ssars_register()
 component_auditors_register()
 # A-09-T28 (DEC-5406): the late gate (Today) and the follow-up email template.
 component_late_register()
+# Q-05-T17 (DEC-5828): INB-01's post-issuance source destination.
+from abacus.modules.assurance.post_issuance_reissue import register as _reissue_register  # noqa: E402
+
+_reissue_register()
 # A-09-T30 (DEC-5408): AUD-02's Group band rows and AUD-01's group tags.
 group_hosts_register()
 register_anchor(COMPONENT_THREAD_KIND, COMPONENT_THREAD_ANCHORS)  # type: ignore[arg-type] -- an AnchorProvider

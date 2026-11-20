@@ -513,7 +513,14 @@ async def request_release(
         if await release_mode(ctx.tenant) != "in_app":
             raise ReleaseModeExternal(facts={"mode": "external"})
         done = await released(ctx.tenant, work_item_id)
-        if done is not None:
+        reissuing = await tx.session.scalar(
+            text(
+                "SELECT v.reissue_of_release_id FROM audit_reports r JOIN audit_report_versions v "
+                "ON v.id = r.current_version_id WHERE r.work_item_id = :wi"
+            ),
+            {"wi": work_item_id},
+        )  # Q-05-T17: a reissue draft releases as kind reissue, never replaying the original
+        if done is not None and reissuing is None:
             if done.idempotency_key == idempotency_key:
                 tx.record(
                     "report.release_replayed",
@@ -714,11 +721,15 @@ async def record_in_app_release(
             await tx.session.scalar(
                 text(
                     "INSERT INTO report_releases (tenant_id, engagement_id, work_item_id, kind, "
+                    "reissue_of_id, "
                     "report_version_id, report_version_hash, released_by, report_date, city, "
                     "gate_snapshot, gate_snapshot_sha256, final_document_version_id, "
                     "deliverable_ids, approval_grant_id, idempotency_key, actor_kind, actor_id, "
                     "released_at) "
-                    "VALUES (:tenant, :engagement, :wi, 'original', :version, :version_hash, "
+                    "VALUES (:tenant, :engagement, :wi, CASE WHEN (SELECT reissue_of_release_id FROM "
+                    "audit_report_versions WHERE id = :version) IS NULL THEN 'original' ELSE "
+                    "'reissue' END, (SELECT reissue_of_release_id FROM audit_report_versions WHERE "
+                    "id = :version), :version, :version_hash, "
                     ":by, :report_date, :city, CAST(:snapshot AS jsonb), :snapshot_sha, :final, "
                     ":deliverables, :grant, :key, 'human', :actor, :released_at) RETURNING id"
                 ),

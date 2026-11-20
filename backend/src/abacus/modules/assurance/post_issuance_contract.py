@@ -387,6 +387,12 @@ async def post_issuance_decision_route(
 async def post_issuance_reissue_route(
     work_item_id: UUID, case_id: UUID, ctx: Ctx, key: IdempotencyKey
 ) -> PostIssuanceReissueOut:
-    """The EP, fresh MFA; opens AUD-23 g through A-07's release path (AC-18)."""
+    """The EP, fresh MFA; opens AUD-23 g through A-07's release path (AC-18; Q-05-T17)."""
+    from abacus.modules.assurance import post_issuance_reissue
+
     await _human(ctx, "post_issuance.reissue")
-    raise NotImplementedYet
+    del key
+    release_id, _ = await post_issuance_reissue.reopen_for_reissue(ctx, work_item_id, case_id)
+    return PostIssuanceReissueOut(
+        case_id=case_id, report_release_id=release_id, href=f"/audits/{work_item_id}/report"
+    )
