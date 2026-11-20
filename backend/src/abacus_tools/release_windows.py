@@ -112,6 +112,9 @@ class Window:
     span: Span
     mini_freezes: tuple[Span, ...]
     deadline_weeks: tuple[Span, ...]
+    # Q-04-T230: the day the window was recorded closed (its close record, after the last
+    # deadline week). A record only: the guards read the dates, never this.
+    closed: date | None = None
 
     def covers(self, day: date) -> bool:
         """The window's dates, and the whole of any deadline week that runs past its end (Apr
@@ -369,7 +372,16 @@ def _windows(raw: object, problems: list[str]) -> tuple[Window, ...]:
             continue
         minis = _spans(item.get("mini_freezes", []), f"{where}.mini_freezes", problems)
         weeks = _spans(item.get("deadline_weeks"), f"{where}.deadline_weeks", problems)
-        window = Window(wid, cast(Kind, kind), Span(start, end), minis, weeks)
+        closed = None
+        if "closed" in item:
+            closed = _date(item.get("closed"))
+            last = max((end, *(w.end for w in weeks)))
+            if closed is None or closed < last:
+                problems.append(
+                    f"{where}.closed: a date on or after the window's last day ({last})"
+                )
+                closed = None
+        window = Window(wid, cast(Kind, kind), Span(start, end), minis, weeks, closed)
         rule = expected(window.kind, int(match.group(2)))
         for name, got, want in (
             ("dates", (window.span,), (rule.span,)),
@@ -566,7 +578,8 @@ def calendar_lines(cal: Calendar, year: int | None = None) -> list[str]:
         ]
         lines += [
             f"{window.id}  {_dated(window.span.start)} {DASH} {_dated(window.span.end)}"
-            f"  ({applies})",
+            f"  ({applies})"
+            + ("" if window.closed is None else f"  closed {_dated(window.closed)}"),
             "  mini-freezes:   " + (", ".join(s.label() for s in window.mini_freezes) or "\u2014"),
             "  deadline weeks: " + ", ".join(s.label() for s in window.deadline_weeks),
             "  Tuesday slots:  " + ", ".join(_md(d) for d in slots(cal, window)),
