@@ -99,6 +99,11 @@ GL_COLUMNS: Final = "tx_date,txn_type,doc_num,name,memo,split_acc,subt_nat_amoun
 _log = get_logger(__name__)
 
 
+_DATASETS: Final[frozenset[Dataset]] = frozenset(
+    {"trial_balance", "accounts", "gl_detail", "trial_balance_month", "vendors", "vendor_payments"}
+)
+
+
 @dataclass(frozen=True)
 class Endpoints:
     authorise: str
@@ -251,10 +256,7 @@ class QuickBooksOnlineConnector(Connector):
 
     def capabilities(self) -> Capabilities:
         return Capabilities(
-            datasets=frozenset(
-                {"trial_balance", "accounts", "gl_detail", "trial_balance_month"}
-                | {"vendors", "vendor_payments"}
-            ),
+            datasets=_DATASETS,
             oauth=True,
             incremental=True,
             attachments=False,
@@ -533,7 +535,10 @@ class QuickBooksOnlineConnector(Connector):
         else:
             following = None
         return RawPayload(
-            response.content, MEDIA_TYPE, PROVIDER, system_now(),
+            response.content,
+            MEDIA_TYPE,
+            PROVIDER,
+            system_now(),
             f"vendor_payments {entity} {period.start.isoformat()}..{period.end.isoformat()} "
             f"from {position}",
             next_cursor=following,

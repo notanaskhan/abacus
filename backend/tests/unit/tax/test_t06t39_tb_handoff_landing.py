@@ -33,7 +33,7 @@ def test_draft_mapping_from_choices() -> None:
                         suggestion_id=None),
         SimpleNamespace(account_no="2255", tax_line_code=None, travel="blank", suggestion_id=None),
     ]  # fmt: skip
-    assert landing.draft_mapping(rows) == [
+    assert landing.draft_mapping(list[object](rows)) == [
         {
             "account_no": "1000",
             "tax_line_code": "L1",
@@ -65,7 +65,7 @@ def test_ac_replay_creates_no_second_issue(monkeypatch: pytest.MonkeyPatch) -> N
     async def handoff_of(*_a: object) -> None:
         touched.append("ledger")
 
-    monkeypatch.setattr(landing, "tenant_session", lambda _t: _Session())
+    monkeypatch.setattr(landing, "tenant_session", lambda _t: _Session())  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType] -- a monkeypatched double
     monkeypatch.setattr(tb_handoff, "handoff_of", handoff_of)
     event = OutboxEvent(uuid.uuid4(), uuid.uuid4(), "tb_handoff.created",
                         {"tb_handoff_id": str(uuid.uuid4())})  # fmt: skip

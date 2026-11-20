@@ -1,4 +1,4 @@
-"""C-02-T25 (TASK-8810; ADR-344 §3–§5): enablement on live paths.
+"""C-02-T25 (TASK-8810; ADR-344 §3-§5): enablement on live paths.
 
 Row acceptance: "Posting is refused until all four switches are on, a revoked grant stops the next
 entry mid-batch and an attest-flagged client can never hold a write grant." Here: `w1_refusal`
@@ -23,7 +23,9 @@ SRC = Path(w1_switches.__file__).parent
 
 
 def _ctx(mfa_minutes_ago: float | None) -> SimpleNamespace:
-    at = None if mfa_minutes_ago is None else datetime.now(UTC) - timedelta(minutes=mfa_minutes_ago)
+    at = (
+        None if mfa_minutes_ago is None else datetime.now(UTC) - timedelta(minutes=mfa_minutes_ago)
+    )
     return SimpleNamespace(
         tenant=SimpleNamespace(tenant_id=uuid4()), tenant_id=uuid4(), user_id=uuid4(), mfa_at=at
     )
@@ -46,14 +48,14 @@ async def test_ac_the_firm_switch_refuses_while_unreleased(
 ) -> None:
     monkeypatch.setattr(w1_switches, "released", lambda: False)
     with pytest.raises(w1_switches.NotReleased):
-        await w1_switches.set_firm_switch(_ctx(1), enabled=True, reason=None)  # type: ignore[arg-type]
+        await w1_switches.set_firm_switch(_ctx(1), enabled=True, reason=None)  # type: ignore[arg-type] -- a test double for the context
 
 
 async def test_ac_the_firm_switch_needs_a_fresh_mfa(no_authz: None) -> None:
     with pytest.raises(w1_switches.MfaRequired):
-        await w1_switches.set_firm_switch(_ctx(None), enabled=False, reason=None)  # type: ignore[arg-type]
+        await w1_switches.set_firm_switch(_ctx(None), enabled=False, reason=None)  # type: ignore[arg-type] -- a test double for the context
     with pytest.raises(w1_switches.MfaRequired):
-        await w1_switches.set_firm_switch(_ctx(30), enabled=False, reason=None)  # type: ignore[arg-type]
+        await w1_switches.set_firm_switch(_ctx(30), enabled=False, reason=None)  # type: ignore[arg-type] -- a test double for the context
 
 
 async def test_ac_an_attest_client_never_gets_posting_enabled(
@@ -71,7 +73,11 @@ async def test_ac_an_attest_client_never_gets_posting_enabled(
     monkeypatch.setattr(engagements, "engagement_resource_of", resource)
     with pytest.raises(w1_switches.AttestRefused):
         await w1_switches.set_posting_enabled(
-            _ctx(1), uuid4(), uuid4(), posting_enabled=True, expected_version=None  # type: ignore[arg-type]
+            _ctx(1),  # pyright: ignore[reportArgumentType] -- a test double for the context
+            uuid4(),
+            uuid4(),
+            posting_enabled=True,
+            expected_version=None,
         )
 
 

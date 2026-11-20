@@ -1,7 +1,7 @@
 ---
 id: TASK-8843
 title: "F-08-T08: T18 parity and axe carry"
-spec: SPEC-660
+spec: SPEC-000
 acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review

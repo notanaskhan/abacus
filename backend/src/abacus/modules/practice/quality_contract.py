@@ -20,11 +20,10 @@ from uuid import UUID
 
 from fastapi import Depends, Header
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import text
 
 from abacus.kernel._flags import QUALITY_MANAGEMENT
 from abacus.kernel.classification import classified
-from sqlalchemy import text
-
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
@@ -451,8 +450,14 @@ async def quality_objective_route(
     await _human(ctx, "quality.manage")
     from abacus.modules.practice import quality_register as reg
 
-    await reg.patch_objective(ctx, objective_id, owner_user_id=body.owner_user_id,
-                              health_flag=body.health_flag, note=body.note, version=body.version)  # fmt: skip
+    await reg.patch_objective(
+        ctx,
+        objective_id,
+        owner_user_id=body.owner_user_id,
+        health_flag=body.health_flag,
+        note=body.note,
+        version=body.version,
+    )
     found = await reg.register(ctx.tenant, None)
     match = [o for o in found["objectives"] if o["id"] == objective_id]
     if not match:
@@ -512,7 +517,11 @@ async def quality_risk_review_route(
     del key
     review_id = await reg.record_review(ctx, body.reviewed_on, body.note)
     return QualityRiskReviewOut.model_validate(
-        {"review_id": review_id, "reviewed_on": body.reviewed_on, "reviewed_by": (await _person(ctx.user_id)).model_dump()}
+        {
+            "review_id": review_id,
+            "reviewed_on": body.reviewed_on,
+            "reviewed_by": (await _person(ctx.user_id)).model_dump(),
+        }
     )
 
 
@@ -579,7 +588,7 @@ async def quality_cycles_route(ctx: Ctx) -> QualityCycleListOut:
     return QualityCycleListOut(items=[QualityCycleOut(
         cycle_id=r["id"], year=r["year"], as_of=r["as_of"], planned=r["planned"],
         in_progress=r["in_progress"], concluded=r["concluded"], findings_open=r["findings_open"],
-    ) for r in rows])  # type: ignore[arg-type]  # fmt: skip
+    ) for r in cast(list[Any], rows)])  # Any: SQL rows  # fmt: skip
 
 
 @quality_router.get(
@@ -603,7 +612,9 @@ async def quality_inspections_route(
     rows = [r for r in await svc.inspections(ctx.tenant, None)
             if (type is None or r["kind"] == type) and (status is None or r["status"] == status)
             and (inspector is None or r["inspector_user_id"] == inspector)]  # fmt: skip
-    return QualityInspectionListOut(items=[await _inspection_out(ctx, r) for r in rows], next_cursor=None)
+    return QualityInspectionListOut(
+        items=[await _inspection_out(ctx, r) for r in rows], next_cursor=None
+    )
 
 
 @quality_router.get(
@@ -617,7 +628,9 @@ async def quality_candidates_route(ctx: Ctx, cycle: int) -> QualityCandidateList
     from abacus.modules.practice import inspections as svc
 
     async with tenant_session(ctx.tenant) as session:
-        cycle_id = await session.scalar(text("SELECT id FROM qm_cycles WHERE year = :y"), {"y": cycle})
+        cycle_id = await session.scalar(
+            text("SELECT id FROM qm_cycles WHERE year = :y"), {"y": cycle}
+        )
     if cycle_id is None:
         raise NotFound("qm_cycle")
     version, found = await svc.candidates(ctx, cast(UUID, cycle_id))
@@ -642,8 +655,14 @@ async def quality_inspection_create_route(
     from abacus.modules.practice import inspections as svc
 
     del key
-    made = await svc.plan(ctx, cycle_id=body.cycle_id, work_item_id=body.work_item_id,
-                          kind=body.kind, inspector_user_id=body.inspector_user_id, due_on=body.due_on)  # fmt: skip
+    made = await svc.plan(
+        ctx,
+        cycle_id=body.cycle_id,
+        work_item_id=body.work_item_id,
+        kind=body.kind,
+        inspector_user_id=body.inspector_user_id,
+        due_on=body.due_on,
+    )
     return await _inspection_by_id(ctx, made)
 
 
@@ -720,8 +739,14 @@ async def quality_finding_create_route(
     from abacus.modules.practice import inspections as svc
 
     del key
-    made = await svc.record_finding(ctx, cycle_id=body.cycle_id, inspection_id=body.inspection_id,
-                                    title=body.title, owner_user_id=body.owner_user_id, due_on=body.due_on)  # fmt: skip
+    made = await svc.record_finding(
+        ctx,
+        cycle_id=body.cycle_id,
+        inspection_id=body.inspection_id,
+        title=body.title,
+        owner_user_id=body.owner_user_id,
+        due_on=body.due_on,
+    )
     return await _finding_by_id(ctx, made)
 
 
@@ -760,7 +785,9 @@ async def quality_finding_evaluate_route(
     from abacus.modules.practice import inspections as svc
 
     del key
-    await svc.evaluate_finding(ctx, finding_id, evaluation=body.evaluation, rationale=body.rationale)
+    await svc.evaluate_finding(
+        ctx, finding_id, evaluation=body.evaluation, rationale=body.rationale
+    )
     return await _finding_by_id(ctx, finding_id)
 
 
@@ -795,8 +822,13 @@ async def quality_finding_todo_route(
     from abacus.modules.practice import inspections as svc
 
     del key
-    todo_id = await svc.remediation_todo(ctx, finding_id, title=body.title,
-                                         assignee_user_id=body.assignee_user_id, due_on=body.due_on)  # fmt: skip
+    todo_id = await svc.remediation_todo(
+        ctx,
+        finding_id,
+        title=body.title,
+        assignee_user_id=body.assignee_user_id,
+        due_on=body.due_on,
+    )
     return QualityTodoOut.model_validate({"todo_id": todo_id, "finding_id": finding_id})
 
 
@@ -863,12 +895,16 @@ async def _inspection_out(ctx: AuthContext, r: dict[str, object]) -> QualityInsp
 
     label = await engagement_label(ctx.tenant, cast(UUID, r["inspected_engagement_id"]))
     return QualityInspectionOut(
-        inspection_id=cast(UUID, r["id"]), ref=str(r["ref"]), work_item_id=cast(UUID, r["work_item_id"]),
+        inspection_id=cast(UUID, r["id"]),
+        ref=str(r["ref"]),
+        work_item_id=cast(UUID, r["work_item_id"]),
         engagement_name="" if label is None else (label.client_entity_name or label.client_name),
-        kind=cast(InspectionKind, r["kind"]), basis=cast(Any, r["basis"]),
+        kind=cast(InspectionKind, r["kind"]),
+        basis=cast(Any, r["basis"]),  # Any: a row value
         inspector=await _person(cast(UUID, r["inspector_user_id"])),
-        status=cast(InspectionStatus, r["status"]), due_on=cast(Any, r["due_on"]),
-    )  # fmt: skip
+        status=cast(InspectionStatus, r["status"]),
+        due_on=cast(Any, r["due_on"]),  # Any: a row value
+    )
 
 
 async def _inspection_by_id(ctx: AuthContext, inspection_id: UUID) -> QualityInspectionOut:
@@ -881,13 +917,25 @@ async def _inspection_by_id(ctx: AuthContext, inspection_id: UUID) -> QualityIns
 
 
 async def _finding_out(r: dict[str, object]) -> QualityFindingOut:
-    return QualityFindingOut.model_validate({
-        "finding_id": r["id"], "ref": r["ref"], "source": r["source"], "agent_key": r["agent_key"],
-        "inspection_ref": r["inspection_ref"], "title": r["title"], "status": r["status"],
-        "evaluation": r["evaluation"], "root_cause_category": r["root_cause_category"],
-        "owner": None if r["owner_user_id"] is None else (await _person(cast(UUID, r["owner_user_id"]))).model_dump(),
-        "due_on": r["due_on"], "raised_by_kind": r["raised_by_kind"], "version": r["version"],
-    })  # fmt: skip
+    return QualityFindingOut.model_validate(
+        {
+            "finding_id": r["id"],
+            "ref": r["ref"],
+            "source": r["source"],
+            "agent_key": r["agent_key"],
+            "inspection_ref": r["inspection_ref"],
+            "title": r["title"],
+            "status": r["status"],
+            "evaluation": r["evaluation"],
+            "root_cause_category": r["root_cause_category"],
+            "owner": None
+            if r["owner_user_id"] is None
+            else (await _person(cast(UUID, r["owner_user_id"]))).model_dump(),
+            "due_on": r["due_on"],
+            "raised_by_kind": r["raised_by_kind"],
+            "version": r["version"],
+        }
+    )
 
 
 async def _finding_by_id(ctx: AuthContext, finding_id: UUID) -> QualityFindingOut:
@@ -902,31 +950,45 @@ async def _finding_by_id(ctx: AuthContext, finding_id: UUID) -> QualityFindingOu
 async def _evaluation_out(ctx: AuthContext, year: int) -> QualityAnnualEvaluationOut:
     from abacus.modules.practice import inspections as svc
 
-    found = await svc.evaluation(ctx.tenant, year)
+    found = await svc.annual_evaluation(ctx.tenant, year)
     return QualityAnnualEvaluationOut(
-        year=year, status=cast(Any, found["status"]),
+        year=year,
+        status=cast(Any, found["status"]),  # Any: a row value
         responsible=await _person(cast(UUID | None, found["responsible_user_id"])),
         decision_card_id=cast(UUID | None, found["decision_card_id"]),
-        concluded_at=cast(Any, found["concluded_at"]), checklist=cast(dict[str, bool], found["checklist"]),
+        concluded_at=cast(Any, found["concluded_at"]),  # Any: a row value
+        checklist=cast(dict[str, bool], found["checklist"]),
         inspections_open=int(cast(int, found["inspections_open"])),
-    )  # fmt: skip
+    )
 
 
 # --- S52 Q-05 sweep (DEC-5829): the register's outs ---------------------------------------------
 
 
-async def _objective_out(o: dict[str, object], found: dict[str, list[dict[str, object]]]) -> dict[str, object]:
+async def _objective_out(
+    o: dict[str, object], found: dict[str, list[dict[str, object]]]
+) -> dict[str, object]:
     return {
-        "objective_id": o["id"], "component": o["component"], "ref": o["ref"], "title": o["title"],
-        "owner": None if o["owner_user_id"] is None else (await _person(cast(UUID, o["owner_user_id"]))).model_dump(),
+        "objective_id": o["id"],
+        "component": o["component"],
+        "ref": o["ref"],
+        "title": o["title"],
+        "owner": None
+        if o["owner_user_id"] is None
+        else (await _person(cast(UUID, o["owner_user_id"]))).model_dump(),
         "health_flag": o["health_flag"],
         "risks": sum(1 for r in found["risks"] if r["objective_id"] == o["id"]),
         "responses": sum(1 for r in found["responses"] if r["objective_id"] == o["id"]),
         "version": o["version"],
-    }  # fmt: skip
+    }
 
 
 def _import_out(row: dict[str, object]) -> QualityImportOut:
     return QualityImportOut.model_validate(
-        {"import_id": row["id"], "kind": row["kind"], "status": row["status"], "counts": row["counts"]}
+        {
+            "import_id": row["id"],
+            "kind": row["kind"],
+            "status": row["status"],
+            "counts": row["counts"],
+        }
     )

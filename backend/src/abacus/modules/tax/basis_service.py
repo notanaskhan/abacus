@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, Final, Literal, cast
+from typing import TYPE_CHECKING, Any, Final, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -33,6 +33,9 @@ from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise
 from abacus.modules.tax.entity_depth_errors import DecisionAlreadySent
+
+if TYPE_CHECKING:
+    from abacus.modules.engagements.api import ClientDecision, ClientDecisionContext
 
 READ: Final = "basis.read"
 RAISE: Final = "decision.raise"
@@ -107,7 +110,11 @@ async def section_754_state(tenant: TenantContext, return_id: UUID) -> Section75
 
 async def basis(ctx: AuthContext, return_id: UUID, partner: UUID | None = None) -> BasisView:
     _engagement, resource = await _loaded(ctx, return_id)
-    await authorise(ctx, READ, cast(Any, resource))
+    await authorise(
+        ctx,
+        READ,
+        cast(Any, resource),  # Any: a row value
+    )  # Any: a row value
     async with tenant_session(ctx.tenant) as session:
         rows = (await session.execute(_BASIS, {"r": return_id})).all()
         shares = (await session.execute(_SHARES, {"r": return_id})).all()
@@ -139,7 +146,7 @@ async def basis(ctx: AuthContext, return_id: UUID, partner: UUID | None = None) 
 
 
 def _human(ctx: AuthContext, action: str) -> None:
-    if ctx.client or ctx.tenant.actor_kind != "human" or ctx.is_support:
+    if ctx.tenant.actor_kind != "human" or ctx.client or ctx.is_support:
         raise Forbidden(action, "role")  # the agent never raises, sends or decides here
 
 
@@ -150,7 +157,11 @@ async def raise_card(ctx: AuthContext, return_id: UUID) -> UUID:
 
     _human(ctx, RAISE)
     engagement_id, resource = await _loaded(ctx, return_id)
-    await authorise(ctx, RAISE, cast(Any, resource))
+    await authorise(
+        ctx,
+        RAISE,
+        cast(Any, resource),  # Any: a row value
+    )  # Any: a row value
     awaiting = await awaiting_cards(ctx.tenant, return_id, [SECTION_754])
     if awaiting:
         return awaiting[0].card_id  # one card per return: the open one answers
@@ -193,7 +204,11 @@ async def send_to_client(
         raise DecisionCardUnknown(facts={"card_id": str(card_id)})
     return_id = subject[1]
     engagement_id, resource = await _loaded(ctx, return_id)
-    await authorise(ctx, SEND, cast(Any, resource))
+    await authorise(
+        ctx,
+        SEND,
+        cast(Any, resource),  # Any: a row value
+    )  # Any: a row value
     if await card_decision(ctx.tenant, card_id) is not None:
         raise DecisionAlreadySent(facts={"card_id": str(card_id), "decided": True})
     portal = await contact_portal_facts(ctx.tenant, contact_id)
@@ -232,7 +247,7 @@ async def send_to_client(
         tx.record(
             "decision_request.sent",
             target=Target(TARGET, UUID(str(request_id))),
-            after=Ref(card=card_id, issue=issue_id),
+            after=Ref(card=card_id) if issue_id is None else Ref(card=card_id, issue=issue_id),
             scope=Scope(engagement_id=engagement_id, work_item_id=return_id),
         )
     return UUID(str(request_id))
@@ -255,15 +270,22 @@ class _Request:
     answered_at: object | None
 
 
-_REQUEST: Final = text(
+_REQUEST_SQL: Final = (
     "SELECT q.id, q.engagement_id, q.work_item_id, q.card_id, q.subject_partner_id, "
     "q.contact_user_id, q.sent_by, q.sent_at, a.decision, a.answered_at FROM "
     "tax_decision_requests q LEFT JOIN tax_decision_answers a ON a.request_id = q.id "
 )
+# Fixed statements, composed once from constants (SQL-001).
+_REQUESTS_OF_ITEM_SQL: Final = _REQUEST_SQL + "WHERE q.work_item_id = :s ORDER BY q.sent_at"
+_REQUEST_BY_ID_SQL: Final = _REQUEST_SQL + "WHERE q.id = :i"
+_REQUESTS_OF_ITEM: Final = text(_REQUESTS_OF_ITEM_SQL)
+_REQUEST_BY_ID: Final = text(_REQUEST_BY_ID_SQL)
+# The unit of work carries a session, not a tenant: the row names its own (RLS scopes it).
+_REQUEST_TENANT: Final = text("SELECT tenant_id FROM tax_decision_requests WHERE id = :i")
 
 
 def _request(r: object) -> _Request:
-    row = cast(Any, r)
+    row = cast(Any, r)  # Any: a row value
     return _Request(
         UUID(str(row.id)), UUID(str(row.engagement_id)), UUID(str(row.work_item_id)),
         UUID(str(row.card_id)),
@@ -294,19 +316,24 @@ class Section754Approvals:
             "waiting" if r.answer is None else ("accepted" if r.answer == "accept" else "declined")
         )
         return ApprovalItem(
-            kind=cast(Any, KIND), item_id=r.id, scope_kind="work_item", scope_id=r.return_id,
-            sent_to_client=True, title="Elect under section 754?", state=cast(Any, state),
+            kind=cast(Any, KIND),  # Any: a row value
+            item_id=r.id,
+            scope_kind="work_item",
+            scope_id=r.return_id,
+            sent_to_client=True,
+            title="Elect under section 754?",
+            state=cast(Any, state),  # Any: a row value
             seen_hash=_seen(r),
             legend="Your answer is recorded as the partnership's decision.",
-            released_by_user_id=r.sent_by, released_at=cast(Any, r.sent_at),
-            decided_at=cast(Any, r.answered_at),
+            released_by_user_id=r.sent_by, released_at=cast(Any, r.sent_at),  # Any: a row value
+            decided_at=cast(Any, r.answered_at),  # Any: a row value
         )  # fmt: skip
 
     async def items(self, tenant: TenantContext, scope_id: UUID) -> list[object]:
         async with tenant_session(tenant) as session:
             rows = (
                 await session.execute(
-                    text(_REQUEST.text + "WHERE q.work_item_id = :s ORDER BY q.sent_at"),
+                    _REQUESTS_OF_ITEM,
                     {"s": scope_id},
                 )
             ).all()
@@ -315,22 +342,22 @@ class Section754Approvals:
 
     async def item(self, tenant: TenantContext, item_id: UUID) -> object | None:
         async with tenant_session(tenant) as session:
-            row = (
-                await session.execute(text(_REQUEST.text + "WHERE q.id = :i"), {"i": item_id})
-            ).first()
+            row = (await session.execute(_REQUEST_BY_ID, {"i": item_id})).first()
         if row is None:
             return None
         r = _request(row)
         return self._item(r) if _viewer_is_contact(tenant, r) else None
 
     async def decide(
-        self, tx: UnitOfWork, item_id: UUID, decision: object, context: object
+        self,
+        tx: UnitOfWork,
+        item_id: UUID,
+        decision: ClientDecision,
+        context: ClientDecisionContext,
     ) -> object:
         from abacus.modules.engagements.api import ItemChanged
 
-        row = (
-            await tx.session.execute(text(_REQUEST.text + "WHERE q.id = :i"), {"i": item_id})
-        ).first()
+        row = (await tx.session.execute(_REQUEST_BY_ID, {"i": item_id})).first()
         if row is None:
             raise NotFound(TARGET)
         r = _request(row)
@@ -338,14 +365,14 @@ class Section754Approvals:
             raise ItemChanged
         word = str(decision.decision)
         answer = "accept" if word in ("accept", "approve") else "decline"
-        ctx = cast(Any, context)
+        ctx = context
         await tx.session.execute(
             text(
                 "INSERT INTO tax_decision_answers (tenant_id, request_id, decision, contact_id, "
                 "user_id, grant_id, designation_basis) VALUES (:t, :q, :d, :c, :u, :g, :b)"
             ),
             {
-                "t": tx.tenant.tenant_id,
+                "t": await tx.session.scalar(_REQUEST_TENANT, {"i": item_id}),
                 "q": item_id,
                 "d": answer,
                 "c": ctx.contact_id,
@@ -368,9 +395,7 @@ class Section754Approvals:
         from abacus.modules.engagements.api import ApprovalFacts
 
         async with tenant_session(tenant) as session:
-            row = (
-                await session.execute(text(_REQUEST.text + "WHERE q.id = :i"), {"i": item_id})
-            ).first()
+            row = (await session.execute(_REQUEST_BY_ID, {"i": item_id})).first()
         if row is None:
             raise NotFound(TARGET)
         return ApprovalFacts(False, _request(row).return_id)

@@ -12,6 +12,11 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-21 (S52 end pass): C-02-T25 write grants, C-02-T31 approvals, Q-05-T16
+        # firm-scope decisions; identifiers and a capability flag only (no amounts or names)
+        "decision.recorded",
+        "proposed_entry.approval_withdrawn",
+        "proposed_entry.approved",
         # reviewed 2026-11-17 (S48 rest): identifiers and a reason code only
         "analytics.went_out_of_date",
         "component_deliverable.request_blocked",

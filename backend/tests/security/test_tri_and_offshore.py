@@ -46,6 +46,12 @@ REVEALS = ("tin.reveal", "pii.reveal")
 # reaches an offshore principal: the record through `mask_tins_for`, the reveal never (its action
 # is `not_offshore`). A new one fails here until it is wired.
 TIN_ROUTES = {
+    # C-02-T21 (CLS-13 stubs): the vendor row and the information returns carry the masked TIN
+    # through `mask_tins_for`; the reveal is `tin.reveal` (never offshore, refused below).
+    ("GET", "/v1/client-entities/{client_entity_id}/information-returns"): "masked",
+    ("GET", "/v1/vendors/{vendor_id}"): "masked",
+    ("PATCH", "/v1/vendors/{vendor_id}"): "masked",
+    ("POST", "/v1/vendors/{vendor_id}/tin:reveal"): "refused",
     ("GET", "/v1/clients/{client_id}"): "masked",
     ("PATCH", "/v1/clients/{client_id}"): "masked",
     ("POST", "/v1/client-entities/{entity_id}/tin/reveal"): "refused",

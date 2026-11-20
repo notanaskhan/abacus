@@ -56,7 +56,7 @@ describe("CLS-02 close shell", () => {
     expect(bar.textContent).toContain("7");
   });
 
-  it("renders Deliverables (CLS-08, C-02's) disabled", async () => {
+  it("renders Deliverables (CLS-08, C-02's) as a live tab now that C-02 ships CLS-08", async () => {
     show("shell");
     const tab = await waitFor(() => {
       const found = Array.from(document.querySelectorAll<HTMLElement>("[role='tab']")).find((t) =>
@@ -66,7 +66,7 @@ describe("CLS-02 close shell", () => {
       return found as HTMLElement;
     });
     expect(tab.getAttribute("aria-disabled") === "true" || tab.hasAttribute("disabled")).toBe(
-      true,
+      false,
     );
   });
 

@@ -389,10 +389,16 @@ _HANDOFF_COLUMNS: Final = (
     "s.superseded_by_handoff_id FROM tb_handoffs h LEFT JOIN tb_handoff_supersessions s "
     "ON s.tenant_id = h.tenant_id AND s.handoff_id = h.id"
 )
+# Fixed statements, composed once from constants (SQL-001).
+_HANDOFF_BY_ID: Final = "SELECT " + _HANDOFF_COLUMNS + " WHERE h.id = :h"
+_HANDOFF_LATEST: Final = (
+    "SELECT " + _HANDOFF_COLUMNS + " WHERE h.target_work_item_id = :t "
+    "ORDER BY h.version_no DESC LIMIT 1"
+)
 
 
 def _handoff_row(r: object) -> HandoffRow:
-    row = cast(Any, r)
+    row = cast(Any, r)  # Any: a row value
     return HandoffRow(
         UUID(str(row.id)), UUID(str(row.client_id)), row.source_kind,
         UUID(str(row.source_engagement_id)), UUID(str(row.source_work_item_id)),
@@ -405,11 +411,7 @@ def _handoff_row(r: object) -> HandoffRow:
 
 async def handoff_of(tenant: TenantContext, handoff_id: UUID) -> HandoffRow | None:
     async with tenant_session(tenant) as session:
-        found = (
-            await session.execute(
-                text(f"SELECT {_HANDOFF_COLUMNS} WHERE h.id = :h"), {"h": handoff_id}
-            )
-        ).first()
+        found = (await session.execute(text(_HANDOFF_BY_ID), {"h": handoff_id})).first()
     return None if found is None else _handoff_row(found)
 
 
@@ -418,10 +420,7 @@ async def latest_for_target(tenant: TenantContext, target_work_item_id: UUID) ->
     async with tenant_session(tenant) as session:
         found = (
             await session.execute(
-                text(
-                    f"SELECT {_HANDOFF_COLUMNS} WHERE h.target_work_item_id = :t "
-                    "ORDER BY h.version_no DESC LIMIT 1"
-                ),
+                text(_HANDOFF_LATEST),
                 {"t": target_work_item_id},
             )
         ).first()

@@ -573,6 +573,16 @@ async def card_decision(tenant: TenantContext, card_id: UUID) -> str | None:
     return str(found) if found is not None else None
 
 
+async def card_decided_at(tenant: TenantContext, card_id: UUID) -> datetime | None:
+    """Q-05-T18 (S52 end pass): when the card was decided, or None while it awaits its person
+    (ADM-11's annual evaluation reads its conclusion date here, not the decisions table)."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            select(Decision.created_at).where(Decision.card_id == card_id)
+        )
+    return found
+
+
 async def card_subject(tenant: TenantContext, card_id: UUID) -> tuple[str, UUID | None] | None:
     """T-06-T35 (DEC-5835): a card's kind and work item, for the owner that holds its id (the
     §754 send names the card only); None outside the tenant."""

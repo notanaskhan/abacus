@@ -13,20 +13,15 @@ import {
   type TallyItem,
   TallyStrip,
   amount,
+  date,
 } from "@abacus/ui";
 import type { JSX } from "react";
 import { COPY } from "./copy";
 
 export type Txp09View = "apportionment" | "credits" | "nexus";
 const whole = (v: string | null | undefined): string => amount(v ?? "0", "whole").text;
-const day = (iso: string): string =>
-  new Date(`${iso}T12:00:00`).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-const short = (iso: string): string =>
-  new Date(`${iso}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const day = (iso: string): string => date(iso, { now: 0, withYear: true });
+const short = (iso: string): string => date(iso, { now: Date.parse(`${iso}T12:00:00Z`) });
 
 export function tallyItems(s: TaxDepthStatesOut | undefined): TallyItem[] {
   if (s === undefined) return [];

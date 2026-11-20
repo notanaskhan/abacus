@@ -34,6 +34,17 @@ COMPONENTS: Final = frozenset(
 LEVELS: Final = ("objective", "risk", "response")
 
 
+# Two fixed statements, never an interpolated table name (S608).
+_INSERT_RISK = (
+    "INSERT INTO qm_risks (tenant_id, objective_id, ref, title) VALUES (:t, :o, :r, :ti) "
+    "ON CONFLICT (tenant_id, ref) DO NOTHING"
+)
+_INSERT_RESPONSE = (
+    "INSERT INTO qm_responses (tenant_id, objective_id, ref, title, frequency) "
+    "VALUES (:t, :o, :r, :ti, :f) ON CONFLICT (tenant_id, ref) DO NOTHING"
+)
+
+
 class ImportInvalid(DomainInvalid):
     code = "register_import_invalid"
     message = "The register file has rows that cannot be loaded."
@@ -67,11 +78,23 @@ async def dry_run(ctx: AuthContext, kind: str, source_evidence_version_id: UUID)
     rows = parse(await version_content(ctx.tenant, source_evidence_version_id))
     counts = dict(Counter(r["level"] for r in rows))
     async with uow(ctx.tenant) as tx:
-        import_id = cast(UUID, await tx.session.scalar(text(
-            "INSERT INTO qm_register_imports (tenant_id, kind, source_evidence_version_id, counts, "
-            "status) VALUES (:t, :k, :v, CAST(:c AS jsonb), 'dry_run') RETURNING id"
-        ), {"t": ctx.tenant_id, "k": kind, "v": source_evidence_version_id,
-            "c": json.dumps(counts, sort_keys=True)}))  # fmt: skip
+        import_id = cast(
+            UUID,
+            await tx.session.scalar(
+                text(
+                    "INSERT INTO qm_register_imports (tenant_id, kind, "
+                    "source_evidence_version_id, "
+                    "counts, "
+                    "status) VALUES (:t, :k, :v, CAST(:c AS jsonb), 'dry_run') RETURNING id"
+                ),
+                {
+                    "t": ctx.tenant_id,
+                    "k": kind,
+                    "v": source_evidence_version_id,
+                    "c": json.dumps(counts, sort_keys=True),
+                },
+            ),
+        )
         tx.record("quality_import.dry_run", target=Target("qm_register_import", import_id))
     return import_id
 
@@ -81,9 +104,15 @@ async def publish(ctx: AuthContext, import_id: UUID) -> UUID:
 
     await authorise(ctx, "quality.manage", Resource.firm(ctx.tenant_id))
     async with tenant_session(ctx.tenant) as session:
-        found = (await session.execute(text(
-            "SELECT kind, source_evidence_version_id, status FROM qm_register_imports WHERE id = :i"
-        ), {"i": import_id})).first()  # fmt: skip
+        found = (
+            await session.execute(
+                text(
+                    "SELECT kind, source_evidence_version_id, status FROM qm_register_imports "
+                    "WHERE id = :i"
+                ),
+                {"i": import_id},
+            )
+        ).first()
     if found is None:
         raise NotFound("qm_register_import")
     if found.status != "dry_run":
@@ -92,27 +121,50 @@ async def publish(ctx: AuthContext, import_id: UUID) -> UUID:
     async with uow(ctx.tenant) as tx:
         objectives: dict[str, UUID] = {}
         for r in (r for r in rows if r["level"] == "objective"):
-            oid = await tx.session.scalar(text(
-                "INSERT INTO qm_objectives (tenant_id, component, ref, title) VALUES (:t, :c, :r, :ti) "
-                "ON CONFLICT (tenant_id, ref) DO NOTHING RETURNING id"
-            ), {"t": ctx.tenant_id, "c": r["component"], "r": r["ref"], "ti": r["title"][:300]})  # fmt: skip
+            oid = await tx.session.scalar(
+                text(
+                    "INSERT INTO qm_objectives (tenant_id, component, ref, title) VALUES (:t, :c, "
+                    ":r, :ti) "
+                    "ON CONFLICT (tenant_id, ref) DO NOTHING RETURNING id"
+                ),
+                {"t": ctx.tenant_id, "c": r["component"], "r": r["ref"], "ti": r["title"][:300]},
+            )
             if oid is None:
-                oid = await tx.session.scalar(text("SELECT id FROM qm_objectives WHERE ref = :r"), {"r": r["ref"]})
+                oid = await tx.session.scalar(
+                    text("SELECT id FROM qm_objectives WHERE ref = :r"), {"r": r["ref"]}
+                )
             objectives[r["ref"]] = cast(UUID, oid)
         for r in (r for r in rows if r["level"] in ("risk", "response")):
-            table = "qm_risks" if r["level"] == "risk" else "qm_responses"
-            extra = "" if r["level"] == "risk" else ", frequency"
-            value = "" if r["level"] == "risk" else ", :f"
-            await tx.session.execute(text(
-                f"INSERT INTO {table} (tenant_id, objective_id, ref, title{extra}) VALUES "
-                f"(:t, :o, :r, :ti{value}) ON CONFLICT (tenant_id, ref) DO NOTHING"
-            ), {"t": ctx.tenant_id, "o": objectives[r["parent_ref"]], "r": r["ref"],
-                "ti": r["title"][:300], "f": r.get("frequency") or None})  # fmt: skip
-        new_id = cast(UUID, await tx.session.scalar(text(
-            "INSERT INTO qm_register_imports (tenant_id, kind, source_evidence_version_id, counts, "
-            "status, published_by) VALUES (:t, :k, :v, CAST(:c AS jsonb), 'published', :u) RETURNING id"
-        ), {"t": ctx.tenant_id, "k": found.kind, "v": found.source_evidence_version_id,
-            "c": json.dumps(dict(Counter(r["level"] for r in rows)), sort_keys=True), "u": ctx.user_id}))  # fmt: skip
+            await tx.session.execute(
+                text(_INSERT_RISK if r["level"] == "risk" else _INSERT_RESPONSE),
+                {
+                    "t": ctx.tenant_id,
+                    "o": objectives[r["parent_ref"]],
+                    "r": r["ref"],
+                    "ti": r["title"][:300],
+                    "f": r.get("frequency") or None,
+                },
+            )
+        new_id = cast(
+            UUID,
+            await tx.session.scalar(
+                text(
+                    "INSERT INTO qm_register_imports (tenant_id, kind, "
+                    "source_evidence_version_id, "
+                    "counts, "
+                    "status, published_by) VALUES (:t, :k, :v, CAST(:c AS jsonb), 'published', "
+                    ":u) "
+                    "RETURNING id"
+                ),
+                {
+                    "t": ctx.tenant_id,
+                    "k": found.kind,
+                    "v": found.source_evidence_version_id,
+                    "c": json.dumps(dict(Counter(r["level"] for r in rows)), sort_keys=True),
+                    "u": ctx.user_id,
+                },
+            ),
+        )
         tx.record("quality_import.published", target=Target("qm_register_import", new_id))
     return new_id
 
@@ -127,16 +179,37 @@ async def import_row(tenant: TenantContext, import_id: UUID) -> dict[str, object
     return dict(row)
 
 
-async def register(tenant: TenantContext, component: str | None) -> dict[str, list[dict[str, object]]]:
+async def register(
+    tenant: TenantContext, component: str | None
+) -> dict[str, list[dict[str, object]]]:
     async with tenant_session(tenant) as session:
-        objectives = [dict(r) for r in (await session.execute(text(
-            "SELECT id, component, ref, title, owner_user_id, health_flag, version FROM qm_objectives "
-            "WHERE active AND (CAST(:c AS text) IS NULL OR component = :c) ORDER BY ref"
-        ), {"c": component})).mappings()]  # fmt: skip
+        objectives = [
+            dict(r)
+            for r in (
+                await session.execute(
+                    text(
+                        "SELECT id, component, ref, title, owner_user_id, health_flag, version "
+                        "FROM qm_objectives "
+                        "WHERE active AND (CAST(:c AS text) IS NULL OR component = :c) ORDER BY "
+                        "ref"
+                    ),
+                    {"c": component},
+                )
+            ).mappings()
+        ]
         ids = [o["id"] for o in objectives]
-        risks = [dict(r) for r in (await session.execute(text(
-            "SELECT id, objective_id, ref, title FROM qm_risks WHERE objective_id = ANY(:ids) ORDER BY ref"
-        ), {"ids": ids})).mappings()]  # fmt: skip
+        risks = [
+            dict(r)
+            for r in (
+                await session.execute(
+                    text(
+                        "SELECT id, objective_id, ref, title FROM qm_risks WHERE objective_id = "
+                        "ANY(:ids) ORDER BY ref"
+                    ),
+                    {"ids": ids},
+                )
+            ).mappings()
+        ]
         responses = [dict(r) for r in (await session.execute(text(
             "SELECT id, objective_id, ref, title, owner_user_id, frequency FROM qm_responses "
             "WHERE objective_id = ANY(:ids) ORDER BY ref"
@@ -145,30 +218,53 @@ async def register(tenant: TenantContext, component: str | None) -> dict[str, li
 
 
 async def patch_objective(
-    ctx: AuthContext, objective_id: UUID, *, owner_user_id: UUID | None, health_flag: str | None,
-    note: str | None, version: int,
+    ctx: AuthContext,
+    objective_id: UUID,
+    *,
+    owner_user_id: UUID | None,
+    health_flag: str | None,
+    note: str | None,
+    version: int,
 ) -> None:
     await authorise(ctx, "quality.manage", Resource.firm(ctx.tenant_id))
     sealed = None if note is None else await seal(ctx.tenant_id, note.encode(), _FINGERPRINT)
     async with uow(ctx.tenant) as tx:
-        done = await tx.session.scalar(text(
-            "UPDATE qm_objectives SET owner_user_id = coalesce(:o, owner_user_id), health_flag = :h, "
-            "note_sealed = coalesce(:n, note_sealed), version = version + 1 WHERE id = :id AND "
-            "version = :v RETURNING id"
-        ), {"o": owner_user_id, "h": health_flag, "n": sealed, "id": objective_id, "v": version})  # fmt: skip
+        done = await tx.session.scalar(
+            text(
+                "UPDATE qm_objectives SET owner_user_id = coalesce(:o, owner_user_id), "
+                "health_flag "
+                "= :h, "
+                "note_sealed = coalesce(:n, note_sealed), version = version + 1 WHERE id = :id "
+                "AND "
+                ""
+                "version = :v RETURNING id"
+            ),
+            {"o": owner_user_id, "h": health_flag, "n": sealed, "id": objective_id, "v": version},
+        )
         if done is None:
             raise DomainConflict(facts={"reason": "stale_objective"})
-        tx.record("qm_objective.updated", target=Target("qm_objective", objective_id), after=Ref(at_risk=int(health_flag == "at_risk")))
+        tx.record(
+            "qm_objective.updated",
+            target=Target("qm_objective", objective_id),
+            after=Ref(at_risk=int(health_flag == "at_risk")),
+        )
 
 
 async def record_review(ctx: AuthContext, reviewed_on: object, note: str | None) -> UUID:
     await authorise(ctx, "quality.manage", Resource.firm(ctx.tenant_id))
     sealed = None if note is None else await seal(ctx.tenant_id, note.encode(), _FINGERPRINT)
     async with uow(ctx.tenant) as tx:
-        review_id = cast(UUID, await tx.session.scalar(text(
-            "INSERT INTO qm_risk_assessment_reviews (tenant_id, reviewed_on, note_sealed, reviewed_by) "
-            "VALUES (:t, :d, :n, :u) RETURNING id"
-        ), {"t": ctx.tenant_id, "d": reviewed_on, "n": sealed, "u": ctx.user_id}))  # fmt: skip
+        review_id = cast(
+            UUID,
+            await tx.session.scalar(
+                text(
+                    "INSERT INTO qm_risk_assessment_reviews (tenant_id, reviewed_on, note_sealed, "
+                    "reviewed_by) "
+                    "VALUES (:t, :d, :n, :u) RETURNING id"
+                ),
+                {"t": ctx.tenant_id, "d": reviewed_on, "n": sealed, "u": ctx.user_id},
+            ),
+        )
         tx.record("qm_risk_review.recorded", target=Target("qm_risk_review", review_id))
     return review_id
 

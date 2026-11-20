@@ -100,9 +100,10 @@ def _fill_body(value: object, variables: Mapping[str, str]) -> object:
     as JSON when it starts with `[` or `{` (a list of entry ids, a map of seen versions); any other
     string is formatted like a path. Numbers, booleans and null pass through."""
     if isinstance(value, dict):
-        return {k: _fill_body(v, variables) for k, v in value.items()}
+        mapping = cast(dict[str, object], value)
+        return {k: _fill_body(v, variables) for k, v in mapping.items()}
     if isinstance(value, list):
-        return [_fill_body(v, variables) for v in value]
+        return [_fill_body(v, variables) for v in cast(list[object], value)]
     if isinstance(value, str):
         whole = re.fullmatch(r"\{([a-z_]+)\}", value)
         filled = _fill(value, variables)

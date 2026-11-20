@@ -65,18 +65,19 @@ def test_the_only_writes_are_the_dry_run_and_one_replayed_post() -> None:
 def test_every_group_has_its_target_and_every_var_is_named() -> None:
     scenario = _scenario()
     assert all(g.p95_ms is not None for g in scenario.groups)
-    run._paths(scenario, VARS)  # raises on a placeholder without a var
+    # raises on a placeholder without a var
+    run._paths(scenario, VARS)  # pyright: ignore[reportPrivateUsage] -- the unit under test
 
 
 def test_json_body_placeholders_fill_and_parse() -> None:
     body = {"entry_ids": "{entry_ids}", "seen_versions": "{seen_versions}", "note": "x {close_id}"}
-    assert run._fill_body(body, VARS) == {
+    assert run._fill_body(body, VARS) == {  # pyright: ignore[reportPrivateUsage] -- the unit under test
         "entry_ids": ["e1", "e2"],
         "seen_versions": {"e1": 3, "e2": 1},
         "note": "x k",
     }
     with pytest.raises(ValueError, match="needs --var"):
-        run._fill_body({"a": "{missing}"}, VARS)
+        run._fill_body({"a": "{missing}"}, VARS)  # pyright: ignore[reportPrivateUsage] -- the unit under test
 
 
 def test_a_replay_needs_a_key() -> None:

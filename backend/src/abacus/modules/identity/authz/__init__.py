@@ -79,6 +79,12 @@ from abacus.modules.identity.authz.conditions import LOOKUPS, ConditionFacts, co
 from abacus.modules.identity.authz.matrix import G2_BLOCKS_VIEW, RULES, Decision, Rule
 from abacus.modules.identity.authz.overrides import apply_override
 from abacus.modules.identity.context import Actor, AgentContext, AuthContext, SystemContext
+from abacus.modules.identity.inspection_grants import (
+    INSPECTION_READS,
+    INSPECTOR,
+    inspector_of,
+    inspector_reach,
+)
 from abacus.modules.identity.repository import (
     CLIENT_ROLES,
     ENGAGEMENT_ROLES,
@@ -99,12 +105,6 @@ from abacus.modules.identity.repository import (
     walled_clients,
 )
 from abacus.modules.identity.slots import consent_given
-from abacus.modules.identity.inspection_grants import (
-    INSPECTION_READS,
-    INSPECTOR,
-    inspector_of,
-    inspector_reach,
-)
 
 MFA_RECENT = timedelta(minutes=15)
 # Ethical walls (ADR-026; SPEC-002) are enforced below, before roles: the API may start in
@@ -489,6 +489,19 @@ def metadata_only(ctx: AuthContext) -> bool:
     """I-01-T10 (DEC-648): the person's firm role reads metadata only (ADR-024, DEC-20), so Home
     shows them the admin tile set and no work band. Identity reads firm roles; others ask here."""
     return ctx.firm_role in _METADATA_ONLY_FIRM_ROLES
+
+
+# Q-05-T15 (DEC-5819): the two firm roles that split a destruction batch's approvals.
+DESTRUCTION_APPROVER_ROLES: tuple[str, ...] = ("firm_admin", "security_admin")
+
+
+def destruction_approver_role(ctx: AuthContext) -> int | None:
+    """Which of the two approver roles the person holds, as its index in
+    `DESTRUCTION_APPROVER_ROLES` (the two approvals must differ), or None. Identity reads firm
+    roles; evidence asks here (ADR-020)."""
+    if ctx.firm_role in DESTRUCTION_APPROVER_ROLES:
+        return DESTRUCTION_APPROVER_ROLES.index(ctx.firm_role)
+    return None
 
 
 def _line_reader_cell(rule: Rule) -> Decision | None:
@@ -1536,6 +1549,7 @@ def visible_items(
 
 
 __all__ = [
+    "DESTRUCTION_APPROVER_ROLES",
     "MFA_RECENT",
     "SERVICE_LINE_READER",
     "WALL_SAFE",
@@ -1549,6 +1563,7 @@ __all__ = [
     "authorise_on_condition",
     "authorise_own",
     "authorise_staff",
+    "destruction_approver_role",
     "holds_engagement_role",
     "own_role_allows",
     "policy_agent_may_hold",

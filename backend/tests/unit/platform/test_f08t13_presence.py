@@ -20,7 +20,7 @@ from abacus.modules.platform import presence
 
 
 def test_ac_unregistered_kind_refused() -> None:
-    assert not asyncio.run(presence._may_read(object(), "no_such_kind", uuid.uuid4()))
+    assert not asyncio.run(presence._may_read(object(), "no_such_kind", uuid.uuid4()))  # pyright: ignore[reportPrivateUsage] -- the unit under test
     with pytest.raises(NotFound):
         asyncio.run(presence.present(object(), "no_such_kind", uuid.uuid4()))
 
@@ -50,6 +50,5 @@ def test_ephemeral_refuses_any_other_table() -> None:
 
 
 def test_work_item_kind_registered() -> None:
-    import abacus.modules.engagements.api  # noqa: F401 -- registration at import
 
     assert "work_item" in presence.presence_kinds()

@@ -1706,7 +1706,10 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     | {"engagements", "methodology", "evidence", "requests", "ledger", "sampling", "review"}
     | {"agents", "collaboration"},
     "adjustments": _BASE
-    | {"engagements", "ledger", "methodology", "review", "agents", "integrations"},
+    | {"engagements", "ledger", "methodology", "review", "agents", "integrations"}
+    # C-02-T24 (S52 end pass): a closing-date conflict mails the client's owners through
+    # communications, which never imports adjustments.
+    | {"communications"},
     "reporting": _BASE
     | {"engagements", "methodology", "evidence", "ledger", "review", "adjustments"},
     "assurance": _BASE
@@ -1748,7 +1751,10 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     | {"organisations", "engagements", "integrations", "tax", "review", "agents", "requests"}
     # S51 partials (Q-05-T08): ADM-11's open-consultations signal (assurance never imports
     # practice, an edge module).
-    | {"assurance"},
+    | {"assurance"}
+    # Q-05-T16/T18 (S52 end pass): inspection findings open a to-do (collaboration) and the QM
+    # register reads its imported workbook (evidence); neither imports practice, an edge module.
+    | {"collaboration", "evidence"},
     # A-02-T23 (DEC-517, DEC-611): the home's reconnect to-do reads connections.
     "portal": _BASE
     | {"organisations", "engagements", "requests", "evidence", "signatures", "communications"}
@@ -2545,6 +2551,9 @@ RULES: list[Rule | TreeRule] = [
             # P-02-T06 (DEC-4612; ADR-241 decisions 3 and 8): the search index and recents, a
             # rebuildable projection and operational UI state; the reindex itself is audited.
             "src/abacus/modules/platform/search/store.py",
+            # F-08-T13 (DEC-5845): presence heartbeats, ephemeral by design (UNLOGGED, 45 s, no
+            # audit and no outbox); the one writer is kernel.ephemeral.
+            "src/abacus/kernel/ephemeral.py",
             "tests/integration/test_tenancy.py",
             "tests/integration/test_uow_session_rollback.py",
             # Calls the slot ledger's functions as the app, one committed call at a time.
@@ -2781,6 +2790,7 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/ai_gateway/admission.py",  # see UOW-001
             "src/abacus/modules/audit_trail/labels.py",  # see UOW-001 (DEC-436)
             "src/abacus/modules/platform/search/store.py",  # see UOW-001 (DEC-4612)
+            "src/abacus/kernel/ephemeral.py",  # see UOW-001 (DEC-5845)
             "tests/integration/*",
             "tests/security/conftest.py",  # the suite's database (as integration's conftest)
             "tests/contracts/undo/conftest.py",  # P-04-T13: the Undo suite's own database
@@ -2938,6 +2948,9 @@ RULES: list[Rule | TreeRule] = [
             # A-02-T26 (DEC-709): a live connector sets the provider's Authorization on its own
             # outbound reads through `kernel.egress`; it never reads an inbound request.
             "src/abacus/modules/connections/connectors/quickbooks_online.py",
+            # C-02-T13 (W1): the posting writer sets the provider's Authorization on its own
+            # outbound writes; it never reads an inbound request.
+            "src/abacus/modules/integrations/writers/quickbooks_online.py",
         ),
     ),
     Rule(
@@ -3066,6 +3079,8 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/assurance/mapping.py",
             "src/abacus/modules/assurance/trial_balance.py",
             "src/abacus/modules/tax/approval.py",  # T-01-T18: the return's only L4 writer
+            # C-02-T29 (S52): the close's release, the partner's own sign on the close package.
+            "src/abacus/modules/closes/release.py",
             "src/abacus/modules/sampling/sample_sets.py",  # A-03-T10: a sample's only L2 writer
             # T-05-T41 (DEC-4702): an allocation structure's only L3 writer (Samuel's approval).
             "src/abacus/modules/tax/allocation_structure.py",
@@ -3334,6 +3349,10 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/assurance/post_issuance.py",
             "src/abacus/modules/evidence/retention_extend.py",
             "src/abacus/modules/evidence/destruction.py",
+            # Q-05-T15 (DEC-5819): the approved batch's tombstones, the destruction service's own.
+            "src/abacus/modules/evidence/destruction_execute.py",
+            # Q-05-T17 (DEC-5828): the reissue draft and the intake source, `post_issuance` kind.
+            "src/abacus/modules/assurance/post_issuance_reissue.py",
         ),
     ),
     Rule(
@@ -3395,6 +3414,9 @@ RULES: list[Rule | TreeRule] = [
         exclude=(
             "src/abacus/modules/integrations/*",
             "src/abacus/modules/adjustments/posting.py",
+            # C-02-T24 (S52): a failed entry's retry and the closing-date write, under the
+            # batch's own approval grant and posting.py's helpers; nothing else posts.
+            "src/abacus/modules/adjustments/posting_recovery.py",
         ),
     ),
     Rule(

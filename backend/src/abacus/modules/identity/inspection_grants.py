@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 from typing import Final
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, select, table, column, and_, or_, text
+from sqlalchemy import ColumnElement, and_, column, or_, select, table, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.clock import system_now
@@ -70,14 +70,22 @@ async def issue(
     for engagement_id in sorted(set(engagement_ids)):
         found = await tx.session.scalar(
             text(
-                "INSERT INTO inspection_access_grants (tenant_id, inspection_id, inspector_user_id, "
+                "INSERT INTO inspection_access_grants (tenant_id, inspection_id, "
+                "inspector_user_id, "
                 "engagement_id, granted_by, expires_at) VALUES (:t, :i, :u, :e, :by, :x) "
-                "ON CONFLICT (tenant_id, inspection_id, inspector_user_id, engagement_id) DO NOTHING "
+                "ON CONFLICT (tenant_id, inspection_id, inspector_user_id, engagement_id) DO "
+                "NOTHING "
                 "RETURNING id"
             ),
-            {"t": tenant_id, "i": inspection_id, "u": inspector_user_id, "e": engagement_id,
-             "by": granted_by, "x": expires_at},
-        )  # fmt: skip
+            {
+                "t": tenant_id,
+                "i": inspection_id,
+                "u": inspector_user_id,
+                "e": engagement_id,
+                "by": granted_by,
+                "x": expires_at,
+            },
+        )
         if found is not None:
             n += 1
             tx.record(
@@ -117,7 +125,9 @@ async def sweep(tenant: TenantContext) -> int:
             )
         )
         for grant_id in rows:
-            tx.record("inspection_grant.expired", target=Target("inspection_access_grant", grant_id))
+            tx.record(
+                "inspection_grant.expired", target=Target("inspection_access_grant", grant_id)
+            )
     return len(rows)
 
 
@@ -134,7 +144,9 @@ async def holds_grant(
     return found is not None
 
 
-async def inspector_of(tenant: TenantContext, user_id: UUID, engagement_id: UUID, action: str) -> bool:
+async def inspector_of(
+    tenant: TenantContext, user_id: UUID, engagement_id: UUID, action: str
+) -> bool:
     """`authorise`'s relationship check: a live grant, for a read in `INSPECTION_READS`."""
     if action not in INSPECTION_READS:
         return False
@@ -142,7 +154,9 @@ async def inspector_of(tenant: TenantContext, user_id: UUID, engagement_id: UUID
         return await holds_grant(session, user_id, engagement_id)
 
 
-def inspector_reach(user_id: UUID, action: str, engagement_id: object) -> ColumnElement[bool] | None:
+def inspector_reach(
+    user_id: UUID, action: str, engagement_id: object
+) -> ColumnElement[bool] | None:
     """`visible()`'s clause: the engagements a live grant covers, for an inspection read."""
     if action not in INSPECTION_READS:
         return None
@@ -153,7 +167,7 @@ def inspector_reach(user_id: UUID, action: str, engagement_id: object) -> Column
             _grants.c.expires_at > text("clock_timestamp()"),
         )
     )
-    return or_(engagement_id.in_(granted))  # type: ignore[attr-defined]
+    return or_(engagement_id.in_(granted))  # type: ignore[attr-defined] -- a narrower type than the declared one
 
 
 __all__ = [

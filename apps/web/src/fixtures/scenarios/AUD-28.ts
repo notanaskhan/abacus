@@ -26,6 +26,12 @@ function at(state: Aud28State): Scenario {
 }
 
 export const scenarios = defineScenarios({
-  a: at("a"), b: at("b"), c: at("c"), d: at("d"), e: at("e"), f: at("f"), g: at("g"),
+  a: at("a"),
+  b: at("b"),
+  c: at("c"),
+  d: at("d"),
+  e: at("e"),
+  f: at("f"),
+  g: at("g"),
 });
 export type Aud28ScenarioState = keyof typeof scenarios;

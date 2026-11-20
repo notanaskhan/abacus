@@ -18,6 +18,7 @@ import {
   BookOpen,
   Briefcase,
   Bug,
+  CalendarRange,
   Camera,
   Check,
   ChevronDown,
@@ -129,6 +130,7 @@ const PORTAL_ICONS = {
   building: Building, // S40: status code "building" reads as this name (DEC-1006 test)
   "building-2": BuildingComplex, // S41: the graph canvas's entity and external nodes (DEC-1006 test)
   bug: Bug, // F-07-T02: the chat header's run trace
+  "calendar-range": CalendarRange, // F-08-T14: the analytics scope chip's name (DEC-1006 test)
   camera: Camera,
   check: Check,
   "chevron-down": ChevronDown,

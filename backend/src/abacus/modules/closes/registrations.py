@@ -480,7 +480,7 @@ async def on_question_answered(event: OutboxEvent) -> None:
         )
 
 
-# --- C-02-T24: posting failures become CLS-06 issues; posted reversals carry forward ---------------
+# --- C-02-T24: posting failures become CLS-06 issues; posted reversals carry forward -------------
 
 
 def _next_period(period: str) -> str:

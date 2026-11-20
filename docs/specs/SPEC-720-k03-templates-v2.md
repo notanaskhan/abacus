@@ -4,7 +4,7 @@ title: K-03 Templates v2 — drafts, checks, change list, publish and deprecate,
 status: approved
 owner: ayushkbhatia
 risk_zone: amber
-related_adrs: [ADR-004, ADR-005, ADR-007, ADR-050, ADR-118, ADR-143, ADR-159, ADR-161, ADR-213, ADR-236]
+related_adrs: [ADR-004, ADR-005, ADR-007, ADR-050, ADR-143, ADR-159, ADR-161, ADR-213, ADR-236]
 related_specs: [SPEC-008, SPEC-721]
 created: 2026-11-20
 updated: 2026-11-20

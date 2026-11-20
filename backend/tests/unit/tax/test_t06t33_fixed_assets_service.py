@@ -1,5 +1,5 @@
 """T-06-T33 (TASK-8831; T-06 F1; SPEC-702 AC-1 to AC-6; TXP-03; DEC-5833): the fixed-assets
-service. 
+service.
 Row acceptance: "An edit by Olivia Brandt changes nothing until a reviewer approves the proposal,
 and approval writes a checkpoint and re-ties 733,500."
 """
@@ -48,7 +48,7 @@ def test_register_from_e3_and_ties() -> None:
 
 def test_a_ghost_value_changes_nothing() -> None:
     asset = _asset(1, "7", "50000")
-    ghost = fa._apply(asset, {"recovery_class": "5", "bonus_pct": "60"})
+    ghost = fa._apply(asset, {"recovery_class": "5", "bonus_pct": "60"})  # pyright: ignore[reportPrivateUsage] -- the unit under test
     assert asset.recovery_class == "7" and ghost.recovery_class == "5" and ghost.version == 2
     before = fa.compute(_facts(asset)).register.current
     assert fa.compute(_facts(asset)).register.current == before  # the stored asset is unchanged
@@ -56,13 +56,13 @@ def test_a_ghost_value_changes_nothing() -> None:
 
 def test_impossible_change_refuses() -> None:
     with pytest.raises(ValueError):
-        fa._apply(_asset(1, "39"), {"convention": "HY"})
+        fa._apply(_asset(1, "39"), {"convention": "HY"})  # pyright: ignore[reportPrivateUsage] -- the unit under test
 
 
 def test_approval_recomputes_the_register() -> None:
     a, b = _asset(1, "7", "50000"), _asset(2, "39")
     before = fa.compute(_facts(a, b)).register
-    changed = fa._apply(a, {"bonus_pct": "100"})
+    changed = fa._apply(a, {"bonus_pct": "100"})  # pyright: ignore[reportPrivateUsage] -- the unit under test
     after = fa.compute(_facts(changed, b)).register
     assert after.current != before.current and after.crossfoots()
 
@@ -97,22 +97,29 @@ def test_requester_never_decides(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(fa, "_loaded", loaded)
     monkeypatch.setattr(fa, "authorise", authorise)
-    monkeypatch.setattr(fa, "tenant_session", lambda _t: _S())
+    monkeypatch.setattr(fa, "tenant_session", lambda _t: _S())  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType] -- a monkeypatched double
     ctx = SimpleNamespace(
         client=False, is_support=False, user_id=requester,
         tenant=SimpleNamespace(actor_kind="human"), tenant_id=uuid.uuid4(),
     )  # fmt: skip
     with pytest.raises(Forbidden):
-        asyncio.run(fa.decide(ctx, facts.return_id, uuid.uuid4(), approve=True, reason=None))  # type: ignore[arg-type] -- a context double
+        asyncio.run(
+            fa.settle_change(
+                ctx,  # pyright: ignore[reportArgumentType] -- a context double
+                facts.return_id,
+                uuid.uuid4(),
+                approve=True,
+                reason=None,
+            )
+        )
 
 
 def test_approval_writes_a_checkpoint() -> None:
-    source = inspect.getsource(fa.decide)
+    source = inspect.getsource(fa.settle_change)
     assert "save_checkpoint(" in source and "ProposalChanged" in source
 
 
 def test_section_flags_registered() -> None:
-    import abacus.modules.tax.api  # noqa: F401 -- registration at import
     from abacus.modules.tax import entity_sections
 
-    assert entity_sections._FLAGS["fixed-assets"] is fa.open_flags
+    assert entity_sections._FLAGS["fixed-assets"] is fa.open_flags  # pyright: ignore[reportPrivateUsage] -- the unit under test

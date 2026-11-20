@@ -556,6 +556,15 @@ from abacus.modules.agents.spec_v2 import (  # noqa: E402
     spec_problems,
     spec_v2,  # T-04-T25: a capability's v2 spec (the drafter's tier, limits, routes)
 )
+from abacus.modules.engagements.api import (  # noqa: E402 -- T-08-T17 slot
+    SeasonPlannerRuns,
+    register_season_planner_runs,
+)
+
+# T-08-T17 (DEC-5842): the season planner's capability runs, through engagements' slot.
+register_season_planner_runs(
+    SeasonPlannerRuns(spec_v2=spec_v2, start=start_capability_run, end=end_capability_run)
+)
 from abacus.modules.agents.trace_pdf import (  # noqa: E402 -- TASK-7825: the composition root's slot
     TracePdfRenderer,
     register_trace_pdf_renderer,

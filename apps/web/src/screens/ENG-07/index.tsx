@@ -11,36 +11,34 @@ import type {
   SeasonManifestOut,
   SeasonManifestRowOut,
 } from "@abacus/api-client";
-import { Button, Dialog, Pill, Segmented, type TallyItem, TallyStrip } from "@abacus/ui";
+import {
+  Button,
+  Dialog,
+  Pill,
+  Segmented,
+  type TallyItem,
+  TallyStrip,
+  count,
+  date,
+  time,
+} from "@abacus/ui";
 import { type JSX, useState } from "react";
 import { COPY } from "./copy";
 
 export type Eng07View = "cohorts" | "all" | "exceptions";
 
-const day = (iso: string): string =>
-  new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    timeZone: "America/Chicago",
-  });
-const at = (iso: string): string =>
-  new Date(iso).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "America/Chicago",
-  });
+const day = (iso: string): string => date(iso, { now: Date.parse(iso) });
+const at = (iso: string): string => `${date(iso, { now: Date.parse(iso) })}, ${time(iso)}`;
 
 export function tallyItems(m: SeasonManifestOut): TallyItem[] {
   return [
-    { label: COPY.tally.engagements, value: m.tally.engagements.toLocaleString("en-US") },
-    { label: COPY.tally.returns, value: m.tally.returns.toLocaleString("en-US") },
-    { label: COPY.tally.binders, value: m.tally.binders.toLocaleString("en-US") },
+    { label: COPY.tally.engagements, value: count(m.tally.engagements) },
+    { label: COPY.tally.returns, value: count(m.tally.returns) },
+    { label: COPY.tally.binders, value: count(m.tally.binders) },
     { label: COPY.tally.approved, value: COPY.of(m.tally.cohorts_approved, m.tally.cohorts) },
     {
       label: COPY.tally.created,
-      value: m.tally.created.toLocaleString("en-US"),
+      value: count(m.tally.created),
       info: `of ${String(m.tally.engagements)}`,
     },
     {
@@ -70,6 +68,8 @@ function CohortPill({ c }: { c: SeasonCohortOut }): JSX.Element {
 }
 
 export interface ENG07Props {
+  /** The firm's name for the subtitle ("TY2025 · <firm>"), the session's. */
+  firmName?: string;
   manifest: SeasonManifestOut;
   rows: SeasonManifestRowOut[];
   view: Eng07View;
@@ -85,6 +85,7 @@ export interface ENG07Props {
 }
 
 export function ENG07({
+  firmName = "",
   manifest: m,
   rows,
   view,
@@ -120,7 +121,7 @@ export function ENG07({
       <div className="flex h-[42px] items-center gap-[8px] px-[12px]">
         <span className="text-[14px] text-ink-2">{COPY.back}</span>
         <span className="flex-1 text-center text-[15px] font-medium text-ink">
-          {COPY.title} <span className="font-normal text-ink-2">{COPY.context}</span>{" "}
+          {COPY.title} <span className="font-normal text-ink-2">{COPY.context(firmName)}</span>{" "}
           <Pill variant="neutral">{COPY.inProgress}</Pill>
         </span>
         <span
@@ -166,7 +167,9 @@ export function ENG07({
             aria-label={COPY.search}
             placeholder={COPY.search}
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={(e) => {
+              setQ(e.target.value);
+            }}
             className="h-[30px] w-[200px] rounded-[8px] bg-nested px-[8px] text-body"
           />
           <h2 className="flex-1 text-center text-[13.5px] font-medium text-ink">
@@ -251,7 +254,13 @@ export function ENG07({
                   {o.label}
                 </Button>
               ))}
-              <Button variant="ghost" size="sm" onClick={() => setAskDone(true)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setAskDone(true);
+                }}
+              >
                 {COPY.ask.skip}
               </Button>
             </div>
@@ -293,7 +302,13 @@ export function ENG07({
             ) : null}
             {(open.allowed_actions ?? []).includes("approve") ? (
               <span className="flex flex-col items-end">
-                <Button variant="primary" opensDialog onClick={() => setConfirm(true)}>
+                <Button
+                  variant="primary"
+                  opensDialog
+                  onClick={() => {
+                    setConfirm(true);
+                  }}
+                >
                   {COPY.bar.approve(open.position)}
                 </Button>
                 <span className="text-[11.5px] text-ink-3">{COPY.bar.helper}</span>
@@ -391,7 +406,9 @@ function CohortBand({
                 type="checkbox"
                 aria-label={r.client_name}
                 checked={selected.has(r.row_id)}
-                onChange={() => onToggle(r.row_id)}
+                onChange={() => {
+                  onToggle(r.row_id);
+                }}
               />
               <span>
                 <span className="block text-ink">{r.client_name}</span>

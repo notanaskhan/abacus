@@ -66,7 +66,8 @@ export function batch(state: Fil02State) {
 
 export function versions() {
   return {
-    record_type: "signed_efile_authorization", service_line: null,
+    record_type: "signed_efile_authorization",
+    service_line: null,
     items: [1, 2].map((n) => ({
       version_id: stableId(`policy-version:${String(n)}`), version_no: n, retention_years: n === 1 ? 6 : 7,
       legal_minimum_years: 3, policy_text: n === 2 ? "Signed e-file authorizations are kept 7 years from the return due date." : null,
@@ -78,6 +79,13 @@ export function versions() {
 }
 
 export const PERSONA: Readonly<Record<Fil02State, string>> = {
-  a: "felix-andersen", b: "felix-andersen", c: "felix-andersen", d: "felix-andersen",
-  e: "felix-andersen", f: "samuel-ito", g: "felix-andersen", h: "felix-andersen", i: "felix-andersen",
+  a: "felix-andersen",
+  b: "felix-andersen",
+  c: "felix-andersen",
+  d: "felix-andersen",
+  e: "felix-andersen",
+  f: "samuel-ito",
+  g: "felix-andersen",
+  h: "felix-andersen",
+  i: "felix-andersen",
 };

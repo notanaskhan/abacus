@@ -31,7 +31,9 @@ def test_ac_a_managers_release_is_refused_at_the_matrix() -> None:
     assert row.get("agent") == "deny" and row.get("system") == "deny"
 
 
-async def test_release_needs_a_live_human_with_a_fresh_mfa(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_release_needs_a_live_human_with_a_fresh_mfa(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     async def now(_: object) -> datetime:
         return datetime.now(UTC)
 
@@ -41,21 +43,23 @@ async def test_release_needs_a_live_human_with_a_fresh_mfa(monkeypatch: pytest.M
         mfa_at=datetime.now(UTC) - timedelta(hours=1),
     )  # fmt: skip
     with pytest.raises(release.MfaRequired):
-        await release._fresh(stale)  # type: ignore[arg-type]  # pyright: ignore[reportPrivateUsage]
-    agent = SimpleNamespace(tenant=SimpleNamespace(actor_kind="agent"), is_support=False, mfa_at=None)
+        await release._fresh(stale)  # type: ignore[arg-type] -- a context double
+    agent = SimpleNamespace(
+        tenant=SimpleNamespace(actor_kind="agent"), is_support=False, mfa_at=None
+    )
     with pytest.raises(release.Forbidden):
-        await release._fresh(agent)  # type: ignore[arg-type]  # pyright: ignore[reportPrivateUsage]
+        await release._fresh(agent)  # type: ignore[arg-type] -- a context double
 
 
 async def test_the_final_render_approval_holds_only_inside_the_release() -> None:
     ref = SimpleNamespace(kind="close_release", id=uuid4(), content_hash="a" * 64)
     assert await release.release_approval(ref) is None
-    token = release._approving.set((ref, uuid4()))  # pyright: ignore[reportPrivateUsage]
+    token = release._approving.set((ref, uuid4()))  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
     try:
         found = await release.release_approval(ref)
         assert found is not None and found[1] == "a" * 64
     finally:
-        release._approving.reset(token)  # pyright: ignore[reportPrivateUsage]
+        release._approving.reset(token)  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
 
 
 def test_lock_before_client_approval_is_a_conflict_code() -> None:

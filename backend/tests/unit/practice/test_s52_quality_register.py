@@ -8,11 +8,11 @@ import pytest
 from abacus.modules.practice import quality_register as reg
 
 GOOD = (
-    "level,component,ref,parent_ref,title,frequency\n"
-    "objective,resources,QO-01,,People are competent,\n"
-    "risk,,QR-01,QO-01,Staff lack training,\n"
-    "response,,QS-01,QO-01,Annual CPE review,annual\n"
-).encode()
+    b"level,component,ref,parent_ref,title,frequency\n"
+    b"objective,resources,QO-01,,People are competent,\n"
+    b"risk,,QR-01,QO-01,Staff lack training,\n"
+    b"response,,QS-01,QO-01,Annual CPE review,annual\n"
+)
 
 
 def test_a_register_file_parses() -> None:

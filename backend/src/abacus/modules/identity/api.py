@@ -18,6 +18,7 @@ from abacus.modules.identity.audit_facts import (
 )
 from abacus.modules.identity.audit_targets import AUDIT_KINDS, audit_hidden_walls, audit_owners
 from abacus.modules.identity.authz import (
+    DESTRUCTION_APPROVER_ROLES,
     MFA_RECENT,
     WALL_SAFE,
     Forbidden,
@@ -34,6 +35,7 @@ from abacus.modules.identity.authz import (
     authorise_own,
     authorise_staff,
     authorise_with_scope,
+    destruction_approver_role,
     firm_role_allows,
     holds_engagement_role,
     metadata_only,
@@ -553,9 +555,6 @@ from abacus.modules.identity.inspection_grants import (  # noqa: E402
 )
 
 __all__ = [
-    "inspection_grant_expiry",
-    "issue_inspection_grants",
-    "revoke_inspection_grants",
     "ACCESS_END_ID",
     "ACTION_KEY",
     "ACTIVITIES",
@@ -565,6 +564,7 @@ __all__ = [
     "CODE_DIGITS",
     "CONDITION_KEYS",  # the matrix's condition kinds, for the generator-coverage sweep (Q-03-T095)
     "DELEGATE_ROLES",
+    "DESTRUCTION_APPROVER_ROLES",
     "EQR_ROLE",
     "EQR_ROLES",
     "FULL_ROLES",
@@ -754,6 +754,7 @@ __all__ = [
     "declared_action",
     "delegation_holders",
     "delegation_holders_by_grant",
+    "destruction_approver_role",
     "display_names",
     "drafted_guidance_to_clients",
     "earliest_partner",
@@ -790,6 +791,7 @@ __all__ = [
     "hidden_clients",
     "holds_engagement_role",
     "in_intake_scope",
+    "inspection_grant_expiry",
     "invitation_contact",
     "invitation_grants",
     "invitation_router",
@@ -800,6 +802,7 @@ __all__ = [
     "is_offshore",
     "is_synthetic_firm",
     "issue_grant",
+    "issue_inspection_grants",
     "issue_invitation_token",
     "issue_link_code",
     "issue_sign_in_code",
@@ -894,6 +897,7 @@ __all__ = [
     "revoke_client_access",
     "revoke_contact",
     "revoke_contact_links",
+    "revoke_inspection_grants",
     "revoke_invitation",
     "revoke_link",
     "role_codes",

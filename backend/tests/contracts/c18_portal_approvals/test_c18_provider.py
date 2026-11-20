@@ -34,12 +34,14 @@ MATRIX = yaml.safe_load((REPO / "docs/architecture/permission-matrix/portal.yaml
 # --- the protocol ---------------------------------------------------------------------------
 
 
-def test_ac1_kinds_are_the_four_r02_names() -> None:
+def test_ac1_kinds_are_the_four_r02_names_and_section_754() -> None:
+    # T-06-T35 (DEC-5835): the §754 election request is a C18 kind of its own (the client decides).
     assert {
         "proposed_entry",
         "uncorrected_misstatements",
         "fs_draft",
         "fs_package",
+        "section_754",
     } == ca.CLIENT_APPROVAL_KINDS
 
 

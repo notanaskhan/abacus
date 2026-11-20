@@ -69,7 +69,9 @@ function boardProps(state: T18State, onSignOff: (key: string) => void): SheetLay
       viewer: { kind: "human", name: "Ana Cruz" },
       ...(state === "c" ? { filterRow: true } : {}),
     },
-    onOpenSignOff: (target) => onSignOff(String(target)),
+    onOpenSignOff: (target) => {
+      onSignOff(String(target));
+    },
     ...(state === "b" ? { dock: <aside aria-label="Dock" className="h-full w-[330px]" /> } : {}),
     ...(state === "h" ? { onAddRow: () => undefined } : {}),
   };

@@ -155,6 +155,7 @@ export function ChartKpiTile({
   value,
   delta,
   spark,
+  caption,
 }: KpiTileProps): JSX.Element {
   return (
     <div
@@ -169,6 +170,11 @@ export function ChartKpiTile({
           <Sparkline label={label} comparisonBasis={comparisonBasis} values={spark} />
         )}
       </div>
+      {caption !== undefined && delta === undefined && (
+        <p data-kpi-caption="" className="text-meta text-ink-2">
+          {caption}
+        </p>
+      )}
       {delta !== undefined && (
         <p
           data-delta={delta.direction}

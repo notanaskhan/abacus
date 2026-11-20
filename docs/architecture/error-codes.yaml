@@ -353,6 +353,10 @@ codes:
     raised_by:
     - abacus.modules.communications.intake_contract.AttachmentWithdrawn
     summary: The client withdrew the attachment before it was filed (ADR-162).
+  attest_client_posting_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.integrations.w1_switches.AttestRefused
   audit_locked:
     status: 422
     raised_by:
@@ -387,10 +391,15 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.assurance.completion_projector.BasisRequired
+  batch_not_open:
+    status: 409
+    raised_by:
+    - abacus.modules.evidence.destruction_execute.BatchNotOpen
   batch_phrase_mismatch:
     status: 409
     raised_by:
     - abacus.modules.evidence.destruction_errors.BatchPhraseMismatch
+    - abacus.modules.evidence.destruction_execute.PhraseMismatch
     summary: The typed confirmation is not `DESTROY <ref>` (AC-23).
   before_date_as_of:
     status: 409
@@ -401,6 +410,10 @@ codes:
     raised_by:
     - abacus.modules.evidence.retention.BelowFloor
     summary: The policy keeps records for less time than the published legal floor allows.
+  below_type_policy:
+    status: 422
+    raised_by:
+    - abacus.modules.evidence.retention.BelowTypePolicy
   benchmark_not_found:
     status: 422
     raised_by:
@@ -477,6 +490,14 @@ codes:
     raised_by:
     - abacus.modules.tax.workbook_service.CellSourceInvalid
     summary: Written by an engine (formula, engine import, TB link) or by a person, nothing else.
+  change_already_decided:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.fixed_assets_service.ChangeAlreadyDecided
+  check_already_confirmed:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.standards_runs.CheckAlreadyConfirmed
   check_code_unknown:
     status: 422
     raised_by:
@@ -551,6 +572,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.closes.delivery_errors.ClientApprovalRequired
+    - abacus.modules.closes.release.ClientApprovalRequired
     summary: The close locks only after the client approves its package.
   client_contact:
     status: 409
@@ -573,6 +595,10 @@ codes:
     raised_by:
     - abacus.modules.closes.issues.NoCloseRequests
     summary: 'The close''s requests are not published yet: a question has no binder to sit on.'
+  closing_date_conflict:
+    status: 409
+    raised_by:
+    - abacus.modules.adjustments.posting_recovery.ClosingDateConflictOpen
   closing_date_locked:
     status: 409
     raised_by:
@@ -892,7 +918,12 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.review.decisions.DecisionCardState
+    - abacus.modules.review.firm_cards.CardState
     summary: The card is not in a state that takes this (decided, superseded).
+  decision_card_unknown:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.basis_service.DecisionCardUnknown
   decision_incomplete:
     status: 422
     raised_by:
@@ -1201,6 +1232,10 @@ codes:
     raised_by:
     - abacus.modules.adjustments.posting_errors.EntryLocked
     summary: An approved entry's lines or date cannot change until its approval is withdrawn.
+  entry_not_failed:
+    status: 409
+    raised_by:
+    - abacus.modules.adjustments.posting_recovery.NotRetryable
   entry_not_sendable:
     status: 422
     raised_by:
@@ -2312,6 +2347,10 @@ codes:
   mfa_required:
     status: 409
     raised_by:
+    - abacus.modules.closes.release.MfaRequired
+    - abacus.modules.evidence.destruction_execute.MfaRequired
+    - abacus.modules.integrations.w1_switches.MfaRequired
+    - abacus.modules.review.firm_cards.MfaRequired
     - abacus.modules.signatures.portal.MfaRequired
     - abacus.modules.tax.k1_portal.K1MfaRequired
     summary: 'K-1s carry amounts (TRI): the portal session''s second step first (DEC-34).'
@@ -3039,6 +3078,10 @@ codes:
     raised_by:
     - abacus.modules.engagements.service.PossibleDuplicate
     summary: 'A client with this name (normalised) already exists: pick it, or confirm a new one.'
+  post_issuance_not_revising:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.post_issuance_reissue.NotRevising
   posting_not_enabled:
     status: 409
     raised_by:
@@ -3120,6 +3163,7 @@ codes:
     - abacus.modules.agents.proposals.ProposalChanged
     - abacus.modules.engagements.roll_forward.ProposalChanged
     - abacus.modules.evidence.service.ProposalChanged
+    - abacus.modules.tax.fixed_assets_service.ProposalChanged
     summary: 'The template''s latest version changed since the proposal: ask for it again.'
   proposal_invalid:
     status: 422
@@ -3302,6 +3346,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.closes.delivery_errors.ReleasePreconditionsUnmet
+    - abacus.modules.closes.release.PreconditionsUnmet
     summary: 'Release is blocked: accounts unreconciled, issues open or entries neither posted nor recorded
       (`facts.unreconciled`, `facts.open_issues`, `facts.entries_unposted`).'
   release_refused:
@@ -3538,6 +3583,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.evidence.destruction_errors.SameApprover
+    - abacus.modules.evidence.destruction_execute.SameApprover
     summary: The second approval is by the person who gave the first (AC-22).
   same_variant:
     status: 409
@@ -3910,6 +3956,10 @@ codes:
     raised_by:
     - abacus.modules.methodology.standards.StandardKeyTaken
     summary: The firm already has a standard with this key.
+  standard_not_checklist:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.standards_runs.StandardNotChecklist
   standard_row_missing:
     status: 422
     raised_by:
@@ -4445,6 +4495,7 @@ codes:
     - abacus.modules.assurance.risks.RiskMoved
     - abacus.modules.assurance.service_orgs.OrganizationMoved
     - abacus.modules.assurance.soc_reports.SocReportMoved
+    - abacus.modules.integrations.w1_switches.VersionMoved
     - abacus.modules.notices.intake.IntakeMoved
     - abacus.modules.notices.service.VersionConflict
     - abacus.modules.reporting.statements.StaleAnswer
@@ -4551,6 +4602,7 @@ codes:
   write_capability_not_released:
     status: 409
     raised_by:
+    - abacus.modules.integrations.w1_switches.NotReleased
     - abacus.modules.integrations.write_errors.WriteCapabilityNotReleased
     summary: 'The registry entry is `enabled: false`: the firm switch is shown but cannot turn on.'
   write_capability_refused:

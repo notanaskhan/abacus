@@ -1,5 +1,7 @@
 // ADM-11 · Quality management dashboard (Q-05-T19): words verbatim from the handoff spec and the
 // R2 revision.
+import { count, date } from "@abacus/ui";
+
 export const COPY = {
   title: "Quality management",
   sqms: "SQMS No. 1",
@@ -18,7 +20,7 @@ export const COPY = {
   findingsSub: (inspections: number, agents: number) =>
     `${String(inspections)} inspections · ${String(agents)} agent monitoring`,
   overrideSub: (o: number, n: number, tol: string) =>
-    `${o.toLocaleString("en-US")} of ${n.toLocaleString("en-US")} · tolerance ${tol}% · `,
+    `${count(o)} of ${count(n)} · tolerance ${tol}% · `,
   insights: "Insights →",
   accuracySub: "145 filed TY2025 returns",
   days: (n: number) => `${String(n)} days`,
@@ -63,7 +65,7 @@ export const COPY = {
     other: "Other",
   } as Readonly<Record<string, string>>,
   consultationSub: (at: string, ep: string | null | undefined) =>
-    `opened ${new Date(at).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/Chicago" })} · EP ${ep ?? ""}`,
+    `opened ${date(at, { now: Date.parse(at) })} · EP ${ep ?? ""}`,
   emptyTitle: "No QM findings yet.",
   emptyBody: "Inspection findings and agent monitoring appear here.",
 } as const;

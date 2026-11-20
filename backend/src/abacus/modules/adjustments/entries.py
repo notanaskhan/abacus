@@ -548,14 +548,20 @@ async def _recorded_tjes(tenant: TenantContext, work_item_id: UUID) -> list[Line
 
 
 async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:
-    """For `proposed_entry` rows an audit event names: id -> the owning engagement."""
-    del kind
+    """For `proposed_entry` and `closing_date_conflict` rows an audit event names: id -> the
+    owning engagement (a conflict is its posting batch's)."""
+    query = _CONFLICT_OWNERS if kind == CLOSING_DATE_CONFLICT else _ENTRY_OWNERS
     async with tenant_session(tenant) as session:
-        rows = await session.execute(
-            text("SELECT id, engagement_id FROM proposed_entries WHERE id = ANY(:ids)"),
-            {"ids": list(ids)},
-        )
+        rows = await session.execute(query, {"ids": list(ids)})
         return {found: owned for found, owned in rows}
 
 
-AUDIT_KINDS: Final = frozenset({TARGET})
+CLOSING_DATE_CONFLICT: Final = "closing_date_conflict"  # C-02-T24 (S52 end pass)
+_ENTRY_OWNERS = text("SELECT id, engagement_id FROM proposed_entries WHERE id = ANY(:ids)")
+_CONFLICT_OWNERS = text(
+    "SELECT c.id, b.engagement_id FROM closing_date_conflicts c JOIN posting_batches b "
+    "ON b.id = c.posting_batch_id WHERE c.id = ANY(:ids)"
+)
+
+
+AUDIT_KINDS: Final = frozenset({TARGET, CLOSING_DATE_CONFLICT})

@@ -25,7 +25,7 @@ import type {
 
 // ChartKit C-36 marks (F-08-T10; F-08 §3 D1): hand-rolled SVG on plain-math scales (DEC-16: no
 // Recharts, Chart.js, ECharts or d3). Fills are --p1…--p4 with --d1…--d4 strokes (DF-38): no
-// purple, gradients, 3D, radar or rainbow, and no peer benchmarks (D6). Every SVG is role="img"
+// purple, gradients, 3D, radar or rainbow, and no comparison with other firms (D6). Every SVG is role="img"
 // with a generated summary that ends in the comparison basis; each mark carries `data-value`, the
 // number "View as table" shows. Holding a mark keeps it and dims the others to 45%.
 

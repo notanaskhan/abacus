@@ -1,4 +1,4 @@
-"""W1 enablement on live paths (C-02-T25; SPEC-700 F3; ADR-344 §3–§5; DEC-5817). PROTECTED (red).
+"""W1 enablement on live paths (C-02-T25; SPEC-700 F3; ADR-344 §3-§5; DEC-5817). PROTECTED (red).
 
 ADR-344's four switches a posting needs, each a person's act with its own record, and read back by
 `writes.w1_refusal` on every entry (so turning any one off stops the next entry of an in-flight
@@ -189,7 +189,9 @@ async def memo_prefix_of(tenant: TenantContext) -> str:
     """The memo prefix W1 writes carry (C-02-T13's writer reads it through `integrations.api`)."""
     async with tenant_session(tenant) as session:
         found = await session.scalar(
-            text("SELECT memo_prefix FROM gl_posting_settings WHERE provider = 'quickbooks_online'")
+            text(
+                "SELECT memo_prefix FROM gl_posting_settings WHERE provider = 'quickbooks_online'"
+            )
         )
     return DEFAULT_MEMO_PREFIX if found is None else str(found)
 
@@ -305,7 +307,7 @@ async def _grant(ctx: AuthContext, connection_id: UUID, *, event: str, consent: 
             ),
         )  # fmt: skip
         tx.record(
-            f"connection.write_{event}",
+            "connection.write_granted" if event == "granted" else "connection.write_revoked",
             target=Target("connection", connection_id),
             after=Ref(capability=0 if event == "revoked" else 1),
         )
@@ -370,7 +372,13 @@ async def _write_log_entries(tenant: TenantContext, client_entity_id: UUID) -> l
 
     return [
         LogEntry(
-            r.id, f"write:{r.operation}", "", "", r.status, r.started_at, r.finished_at,
+            r.id,
+            f"write:{r.operation}",
+            "",
+            "",
+            r.status,
+            r.started_at,
+            r.finished_at,
             str(r.actor_user_id),
         )
         for r in await access_log_writes(tenant, client_entity_id)

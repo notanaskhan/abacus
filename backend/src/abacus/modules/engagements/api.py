@@ -102,6 +102,7 @@ from abacus.modules.engagements.hold_scope import (
     engagement_hold_facts,
     engagement_retention_facts,
     engagements_in_hold_scope,
+    inspectable_work_items,
     work_item_engagement,
     work_item_period,
     work_item_titles,
@@ -178,6 +179,12 @@ from abacus.modules.engagements.routes import (
     work_items_router,
 )
 from abacus.modules.engagements.season_contract import season_router
+from abacus.modules.engagements.season_planner import (
+    PlannerRuns as SeasonPlannerRuns,
+)
+from abacus.modules.engagements.season_planner import (
+    register_planner_runs as register_season_planner_runs,
+)
 from abacus.modules.engagements.service import (
     CheckFacts,
     EngagementMetadata,
@@ -578,6 +585,7 @@ __all__ = [
     "RosterMember",
     "SeasonCandidate",
     "SeasonExecInput",
+    "SeasonPlannerRuns",
     "SeasonSetupExecutionWorkflow",
     "StoredFile",
     "TemplateItem",
@@ -660,6 +668,7 @@ __all__ = [
     "independence_cleared",
     "independence_conclusions_due",
     "independence_confirmations_due",
+    "inspectable_work_items",
     "is_archived",
     "judgments_of",
     "letter_for_envelope",
@@ -697,6 +706,7 @@ __all__ = [
     "register_progress_source",
     "register_roll_forward_items",
     "register_season_candidates",
+    "register_season_planner_runs",
     "register_season_step",
     "register_work_item_kind",
     "remove_from_team",

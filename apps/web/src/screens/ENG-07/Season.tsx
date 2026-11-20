@@ -10,6 +10,7 @@ import {
 } from "@abacus/api-client/query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
+import { useSession } from "../../app-core/session";
 import { ENG07, type Eng07View } from "./index";
 
 export function Season({
@@ -34,10 +35,12 @@ export function Season({
     void client.invalidateQueries({ queryKey: seasonManifestQueryKey({ path }) });
   };
   const approve = useMutation({ ...seasonCohortApproveMutation(), onSuccess: refresh });
+  const firmName = useSession().tenant?.firm_name ?? "";
   const answer = useMutation({ ...seasonAskAnswerMutation(), onSuccess: refresh });
   if (m.data === undefined) return null;
   return (
     <ENG07
+      firmName={firmName}
       manifest={m.data}
       rows={rows.data?.items ?? []}
       view={view}

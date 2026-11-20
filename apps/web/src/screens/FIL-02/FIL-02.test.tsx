@@ -22,13 +22,17 @@ afterEach(() => {
 
 function show(state: Fil02ScenarioState, props: FIL02Props = {}): void {
   restore = installFixtureMode(scenarios[state]);
-  render(<QueryClientProvider client={newQueryClient()}><FIL02 {...props} /></QueryClientProvider>);
+  render(
+    <QueryClientProvider client={newQueryClient()}>
+      <FIL02 {...props} />
+    </QueryClientProvider>,
+  );
 }
 
 describe("FIL-02 · Retention & legal hold", () => {
   it("a · eight policies; audit documentation locked WORM", async () => {
     show("a");
-    expect((await screen.findAllByText(/years$/u)).length).toBe(8);
+    expect((await screen.findAllByText(/^\d+ years$/u)).length).toBe(8);
     expect(screen.getByText(COPY.locked)).toBeTruthy();
     expect(screen.getByText(COPY.footer)).toBeTruthy();
   });

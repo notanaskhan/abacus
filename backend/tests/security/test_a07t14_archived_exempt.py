@@ -25,6 +25,12 @@ EXEMPT = {
     "legal_hold.place": "legal_hold",
     "legal_hold.lift": "legal_hold",
     "export.create": "export",
+    # Q-05 (S50 bundle, ADR-159 / A-07 F8): a post-issuance case is opened, analysed, decided and
+    # reissued on the archived engagement it concerns, under its own archived-write kind.
+    "post_issuance.create": "post_issuance",
+    "post_issuance.analyse": "post_issuance",
+    "post_issuance.decide": "post_issuance",
+    "post_issuance.reissue": "post_issuance",
 }
 MUTATING = {"post", "put", "patch", "delete"}
 

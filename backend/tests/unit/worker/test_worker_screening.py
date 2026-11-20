@@ -119,6 +119,8 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "confirmation.link_requested",  # A-08-T18 (DEC-5324): communications emails the link
         "session.items_changed",  # TASK-7325: a session's items reach its topic
         "daily_briefing.built",  # I-02-T13 (S42): the Today panel's user topic
+        "tb_handoff.created",  # T-06-T39 (DEC-5832): the tax side lands the C12 hand-off
+        "standards_run.progressed",  # T-08-T14 (DEC-5840): TAX-14's run tiles
         EVIDENCE_VERSION_CREATED,
         "knowledge_document.added",
         "client_invitation.issued",  # SPEC-015

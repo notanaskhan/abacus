@@ -182,14 +182,14 @@ class TemplatePreviewIn(BaseModel):
     blank: Annotated[bool, Internal] = False
 
 
-class TemplatePreviewOut(BaseModel):
+class TemplateVersionPreviewOut(BaseModel):
     """KNW-06b's dock: 38 steps · 14 sheets · 47 requests · 2 triggers · 3 report templates ·
     5 skills."""
 
     model_config = _cfg()
 
     rail: Annotated[RailCountsOut, Internal]
-    hidden_steps: Count = 0
+    skipped_steps: Count = 0  # DEC-43: no "hidden" field names in any schema
 
 
 class ScopingRuleOut(BaseModel):
@@ -426,8 +426,10 @@ async def changes_route(version_id: UUID, ctx: Ctx, against: UUID | None = None)
     raise NotImplementedYet
 
 
-@_route("post", f"{_V}/preview", "template.read", TemplatePreviewOut)
-async def preview_route(version_id: UUID, body: TemplatePreviewIn, ctx: Ctx) -> TemplatePreviewOut:
+@_route("post", f"{_V}/preview", "template.read", TemplateVersionPreviewOut)
+async def preview_route(
+    version_id: UUID, body: TemplatePreviewIn, ctx: Ctx
+) -> TemplateVersionPreviewOut:
     """The same rule engine as engagements; no model is called (INV-1)."""
     await _on(ctx)
     raise NotImplementedYet

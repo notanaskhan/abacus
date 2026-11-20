@@ -9,7 +9,7 @@ import type {
   FilingDeadlineDetailOut,
   FilingDeadlineItemOut,
 } from "@abacus/api-client";
-import { Button, Pill, type PillVariant, Popover, Segmented } from "@abacus/ui";
+import { Button, Pill, type PillVariant, Popover, Segmented, date } from "@abacus/ui";
 import { type JSX, useState } from "react";
 import { COPY } from "./copy";
 
@@ -39,19 +39,8 @@ const TINT: Record<FilingDeadlineItemOut["risk"], PillVariant> = {
 };
 
 const iso = (d: Date): string => d.toISOString().slice(0, 10);
-const short = (s: string): string =>
-  new Date(`${s}T12:00:00Z`).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  });
-const long = (s: string): string =>
-  new Date(`${s}T12:00:00Z`).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+const short = (s: string): string => date(s, { now: Date.parse(`${s}T12:00:00Z`) });
+const long = (s: string): string => date(s, { now: 0, withYear: true });
 
 function Chip({
   item,
@@ -231,7 +220,12 @@ export function HOME03({
                 >
                   <td className="px-[8px]">{short(i.due_on)}</td>
                   <td className="px-[8px]">
-                    <button type="button" onClick={() => open(i)}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        open(i);
+                      }}
+                    >
                       {i.client_name}
                     </button>
                   </td>
@@ -300,14 +294,18 @@ export function HOME03({
                   {rest > 0 ? (
                     <Popover
                       open={more === d}
-                      onOpenChange={(o) => setMore(o ? d : undefined)}
+                      onOpenChange={(o) => {
+                        setMore(o ? d : undefined);
+                      }}
                       width={300}
                       label={`${short(d)} · ${String(list.length)}`}
                       trigger={
                         <button
                           type="button"
                           className="text-left text-[11.5px] text-ink-3"
-                          onClick={() => setMore(d)}
+                          onClick={() => {
+                            setMore(d);
+                          }}
                         >
                           {COPY.more(rest)}
                         </button>
@@ -322,7 +320,9 @@ export function HOME03({
                             <button
                               type="button"
                               className="truncate text-left"
-                              onClick={() => open(i)}
+                              onClick={() => {
+                                open(i);
+                              }}
                             >
                               {`${i.client_name} · ${i.filing_label}`}
                             </button>

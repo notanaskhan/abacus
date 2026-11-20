@@ -3,9 +3,9 @@ index still holds one live ledger per entity (A-09 OQ-9)."""
 
 from __future__ import annotations
 
-import asyncpg
 import pytest
 
+from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
 
 pytestmark = pytest.mark.asyncio
@@ -16,15 +16,15 @@ def _dsn(url: str) -> str:
 
 
 async def test_old_index_dropped_coverage_index_kept(migrated_db: MigratedDatabase) -> None:
-    conn = await asyncpg.connect(_dsn(migrated_db.owner_url))
-    try:
-        rows = await conn.fetch(
-            "SELECT indexname, indexdef FROM pg_indexes WHERE indexname IN "
-            "('connections_one_live_ledger', 'connection_coverage_one_live')"
+    seeder = Seeder(_dsn(migrated_db.owner_url))
+    old = await seeder.value(
+        "SELECT count(*) FROM pg_indexes WHERE indexname = 'connections_one_live_ledger'"
+    )
+    kept = str(
+        await seeder.value(
+            "SELECT indexdef FROM pg_indexes WHERE indexname = 'connection_coverage_one_live'"
         )
-    finally:
-        await conn.close()
-    names = {r["indexname"]: r["indexdef"] for r in rows}
-    assert "connections_one_live_ledger" not in names
-    assert "UNIQUE" in names["connection_coverage_one_live"]
-    assert "live" in names["connection_coverage_one_live"]
+    )
+    assert old == 0
+    assert "UNIQUE" in kept
+    assert "live" in kept

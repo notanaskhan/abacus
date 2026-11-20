@@ -242,6 +242,10 @@ def without_conditions(rule: authz.Rule) -> authz.Rule:
         tb_handoff_source_released=False,
         same_client=False,
         decision_owner_contact=False,
+        # Q-05-T02 (SPEC-711): consultation, destruction and monitoring conditions.
+        consulted_person=False,
+        distinct_approver_role=False,
+        monitoring_reviewer=False,
     )
 
 

@@ -7,6 +7,8 @@ model in CI, and no case uses kit sample data."
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import yaml
 
 from abacus_tools.evals import close_vendor_screen as s
@@ -42,7 +44,7 @@ def test_ac_no_case_uses_kit_sample_data() -> None:
     assert yaml.safe_load(text)["suite"] == s.SUITE
 
 
-def test_changing_a_threshold_is_refused(tmp_path) -> None:  # type: ignore[no-untyped-def]
+def test_changing_a_threshold_is_refused(tmp_path: Path) -> None:
     data = yaml.safe_load((s.ROOT / s.SUITE / "suite.yaml").read_text())
     data["thresholds"]["entity_accuracy"] = 0.5
     p = tmp_path / "suite.yaml"

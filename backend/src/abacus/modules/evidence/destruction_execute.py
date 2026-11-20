@@ -31,17 +31,27 @@ from typing import Final, cast
 from uuid import UUID
 
 from sqlalchemy import text
-from temporalio import activity, workflow
-from temporalio.common import RetryPolicy
+from temporalio import activity
 
 from abacus.kernel import clock
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.dispatch import register_work_classes
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.identity.api import AuthContext, Forbidden, Resource, authorise
+from abacus.modules.evidence.destruction_execute_workflow import (
+    EXECUTE,
+    DestructionExecuteWorkflow,
+)
+from abacus.modules.identity.api import (
+    DESTRUCTION_APPROVER_ROLES,
+    AuthContext,
+    Forbidden,
+    Resource,
+    authorise,
+    destruction_approver_role,
+)
 
 MFA_WINDOW: Final = timedelta(minutes=10)
-EXECUTE: Final = "evidence.execute_destruction"
 CERTIFICATE_YEARS: Final = 7
 BACKUP_STATEMENT: Final = (
     "Encrypted backups that may hold these records expire within 35 days of this certificate and "
@@ -89,10 +99,11 @@ _APPROVALS = text(
 
 
 def _role_of(ctx: AuthContext) -> str:
-    """The approver's firm role: security_admin or firm_admin (the matrix lets these act)."""
-    if ctx.firm_role in ("security_admin", "firm_admin"):
-        return str(ctx.firm_role)
-    raise Forbidden("destruction.approve", "role")
+    """The approver's firm role, one of identity's two destruction approver roles."""
+    index = destruction_approver_role(ctx)
+    if index is None:
+        raise Forbidden("destruction.approve", "role")
+    return DESTRUCTION_APPROVER_ROLES[index]
 
 
 async def approve(
@@ -137,7 +148,7 @@ async def approve(
         tx.record(
             "destruction_batch.approved" if second else "destruction_batch.first_approval",
             target=Target("destruction_batch", batch_id),
-            after=Ref(role=0 if role == "firm_admin" else 1),
+            after=Ref(role=DESTRUCTION_APPROVER_ROLES.index(role)),
         )
     if second:
         await start_execution(ctx.tenant_id, batch_id, ctx.user_id)
@@ -197,7 +208,9 @@ async def execute(tenant_id: UUID, batch_id: UUID, approver: UUID) -> str:
     from abacus.kernel.controls import control_active_now
     from abacus.modules.evidence import storage
 
-    tenant = TenantContext(tenant_id, "system", f"destruction:{batch_id}", on_behalf_of_user_id=approver)
+    tenant = TenantContext(
+        tenant_id, "system", f"destruction:{batch_id}", on_behalf_of_user_id=approver
+    )
     async with tenant_session(tenant) as session:
         batch = (await session.execute(_BATCH, {"b": batch_id})).first()
         items = list((await session.execute(_ITEMS, {"b": batch_id})).all())
@@ -243,7 +256,9 @@ async def execute(tenant_id: UUID, batch_id: UUID, approver: UUID) -> str:
         if shared is not None:
             await _exclude(tenant, item.id, "shared_object")
             continue
-        if not await storage.delete_version(str(batch.ref), item.object_key, item.object_version_id):
+        if not await storage.delete_version(
+            str(batch.ref), item.object_key, item.object_version_id
+        ):
             await _exclude(tenant, item.id, "missing_object")  # S3 refused: never forced
             continue
         if item.replica_version_id:
@@ -272,8 +287,16 @@ async def execute(tenant_id: UUID, batch_id: UUID, approver: UUID) -> str:
 
 
 def certificate_body(
-    *, ref: str, scope: str, eligible: int, destroyed: int, excluded: list[tuple[str, str]],
-    approvers: list[tuple[str, str]], hold_recheck_at: str, manifest_sha256: str, checkpoint_root: str,
+    *,
+    ref: str,
+    scope: str,
+    eligible: int,
+    destroyed: int,
+    excluded: list[tuple[str, str]],
+    approvers: list[tuple[str, str]],
+    hold_recheck_at: str,
+    manifest_sha256: str,
+    checkpoint_root: str,
 ) -> bytes:
     """Canonical JSON (sorted keys, no whitespace variance): the same batch, the same bytes."""
     return json.dumps(
@@ -294,24 +317,51 @@ def certificate_body(
     ).encode()
 
 
-async def certify(tenant: TenantContext, batch_id: UUID, certificate_id: UUID, destroyed: int) -> None:
+async def certify(
+    tenant: TenantContext, batch_id: UUID, certificate_id: UUID, destroyed: int
+) -> None:
     from abacus.kernel.uow.chain import latest_checkpoint
     from abacus.modules.evidence.records import put_record
 
     async with tenant_session(tenant) as session:
-        batch = (await session.execute(
-            text("SELECT ref, scope_description, eligible_count, hold_recheck_at FROM destruction_batches WHERE id = :b"),
-            {"b": batch_id},
-        )).first()  # fmt: skip
-        items = [str(r[0]) for r in (await session.execute(
-            text("SELECT evidence_version_id FROM destruction_batch_items WHERE batch_id = :b ORDER BY evidence_version_id"),
-            {"b": batch_id},
-        )).all()]  # fmt: skip
-        excluded = [(str(r[0]), str(r[1])) for r in (await session.execute(
-            text("SELECT i.evidence_version_id, x.reason FROM destruction_item_exclusions x JOIN destruction_batch_items i ON i.id = x.item_id WHERE i.batch_id = :b"),
-            {"b": batch_id},
-        )).all()]  # fmt: skip
-        approvers = [(str(r[0]), str(r[1])) for r in (await session.execute(_APPROVALS, {"b": batch_id})).all()]
+        batch = (
+            await session.execute(
+                text(
+                    "SELECT ref, scope_description, eligible_count, hold_recheck_at FROM "
+                    "destruction_batches WHERE id = :b"
+                ),
+                {"b": batch_id},
+            )
+        ).first()
+        items = [
+            str(r[0])
+            for r in (
+                await session.execute(
+                    text(
+                        "SELECT evidence_version_id FROM destruction_batch_items WHERE batch_id = "
+                        ":b ORDER BY evidence_version_id"
+                    ),
+                    {"b": batch_id},
+                )
+            ).all()
+        ]
+        excluded = [
+            (str(r[0]), str(r[1]))
+            for r in (
+                await session.execute(
+                    text(
+                        "SELECT i.evidence_version_id, x.reason FROM destruction_item_exclusions "
+                        "x "
+                        "JOIN destruction_batch_items i ON i.id = x.item_id WHERE i.batch_id = :b"
+                    ),
+                    {"b": batch_id},
+                )
+            ).all()
+        ]
+        approvers = [
+            (str(r[0]), str(r[1]))
+            for r in (await session.execute(_APPROVALS, {"b": batch_id})).all()
+        ]
     if batch is None:
         raise NotFound("destruction_batch")
     manifest = hashlib.sha256("\n".join(items).encode()).hexdigest()
@@ -332,30 +382,55 @@ async def certify(tenant: TenantContext, batch_id: UUID, certificate_id: UUID, d
         await tx.session.execute(
             text(
                 "INSERT INTO destruction_certificates (id, tenant_id, batch_id, ref, "
-                "document_version_id, manifest_object_key, manifest_sha256, audit_checkpoint_root) "
+                "document_version_id, manifest_object_key, manifest_sha256, "
+                "audit_checkpoint_root) "
+                ""
                 "VALUES (:id, :t, :b, :ref, :doc, :key, :sha, :root) ON CONFLICT DO NOTHING"
             ),
-            {"id": certificate_id, "t": tenant.tenant_id, "b": batch_id, "ref": f"DC-{batch.ref}",
-             "doc": uuid.uuid5(_NAMESPACE, stored.sha256), "key": stored.key, "sha": manifest,
-             "root": str(root)},
-        )  # fmt: skip
+            {
+                "id": certificate_id,
+                "t": tenant.tenant_id,
+                "b": batch_id,
+                "ref": f"DC-{batch.ref}",
+                "doc": uuid.uuid5(_NAMESPACE, stored.sha256),
+                "key": stored.key,
+                "sha": manifest,
+                "root": str(root),
+            },
+        )
         await tx.session.execute(
             text(
                 "UPDATE destruction_batches SET status = 'destroyed', destroyed_count = :n, "
-                "held_excluded_count = :x, certificate_id = :c, version = version + 1 WHERE id = :b "
+                "held_excluded_count = :x, certificate_id = :c, version = version + 1 WHERE id = "
+                ":b "
                 "AND status = 'destroying'"
             ),
             {"n": destroyed, "x": len(excluded), "c": certificate_id, "b": batch_id},
         )
-        tx.record("destruction_batch.destroyed", target=Target("destruction_batch", batch_id), after=Ref(n=destroyed))
+        tx.record(
+            "destruction_batch.destroyed",
+            target=Target("destruction_batch", batch_id),
+            after=Ref(n=destroyed),
+        )
 
 
 async def certificate(tenant: TenantContext, certificate_id: UUID) -> dict[str, object]:
     async with tenant_session(tenant) as session:
-        row = (await session.execute(
-            text("SELECT c.id, c.ref, c.batch_id, c.manifest_sha256, c.audit_checkpoint_root, c.generated_at, b.destroyed_count, b.held_excluded_count, b.eligible_count FROM destruction_certificates c JOIN destruction_batches b ON b.id = c.batch_id WHERE c.id = :c"),
-            {"c": certificate_id},
-        )).mappings().first()  # fmt: skip
+        row = (
+            (
+                await session.execute(
+                    text(
+                        "SELECT c.id, c.ref, c.batch_id, c.manifest_sha256, "
+                        "c.audit_checkpoint_root, c.generated_at, b.destroyed_count, "
+                        "b.held_excluded_count, b.eligible_count FROM destruction_certificates c "
+                        "JOIN destruction_batches b ON b.id = c.batch_id WHERE c.id = :c"
+                    ),
+                    {"c": certificate_id},
+                )
+            )
+            .mappings()
+            .first()
+        )
     if row is None:
         raise NotFound("destruction_certificate")
     return dict(row)
@@ -364,39 +439,26 @@ async def certificate(tenant: TenantContext, certificate_id: UUID) -> dict[str, 
 async def destroyed_reference(tenant: TenantContext, version_id: UUID) -> str | None:
     """`DC-2026-Q3` when the evidence version was destroyed (its reads answer 410), else None."""
     async with tenant_session(tenant) as session:
-        return cast(str | None, await session.scalar(
-            text("SELECT c.ref FROM evidence_versions v JOIN destruction_certificates c ON c.id = v.destruction_certificate_id WHERE v.id = :v AND v.destroyed_at IS NOT NULL"),
-            {"v": version_id},
-        ))  # fmt: skip
+        return cast(
+            str | None,
+            await session.scalar(
+                text(
+                    "SELECT c.ref FROM evidence_versions v JOIN destruction_certificates c ON "
+                    "c.id "
+                    "= v.destruction_certificate_id WHERE v.id = :v AND v.destroyed_at IS NOT NULL"
+                ),
+                {"v": version_id},
+            ),
+        )
 
 
-# --- DestructionExecuteWorkflow (worker-batch) ----------------------------------------------------
+# --- DestructionExecuteWorkflow (worker-batch) ---------------------------------------------------
 
 
 @activity.defn(name=EXECUTE)
 async def execute_activity(given: list[str]) -> str:
     tenant_id, batch_id, approver = given
     return await execute(UUID(tenant_id), UUID(batch_id), UUID(approver))
-
-
-@workflow.defn(name="DestructionExecuteWorkflow")
-class DestructionExecuteWorkflow:
-    """`destruction:<tenant>:<batch>`, batch class: one activity that resumes where it stopped."""
-
-    @workflow.run
-    async def run(self, given: list[str]) -> str:
-        return cast(
-            str,
-            await workflow.execute_activity(
-                EXECUTE, given, result_type=str,
-                start_to_close_timeout=timedelta(hours=2),
-                heartbeat_timeout=None,
-                retry_policy=RetryPolicy(
-                    initial_interval=timedelta(seconds=30), maximum_attempts=10,
-                    non_retryable_error_types=["NotFound", "DomainConflict"],
-                ),
-            ),
-        )  # fmt: skip
 
 
 async def start_execution(tenant_id: UUID, batch_id: UUID, approver: UUID) -> None:
@@ -415,8 +477,22 @@ async def start_execution(tenant_id: UUID, batch_id: UUID, approver: UUID) -> No
 
 ACTIVITIES: tuple[object, ...] = (execute_activity,)
 
+# Q-05-T15: the batch class routes `dispatch` (ADR-071); one registration, at import.
+register_work_classes({DestructionExecuteWorkflow: "batch"})
+
 __all__ = [
-    "ACTIVITIES", "BACKUP_STATEMENT", "DestructionExecuteWorkflow", "PhraseMismatch", "SameApprover",
-    "approve", "cancel", "certificate", "certificate_body", "certify", "destroyed_reference",
-    "execute", "register_derived_store", "start_execution",
-]  # fmt: skip
+    "ACTIVITIES",
+    "BACKUP_STATEMENT",
+    "DestructionExecuteWorkflow",
+    "PhraseMismatch",
+    "SameApprover",
+    "approve",
+    "cancel",
+    "certificate",
+    "certificate_body",
+    "certify",
+    "destroyed_reference",
+    "execute",
+    "register_derived_store",
+    "start_execution",
+]

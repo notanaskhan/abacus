@@ -457,7 +457,7 @@ DestructionClient = Callable[[str], Awaitable[Any]]  # Any: a boto3 S3 client fo
 _destruction_clients: list[DestructionClient] = []
 
 
-async def _default_destruction_client(batch_ref: str) -> Any:  # Any: a boto3 S3 client
+async def _default_destruction_client(batch_ref: str) -> Any:  # noqa: ANN401 -- a boto3 S3 client, untyped
     """In AWS, the destruction role with the batch's tag; in local and test runs (no role), the
     configured client; anywhere else without a role, refused (fail closed)."""
     from abacus.kernel.config import SYNTHETIC_ENVIRONMENTS
@@ -465,7 +465,9 @@ async def _default_destruction_client(batch_ref: str) -> Any:  # Any: a boto3 S3
 
     role = settings().destruction_role_arn
     if role:
-        return await asyncio.to_thread(destruction_s3_client, role, batch_ref, region=settings().s3_region)
+        return await asyncio.to_thread(
+            destruction_s3_client, role, batch_ref, region=settings().s3_region
+        )
     if settings().environment in SYNTHETIC_ENVIRONMENTS:
         return _storage().client
     raise ServiceUnavailable
@@ -478,12 +480,14 @@ def register_destruction_client(factory: DestructionClient) -> None:
     _destruction_clients.append(factory)
 
 
-async def delete_version(batch_ref: str, key: str, version_id: str, *, replica: bool = False) -> bool:
+async def delete_version(
+    batch_ref: str, key: str, version_id: str, *, replica: bool = False
+) -> bool:
     """Delete one object version as the destruction role. S3 still refuses a version under
     retention or legal hold (AccessDenied answers False); a missing version answers True."""
-    client = await (_destruction_clients[0] if _destruction_clients else _default_destruction_client)(
-        batch_ref
-    )
+    client = await (
+        _destruction_clients[0] if _destruction_clients else _default_destruction_client
+    )(batch_ref)
     target = _storage()
     bucket = target.bucket if not replica else settings().evidence_replica_bucket or ""
     if not bucket:

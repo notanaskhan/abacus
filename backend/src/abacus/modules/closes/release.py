@@ -7,7 +7,7 @@ DEC-5820). PROTECTED (red-adjacent: a client deliverable leaves the firm here).
   the `close` reviewable, the package's content hash) moves the close to Approved, a single-use
   grant is issued and consumed for the final render (C11 without the watermark, approved through
   this module's provider), and the deliverable is marked released. `PackageAssemblyWorkflow`
-  (mode `release`) waits for the final render, then publishes to Portal › Deliverables (C10, kind
+  (mode `release`) waits for the final render, then publishes to Portal > Deliverables (C10, kind
   `close_package`, AR-C 70 legend), opens the `fs_package` approval item (C18) for the owner and
   the approver of record, sends the firm's "Deliverable ready" template row and moves the close to
   Delivered.
@@ -26,10 +26,11 @@ import contextvars
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Annotated, ClassVar, Final, cast
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Final, cast
 from uuid import UUID
 
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel import clock
 from abacus.kernel.classification import classified
@@ -39,11 +40,20 @@ from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, UnitOfWork, uow
 from abacus.modules.closes import repository as repo
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise
 
+if TYPE_CHECKING:
+    from abacus.modules.engagements.api import (
+        ApprovalItem,
+        ClientDecision,
+        ClientDecisionContext,
+    )
+
 ACTION: Final = "close_package.release"
 MFA_WINDOW: Final = timedelta(minutes=10)
 APPROVAL_KIND: Final = "fs_package"
 GRANT_TTL: Final = timedelta(minutes=5)
-DELIVERABLE_READY: Final = "deliverable_ready"  # the firm's POR-20 row (communications template key)
+DELIVERABLE_READY: Final = (
+    "deliverable_ready"  # the firm's POR-20 row (communications template key)
+)
 
 _approving: contextvars.ContextVar[tuple[object, UUID] | None] = contextvars.ContextVar(
     "close_release_approving", default=None
@@ -94,7 +104,7 @@ async def release_approval(ref: object) -> tuple[UUID, str] | None:
     held = _approving.get()
     if held is None or held[0] != ref:
         return None
-    return held[1], cast(str, getattr(ref, "content_hash"))
+    return held[1], cast(str, cast(Any, ref).content_hash)  # Any: C11's approval request
 
 
 @dataclass(frozen=True)
@@ -189,8 +199,8 @@ async def release(ctx: AuthContext, close_id: UUID, *, seen_version: int) -> Rel
 async def deliver(tenant_id: UUID, close_id: UUID, document_id: UUID, version_no: int) -> str:
     """The release workflow's last step, once the final render is filed: publish (C10), the C18
     item, the Deliverable ready email from the firm's row, Delivered."""
-    from abacus.modules.communications.api import RecipientRef, SendScope, send_templated
     from abacus.modules.closes.package_service import LEGENDS
+    from abacus.modules.communications.api import RecipientRef, SendScope, send_templated
     from abacus.modules.engagements.api import (
         client_contact_names,
         engagement_contacts,
@@ -356,6 +366,32 @@ async def state_of(tenant: TenantContext, close_id: UUID) -> tuple[str, int]:
 # --- C18's fs_package provider: the client's decision in POR-08 ---------------------------------
 
 
+_PACKAGE_ITEM = text(
+    "SELECT d.status, d.released_by, d.released_at, d.client_approved_at, "
+    "v.content_hash FROM close_deliverables d JOIN close_deliverable_versions "
+    "v ON v.deliverable_id = d.id AND v.version_no = d.current_version_no "
+    "WHERE d.close_id = :c AND d.released_at IS NOT NULL"
+)
+
+
+async def _package_item(session: AsyncSession, item_id: UUID) -> ApprovalItem | None:
+    """The released package as the portal approval reads it, in the caller's session (the
+    provider's decide runs inside the unit of work, which has a session and no tenant)."""
+    from abacus.modules.engagements.api import ApprovalItem
+
+    row = (await session.execute(_PACKAGE_ITEM, {"c": item_id})).first()
+    if row is None:
+        return None
+    return ApprovalItem(
+        kind=APPROVAL_KIND, item_id=item_id, scope_kind="work_item", scope_id=item_id,
+        sent_to_client=True, title="Financial statements",
+        state="approved" if row.client_approved_at is not None else "waiting",
+        seen_hash=str(row.content_hash), legend="No assurance is provided.",
+        released_by_user_id=row.released_by, released_at=row.released_at,
+        decided_at=row.client_approved_at,
+    )  # fmt: skip
+
+
 class FsPackageApprovals:
     """C18 kind `fs_package` for a released close package (owner or approver of record decides;
     an attest client's also needs the SKE designee, DeciderRule)."""
@@ -364,41 +400,25 @@ class FsPackageApprovals:
         found = await self.item(tenant, scope_id)
         return [] if found is None else [found]
 
-    async def item(self, tenant: TenantContext, item_id: UUID) -> object | None:
-        from abacus.modules.engagements.api import ApprovalItem
-
+    async def item(self, tenant: TenantContext, item_id: UUID) -> ApprovalItem | None:
         async with tenant_session(tenant) as session:
-            row = (
-                await session.execute(
-                    text(
-                        "SELECT d.status, d.released_by, d.released_at, d.client_approved_at, "
-                        "v.content_hash FROM close_deliverables d JOIN close_deliverable_versions "
-                        "v ON v.deliverable_id = d.id AND v.version_no = d.current_version_no "
-                        "WHERE d.close_id = :c AND d.released_at IS NOT NULL"
-                    ),
-                    {"c": item_id},
-                )
-            ).first()
-        if row is None:
-            return None
-        return ApprovalItem(
-            kind=APPROVAL_KIND, item_id=item_id, scope_kind="work_item", scope_id=item_id,
-            sent_to_client=True, title="Financial statements",
-            state="approved" if row.client_approved_at is not None else "waiting",
-            seen_hash=str(row.content_hash), legend="No assurance is provided.",
-            released_by_user_id=row.released_by, released_at=row.released_at,
-            decided_at=row.client_approved_at,
-        )  # fmt: skip
+            return await _package_item(session, item_id)
 
-    async def decide(self, tx: UnitOfWork, item_id: UUID, decision: object, context: object) -> object:
+    async def decide(
+        self,
+        tx: UnitOfWork,
+        item_id: UUID,
+        decision: ClientDecision,
+        context: ClientDecisionContext,
+    ) -> ApprovalItem:
         from abacus.modules.engagements.api import ItemChanged
 
-        current = await self.item(tx.tenant, item_id)
+        current = await _package_item(tx.session, item_id)
         if current is None:
             raise NotFound("close_package")
-        if getattr(decision, "seen_hash") != getattr(current, "seen_hash"):
+        if decision.seen_hash != current.seen_hash:
             raise ItemChanged
-        contact = cast(UUID, getattr(context, "contact_id"))
+        contact = context.contact_id
         released_by = await tx.session.scalar(
             text(
                 "UPDATE close_deliverables SET status = 'approved_by_client', "
@@ -409,8 +429,12 @@ class FsPackageApprovals:
         )
         tx.record("close_package.client_approved", target=Target("close", item_id))
         if released_by is not None:
-            tx.emit(PackageClientApproved(close_id=item_id, recipient_user_ids=[cast(UUID, released_by)]))
-        return await self.item(tx.tenant, item_id) or current
+            tx.emit(
+                PackageClientApproved(
+                    close_id=item_id, recipient_user_ids=[cast(UUID, released_by)]
+                )
+            )
+        return await _package_item(tx.session, item_id) or current
 
     async def facts(self, tenant: TenantContext, item_id: UUID) -> object:
         from abacus.modules.engagements.api import ApprovalFacts, attest_of

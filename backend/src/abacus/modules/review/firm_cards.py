@@ -57,17 +57,23 @@ async def raise_firm_card(
                 text(
                     "INSERT INTO decision_cards (tenant_id, engagement_id, work_item_id, kind, "
                     "version_no, question_key, reserved_role, reserved_user_id, options, context, "
-                    "factors, blocking_refs, raised_by_kind, raised_by_id, scope_kind) VALUES (:t, "
+                    "factors, blocking_refs, raised_by_kind, raised_by_id, scope_kind) VALUES "
+                    "(:t, "
+                    ""
                     "NULL, NULL, :k, 1, :q, 'qm_ultimate', :u, CAST(:o AS jsonb), CAST(:c AS "
                     "jsonb), '[]'::jsonb, '[]'::jsonb, 'human', :by, 'firm') RETURNING id"
                 ),
                 {
-                    "t": ctx.tenant_id, "k": kind, "q": question_key, "u": reserved_user_id,
-                    "o": json.dumps(options), "c": json.dumps(context or []),
+                    "t": ctx.tenant_id,
+                    "k": kind,
+                    "q": question_key,
+                    "u": reserved_user_id,
+                    "o": json.dumps(options),
+                    "c": json.dumps(context or []),
                     "by": ctx.tenant.actor_id,
                 },
             ),
-        )  # fmt: skip
+        )
         tx.record("decision_card.raised", target=Target(SUBJECT, card_id), after=Ref(version=1))
     return card_id
 
@@ -94,7 +100,7 @@ async def decide_firm_card(
         if card is None:
             raise NotFound(SUBJECT)
         if card.reserved_user_id != ctx.user_id:
-            raise Forbidden(DECIDE, "reserved_user")
+            raise Forbidden(DECIDE, "condition")
         if card.status != "awaiting_role" or int(card.version_no) != seen_version:
             raise CardState
         if option_key not in {str(o.get("key")) for o in card.options}:
@@ -114,7 +120,9 @@ async def decide_firm_card(
         await tx.session.execute(
             text("UPDATE decision_cards SET status = 'decided' WHERE id = :c"), {"c": card_id}
         )
-        tx.record("decision.recorded", target=Target(SUBJECT, card_id), after=Ref(decision=decision_id))
+        tx.record(
+            "decision.recorded", target=Target(SUBJECT, card_id), after=Ref(decision=decision_id)
+        )
     return decision_id
 
 

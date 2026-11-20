@@ -32,3 +32,24 @@ gradients in product UI, emoji, saturated blue, heavy shadows, invented colours,
 ## Walls and agent
 - Walled users: 404, absent from lists, no hidden counts (INV-3, DEC-43).
 - The agent never publishes, applies, holds, adopts, signs or raises an exception here (INV-1); attribution "‹person› via Agent" (INV-5).
+
+## Links
+
+The designed links of the handoff link graph (link-contract rule 5); each is wired when its screen task builds the screen (K-03-T11/T12).
+
+| From | To | Status |
+|---|---|---|
+| tooltip or toast inside kits/SHT01 Sheet | SHT-02 | designed (handoff link graph) |
+| tooltip or toast inside kits/SHT01 Sheet | SHT-04 | designed (handoff link graph) |
+| tooltip or toast inside kits/SHT01 Sheet | SHL-08 | designed (handoff link graph) |
+| tooltip or toast inside kits/SHT01 Sheet | SHL-18 | designed (handoff link graph) |
+| tooltip or toast inside kits/SHT01 Sheet | SHL-14 | designed (handoff link graph) |
+| tooltip or toast inside kits/SHT01 Sheet | SHL-17 | designed (handoff link graph) |
+| tooltip or toast inside kits/SHT01 Sheet | SHL-07 | designed (handoff link graph) |
+| tooltip or toast inside kits/SHT01 Sheet | AUD-15 | designed (handoff link graph) |
+| tooltip or toast inside kits/SHT01 Sheet | AUD-01 | designed (handoff link graph) |
+| tooltip or toast inside kits/SHT01 Sheet | ENG-11 | designed (handoff link graph) |
+| tooltip or toast inside kits/SHT01 Sheet | SHT-03 | designed (handoff link graph) |
+| tooltip or toast inside kits/SHT01 Sheet | SHL-12 | designed (handoff link graph) |
+| tooltip or toast inside kits/SHT01 Sheet | SHL-13 | designed (handoff link graph) |
+| tooltip or toast inside kits/SHT01 Sheet | XLA-01 | designed (handoff link graph) |

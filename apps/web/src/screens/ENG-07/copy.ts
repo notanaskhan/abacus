@@ -4,7 +4,7 @@
 export const COPY = {
   back: "‹ All Engagements",
   title: "Season setup",
-  context: "TY2025 · Brightwater Hale",
+  context: (firm: string) => `TY2025 · ${firm}`,
   inProgress: "In progress",
   provenance: "Season Setup Planner · Published by Accrued",
   viewRun: "View run ›",
@@ -65,7 +65,7 @@ export const COPY = {
       `${String(e)} engagements · ${String(r)} returns · ${String(b)} binders · ${String(l)} letters with separate §7216 consents · ${String(i)} portal invitations`,
     exclude: "Exclude selected…",
     edit: "Edit assignments…",
-    approve: (n: number) => `Approve cohort ${String(n)}`,
+    approve: (n: number) => `Approve cohort ${String(n)}…`, // opens the confirm dialog (kit rule)
     helper: "Creates nothing until approved. Letters go to SIG-02 for partner review.",
     confirm: (e: number, office: string) => `Approve ${String(e)} engagements for ${office}?`,
     withdraw: "Withdraw approval",

@@ -1,7 +1,7 @@
 ---
 id: TASK-8849
 title: "F-08-T17: AddinPane and AddinChrome C-39"
-spec: SPEC-660
+spec: SPEC-000
 acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review

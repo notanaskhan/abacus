@@ -52,9 +52,9 @@ TASK_FIELDS = (
     "updated",
 )
 ID_IN_NAME = re.compile(r"^((?:ADR|SPEC|TASK)-\d{3,})(?:-|\.md$)")
-RUNBOOK_IN_NAME = re.compile(r"^(RB-\d{2})-[a-z0-9-]+\.md$")
+RUNBOOK_IN_NAME = re.compile(r"^(RB-\d{2,3})-[a-z0-9-]+\.md$")  # RB-100 on (S52)
 RUNBOOK_FIELDS = ("id", "title", "owner", "alarms", "last_rehearsed")
-RUNBOOK_REF = re.compile(r"\bRB-\d{2}\b")
+RUNBOOK_REF = re.compile(r"\bRB-\d{2,3}\b")
 ALARM_RESOURCE = re.compile(
     r'^resource\s+"(aws_cloudwatch_metric_alarm|aws_cloudwatch_composite_alarm)"\s+"([^"]+)"\s*\{',
     re.MULTILINE,

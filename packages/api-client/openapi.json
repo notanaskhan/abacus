@@ -22573,7 +22573,8 @@
               "schedule",
               "flux",
               "recategorize",
-              "intake"
+              "intake",
+              "posting"
             ],
             "title": "Issue Class",
             "type": "string"
@@ -30970,7 +30971,8 @@
               "issue",
               "document",
               "workpaper",
-              "post_issuance_case"
+              "post_issuance_case",
+              "decision_card"
             ],
             "title": "Kind",
             "type": "string"
@@ -31005,7 +31007,8 @@
               "issue",
               "document",
               "workpaper",
-              "post_issuance_case"
+              "post_issuance_case",
+              "decision_card"
             ],
             "title": "Kind",
             "type": "string"
@@ -125534,6 +125537,15 @@
       "SheetViewIn": {
         "additionalProperties": false,
         "properties": {
+          "columns_off": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns Off",
+            "type": "array"
+          },
           "filters": {
             "cls": "internal",
             "default": [],
@@ -125544,15 +125556,6 @@
               "type": "object"
             },
             "title": "Filters",
-            "type": "array"
-          },
-          "hidden": {
-            "cls": "internal",
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "title": "Hidden",
             "type": "array"
           },
           "name": {
@@ -125602,6 +125605,15 @@
       "SheetViewOut": {
         "additionalProperties": false,
         "properties": {
+          "columns_off": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns Off",
+            "type": "array"
+          },
           "filters": {
             "cls": "internal",
             "default": [],
@@ -125612,15 +125624,6 @@
               "type": "object"
             },
             "title": "Filters",
-            "type": "array"
-          },
-          "hidden": {
-            "cls": "internal",
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "title": "Hidden",
             "type": "array"
           },
           "name": {
@@ -144392,6 +144395,31 @@
         "title": "TemplatePreviewIn",
         "type": "object"
       },
+      "TemplatePreviewOut": {
+        "description": "A SAMPLE-watermarked render from the version's synthetic sample data; never evidence.",
+        "properties": {
+          "expires_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "pages": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/PreviewPageOut"
+            },
+            "title": "Pages",
+            "type": "array"
+          }
+        },
+        "required": [
+          "pages",
+          "expires_at"
+        ],
+        "title": "TemplatePreviewOut",
+        "type": "object"
+      },
       "TemplateRefOut": {
         "properties": {
           "id": {
@@ -144641,6 +144669,28 @@
           "created_at"
         ],
         "title": "TemplateVersionOut",
+        "type": "object"
+      },
+      "TemplateVersionPreviewOut": {
+        "additionalProperties": false,
+        "description": "KNW-06b's dock: 38 steps \u00b7 14 sheets \u00b7 47 requests \u00b7 2 triggers \u00b7 3 report templates \u00b7\n5 skills.",
+        "properties": {
+          "rail": {
+            "$ref": "#/components/schemas/RailCountsOut",
+            "cls": "internal"
+          },
+          "skipped_steps": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Skipped Steps",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rail"
+        ],
+        "title": "TemplateVersionPreviewOut",
         "type": "object"
       },
       "TemplateVersionRefOut": {
@@ -161851,28 +161901,6 @@
         "title": "StepOut",
         "type": "object"
       },
-      "abacus__modules__methodology__templates_v2_contract__TemplatePreviewOut": {
-        "additionalProperties": false,
-        "description": "KNW-06b's dock: 38 steps \u00b7 14 sheets \u00b7 47 requests \u00b7 2 triggers \u00b7 3 report templates \u00b7\n5 skills.",
-        "properties": {
-          "hidden_steps": {
-            "cls": "internal",
-            "default": 0,
-            "minimum": 0.0,
-            "title": "Hidden Steps",
-            "type": "integer"
-          },
-          "rail": {
-            "$ref": "#/components/schemas/RailCountsOut",
-            "cls": "internal"
-          }
-        },
-        "required": [
-          "rail"
-        ],
-        "title": "TemplatePreviewOut",
-        "type": "object"
-      },
       "abacus__modules__methodology__templates_v2_contract__TemplatePublishIn": {
         "additionalProperties": false,
         "properties": {
@@ -161915,31 +161943,6 @@
           "at"
         ],
         "title": "ApprovalOut",
-        "type": "object"
-      },
-      "abacus__modules__reporting__contract__TemplatePreviewOut": {
-        "description": "A SAMPLE-watermarked render from the version's synthetic sample data; never evidence.",
-        "properties": {
-          "expires_at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "Expires At",
-            "type": "string"
-          },
-          "pages": {
-            "cls": "internal",
-            "items": {
-              "$ref": "#/components/schemas/PreviewPageOut"
-            },
-            "title": "Pages",
-            "type": "array"
-          }
-        },
-        "required": [
-          "pages",
-          "expires_at"
-        ],
-        "title": "TemplatePreviewOut",
         "type": "object"
       },
       "abacus__modules__requests__questionnaires_contract__TemplatePublishIn": {
@@ -215836,16 +215839,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Send Decision Route",
@@ -340976,7 +340969,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__reporting__contract__TemplatePreviewOut"
+                  "$ref": "#/components/schemas/TemplatePreviewOut"
                 }
               }
             },
@@ -358212,16 +358205,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Raise Decision Route",
@@ -365842,16 +365825,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sourcing Undo Route",
@@ -366086,16 +366059,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sourcing Propose Route",
@@ -366232,16 +366195,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Ptet Route",
@@ -379183,7 +379136,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__methodology__templates_v2_contract__TemplatePreviewOut"
+                  "$ref": "#/components/schemas/TemplateVersionPreviewOut"
                 }
               }
             },

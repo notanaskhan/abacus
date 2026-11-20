@@ -36,7 +36,9 @@ Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)]
 Internal = classified("internal")
 Confidential = classified("confidential")
-LinkKind = Literal["finding", "issue", "document", "workpaper", "post_issuance_case"]
+LinkKind = Literal[
+    "finding", "issue", "document", "workpaper", "post_issuance_case", "decision_card"
+]
 PositionRole = Literal["engagement_partner", "eqr_reviewer"]
 
 
@@ -222,7 +224,7 @@ async def _detail(ctx: AuthContext, consultation_id: UUID) -> ConsultationDetail
         reopened_at=d.reopened_at,
         links=[
             ConsultationLinkOut(
-                kind=x.kind,  # type: ignore[arg-type]  # the column's CHECK (0983)
+                kind=x.kind,  # type: ignore[arg-type]  # the column's CHECK (0983, 1002)
                 target_id=x.target_id,
                 linked_by_name=names.get(x.linked_by, "Former member"),
                 at=x.at,
@@ -231,7 +233,7 @@ async def _detail(ctx: AuthContext, consultation_id: UUID) -> ConsultationDetail
         ],
         positions=[
             ConsultationPositionOut(
-                role=p.role,  # type: ignore[arg-type]  # the column's CHECK (0983)
+                role=p.role,  # type: ignore[arg-type]  # the column's CHECK (0983, 1002)
                 agrees=p.agrees,
                 position=p.position,
                 recorded_by_name=names.get(p.recorded_by, "Former member"),

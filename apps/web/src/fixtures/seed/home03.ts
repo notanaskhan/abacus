@@ -459,7 +459,7 @@ function item(
     client_id: stableId(`client:${key.split("-")[0] ?? key}`),
     client_name: client,
     filing_label: filing,
-    due_on: postponed ? "2026-10-15" : due,
+    due_on: postponed ? "2026-09-28" : due, // x2: inside the September board
     original_due_on: due,
     postponed_from: postponed ? due : null,
     rule_text: rule,
@@ -474,12 +474,10 @@ function item(
     risk: r,
     days_left: daysLeft(due),
     risk_label: label,
-    owners: owners
-      .split("/")
-      .map((o) => ({
-        user_id: o === "DR" || daniel ? DANIEL : stableId(`user:${o}`),
-        initials: o,
-      })),
+    owners: owners.split("/").map((o) => ({
+      user_id: o === "DR" || daniel ? DANIEL : stableId(`user:${o}`),
+      initials: o,
+    })),
     signer: key === "ridgeline-1065" ? { user_id: DANIEL, initials: "DR" } : null,
     work_item_id: stableId(`work-item:${key}`),
     href: null,

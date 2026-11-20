@@ -110,10 +110,25 @@ def _operations() -> list[tuple[str, str, str]]:
     return found
 
 
+# S52 (T-06-T33 to T-06-T36; DEC-5833 to DEC-5836): fixed assets, M-3/M-1, basis and states are
+# live, so their operations answer without the stub's 501; every other operation is still a stub.
+LIVE_PREFIXES = (
+    "/v1/tax-returns/{return_id}/fixed-asset",
+    "/v1/tax-returns/{return_id}/schedules/m3",
+    "/v1/tax-returns/{return_id}/schedules/m1",
+    "/v1/tax-returns/{return_id}/basis",
+    "/v1/tax-returns/{return_id}/states",
+    # T-06-T35: the §754 card's raise and its send to the client.
+    "/v1/tax-returns/{return_id}/decision-cards",
+    "/v1/decision-cards/{card_id}/send-to-client",
+)
+
+
 @pytest.mark.parametrize(("method", "path", "action"), _operations())
-def test_every_operation_is_declared_with_its_action_and_501(
+def test_every_operation_is_declared_with_its_action_and_its_status(
     method: str, path: str, action: str
 ) -> None:
     operation = PATHS[path][method]
     assert operation["x-abacus-action"] == action
-    assert "501" in cast(Json, operation["responses"])
+    live = path.startswith(LIVE_PREFIXES)
+    assert ("501" in cast(Json, operation["responses"])) is not live, path

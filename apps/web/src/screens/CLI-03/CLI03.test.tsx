@@ -17,12 +17,15 @@ describe("CLI-03 Relationships", () => {
   it("a: every node is a keyboard stop and Jonah Feld's inspector masks the TIN", () => {
     const g = graph("ridgeline");
     render(<CLI03 graph={g} view="graph" selected="jonah-feld" />);
-    for (const n of g.nodes) {
-      const el = screen.getByRole("button", {
-        name: new RegExp(n.label.replace(/[()·]/gu, "."), "u"),
-      });
-      expect(el.getAttribute("tabindex")).not.toBe("-1");
-    }
+    // GraphView's roving tabindex: every node is a button with a tab stop, one of them in the
+    // tab order at a time (the arrows move between them).
+    const stops = g.nodes.map((n) =>
+      document
+        .querySelector<HTMLElement>(`button[data-node='${n.node_id}']`)
+        ?.getAttribute("tabindex"),
+    );
+    expect(stops.every((t) => t === "0" || t === "-1")).toBe(true);
+    expect(stops.filter((t) => t === "0")).toHaveLength(1);
     const inspector = inspectorOf(g, "jonah-feld");
     expect(inspector?.tin).toBe("•••-••-4417");
     expect(inspector?.linked?.map((l) => l.id)).toEqual(["feld-1040"]);
@@ -39,7 +42,7 @@ describe("CLI-03 Relationships", () => {
 
   it("d: the external node reads Not a Brightwater Hale client", () => {
     const ext = canvasNodes(graph("external")).find((n) => n.kind === "external");
-    expect(ext?.line).toBe(COPY.external);
+    expect(ext?.line).toBe("Not a Brightwater Hale client");
   });
 
   it("e: a single entity shows the empty state", () => {

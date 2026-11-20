@@ -3,6 +3,7 @@
 import { filingDeadlinesOptions } from "@abacus/api-client/query";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
+import { nowMs } from "../../app-core/clock";
 import { type ChipTarget, HOME03, type Home03View } from "./index";
 
 export function Deadlines({
@@ -17,7 +18,7 @@ export function Deadlines({
   );
   // The month shown and its grid's edges (Sunday before the 1st to Saturday after the last day).
   const [month] = useState(() => {
-    const now = new Date();
+    const now = new Date(nowMs());
     return { y: now.getFullYear(), m: now.getMonth() };
   });
   const first = new Date(Date.UTC(month.y, month.m, 1));

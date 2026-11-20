@@ -105,7 +105,8 @@ class ClosedEntry:
     approval_label: str | None
     # The listed class's limit from K-02 (None for an unlisted class or an attest client).
     limit: Decimal | None = None
-    # C-02-T31: CLS-07 d and e (QuickBooks ids, the auto-reversal date, the batch and why it failed).
+    # C-02-T31: CLS-07 d and e (QuickBooks ids, the auto-reversal date, the batch and why it
+    # failed).
     external_txn_ref: str | None = None
     reverses_on: date | None = None
     posting_batch_id: UUID | None = None
@@ -565,9 +566,9 @@ async def posting_enabled(ctx: AuthContext, work_item_id: UUID) -> bool:
 async def redate_withdraw(
     ctx: AuthContext, entry_id: UUID, new_date: date, reason: str, *, conflict_id: UUID
 ) -> UUID:
-    """CLS-11e "Re-date to …": the approval is withdrawn (`approval_withdrawn`), the date edited and
-    the entry taken out of its batch, so it is re-approved (a new payload hash) before it posts.
-    The conflict is closed `redated` in the same unit of work."""
+    """CLS-11e "Re-date to …": the approval is withdrawn (`approval_withdrawn`), the date edited
+    and the entry taken out of its batch, so it is re-approved (a new payload hash) before it
+    posts. The conflict is closed `redated` in the same unit of work."""
     row = await _entry(ctx, entry_id)
     engagement_id, work_item_id = UUID(str(row["engagement_id"])), UUID(str(row["work_item_id"]))
     await _authorised(ctx, "closing_date_conflict.resolve", engagement_id)
@@ -662,7 +663,9 @@ async def _mark_reversal(tenant: TenantContext, new_id: UUID, of: UUID, on: date
             ),
             {"of": of, "d": on, "id": new_id},
         )
-        tx.record("proposed_entry.reversal_linked", target=Target(TARGET, new_id), after=Ref(of=of))
+        tx.record(
+            "proposed_entry.reversal_linked", target=Target(TARGET, new_id), after=Ref(of=of)
+        )
 
 
 async def propose_reversal(ctx: AuthContext, entry_id: UUID, on: date | None) -> UUID:
@@ -680,7 +683,9 @@ _ORIGINAL_APPROVER = text(
 )
 
 
-async def carry_reversal(tenant: TenantContext, entry_id: UUID, next_work_item_id: UUID) -> UUID | None:
+async def carry_reversal(
+    tenant: TenantContext, entry_id: UUID, next_work_item_id: UUID
+) -> UUID | None:
     """The auto-reversal carry (US-3.4): the reversing entry on the next period's close, dated
     `reverses_on`, approved with the original's decision under its approver ("Approved with
     AJE-01 by RM under …"). It posts only when a person posts that period's batch."""
@@ -739,7 +744,8 @@ async def mark_recorded_externally(
         await tx.session.execute(
             text(
                 "UPDATE proposed_entries SET status = 'recorded_externally', "
-                "recorded_externally_at = clock_timestamp(), recorded_externally_evidence_id = :ev, "
+                "recorded_externally_at = clock_timestamp(), recorded_externally_evidence_id = "
+                ":ev, "
                 "recorded_externally_match_ref = :m, version = version + 1 WHERE id = :id"
             ),
             {"ev": evidence_version_id, "m": match_ref, "id": entry_id},

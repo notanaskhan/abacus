@@ -102,7 +102,9 @@ class PostingTalliesOut(BaseModel):
     # C-02-T31 (additive): CLS-07d's banner.
     posted_batch_id: Annotated[UUID | None, Internal] = None
     posted_count: Annotated[int | None, Field(ge=0), Internal] = None
-    posted_amount: Annotated[Decimal | None, Field(ge=0, max_digits=20, decimal_places=2), Confidential] = None
+    posted_amount: Annotated[
+        Decimal | None, Field(ge=0, max_digits=20, decimal_places=2), Confidential
+    ] = None
     posted_at: Annotated[datetime | None, Internal] = None
     closing_date_set: Annotated[date | None, Internal] = None
     resolved_failure_count: Annotated[int, Field(ge=0), Internal] = 0

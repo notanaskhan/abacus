@@ -619,7 +619,7 @@ async def sync_entity(
     changed: tuple[str, ...]
     try:
         supported = connector.capabilities().datasets
-        every = DATASETS + tuple(d for d in VENDOR_DATASETS if d in supported)
+        every: tuple[Dataset, ...] = (*DATASETS, *(d for d in VENDOR_DATASETS if d in supported))
         if schedule.cdc_cursor is None or at - schedule.cdc_cursor > CDC_LOOKBACK:
             changed = every
         else:

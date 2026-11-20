@@ -178,6 +178,10 @@ export default defineConfig(({ mode, command }) => {
                     // F-08-T12 (DEC-16): the two engines get chunks of their own, so the budget
                     // script can hold each (engine-dnd 40 KB, engine-editor 180 KB) and no route
                     // that never drags or edits pays for them.
+                    // S52 end pass: AUD-06's copy in a chunk of its own, so the trial balance's
+                    // route chunks (TbLive, LineActions) no longer pull the whole AUD-02 cockpit
+                    // chunk the bundler would otherwise place it in.
+                    { name: "aud06-copy", test: /src[\\/]screens[\\/]AUD-06[\\/]copy\.ts$/ },
                     { name: "engine-dnd", test: /node_modules[\\/]@dnd-kit[\\/]/ },
                     {
                       name: "engine-editor",

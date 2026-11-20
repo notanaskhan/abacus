@@ -82,7 +82,9 @@ class ConsultationList:
 
 
 async def _question(ctx: AuthContext, sealed: object) -> str:
-    from abacus.modules.assurance.consultations import _text  # pyright: ignore[reportPrivateUsage]
+    from abacus.modules.assurance.consultations import (
+        _text,  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
+    )
 
     return await _text(ctx, sealed)
 
@@ -137,11 +139,16 @@ async def firm_log(
     for r in rows:
         shaped.append(
             ConsultationRow(
-                cast(UUID, r[0]), str(r[1]), cast(UUID | None, r[2]), str(r[3]), cast(UUID, r[4]),
-                cast(UUID, r[5]), cast(datetime, r[6]),
+                cast(UUID, r[0]),
+                str(r[1]),
+                cast(UUID | None, r[2]),
+                str(r[3]),
+                cast(UUID, r[4]),
+                cast(UUID, r[5]),
+                cast(datetime, r[6]),
                 (await _question(ctx, r[7])) if r[7] is not None else None,
                 (await _question(ctx, r[8])) if r[8] is not None else None,
-            )  # fmt: skip
+            )
         )
     return ConsultationList(
         tuple(shaped),

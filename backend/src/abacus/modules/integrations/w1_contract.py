@@ -416,11 +416,7 @@ async def _switch_out(ctx: AuthContext, found: object) -> W1CapabilitySwitchOut:
     from abacus.modules.integrations.w1_switches import Switch
 
     switch = cast(Switch, found)
-    names = (
-        await display_names([switch.changed_by])
-        if switch.changed_by is not None
-        else {}
-    )
+    names = await display_names([switch.changed_by]) if switch.changed_by is not None else {}
     return W1CapabilitySwitchOut(
         capability_id="ledger_post_journal_entries",
         enabled=switch.enabled,

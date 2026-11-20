@@ -21,31 +21,38 @@ DEC-5840). Amber. No model is called anywhere in TAX-14 (OQ-3).
 
 from __future__ import annotations
 
-import asyncio
 import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import timedelta
 from decimal import Decimal
-from typing import Annotated, ClassVar, Final, Literal, cast
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Final, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import text
-from temporalio import activity, workflow
+from temporalio import activity
 from temporalio.common import RetryPolicy
 
 from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.dispatch import register_work_classes
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, uow
+from abacus.modules.tax.standards_run_workflow import (
+    FINISH_ACTIVITY,
+    ITEM_ACTIVITY,
+    ITEMS_ACTIVITY,
+    StandardsRunWorkflow,
+)
+
+if TYPE_CHECKING:
+    from abacus.modules.identity.api import AuthContext
 
 READ: Final = "standards_run.read"
 START: Final = "standards_run.start"
 CONFIRM: Final = "standards_check.confirm"
 TARGET: Final = "standards_run"
 CATEGORY: Final = "standards_runs"
-ITEM_ACTIVITY: Final = "standards_run_item"
-FINISH_ACTIVITY: Final = "standards_run_finish"
 _DISPLAY: Final = re.compile(r"^[A-Za-z]-\d{2,3}$")
 Outcome = Literal["pass", "exception", "manual_pending", "not_applicable"]
 
@@ -59,7 +66,7 @@ class CheckAlreadyConfirmed(DomainConflict):
 
 
 @dataclass(frozen=True)
-class CheckResult:
+class TieOutResult:
     outcome: Outcome
     difference: Decimal | None = None
     anchor: dict[str, str] | None = None
@@ -67,7 +74,7 @@ class CheckResult:
     title: str | None = None
 
 
-Check = Callable[[TenantContext, UUID, Decimal | None], Awaitable[CheckResult]]
+Check = Callable[[TenantContext, UUID, Decimal | None], Awaitable[TieOutResult]]
 _CHECKS: dict[str, Check] = {}
 
 
@@ -80,7 +87,7 @@ def register_check(code: str, description: str, check: Check) -> None:
 
 
 def _tie_out(key: str) -> Check:
-    async def run(tenant: TenantContext, return_id: UUID, _t: Decimal | None) -> CheckResult:
+    async def run(tenant: TenantContext, return_id: UUID, _t: Decimal | None) -> TieOutResult:
         from abacus.modules.review.api import current_values
         from abacus.modules.tax.entity_sections import tie_outs
         from abacus.modules.tax.workbook_service import WORKBOOK
@@ -94,11 +101,11 @@ def _tie_out(key: str) -> Check:
             None,
         )
         if found is None or found.state == "pending":
-            return CheckResult("not_applicable")
+            return TieOutResult("not_applicable")
         link = dict(found.links[0]) if found.links else None
         if found.state == "tie":
-            return CheckResult("pass", found.difference, link)
-        return CheckResult(
+            return TieOutResult("pass", found.difference, link)
+        return TieOutResult(
             "exception",
             found.difference,
             link,
@@ -133,10 +140,15 @@ def check_key(form: str, version_no: int, item_key: str) -> str | None:
     return f"{form.lower()}-v{version_no}/{item_key.upper()}"
 
 
+def _tenant(ctx: object) -> TenantContext:
+    """The caller's tenant: every caller here is a person's context (the routes are human)."""
+    return cast("AuthContext", ctx).tenant  # a person: the standards routes admit humans only
+
+
 async def _checklist(ctx: object, version_id: UUID) -> tuple[str, int, dict[str, object]]:
     from abacus.modules.methodology.api import checklist_version
 
-    found = await checklist_version(cast(TenantContext, ctx.tenant), version_id)
+    found = await checklist_version(_tenant(ctx), version_id)
     if found is None:
         raise StandardNotChecklist(facts={"standard_version_id": str(version_id)})
     return found
@@ -145,10 +157,10 @@ async def _checklist(ctx: object, version_id: UUID) -> tuple[str, int, dict[str,
 async def start(ctx: object, version_id: UUID, return_ids: list[UUID]) -> UUID:
     """A person's run over the selected returns (module docstring)."""
     from abacus.modules.engagements.api import work_item_facts
-    from abacus.modules.identity.api import AuthContext, Forbidden, Resource, authorise
+    from abacus.modules.identity.api import Forbidden, Resource, authorise
 
-    person = cast(AuthContext, ctx)
-    if person.client or person.tenant.actor_kind != "human" or person.is_support:
+    person = cast("AuthContext", ctx)  # a person: the route admits human actors only
+    if person.tenant.actor_kind != "human" or person.client or person.is_support:
         raise Forbidden(START, "role")
     await authorise(person, START, Resource.firm(person.tenant_id))
     form, _version_no, _payload = await _checklist(person, version_id)
@@ -202,7 +214,7 @@ async def start(ctx: object, version_id: UUID, return_ids: list[UUID]) -> UUID:
 
 
 async def rerun(ctx: object, run_id: UUID, return_ids: list[UUID]) -> UUID:
-    async with tenant_session(cast(TenantContext, ctx.tenant)) as session:
+    async with tenant_session(_tenant(ctx)) as session:
         version = await session.scalar(
             text("SELECT standard_version_id FROM standards_runs WHERE id = :r"), {"r": run_id}
         )
@@ -275,7 +287,7 @@ async def run_item(tenant_id: UUID, run_id: UUID, item_id: UUID) -> str:
     threshold = payload.get("two_year_threshold_pct")
     t = None if threshold is None else Decimal(str(threshold))
     return_id, engagement_id = UUID(str(row.work_item_id)), UUID(str(row.engagement_id))
-    results: list[tuple[str, CheckResult, UUID | None, UUID | None]] = []
+    results: list[tuple[str, TieOutResult, UUID | None, UUID | None]] = []
     for item in cast(list[dict[str, object]], payload.get("items") or []):
         key = check_key(form, version_no, str(item.get("key", "")))
         if key is None:
@@ -283,7 +295,7 @@ async def run_item(tenant_id: UUID, run_id: UUID, item_id: UUID) -> str:
         code = item.get("check_code")
         check = _CHECKS.get(str(code)) if code else None
         result = (
-            CheckResult("manual_pending") if check is None else await check(system, return_id, t)
+            TieOutResult("manual_pending") if check is None else await check(system, return_id, t)
         )
         linked = created = None
         if result.outcome == "exception" and result.issue_ref is not None:
@@ -369,7 +381,7 @@ _RETRY: Final = RetryPolicy(
 )
 
 
-@activity.defn(name="standards_run_items")
+@activity.defn(name=ITEMS_ACTIVITY)
 async def items_activity(given: list[str]) -> list[str]:
     return await items_of(UUID(given[0]), UUID(given[1]))
 
@@ -384,57 +396,16 @@ async def finish_activity(given: list[str]) -> str:
     return await finish(UUID(given[0]), UUID(given[1]))
 
 
-@workflow.defn(name="StandardsRunWorkflow")
-class StandardsRunWorkflow:
-    """`standards_run:<tenant>:<run>`: list the items, run each return's checks in parallel, then
-    complete the run. Code only: no model is called (OQ-3)."""
-
-    @workflow.run
-    async def run(self, given: list[str]) -> str:
-        items = cast(
-            list[str],
-            await workflow.execute_activity(
-                "standards_run_items",
-                given,
-                result_type=list[str],
-                start_to_close_timeout=timedelta(minutes=1),
-                retry_policy=_RETRY,
-            ),
-        )
-        await asyncio.gather(
-            *(
-                workflow.execute_activity(
-                    ITEM_ACTIVITY,
-                    [*given, item],
-                    result_type=str,
-                    start_to_close_timeout=timedelta(minutes=5),
-                    retry_policy=_RETRY,
-                )
-                for item in items
-            )
-        )
-        return cast(
-            str,
-            await workflow.execute_activity(
-                FINISH_ACTIVITY,
-                given,
-                result_type=str,
-                start_to_close_timeout=timedelta(minutes=1),
-                retry_policy=_RETRY,
-            ),
-        )
-
-
 WORKFLOWS: Final[dict[type, str]] = {StandardsRunWorkflow: "background"}
 ACTIVITIES: Final[tuple[object, ...]] = (items_activity, item_activity, finish_activity)
 
 
 async def confirm(ctx: object, result_id: UUID, outcome: str, note: str | None) -> None:
     """A reviewer confirms a manual item (`standards_check.confirm`, human only), once."""
-    from abacus.modules.identity.api import AuthContext, Forbidden, Resource, authorise
+    from abacus.modules.identity.api import Forbidden, Resource, authorise
 
-    person = cast(AuthContext, ctx)
-    if person.client or person.tenant.actor_kind != "human" or person.is_support:
+    person = cast("AuthContext", ctx)  # a person: the route admits human actors only
+    if person.tenant.actor_kind != "human" or person.client or person.is_support:
         raise Forbidden(CONFIRM, "role")
     await authorise(person, CONFIRM, Resource.firm(person.tenant_id))
     async with uow(person.tenant) as tx:
@@ -464,12 +435,15 @@ def register() -> None:
         )
 
 
+# T-08-T14: the background class routes `dispatch` (ADR-071); one registration, at import.
+register_work_classes(WORKFLOWS)
+
 __all__ = [
     "ACTIVITIES",
     "TIE_OUT_CHECKS",
     "WORKFLOWS",
-    "CheckResult",
     "StandardsRunWorkflow",
+    "TieOutResult",
     "check_key",
     "confirm",
     "finish",
@@ -527,9 +501,9 @@ async def runs(
 ) -> list[RunView]:
     """TAX-14's runs, each item a return the viewer may see (`visible()`; others are absent)."""
     from abacus.modules.engagements.api import work_item_facts
-    from abacus.modules.identity.api import AuthContext, Resource, authorise
+    from abacus.modules.identity.api import Resource, authorise
 
-    person = cast(AuthContext, ctx)
+    person = cast("AuthContext", ctx)  # a person: the route admits human actors only
     await authorise(person, READ, Resource.firm(person.tenant_id))
     visible = {
         f.work_item_id: f for f in await work_item_facts(person, "tax_return", "tax_return.read")
@@ -540,8 +514,10 @@ async def runs(
                 _RUN, {"r": run_id, "f": None if form is None else form.lower(), "s": status}
             )
         ).all()
-        items = (
-            (await session.execute(_ITEMS, {"runs": [r.id for r in found]})).all() if found else []
+        items: list[Any] = (  # Any: SQL rows
+            list((await session.execute(_ITEMS, {"runs": [r.id for r in found]})).all())
+            if found
+            else []
         )
     by_run: dict[UUID, list[RunItemView]] = {}
     for i in items:
@@ -582,17 +558,23 @@ async def checks(ctx: object, run_id: UUID, work_item_id: UUID) -> list[dict[str
     found = await runs(ctx, run_id)
     if not found or all(i.work_item_id != work_item_id for i in found[0].items):
         raise NotFound("standards_run_item")
-    async with tenant_session(cast(TenantContext, ctx.tenant)) as session:
+    async with tenant_session(_tenant(ctx)) as session:
         rows = (
-            await session.execute(
-                text(
-                    "SELECT c.id, c.check_key, c.outcome, c.difference, c.linked_issue_id, "
-                    "c.created_issue_id, f.outcome AS confirmed FROM standards_check_results c "
-                    "JOIN standards_run_items i ON i.id = c.run_item_id LEFT JOIN "
-                    "standards_check_confirmations f ON f.result_id = c.id WHERE i.run_id = :r "
-                    "AND i.work_item_id = :w ORDER BY c.check_key"
-                ),
-                {"r": run_id, "w": work_item_id},
+            (
+                await session.execute(
+                    text(
+                        "SELECT c.id, c.check_key, c.outcome, c.difference, c.linked_issue_id, "
+                        "c.created_issue_id, f.outcome AS confirmed FROM standards_check_results "
+                        "c "
+                        "JOIN standards_run_items i ON i.id = c.run_item_id LEFT JOIN "
+                        "standards_check_confirmations f ON f.result_id = c.id WHERE i.run_id = "
+                        ":r "
+                        "AND i.work_item_id = :w ORDER BY c.check_key"
+                    ),
+                    {"r": run_id, "w": work_item_id},
+                )
             )
-        ).all()
-    return [dict(r._mapping) for r in rows]
+            .mappings()
+            .all()
+        )
+    return [dict(r) for r in rows]

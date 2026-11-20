@@ -1,7 +1,7 @@
 ---
 id: TASK-8848
 title: "F-08-T16: Independent AC tests for the analytics kit"
-spec: SPEC-660
+spec: SPEC-000
 acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review

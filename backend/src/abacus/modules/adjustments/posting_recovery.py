@@ -77,7 +77,9 @@ LIFT_TEMPLATE: Final = "lift_closing_date_request"
 
 class ClosingDateConflictOpen(DomainConflict):
     code = "closing_date_conflict"
-    message = "The entry is dated on or before the ledger's closing date: ask the client or re-date."
+    message = (
+        "The entry is dated on or before the ledger's closing date: ask the client or re-date."
+    )
 
 
 class NotRetryable(DomainConflict):
@@ -225,7 +227,7 @@ _BATCH_ROW = text(
 )
 
 
-def _single_digest(batch_code: str, period: str, entry: P._Entry) -> str:  # pyright: ignore[reportPrivateUsage]
+def _single_digest(batch_code: str, period: str, entry: P._Entry) -> str:  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
     """A retry's grant covers one entry (no closing date: that is set once all have posted)."""
     return P.payload_digest(f"{batch_code}:retry:{entry.id}", period, None, [entry])
 
@@ -251,12 +253,12 @@ async def retry_entry(
             ),
             {"e": entry_id},
         )
-        attempts = int(await session.scalar(P._ATTEMPTS, {"b": batch_id, "e": entry_id}) or 0)  # pyright: ignore[reportPrivateUsage]
+        attempts = int(await session.scalar(P._ATTEMPTS, {"b": batch_id, "e": entry_id}) or 0)  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
     if row is None:
         raise NotFound(P.SUBJECT)
     resource = await engagement_resource_of(ctx.tenant, row.engagement_id)
     await authorise(ctx, P.ACTION, resource)
-    (entry,) = await P._entries(ctx.tenant, row.work_item_id, [entry_id])  # pyright: ignore[reportPrivateUsage]
+    (entry,) = await P._entries(ctx.tenant, row.work_item_id, [entry_id])  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
     if entry.status != "failed_post":
         raise NotRetryable(facts={"status": entry.status})
     if conflict is not None:
@@ -296,7 +298,7 @@ async def run_retry(tenant_id: UUID, batch_id: UUID, entry_id: UUID, grant_id: U
         raise NotFound(P.SUBJECT)
     approver = cast(UUID, row.posted_by_user_id)
     acting = TenantContext(tenant_id, "system", system.actor_id, on_behalf_of_user_id=approver)
-    (entry,) = await P._entries(acting, row.work_item_id, [entry_id])  # pyright: ignore[reportPrivateUsage]
+    (entry,) = await P._entries(acting, row.work_item_id, [entry_id])  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
     if entry.status == "posted":
         return "posted"  # an earlier attempt of this retry already finished
     if not await consume_grant(
@@ -315,7 +317,7 @@ async def run_retry(tenant_id: UUID, batch_id: UUID, entry_id: UUID, grant_id: U
     year, month = (int(p) for p in period.split("-"))
     period_end = date(year + (month == 12), month % 12 + 1, 1) - timedelta(days=1)
     key = f"{batch_id}:{entry_id}"  # the same key as the first attempt: never a second entry
-    journal = P._journal(entry, period_end)  # pyright: ignore[reportPrivateUsage]
+    journal = P._journal(entry, period_end)  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
 
     async def post() -> Posted:
         return await writer.post(journal, key)
@@ -324,16 +326,17 @@ async def run_retry(tenant_id: UUID, batch_id: UUID, entry_id: UUID, grant_id: U
         approver_ctx, W1_CAPABILITY, ledger.client_id, approval_ref=grant_id,
         idempotency_key=key, w1=scope, perform=post,
         operation=W1Operation(
-            "proposed_entry", entry_id, "create_journal_entry", approver, P._body(journal)  # pyright: ignore[reportPrivateUsage]
+            "proposed_entry", entry_id, "create_journal_entry", approver, P._body(journal)  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
         ),
-        evidence_of=P._posted_evidence,  # pyright: ignore[reportPrivateUsage]
+        evidence_of=P._posted_evidence,  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
     )  # fmt: skip
     ok = posted.error is None and posted.verified
     closed_on = await writer.book_close_date() if not ok else None
     async with uow(acting) as tx:
-        attempt = int(await tx.session.scalar(P._ATTEMPTS, {"b": batch_id, "e": entry_id}) or 0) + 1  # pyright: ignore[reportPrivateUsage]
+        attempts = P._ATTEMPTS  # pyright: ignore[reportPrivateUsage] -- posting.py's own statement
+        attempt = int(await tx.session.scalar(attempts, {"b": batch_id, "e": entry_id}) or 0) + 1
         await tx.session.execute(
-            P._RESULT,  # pyright: ignore[reportPrivateUsage]
+            P._RESULT,  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
             {
                 "t": tenant_id, "b": batch_id, "e": entry_id, "n": attempt,
                 "o": "posted" if ok else "failed",
@@ -342,8 +345,12 @@ async def run_retry(tenant_id: UUID, batch_id: UUID, entry_id: UUID, grant_id: U
             },
         )  # fmt: skip
         await tx.session.execute(
-            P._ENTRY_POSTED,  # pyright: ignore[reportPrivateUsage]
-            {"s": "posted" if ok else "failed_post", "ext": posted.external_ref or None, "e": entry_id},
+            P._ENTRY_POSTED,  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
+            {
+                "s": "posted" if ok else "failed_post",
+                "ext": posted.external_ref or None,
+                "e": entry_id,
+            },
         )
         tx.record(
             "proposed_entry.posted" if ok else "proposed_entry.post_failed",
@@ -359,9 +366,14 @@ async def run_retry(tenant_id: UUID, batch_id: UUID, entry_id: UUID, grant_id: U
                 {"b": batch_id},
             )
         elif await record_failure(
-            tx, tenant_id=tenant_id, batch_id=batch_id, entry_id=entry_id,
-            entry_date=journal.txn_date, code=posted.error or "verify_mismatch", closed_on=closed_on,
-        ):  # fmt: skip
+            tx,
+            tenant_id=tenant_id,
+            batch_id=batch_id,
+            entry_id=entry_id,
+            entry_date=journal.txn_date,
+            code=posted.error or "verify_mismatch",
+            closed_on=closed_on,
+        ):
             tx.emit(
                 await failed_event(
                     acting, batch_id=batch_id, work_item_id=row.work_item_id,
@@ -414,7 +426,7 @@ async def finish_if_done(
                 P.SUBJECT, batch_id, "set_closing_date", approver,
                 json.dumps({"closing_date": str(row.closing_date_target)}).encode(),
             ),
-            evidence_of=P._closing_evidence,  # pyright: ignore[reportPrivateUsage]
+            evidence_of=P._closing_evidence,  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
         )  # fmt: skip
         closed = error is None
     acting = TenantContext(tenant_id, "system", system.actor_id, on_behalf_of_user_id=approver)
@@ -431,7 +443,7 @@ async def finish_if_done(
         )  # fmt: skip
         if closed and row.closing_date_set_at is None and row.closing_date_target is not None:
             await tx.session.execute(
-                P._CLOSING_EVENT,  # pyright: ignore[reportPrivateUsage]
+                P._CLOSING_EVENT,  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
                 {"t": tenant_id, "ce": row.client_entity_id, "c": row.connection_id,
                  "p": row.period, "d": row.closing_date_target, "u": approver, "b": batch_id},
             )  # fmt: skip
@@ -474,15 +486,9 @@ async def conflict_view(tenant: TenantContext, conflict_id: UUID) -> ConflictVie
         raise NotFound(CONFLICT)
     asked = None
     if row.communication_ref is not None:
-        async with tenant_session(tenant) as session:
-            asked = await session.scalar(
-                text(
-                    "SELECT created_at FROM audit_events WHERE action = "
-                    "'closing_date_conflict.client_asked' AND target_id = :c ORDER BY created_at "
-                    "LIMIT 1"
-                ),
-                {"c": conflict_id},
-            )
+        from abacus.modules.communications.api import message_created_at
+
+        asked = await message_created_at(tenant, UUID(str(row.communication_ref)))
     return ConflictView(
         row.id, row.proposed_entry_id, row.ledger_closing_date, row.entry_date, str(row.status),
         asked,
@@ -537,7 +543,9 @@ async def ask_client(ctx: AuthContext, conflict_id: UUID) -> ConflictView:
     async with uow(ctx.tenant) as tx:
         await tx.session.execute(
             text(
-                "UPDATE closing_date_conflicts SET status = 'client_asked', communication_ref = :m "
+                "UPDATE closing_date_conflicts SET status = 'client_asked', communication_ref = "
+                ":m "
+                ""
                 "WHERE id = :c AND status = 'open'"
             ),
             {"m": outcome.message_id, "c": conflict_id},
@@ -641,7 +649,14 @@ _EXPORT = text(
     "l.entry_id = e.id WHERE e.work_item_id = :w AND e.status IN ('approved', 'client_approved') "
     "AND e.posting_target IS DISTINCT FROM 'client_ledger' ORDER BY e.kind, e.number, l.line_no"
 )
-EXPORT_HEADER: Final = ("Journal No", "Journal Date", "Account", "Account Name", "Debits", "Credits")
+EXPORT_HEADER: Final = (
+    "Journal No",
+    "Journal Date",
+    "Account",
+    "Account Name",
+    "Debits",
+    "Credits",
+)
 
 
 async def export_file(ctx: AuthContext, work_item_id: UUID) -> bytes:
@@ -662,10 +677,14 @@ async def export_file(ctx: AuthContext, work_item_id: UUID) -> bytes:
         debit, credit = Decimal(r.debit), Decimal(r.credit)
         body.append(
             (
-                str(r.ref), cast(date, r.txn_date).strftime("%m/%d/%Y"), str(r.account_code),
-                str(r.account_name), f"{debit:.2f}" if debit else "", f"{credit:.2f}" if credit else "",
+                str(r.ref),
+                cast(date, r.txn_date).strftime("%m/%d/%Y"),
+                str(r.account_code),
+                str(r.account_name),
+                f"{debit:.2f}" if debit else "",
+                f"{credit:.2f}" if credit else "",
             )
-        )  # fmt: skip
+        )
     content = workbook([Sheet("Journal entries", body)])
     async with uow(ctx.tenant) as tx:
         tx.record(
@@ -699,12 +718,12 @@ __all__ = [
     "PostingBatchFailed",
     "Retried",
     "ask_client",
-    "posted_batches_of",
     "carry_reversals",
     "conflict_view",
     "export_file",
     "failed_entry_facts",
     "failure_line",
+    "posted_batches_of",
     "record_external",
     "record_failure",
     "redate",
@@ -713,4 +732,3 @@ __all__ = [
     "reverse_entry",
     "run_retry",
 ]
-

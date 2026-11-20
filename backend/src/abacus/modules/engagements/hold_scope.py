@@ -160,10 +160,10 @@ async def inspectable_work_items(
 
 
 __all__ = [
-    "inspectable_work_items",
     "EngagementHoldFacts",
     "engagement_hold_facts",
     "engagements_in_hold_scope",
+    "inspectable_work_items",
     "work_item_engagement",
 ]
 

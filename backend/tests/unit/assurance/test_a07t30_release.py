@@ -147,6 +147,11 @@ def _no_db(monkeypatch: pytest.MonkeyPatch, tx: _Tx) -> None:
     monkeypatch.setattr(rel, "lock_ref", ref)
     monkeypatch.setattr(rel, "uow", unit)
 
+    async def no_reissue(*_a: object) -> None:
+        return None  # Q-05-T17: the current draft is not a reissue
+
+    monkeypatch.setattr(rel, "reissue_of", no_reissue)
+
 
 @pytest.mark.parametrize("kind", ["agent", "system"])
 async def test_agent_and_system_calls_are_refused_before_anything_is_written(

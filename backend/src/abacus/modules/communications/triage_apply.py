@@ -100,7 +100,7 @@ class IntakeDestination:
     nodes: Callable[[AuthContext, UUID, UUID | None], Awaitable[Sequence[Node]]]
     place: Callable[[TenantContext, UnitOfWork, UUID], Awaitable[Placement]]
     # Q-05-T17: in the same unit of work, once the file is an evidence version (a case's source).
-    after_file: Callable[[UnitOfWork, UUID, UUID], Awaitable[None]] | None = None
+    after_file: Callable[[TenantContext, UnitOfWork, UUID, UUID], Awaitable[None]] | None = None
 
 
 _DESTINATIONS: dict[str, IntakeDestination] = {}
@@ -376,7 +376,9 @@ async def _decide(tx: UnitOfWork, ctx: AuthContext, given: Decision, message_id:
         )
         filed_version = filed.evidence_version_id
         if destination.after_file is not None:
-            await destination.after_file(tx, given.destination_id, filed.evidence_version_id)
+            await destination.after_file(
+                ctx.tenant, tx, given.destination_id, filed.evidence_version_id
+            )
         if placement.request_item_id is not None:
             await fulfil_by_upload(
                 tx,

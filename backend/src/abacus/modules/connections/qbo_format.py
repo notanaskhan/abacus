@@ -421,7 +421,9 @@ def _method(entity: str, row: dict[str, object]) -> PaymentMethod:
     """The payment method by code: a card is a card whatever its name; ACH is named by the
     payment method (QuickBooks has no ACH pay type) [verify]."""
     named = row.get("PaymentMethodRef")
-    name = _text(_object(named).get("name")).lower() if isinstance(named, dict) else ""
+    name = (
+        _text(_object(cast(object, named)).get("name")).lower() if isinstance(named, dict) else ""
+    )
     kind = _text(row.get("PayType" if entity == "BillPayment" else "PaymentType"))
     if kind == "CreditCard":
         return "card"
@@ -454,7 +456,7 @@ def parse_qbo_vendor_payments(content: bytes) -> tuple[QboVendorPayment, ...]:
         out.append(
             QboVendorPayment(
                 external_id=_identifier(row.get("Id")),
-                entity=cast(Literal["BillPayment", "Purchase"], entity),
+                entity=entity,
                 vendor_external_id=_identifier(ref.get("value")),
                 txn_date=_date(row.get("TxnDate")),
                 amount=_amount(row.get("TotalAmt")),

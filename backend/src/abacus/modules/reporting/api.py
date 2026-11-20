@@ -745,6 +745,19 @@ async def latest_document_version(
     return None if row is None else (row.id, row.content_hash)
 
 
+async def latest_document_version_no(tenant: TenantContext, document_id: UUID) -> int | None:
+    """C-02-T28 (S52 end pass): a generated document's newest version number, for its owner."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT max(version_no) FROM generated_document_versions "
+                "WHERE generated_document_id = :d"
+            ),
+            {"d": document_id},
+        )
+    return None if found is None else int(found)
+
+
 async def document_is_final(tenant: TenantContext, document_id: UUID) -> bool:
     """N-04-T16: a person's final render of this document exists."""
     async with tenant_session(tenant) as session:

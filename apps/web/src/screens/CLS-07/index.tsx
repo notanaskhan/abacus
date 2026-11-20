@@ -61,7 +61,7 @@ export interface CLS07Props {
   onExport?: () => void;
   onSendToClient?: () => void;
   /** CLS-07d → CLS-11: "View in ledger sync ›". */
-  onLedgerSync?: () => void;
+  onLedgerSync?: (() => void) | undefined;
 }
 
 const TH = "h-[30px] bg-nested px-[10px] text-[11.5px] font-medium text-ink-2";
@@ -247,7 +247,7 @@ function PostedBanner({
   onLedgerSync,
 }: {
   view: PostingCloseEntriesOut;
-  onLedgerSync?: () => void;
+  onLedgerSync?: (() => void) | undefined;
 }): JSX.Element {
   const t = view.tallies;
   const code = t.posted_batch_code ?? "";
