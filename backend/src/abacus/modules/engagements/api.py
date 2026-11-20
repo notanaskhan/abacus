@@ -102,7 +102,6 @@ from abacus.modules.engagements.hold_scope import (
     engagement_hold_facts,
     engagement_retention_facts,
     engagements_in_hold_scope,
-    inspectable_work_items,
     work_item_engagement,
     work_item_period,
     work_item_titles,
@@ -435,7 +434,10 @@ register_engagements_of_scope(engagements_of_scope)
 register_engagement_resource(engagement_resource_of)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.engagements.templates_v2_contract import template_link_router  # noqa: E402
+
 ROUTERS: tuple[AbacusRouter, ...] = (
+    template_link_router,  # K-03-T08: TV-1 template link, update and hold (stub; dark)
     # The v2 contract stub (P-07-T05) first: its literal `/v1/engagements/index` must match before
     # the live `/v1/engagements/{engagement_id}` (tests/contracts/engagements_v2 holds the order).
     engagements_v2_router,
