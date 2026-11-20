@@ -2,7 +2,7 @@
 id: TASK-8754
 title: "G-04-T21: Journey E2E, screen E2E and parity: j01 1 and A4, j14 5, j27 2 (plan and usage) with INV-1..5 and axe; plt-01, adm-14 and shl-05 specs; lock PLT-01 a-d, f, g, ADM-14 a-f and SHL-05 a-f, d' at Tier C; report PLT-01 e at Tier C from fixture mode; Tier D"
 spec: SPEC-681
-acceptance_criteria: []
+acceptance_criteria: [AC-15]  # the support-request sheet has no approve control (PLT-01d spec); the row's acceptance is under Objective
 risk_zone: green
 status: in-review
 branch: s51-g04t21

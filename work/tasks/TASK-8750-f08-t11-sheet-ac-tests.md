@@ -2,7 +2,7 @@
 id: TASK-8750
 title: "F-08-T11: Independent AC tests for the Sheet kit (ADR-078); status words asserted against the kit-local draft types until F-08-T04 lands"
 spec: SPEC-000
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review
 branch: s51-f08t11

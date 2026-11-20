@@ -2,7 +2,7 @@
 id: TASK-8755
 title: "C-01-T50: Parity and accessibility: Tier C report for every built artboard with the locks listed in section 10; Tier D close geometry blocking; axe on every scenario and open overlay; keyboard suites; reduced motion"
 spec: SPEC-000
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 branch: s51-c01t50

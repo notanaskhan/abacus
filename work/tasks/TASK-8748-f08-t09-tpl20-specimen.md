@@ -2,7 +2,7 @@
 id: TASK-8748
 title: "F-08-T09: TPL-20 specimen states a-g (Granite Peak BH-FS-430, Sep 24 to Oct 1)"
 spec: SPEC-000
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 branch: s51-f08t09

@@ -2,7 +2,7 @@
 id: TASK-8745
 title: "F-08-T06: Sheet cell editing, keyboard grid model (role=grid) and signed-off row locks"
 spec: SPEC-000
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review
 branch: s51-f08t06

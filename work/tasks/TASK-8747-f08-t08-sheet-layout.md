@@ -2,7 +2,7 @@
 id: TASK-8747
 title: "F-08-T08: SheetLayout T18 (full and cockpit), sheet toolbar, row drawer O2 480, P/R column with C-25 slots, presence slots; states T18a-T18i"
 spec: SPEC-000
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 branch: s51-f08t08

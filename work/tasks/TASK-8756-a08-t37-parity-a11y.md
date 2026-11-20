@@ -2,7 +2,7 @@
 id: TASK-8756
 title: "A-08-T37: Parity and accessibility: 29 artboards reported at Tier C with 13 locked, Tier B for T1, T2, T6 and T15-720 frames, Tier D geometry, axe on every scenario, keyboard suites for option tiles, code input, drawers, sheets and grids"
 spec: SPEC-000
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 branch: s51-a08t37
