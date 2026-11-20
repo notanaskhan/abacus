@@ -25,11 +25,14 @@ else is written.
 
 from __future__ import annotations
 
+import hashlib
+import json
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
-from typing import Final, Literal, Protocol
+from typing import Final, Literal, Protocol, cast
 
 CAPABILITY: Final = "qbo.post_journal_entry"
 PostingType = Literal["Debit", "Credit"]
@@ -205,3 +208,126 @@ class FakeQboTransport:
     async def set_book_close_date(self, on: date, request_id: str) -> None:
         self.closed_on = on
         self.writes.append(("POST Preferences.BookCloseDate", on.isoformat()))
+
+
+# --- C-02-T30: the live transport (Intuit's v3 API over the kernel's W1 write lane) ------------
+
+_QBO_ID: Final = re.compile(r"[0-9]{1,20}")
+
+
+def request_id_of(key: str) -> str:
+    """Intuit's `requestid` for an idempotency key: 40 hex characters of its SHA-256."""
+    return hashlib.sha256(key.encode()).hexdigest()[:40]
+
+
+def journal_body(entry: JournalEntry) -> dict[str, object]:
+    """The JournalEntry create body (golden-tested): DocNumber, TxnDate, the memo as PrivateNote
+    (the posting marker), one JournalEntryLineDetail per line. Account refs are QuickBooks ids."""
+    return {
+        "DocNumber": entry.doc_number,
+        "TxnDate": entry.txn_date.isoformat(),
+        "PrivateNote": entry.memo,
+        "Line": [
+            {
+                "DetailType": "JournalEntryLineDetail",
+                "Amount": str(ln.amount),
+                "Description": ln.description,
+                "JournalEntryLineDetail": {
+                    "PostingType": ln.posting_type,
+                    "AccountRef": {"value": ln.account_ref},
+                },
+            }
+            for ln in entry.lines
+        ],
+    }
+
+
+def _code_of(status: int) -> WriteError:
+    if status == 429:
+        return "rate_limited"
+    if status == 401:
+        return "needs_reauth"
+    return "inactive_account" if status == 400 else "rate_limited"
+
+
+class HttpQboTransport:
+    """QuickBooks Online over `EgressClient`: reads with `request` (GET), writes with `write` (the
+    W1 lane only, so nothing writes until a released entry or the sandbox test opens the lane).
+    Provider text never leaves: statuses map to `WriteError` codes."""
+
+    def __init__(self, client: object, host: str, realm_id: str, access_token: str) -> None:
+        from abacus.kernel.egress import EgressClient
+
+        if not _QBO_ID.fullmatch(realm_id):
+            raise ValueError("realm")
+        self._c = cast(EgressClient, client)
+        self._base = f"https://{host}/v3/company/{realm_id}"
+        self._auth = {"Authorization": f"Bearer {access_token}", "Accept": "application/json"}
+
+    async def _get(self, path: str) -> dict[str, object]:
+        response = await self._c.request("GET", f"{self._base}{path}", headers=self._auth)
+        if response.status_code != 200:
+            raise QboError(_code_of(response.status_code))
+        return cast(dict[str, object], json.loads(response.content))
+
+    async def _post(self, path: str, body: dict[str, object]) -> dict[str, object]:
+        response = await self._c.write(
+            f"{self._base}{path}",
+            headers={**self._auth, "Content-Type": "application/json"},
+            content=json.dumps(body, sort_keys=True).encode(),
+        )
+        if response.status_code != 200:
+            raise QboError(_code_of(response.status_code))
+        return cast(dict[str, object], json.loads(response.content))
+
+    async def book_close_date(self) -> date | None:
+        prefs = await self._get("/preferences?minorversion=75")
+        accounting = cast(dict[str, object], cast(dict[str, object], prefs["Preferences"]).get(
+            "AccountingInfoPrefs", {}
+        ))  # fmt: skip
+        raw = accounting.get("BookCloseDate")
+        return date.fromisoformat(str(raw)) if raw else None
+
+    async def accounts_active(self, refs: Sequence[str]) -> dict[str, bool]:
+        out: dict[str, bool] = {}
+        for ref in refs:
+            if not _QBO_ID.fullmatch(ref):
+                out[ref] = False
+                continue
+            found = await self._get(f"/account/{ref}?minorversion=75")
+            out[ref] = bool(cast(dict[str, object], found["Account"]).get("Active", False))
+        return out
+
+    async def create_journal_entry(self, entry: JournalEntry, request_id: str) -> str:
+        # Intuit's `requestid` (≤ 50 characters) makes the create idempotent: a retry answers
+        # the first entry. Ours is a digest of `{batch}:{entry}`, so it never collides.
+        rid = request_id_of(request_id)
+        created = await self._post(f"/journalentry?requestid={rid}&minorversion=75", journal_body(entry))
+        return str(cast(dict[str, object], created["JournalEntry"])["Id"])
+
+    async def read_journal_entry(self, external_ref: str) -> tuple[JournalLine, ...]:
+        if not _QBO_ID.fullmatch(external_ref):
+            raise ValueError("external_ref")
+        found = cast(dict[str, object], (await self._get(f"/journalentry/{external_ref}?minorversion=75"))["JournalEntry"])
+        lines: list[JournalLine] = []
+        for raw in cast(list[dict[str, object]], found.get("Line", [])):
+            detail = cast(dict[str, object], raw.get("JournalEntryLineDetail", {}))
+            ref = cast(dict[str, object], detail.get("AccountRef", {})).get("value")
+            lines.append(
+                JournalLine(
+                    None if ref is None else str(ref),
+                    cast(PostingType, detail.get("PostingType")),
+                    Decimal(str(raw.get("Amount"))),
+                )
+            )
+        return tuple(lines)
+
+    async def set_book_close_date(self, on: date, request_id: str) -> None:
+        prefs = await self._get("/preferences?minorversion=75")
+        token = cast(dict[str, object], prefs["Preferences"]).get("SyncToken")
+        rid = request_id_of(request_id)
+        await self._post(
+            f"/preferences?requestid={rid}&minorversion=75",
+            {"sparse": True, "SyncToken": token,
+             "AccountingInfoPrefs": {"BookCloseDate": on.isoformat()}},
+        )  # fmt: skip
