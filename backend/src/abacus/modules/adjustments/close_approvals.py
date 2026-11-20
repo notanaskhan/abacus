@@ -105,6 +105,11 @@ class ClosedEntry:
     approval_label: str | None
     # The listed class's limit from K-02 (None for an unlisted class or an attest client).
     limit: Decimal | None = None
+    # C-02-T31: CLS-07 d and e (QuickBooks ids, the auto-reversal date, the batch and why it failed).
+    external_txn_ref: str | None = None
+    reverses_on: date | None = None
+    posting_batch_id: UUID | None = None
+    failure_line: str | None = None
 
 
 @dataclass(frozen=True)
@@ -126,6 +131,21 @@ class CloseEntries:
     may_batch_within_threshold: bool
     attest: bool
     display_name: str = ""
+    posted: PostedBatch | None = None  # C-02-T31: CLS-07d's banner
+
+
+@dataclass(frozen=True)
+class PostedBatch:
+    """The close's latest posted batch: "Posted to QuickBooks Online · batch 2026-08-A · 6 entries
+    · $35,300.00 · closing date set to Aug 31, 2026 at 10:22 AM"."""
+
+    batch_id: UUID
+    batch_code: str
+    entry_count: int
+    total_amount: Decimal
+    posted_at: datetime | None
+    closing_date: date | None
+    resolved_failures: int
 
 
 @dataclass(frozen=True)
@@ -162,7 +182,8 @@ async def _rows(ctx: AuthContext, work_item_id: UUID) -> list[dict[str, object]]
     async with tenant_session(ctx.tenant) as session:
         result = await session.execute(
             text(
-                "SELECT id, kind, number, description, amount, account_class, status, version "
+                "SELECT id, kind, number, description, amount, account_class, status, version, "
+                "external_txn_ref, reverses_on, posting_batch_id "
                 "FROM proposed_entries WHERE work_item_id = :w ORDER BY kind, number"
             ),
             {"w": work_item_id},
@@ -228,6 +249,12 @@ async def close_entries(ctx: AuthContext, work_item_id: UUID) -> CloseEntries:
                 limit=None
                 if cls is None or cls.limit_usd is None
                 else Decimal(cls.limit_usd).quantize(Decimal("0.01")),
+                external_txn_ref=_str(r["external_txn_ref"]),
+                reverses_on=cast(date | None, r["reverses_on"]),
+                posting_batch_id=cast(UUID | None, r["posting_batch_id"]),
+                failure_line=await _failure_line(ctx, entry_id)
+                if str(r["status"]) == "failed_post"
+                else None,
             )
         )
     live = [e for e in entries if e.status != S.REJECTED]
@@ -247,7 +274,37 @@ async def close_entries(ctx: AuthContext, work_item_id: UUID) -> CloseEntries:
         may_batch_within_threshold=not attest and meets(role, "senior_or_above"),
         attest=attest,
         display_name=await _display(ctx),
+        posted=await _posted_batch(ctx, work_item_id),
     )
+
+
+async def _failure_line(ctx: AuthContext, entry_id: UUID) -> str | None:
+    from abacus.modules.adjustments.posting_recovery import failed_entry_facts, failure_line
+
+    facts = await failed_entry_facts(ctx.tenant, entry_id)
+    return None if facts is None else failure_line(facts)
+
+
+async def _posted_batch(ctx: AuthContext, work_item_id: UUID) -> PostedBatch | None:
+    async with tenant_session(ctx.tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT id, batch_code, entry_count, total_amount, posted_at, "
+                    "closing_date_target, closing_date_set_at, resolved_failure_count FROM "
+                    "posting_batches WHERE work_item_id = :w AND status = 'posted' ORDER BY "
+                    "posted_at DESC NULLS LAST, batch_code DESC LIMIT 1"
+                ),
+                {"w": work_item_id},
+            )
+        ).first()
+    if row is None:
+        return None
+    return PostedBatch(
+        row.id, str(row.batch_code), int(row.entry_count), Decimal(row.total_amount),
+        row.posted_at, row.closing_date_target if row.closing_date_set_at is not None else None,
+        int(row.resolved_failure_count),
+    )  # fmt: skip
 
 
 def _str(value: object) -> str | None:

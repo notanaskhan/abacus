@@ -5,7 +5,7 @@
 import { type Scenario, defineScenarios, json } from "../../app-core/fixture-mode";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
-import { type Cls07Fixture, closeEntries, entries } from "../seed/cls07";
+import { type Cls07Fixture, batchView, closeEntries, dryRun, entries } from "../seed/cls07";
 import { capabilitiesFor } from "../seed/shell";
 
 const E0 = seedScenario();
@@ -22,6 +22,11 @@ function at(state: Cls07Fixture, persona: string, clock: string): Scenario {
           json(closeEntries(state)),
         "GET /v1/work-items/{work_item_id}/proposed-entries": () =>
           json({ items: entries(state), next_cursor: null }),
+        // C-02-T31: c2's dry run (nothing written), the post and e's Retry.
+        "POST /v1/work-items/{work_item_id}/posting-batches:dry-run": () => json(dryRun(state)),
+        "POST /v1/work-items/{work_item_id}/posting-batches": () => json(batchView(state), 202),
+        "POST /v1/posting-batches/{batch_id}/entries/{entry_id}/retry": () =>
+          json(batchView(state), 202),
         "GET /v1/me/capabilities": ({ persona: who }: { persona?: string | undefined }) => {
           const base = capabilitiesFor(getSeed(), who ?? persona);
           return json({

@@ -99,6 +99,13 @@ class PostingTalliesOut(BaseModel):
     approved: Annotated[int, Field(ge=0), Internal]
     of: Annotated[int, Field(ge=0), Internal]
     posted_batch_code: Annotated[str | None, Internal] = None
+    # C-02-T31 (additive): CLS-07d's banner.
+    posted_batch_id: Annotated[UUID | None, Internal] = None
+    posted_count: Annotated[int | None, Field(ge=0), Internal] = None
+    posted_amount: Annotated[Decimal | None, Field(ge=0, max_digits=20, decimal_places=2), Confidential] = None
+    posted_at: Annotated[datetime | None, Internal] = None
+    closing_date_set: Annotated[date | None, Internal] = None
+    resolved_failure_count: Annotated[int, Field(ge=0), Internal] = 0
 
 
 class PostingClassLimitOut(BaseModel):
@@ -139,6 +146,9 @@ class PostingCloseEntryRowOut(BaseModel):
     reverses_on: Annotated[date | None, Internal] = None
     version: Annotated[int, Field(ge=1), Internal]
     allowed_actions: Annotated[list[EntryAction], Internal] = []
+    # C-02-T31 (additive): CLS-07e's Retry needs the batch, and its red line the reason by code.
+    posting_batch_id: Annotated[UUID | None, Internal] = None
+    failure_line: Annotated[str | None, Field(max_length=300), Confidential] = None
 
 
 class PostingApproverContextOut(BaseModel):
@@ -361,9 +371,17 @@ def _close_out(
             class_limit=_limit(e),
             approval_label=e.approval_label,
             version=e.version,
+            external_txn_ref=e.external_txn_ref,
+            reverses_on=e.reverses_on,
+            posting_batch_id=e.posting_batch_id,
+            failure_line=e.failure_line,
+            allowed_actions=(
+                ["posting_batch.post"] if e.status == "failed_post" and not view.attest else []
+            ),
         )
         for e in view.entries
     ]
+    posted = view.posted
     return PostingCloseEntriesOut(
         items=items,
         total=len(items),
@@ -377,6 +395,13 @@ def _close_out(
             ),
             approved=view.approved,
             of=view.proposed.count,
+            posted_batch_code=None if posted is None else posted.batch_code,
+            posted_batch_id=None if posted is None else posted.batch_id,
+            posted_count=None if posted is None else posted.entry_count,
+            posted_amount=None if posted is None else posted.total_amount,
+            posted_at=None if posted is None else posted.posted_at,
+            closing_date_set=None if posted is None else posted.closing_date,
+            resolved_failure_count=0 if posted is None else posted.resolved_failures,
         ),
         approver=PostingApproverContextOut(
             user_id=ctx.user_id,

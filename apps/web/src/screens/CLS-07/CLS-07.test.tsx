@@ -9,6 +9,7 @@ import { installFixtureMode } from "../../app-core/fixture-mode";
 import { CLOSE_WORK_ITEM_ID, closeEntries, lineCount } from "../../fixtures/seed/cls07";
 import exported from "../../fixtures/seed/scenario.cls07-entries.json";
 import { newQueryClient } from "../../testing/support";
+import { COPY as C } from "./copy";
 import { CLS07, type CLS07Props } from "./index";
 import { type Cls07State, scenarios } from "./scenarios";
 
@@ -105,5 +106,30 @@ describe("CLS-07 Adjustments & thresholds", () => {
     await rows();
     expect(screen.queryByRole("button", { name: /^Post/ })).toBeNull();
     expect(screen.getByRole("button", { name: "Send to client for approval…" })).toBeTruthy();
+  });
+
+  it("d · Posted banner with the batch and View in ledger sync (C-02-T31)", async () => {
+    show("d");
+    const banner = await screen.findByRole("status");
+    expect(banner.textContent).toContain(
+      "Posted to QuickBooks Online · batch 2026-08-A · 6 entries · $35,300.00 · closing date set to Aug 31, 2026 at 10:22 AM",
+    );
+    expect(screen.getByText(C.posted.ledgerSync)).toBeTruthy();
+    expect(screen.getByText("Posted · QBO 48213")).toBeTruthy();
+  });
+
+  it("e · Failed post: the red line and Retry (C-02-T31)", async () => {
+    show("e");
+    expect(
+      await screen.findByText("QuickBooks Online: account 'Accumulated Depreciation' is inactive"),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: C.retry })).toBeTruthy();
+  });
+
+  it("g · attest client: no Post control and every row held (C-02-T31)", async () => {
+    show("g");
+    expect((await screen.findAllByText(C.attestHeld)).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: /^Post /u })).toBeNull();
+    expect(screen.queryByRole("button", { name: C.retry })).toBeNull();
   });
 });
