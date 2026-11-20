@@ -18,7 +18,7 @@ from abacus.modules.identity.api import AgentContext, AuthContext
 
 
 async def start_capability_run(
-    person: AuthContext, capability: str, engagement_id: UUID
+    person: AuthContext, capability: str, engagement_id: UUID | None
 ) -> AgentContext | None:
     """The run's agent context for `person`, or None when the run could not be recorded."""
     found = spec_v2(capability)

@@ -1187,6 +1187,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "standards_run.item_checked",
         "standards_run.completed",
         "standards_check.confirmed",
+        "season_asks.opened",  # T-08-T17 (TASK-8840): ENG-07 e
+        "season_ask.answered",
         "proposed_entry.approval_requested",
         # reviewed 2026-11-19 (S51 end pass, TASK-8728): W1 posting and its evidence show on
         # CLS-08 / the ledger console's posting log (C-02-T18..T20), the package edit on CLS-08's
