@@ -189,7 +189,16 @@ async def stream(
 TopicAccess = Literal["content", "metadata"]
 TopicAuthorizer = Callable[[object, str], Awaitable[TopicAccess | None]]
 _TOPICS: dict[str, TopicAuthorizer] = {}
-TOPIC_KINDS: Final = ("user", "engagement", "work_item", "run", "session", "firm", "portal")
+TOPIC_KINDS: Final = (
+    "user",
+    "engagement",
+    "work_item",
+    "run",
+    "session",
+    "firm",
+    "portal",
+    "presence",
+)  # F-08-T13: presence
 
 
 def register_topic(kind: str, authorizer: TopicAuthorizer) -> None:

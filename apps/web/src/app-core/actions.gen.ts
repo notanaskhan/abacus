@@ -595,6 +595,8 @@ export const ACTIONS = [
   "post_issuance.reissue",
   "posting_batch.dry_run",
   "posting_batch.post",
+  "presence.read",
+  "presence.update",
   "procedure.configure",
   "procedure.read",
   "procedure.run",
