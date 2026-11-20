@@ -1113,19 +1113,20 @@ objects:
       coming_soon:      {label: "Coming soon", variant: soon, terminal: false, derived: false}
 
   template_version:
-    source: "addendum 3.2; gap 6.5"
+    source: "addendum 3.2; gap 6.5; K-03-T07 (SPEC-720 §3.1, §3.4; KNW-06, KNW-07)"
     codes:
-      draft:      {label: "Draft",      variant: neutral, terminal: false, derived: false}
+      draft:      {label: "Draft",      variant: neutral, terminal: false, derived: false, context_labels: {drafting: "Drafting {label} · changes are not live until you publish"}}
       published:  {label: "Published",  variant: green-tint, terminal: false, derived: false}
-      deprecated: {label: "Deprecated", variant: muted, terminal: true, derived: false}
+      deprecated: {label: "Deprecated", variant: muted, terminal: true, derived: false, context_labels: {for_new_work: "Deprecated for new work"}}
+      superseded: {label: "Superseded", variant: muted, terminal: true, derived: true}   # K-03-T07: only for a retired version (retired_at); never stored
 
   engagement_template_link:
     source: "addendum 3.2"
     codes:
       current:          {label: "Current", variant: green-tint, terminal: false, derived: false}
       update_available: {label: "Update available", variant: state, terminal: false, derived: false}
-      updated:          {label: "Updated {date}", variant: neutral, terminal: false, derived: false}
-      held:             {label: "Held", variant: muted, terminal: false, derived: false}
+      updated:          {label: "Updated {date}", variant: neutral, terminal: false, derived: false, context_labels: {by: "Updated to {label} by {name} · {when}"}}
+      held:             {label: "Held", variant: muted, terminal: false, derived: false, context_labels: {reason: "Held · {reason}"}}
 
   trigger:
     source: "addendum 3.2"
@@ -2126,6 +2127,57 @@ objects:
       synced:          {label: "Synced", variant: green-tint, terminal: false, derived: true, context_labels: {at: "Synced {time}"}}
       offline:         {label: "Offline", variant: muted, terminal: false, derived: true}
       changes_waiting: {label: "Changes waiting", variant: amber, terminal: false, derived: true, context_labels: {n: "{n} changes waiting"}}
+
+  # K-03-T07 (TASK-8850; SPEC-720, SPEC-721; C2 additive; DEC-5847): templates v2 and sheets status
+  # objects. `template_version` and `engagement_template_link` (addendum 3.2, above) are amended in
+  # place; the six below are new.
+  rollout_action:   # template_rollout_actions.action; KNW-07 a, c
+    source: "SPEC-720 §3.4; KNW-07 a"
+    codes:
+      update_now:  {label: "Update now", variant: state, terminal: false, derived: false}
+      on_rollover: {label: "On rollover", variant: neutral, terminal: false, derived: false}
+      hold:        {label: "Hold", variant: muted, terminal: false, derived: false}
+
+  template_update:   # template_updates.status; SHL-22 c, d
+    source: "SPEC-720 §3.5; SHL-22 c-d"
+    codes:
+      applying: {label: "Applying", variant: state, terminal: false, derived: false, context_labels: {n: "Applying {n} of {total}"}}
+      applied:  {label: "Applied", variant: green, terminal: true, derived: false}
+      failed:   {label: "Failed", variant: red, terminal: true, derived: false}
+
+  template_update_change:   # template_update_changes.status; SHL-22 b-d
+    source: "SPEC-720 §3.5; SHL-22 b"
+    codes:
+      pending:          {label: "Pending", variant: neutral, terminal: false, derived: false}
+      applied:          {label: "Applied", variant: green, terminal: true, derived: false}
+      kept_signed_off:  {label: "Kept · signed off", variant: muted, terminal: true, derived: false}
+      kept_team_value:  {label: "Kept · team value", variant: muted, terminal: true, derived: false}
+      recorded:         {label: "Recorded", variant: neutral, terminal: true, derived: false}
+
+  agent_column:   # agent_columns.status; SHT-04 a-c
+    source: "SPEC-721 §3.3; SHT-04 a-c"
+    codes:
+      draft: {label: "Draft", variant: neutral, terminal: false, derived: false}
+      saved: {label: "Saved", variant: green, terminal: false, derived: false, context_labels: {by: "Saved by {name} · {time}"}}
+
+  agent_column_run_row:   # agent_column_run_rows.state; SHT-01 b, SHT-04 c
+    source: "SPEC-721 §3.4; SHT-04 c"
+    codes:
+      queued:            {label: "Queued", variant: neutral, disc: ring, terminal: false, derived: false}
+      running:           {label: "Running", variant: state, disc: spinner, terminal: false, derived: false}
+      waiting_on_inputs: {label: "Waiting on evidence", variant: amber, terminal: false, derived: false}
+      succeeded:         {label: "Done", variant: green, disc: check_olive, terminal: true, derived: false}
+      failed:            {label: "Failed", variant: red, terminal: true, derived: false}
+      cancelled:         {label: "Stopped", variant: muted, terminal: true, derived: false}
+      skipped_adopted:   {label: "Skipped · adopted", variant: muted, terminal: true, derived: false}
+
+  scoping_result:   # scoping_evaluations.result; SHT-03 a-d
+    source: "SPEC-720 §3.3; SHT-03 a-b"
+    codes:
+      shows:     {label: "Shows", variant: green-tint, terminal: true, derived: false}
+      hides:     {label: "Hides", variant: muted, terminal: true, derived: false}
+      no_change: {label: "No change", variant: neutral, terminal: true, derived: false}
+      no_answer: {label: "No answer yet", variant: amber, terminal: true, derived: false}
 
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---

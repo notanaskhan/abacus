@@ -922,6 +922,7 @@ class TemplateVersionStatus(StrEnum):
     DRAFT = "draft"
     PUBLISHED = "published"
     DEPRECATED = "deprecated"
+    # derived, never stored: superseded
 
 
 class EngagementTemplateLinkStatus(StrEnum):
@@ -1748,6 +1749,48 @@ class BoardDropStatus(StrEnum):
 class AddinSyncStatus(StrEnum):
     pass
     # derived, never stored: synced, offline, changes_waiting
+
+
+class RolloutActionStatus(StrEnum):
+    UPDATE_NOW = "update_now"
+    ON_ROLLOVER = "on_rollover"
+    HOLD = "hold"
+
+
+class TemplateUpdateStatus(StrEnum):
+    APPLYING = "applying"
+    APPLIED = "applied"
+    FAILED = "failed"
+
+
+class TemplateUpdateChangeStatus(StrEnum):
+    PENDING = "pending"
+    APPLIED = "applied"
+    KEPT_SIGNED_OFF = "kept_signed_off"
+    KEPT_TEAM_VALUE = "kept_team_value"
+    RECORDED = "recorded"
+
+
+class AgentColumnStatus(StrEnum):
+    DRAFT = "draft"
+    SAVED = "saved"
+
+
+class AgentColumnRunRowStatus(StrEnum):
+    QUEUED = "queued"
+    RUNNING = "running"
+    WAITING_ON_INPUTS = "waiting_on_inputs"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+    SKIPPED_ADOPTED = "skipped_adopted"
+
+
+class ScopingResultStatus(StrEnum):
+    SHOWS = "shows"
+    HIDES = "hides"
+    NO_CHANGE = "no_change"
+    NO_ANSWER = "no_answer"
 
 
 # Each object's stored codes, and their SQL CHECK list.
@@ -3160,6 +3203,42 @@ STORED: dict[str, tuple[str, ...]] = {
     "board_drop": (
     ),
     "addin_sync": (
+    ),
+    "rollout_action": (
+        "update_now",
+        "on_rollover",
+        "hold",
+    ),
+    "template_update": (
+        "applying",
+        "applied",
+        "failed",
+    ),
+    "template_update_change": (
+        "pending",
+        "applied",
+        "kept_signed_off",
+        "kept_team_value",
+        "recorded",
+    ),
+    "agent_column": (
+        "draft",
+        "saved",
+    ),
+    "agent_column_run_row": (
+        "queued",
+        "running",
+        "waiting_on_inputs",
+        "succeeded",
+        "failed",
+        "cancelled",
+        "skipped_adopted",
+    ),
+    "scoping_result": (
+        "shows",
+        "hides",
+        "no_change",
+        "no_answer",
     ),
 }
 CHECKS: dict[str, str] = {

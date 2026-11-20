@@ -4053,7 +4053,10 @@ export const STATUS_REGISTRY = {
       "label": "Draft",
       "variant": "neutral",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "contextLabels": {
+        "drafting": "Drafting {label} · changes are not live until you publish"
+      }
     },
     "published": {
       "label": "Published",
@@ -4065,7 +4068,16 @@ export const STATUS_REGISTRY = {
       "label": "Deprecated",
       "variant": "muted",
       "terminal": true,
-      "derived": false
+      "derived": false,
+      "contextLabels": {
+        "for_new_work": "Deprecated for new work"
+      }
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": true
     }
   },
   "engagement_template_link": {
@@ -4085,13 +4097,19 @@ export const STATUS_REGISTRY = {
       "label": "Updated {date}",
       "variant": "neutral",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "contextLabels": {
+        "by": "Updated to {label} by {name} · {when}"
+      }
     },
     "held": {
       "label": "Held",
       "variant": "muted",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "contextLabels": {
+        "reason": "Held · {reason}"
+      }
     }
   },
   "trigger": {
@@ -7366,6 +7384,171 @@ export const STATUS_REGISTRY = {
       "contextLabels": {
         "n": "{n} changes waiting"
       }
+    }
+  },
+  "rollout_action": {
+    "update_now": {
+      "label": "Update now",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "on_rollover": {
+      "label": "On rollover",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "hold": {
+      "label": "Hold",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "template_update": {
+    "applying": {
+      "label": "Applying",
+      "variant": "state",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "n": "Applying {n} of {total}"
+      }
+    },
+    "applied": {
+      "label": "Applied",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    },
+    "failed": {
+      "label": "Failed",
+      "variant": "red",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "template_update_change": {
+    "pending": {
+      "label": "Pending",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "applied": {
+      "label": "Applied",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    },
+    "kept_signed_off": {
+      "label": "Kept · signed off",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "kept_team_value": {
+      "label": "Kept · team value",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "recorded": {
+      "label": "Recorded",
+      "variant": "neutral",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "agent_column": {
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "saved": {
+      "label": "Saved",
+      "variant": "green",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "by": "Saved by {name} · {time}"
+      }
+    }
+  },
+  "agent_column_run_row": {
+    "queued": {
+      "label": "Queued",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false,
+      "disc": "ring"
+    },
+    "running": {
+      "label": "Running",
+      "variant": "state",
+      "terminal": false,
+      "derived": false,
+      "disc": "spinner"
+    },
+    "waiting_on_inputs": {
+      "label": "Waiting on evidence",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "succeeded": {
+      "label": "Done",
+      "variant": "green",
+      "terminal": true,
+      "derived": false,
+      "disc": "check_olive"
+    },
+    "failed": {
+      "label": "Failed",
+      "variant": "red",
+      "terminal": true,
+      "derived": false
+    },
+    "cancelled": {
+      "label": "Stopped",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "skipped_adopted": {
+      "label": "Skipped · adopted",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "scoping_result": {
+    "shows": {
+      "label": "Shows",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "hides": {
+      "label": "Hides",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "no_change": {
+      "label": "No change",
+      "variant": "neutral",
+      "terminal": true,
+      "derived": false
+    },
+    "no_answer": {
+      "label": "No answer yet",
+      "variant": "amber",
+      "terminal": true,
+      "derived": false
     }
   }
 } as const;
