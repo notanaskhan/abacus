@@ -344,7 +344,28 @@ const dashboardRoute = createRoute({
   },
 });
 
+// ENG-07 (T-08-T15): the season's roll-forward manifest behind `engagements.season_setup` (C-20 off).
+const SeasonPage = lazyScreen(
+  async () => (await import("../../screens/ENG-07/SeasonPage")).SeasonPage,
+);
+
+const seasonRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/engagements/season",
+  component: function SeasonRoutePage(): JSX.Element {
+    return (
+      <FeatureGate
+        flag="engagements.season_setup"
+        fallback={<FlagOffState flag="engagements.season_setup" label="Season setup" />}
+      >
+        <SeasonPage />
+      </FeatureGate>
+    );
+  },
+});
+
 export const engagementRoutes = [
+  seasonRoute,
   newEngagementRoute,
   rollForwardRoute,
   letterRoute,

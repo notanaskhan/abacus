@@ -43,7 +43,14 @@ export const engScreens = {
   // `engagements.v2`; planned for ENG-02's reason (its links are wired in routes/firm).
   "ENG-05": { name: "Team & roles", status: "planned", path: null },
   "ENG-06": { name: "Budget, time & AI effort", status: "planned", path: null },
-  "ENG-07": { name: "Season setup / roll-forward", status: "planned", path: null },
+  // T-08-T15 built a–e, x1 and x2 on fixtures at /engagements/season behind
+  // `engagements.season_setup`; planned until ENG-01's "Season setup…" links it with to.ENG07().
+  "ENG-07": {
+    name: "Season setup / roll-forward",
+    status: "planned",
+    path: "/engagements/season",
+    navArea: "Engagements",
+  },
   "ENG-08": { name: "Billing & WIP read-through", status: "planned", path: null, entry: true },
   "ENG-09": { name: "Proposals & scope builder", status: "planned", path: null },
   "ENG-10": {

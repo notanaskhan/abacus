@@ -47,3 +47,12 @@ The designed links of the handoff link graph (link-contract rule 5); each is wir
 | Opens BND-02 · draft binder preview | BND-02 | designed (handoff link graph) |
 | Opens SIG-01 | SIG-01 | designed (handoff link graph) |
 | Opens CLI-02 · client record | CLI-02 | designed (handoff link graph) |
+
+## T-08-T15 (TASK-8841): built
+a–e, x1 and x2 build from `fixtures/scenarios/ENG-07.ts` over `seed/eng07.ts` (the season
+contract's manifest, cohort rows and asks), at `/engagements/season` behind
+`engagements.season_setup` (x2: the C-20 flag-off state). The live wrappers are
+`screens/ENG-07/Season.tsx` and `SeasonPage.tsx` (approve with the rows hash and manifest version,
+asks answered once). Every count is the server's; Approve renders only when the cohort allows it.
+- **Deviation:** the Office FilterButton and Export menu are drawn; their behaviours arrive with the
+  live swap (T-08-T40). Per-row step discs in c read each row's `display` (created / ready).
