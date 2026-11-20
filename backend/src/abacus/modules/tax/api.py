@@ -542,7 +542,7 @@ _entity_decisions.register()
 from abacus.modules.tax import entity_guards as _entity_guards  # noqa: E402
 
 _entity_guards.register()
-# T-06-T37 (DEC-5830): the form-preview diagnostics block final approval (409 blocking_diagnostics).
+# T-06-T37 (DEC-5830): form-preview diagnostics block final approval (409 blocking_diagnostics).
 from abacus.modules.tax import form_preview_blockers as _form_preview_blockers  # noqa: E402
 
 _form_preview_blockers.register()
@@ -550,6 +550,10 @@ _form_preview_blockers.register()
 from abacus.modules.tax import tb_mapper_tax_lines as _tb_mapper_tax_lines  # noqa: E402
 
 _tb_mapper_tax_lines.register()
+# T-06-T39 (DEC-5832): a TB hand-off lands on its return (idempotent on the hand-off and event).
+from abacus.modules.tax import tb_handoff_landing as _tb_handoff_landing  # noqa: E402
+
+SUBSCRIPTIONS.update(_tb_handoff_landing.SUBSCRIPTIONS)
 
 # T-05-T54 (DEC-4909, DEC-4910): the preparer memo service (the memo as a P-04 reviewable and its
 # draft run's workflow).

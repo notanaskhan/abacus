@@ -1170,6 +1170,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "relationship.updated",
         "relationship.ended",
         "tb_handoff.created",
+        "tb_handoff.received",  # T-06-T39 (TASK-8830): TXP-13 d shows the landing
         "proposed_entry.approval_requested",
         # reviewed 2026-11-19 (S51 end pass, TASK-8728): W1 posting and its evidence show on
         # CLS-08 / the ledger console's posting log (C-02-T18..T20), the package edit on CLS-08's

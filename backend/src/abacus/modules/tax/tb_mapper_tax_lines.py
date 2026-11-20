@@ -63,7 +63,8 @@ JUDGMENT: Final[tuple[tuple[str, re.Pattern[str], str], ...]] = (
     (
         "accrual_461h",
         re.compile(
-            r"\baccru\w*\b.*\b(bonus|bonuses|vacation|pto|warranty|legal|incentive)\b"
+            r"\baccru\w*\b.*\b(bonus(es)?|vacation|pto|warrant(y|ies)|legal|incentives?|"
+            r"rewards?|loyalty|rebates?|litigation|self-insur\w*|severance)\b"
             r"|\bcompensated absences\b|\b(bonus|warranty) accru",
             re.I,
         ),

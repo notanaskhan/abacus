@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C12 in `docs/contracts/README.md` |
 | Owner | ledger (T-06; SPEC-702 F6; DEC-66) |
-| Status | stub (T-06-T05, 2026-11-17; DEC-5514) |
+| Status | stub (T-06-T05, 2026-11-17; DEC-5514); reads and the landing live (T-06-T39, DEC-5832) |
 | Code | `backend/src/abacus/modules/tax/tb_handoff_contract.py` (`tb_handoff_router`) |
 | Flag | `tax.tb_handoff` (default off; off: 404; on: 501 until T-06-T20 and T39) |
 | Fixtures | `backend/src/abacus_tools/synthetic/scenarios/brightwater_hale/tb_handoff_slice.py` (Granite Peak FY2026, Copperleaf `close_lock`) |

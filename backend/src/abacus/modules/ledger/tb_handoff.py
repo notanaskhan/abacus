@@ -27,14 +27,15 @@ import hashlib
 import json
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field
+from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Final, Literal
+from typing import Annotated, Any, Final, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import text
 
 from abacus.kernel.classification import classified
-from abacus.kernel.db import TenantContext
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import DomainEvent, Scope, Target, UnitOfWork, uow
 from abacus.modules.ledger.handoff_errors import HandoffNotAvailable, PreviewChanged
 
@@ -339,3 +340,132 @@ async def supersede_for_snapshot(
             tx.emit(TbHandoffSuperseded(tb_handoff_id=handoff_id, tax_return_id=target))
             marked.append(UUID(str(handoff_id)))
     return marked
+
+
+# --- reads (T-06-T39, DEC-5832): the tax side's landing and C12's read routes -------------------
+
+
+@dataclass(frozen=True)
+class HandoffRow:
+    id: UUID
+    client_id: UUID
+    source_kind: SourceKind
+    source_engagement_id: UUID
+    source_work_item_id: UUID
+    source_snapshot_id: UUID
+    target_work_item_id: UUID
+    version_no: int
+    book_income: Mapping[str, str]
+    counts: Mapping[str, int]
+    handed_off_by: UUID
+    handed_off_at: datetime
+    superseded: bool
+    superseded_by: UUID | None
+
+
+@dataclass(frozen=True)
+class ChoiceRow:
+    account_no: str
+    account_name: str
+    balance: Decimal
+    tax_line_code: str | None
+    travel: Travel
+    suggestion_id: UUID | None
+    needs_review: bool
+
+
+@dataclass(frozen=True)
+class TaxItemRow:
+    item_kind: str
+    source_ref: Mapping[str, str]
+    amount: Decimal
+    create_issue: bool
+
+
+_HANDOFF_COLUMNS: Final = (
+    "h.id, h.client_id, h.source_kind, h.source_engagement_id, h.source_work_item_id, "
+    "h.source_snapshot_id, h.target_work_item_id, h.version_no, h.book_income, h.counts, "
+    "h.handed_off_by, h.handed_off_at, s.handoff_id IS NOT NULL AS superseded, "
+    "s.superseded_by_handoff_id FROM tb_handoffs h LEFT JOIN tb_handoff_supersessions s "
+    "ON s.tenant_id = h.tenant_id AND s.handoff_id = h.id"
+)
+
+
+def _handoff_row(r: object) -> HandoffRow:
+    row = cast(Any, r)
+    return HandoffRow(
+        UUID(str(row.id)), UUID(str(row.client_id)), row.source_kind,
+        UUID(str(row.source_engagement_id)), UUID(str(row.source_work_item_id)),
+        UUID(str(row.source_snapshot_id)), UUID(str(row.target_work_item_id)),
+        int(row.version_no), dict(row.book_income), dict(row.counts),
+        UUID(str(row.handed_off_by)), row.handed_off_at, bool(row.superseded),
+        None if row.superseded_by_handoff_id is None else UUID(str(row.superseded_by_handoff_id)),
+    )  # fmt: skip
+
+
+async def handoff_of(tenant: TenantContext, handoff_id: UUID) -> HandoffRow | None:
+    async with tenant_session(tenant) as session:
+        found = (
+            await session.execute(
+                text(f"SELECT {_HANDOFF_COLUMNS} WHERE h.id = :h"), {"h": handoff_id}
+            )
+        ).first()
+    return None if found is None else _handoff_row(found)
+
+
+async def latest_for_target(tenant: TenantContext, target_work_item_id: UUID) -> HandoffRow | None:
+    """The target return's newest hand-off version (superseded or not)."""
+    async with tenant_session(tenant) as session:
+        found = (
+            await session.execute(
+                text(
+                    f"SELECT {_HANDOFF_COLUMNS} WHERE h.target_work_item_id = :t "
+                    "ORDER BY h.version_no DESC LIMIT 1"
+                ),
+                {"t": target_work_item_id},
+            )
+        ).first()
+    return None if found is None else _handoff_row(found)
+
+
+async def choices_of(tenant: TenantContext, handoff_id: UUID) -> list[ChoiceRow]:
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT account_no, account_name, balance, tax_line_code, source, "
+                    "suggestion_id, needs_review FROM tb_handoff_account_choices "
+                    "WHERE handoff_id = :h ORDER BY account_no"
+                ),
+                {"h": handoff_id},
+            )
+        ).all()
+    return [
+        ChoiceRow(
+            r.account_no,
+            r.account_name,
+            Decimal(r.balance),
+            r.tax_line_code,
+            r.source,
+            None if r.suggestion_id is None else UUID(str(r.suggestion_id)),
+            bool(r.needs_review),
+        )
+        for r in rows
+    ]
+
+
+async def tax_items_of(tenant: TenantContext, handoff_id: UUID) -> list[TaxItemRow]:
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT item_kind, source_ref, amount, create_issue FROM tb_handoff_tax_items "
+                    "WHERE handoff_id = :h ORDER BY item_kind, id"
+                ),
+                {"h": handoff_id},
+            )
+        ).all()
+    return [
+        TaxItemRow(r.item_kind, dict(r.source_ref), Decimal(r.amount), bool(r.create_issue))
+        for r in rows
+    ]
