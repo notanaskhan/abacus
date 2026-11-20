@@ -198,6 +198,10 @@ class ChecklistItem(BaseModel):
     key: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9_.-]{0,79}$"), classified("internal")]
     section: Annotated[str, Field(min_length=1, max_length=80), classified("internal")]
     text: Annotated[str, Field(min_length=1, max_length=1000), classified("internal")]
+    # T-08-T13 (v2, additive; DEC-5839): a registered code-run check, or none (a manual item).
+    check_code: Annotated[
+        str | None, Field(pattern=r"^[a-z][a-z0-9_.]{0,59}$"), classified("internal")
+    ] = None
 
 
 class ReviewChecklistPayload(BaseModel):
@@ -208,6 +212,8 @@ class ReviewChecklistPayload(BaseModel):
     items: Annotated[
         list[ChecklistItem], Field(min_length=1, max_length=200), classified("internal")
     ]
+    # T-08-T13 (v2, additive): the two-year comparison's threshold for the checks that read it.
+    two_year_threshold_pct: Annotated[Pct | None, classified("internal")] = None
 
 
 class ReviewTier(BaseModel):

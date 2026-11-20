@@ -602,7 +602,14 @@ def validate_payload(kind: str, payload: Mapping[str, object]) -> dict[str, obje
         rules = {row.rule for row in parsed.rows}
         if not {"review_required", "always_held"} <= rules:
             raise PayloadInvalid(facts={"kind": kind, "problems": 1})
-    return cast(dict[str, object], parsed.model_dump(mode="json"))
+    dumped = cast(dict[str, object], parsed.model_dump(mode="json"))
+    if kind == "review_checklist":
+        from abacus.modules.methodology.check_codes import unknown_items
+
+        unknown = unknown_items(dumped)
+        if unknown:  # T-08-T13: an unregistered check code never publishes
+            raise PayloadInvalid(facts={"kind": kind, "problems": len(unknown)})
+    return dumped
 
 
 async def create_standard(ctx: AuthContext, body: StandardCreateIn) -> StandardOut:
