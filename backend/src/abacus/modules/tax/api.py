@@ -558,6 +558,10 @@ SUBSCRIPTIONS.update(_tb_handoff_landing.SUBSCRIPTIONS)
 from abacus.modules.tax import fixed_assets_service as _fixed_assets_service  # noqa: E402
 
 _fixed_assets_service.register()
+# T-06-T35 (DEC-5835): the §754 decision reaches the client's owner as a C18 client decision.
+from abacus.modules.tax import basis_service as _basis_service  # noqa: E402
+
+_basis_service.register()
 
 # T-05-T54 (DEC-4909, DEC-4910): the preparer memo service (the memo as a P-04 reviewable and its
 # draft run's workflow).

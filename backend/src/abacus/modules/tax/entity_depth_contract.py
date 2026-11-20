@@ -638,13 +638,30 @@ async def m1_route(return_id: UUID, ctx: Ctx) -> TaxDepthScheduleOut:
 
 
 @entity_depth_router.get(
-    f"{_R}/basis", action="basis.read", response_model=TaxDepthBasisOut, errors=(501,)
+    f"{_R}/basis", action="basis.read", response_model=TaxDepthBasisOut, errors=()
 )
 async def basis_route(
     return_id: UUID, ctx: Ctx, view: BasisView = "basis", partner: UUID | None = None
 ) -> TaxDepthBasisOut:
+    """TXP-08 a to c, e (T-06-T35): basis and §752 shares as E8 stored them."""
     await _on(ctx, _D)
-    raise NotImplementedYet
+    from abacus.modules.tax.basis_service import basis
+
+    found = await basis(ctx, return_id, partner)
+    return TaxDepthBasisOut(
+        view=view,
+        partners=[
+            TaxDepthPartnerBasisOut(
+                partner_id=p.partner_id, name=p.name, inside=p.inside, outside=p.outside,
+                tally="tie" if p.reconciled else "off",
+                qualified_nonrecourse=p.qualified_nonrecourse if view == "s752" else None,
+                other_nonrecourse=p.other_nonrecourse if view == "s752" else None,
+            )
+            for p in found.partners
+        ],
+        reconciled=found.reconciled, inside_total=found.inside_total,
+        outside_total=found.outside_total, section_754=found.section_754,
+    )  # fmt: skip
 
 
 @entity_depth_router.post(
@@ -657,9 +674,14 @@ async def basis_route(
 async def raise_decision_route(
     return_id: UUID, body: TaxDepthDecisionCardIn, ctx: Ctx
 ) -> TaxDepthDecisionOut:
-    """The §754 card with options computed by code."""
+    """The §754 card with options computed by code (T-06-T35); the open card answers again."""
     await _human(ctx, _D, "decision.raise")
-    raise NotImplementedYet
+    from abacus.modules.tax.basis_service import raise_card, section_754_state
+
+    card_id = await raise_card(ctx, return_id)
+    return TaxDepthDecisionOut(
+        card_id=card_id, status=await section_754_state(ctx.tenant, return_id)
+    )
 
 
 @entity_depth_router.post(
@@ -671,9 +693,14 @@ async def raise_decision_route(
 async def send_decision_route(
     card_id: UUID, body: TaxDepthSendToClientIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> TaxDepthDecisionOut:
-    """One POR-04 request from the firm's template; 409 `decision_already_sent`."""
+    """The client owner's decision (C18 `section_754`, POR-08; DEC-5835); 409
+    `decision_already_sent` on a second send."""
     await _human(ctx, _D, "decision.send_to_client")
-    raise NotImplementedYet
+    from abacus.modules.tax.basis_service import send_to_client
+
+    del idempotency_key  # one send per card is the table's own rule (UNIQUE card_id)
+    await send_to_client(ctx, card_id, contact_id=body.contact_id)
+    return TaxDepthDecisionOut(card_id=card_id, status="sent_to_client")
 
 
 @entity_depth_router.get(

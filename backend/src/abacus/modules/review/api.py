@@ -40,6 +40,7 @@ from abacus.modules.review.decisions import (
     RecommendationChanged,
     awaiting_cards,
     card_decision,
+    card_subject,
     decide_card,
     decided_cards,
     raise_decision_card,
@@ -237,6 +238,10 @@ WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
 
 # I-01-T07: owners resolve their gates' presentation facts and register how a gate moves.
+from abacus.modules.review.firm_cards import (  # noqa: E402 -- Q-05-T16 part 2
+    decide_firm_card as decide_firm_card,
+)
+from abacus.modules.review.firm_cards import raise_firm_card as raise_firm_card  # noqa: E402
 from abacus.modules.review.gate_actions import (  # noqa: E402
     Candidate,
     GateFacts,
@@ -246,14 +251,7 @@ from abacus.modules.review.gate_actions import (  # noqa: E402
     register_reassign_hook,
 )
 
-from abacus.modules.review.firm_cards import (  # noqa: E402 -- Q-05-T16 part 2
-    decide_firm_card as decide_firm_card,
-)
-from abacus.modules.review.firm_cards import raise_firm_card as raise_firm_card  # noqa: E402
-
 __all__ = [
-    "decide_firm_card",
-    "raise_firm_card",
     "ACTIVITIES",
     "C13_EVENTS",
     "LEVELS",
@@ -328,6 +326,7 @@ __all__ = [
     "blocking_issues",
     "canonical_json",
     "card_decision",
+    "card_subject",
     "changed_since",
     "changed_since_any",
     "checkpoint_deltas",
@@ -338,6 +337,7 @@ __all__ = [
     "current_checkpoint",
     "current_values",
     "decide_card",
+    "decide_firm_card",
     "decide_import",
     "decided_cards",
     "decision_kind",
@@ -374,6 +374,7 @@ __all__ = [
     "previous_value",
     "propose_checkpoint",
     "raise_decision_card",
+    "raise_firm_card",
     "raise_review_note",
     "raise_review_note_in",
     "read_issue",
