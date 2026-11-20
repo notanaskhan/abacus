@@ -19,3 +19,9 @@ variable "distribution_arn" {
   type        = string
   default     = null
 }
+
+variable "extra_distribution_arns" {
+  description = "G-04-T22: other distributions that read the same bucket through OAC (the staff console's). Empty by default."
+  type        = list(string)
+  default     = []
+}

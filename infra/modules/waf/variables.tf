@@ -100,3 +100,14 @@ variable "enable_logging" {
   type        = bool
   default     = false
 }
+
+variable "allow_ipv4_cidrs" {
+  description = "G-04-T22: when non-empty, only these IPv4 CIDRs reach the distribution (the staff console's IP allowlist); every other source is blocked before any other rule. Empty (the default): no allowlist."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for c in var.allow_ipv4_cidrs : can(cidrhost(c, 0)) && !strcontains(c, ":")])
+    error_message = "Each entry is an IPv4 CIDR, for example 203.0.113.0/24."
+  }
+}

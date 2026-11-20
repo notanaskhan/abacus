@@ -85,7 +85,7 @@ resource "aws_cloudfront_distribution" "firm" {
   web_acl_id          = var.web_acl_arn
   aliases             = var.firm_host == null ? [] : [var.firm_host]
   comment             = "abacus ${var.environment} firm app"
-  default_root_object = "index.html"
+  default_root_object = var.default_root_object
   price_class         = "PriceClass_100"
   http_version        = "http2and3"
 
@@ -163,7 +163,7 @@ resource "aws_cloudfront_distribution" "firm" {
   custom_error_response {
     error_code         = 403
     response_code      = 200
-    response_page_path = "/index.html"
+    response_page_path = "/${var.default_root_object}"
   }
 
   restrictions {

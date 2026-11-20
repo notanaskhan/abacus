@@ -41,3 +41,14 @@ variable "certificate_arn" {
   type        = string
   default     = null
 }
+
+variable "default_root_object" {
+  description = "The SPA's entry document: index.html for the firm app, console.html for the staff console (G-04-T22)."
+  type        = string
+  default     = "index.html"
+
+  validation {
+    condition     = contains(["index.html", "console.html"], var.default_root_object)
+    error_message = "default_root_object is index.html or console.html."
+  }
+}

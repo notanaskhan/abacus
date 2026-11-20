@@ -252,3 +252,21 @@ variable "ledger_sync_freshness_minutes" {
   type        = number
   default     = 90
 }
+
+variable "console_host" {
+  description = "G-04-T22: the staff console's host once its domain exists (console.<domain>). Null: no console edge."
+  type        = string
+  default     = null
+}
+
+variable "console_certificate_arn" {
+  description = "G-04-T22: the issued us-east-1 certificate for console_host. Null: no console edge."
+  type        = string
+  default     = null
+}
+
+variable "console_allow_ipv4_cidrs" {
+  description = "G-04-T22: the only IPv4 CIDRs that reach the console (Accrued staff egress). Empty: no console edge. Set in the untracked terraform.tfvars, never committed."
+  type        = list(string)
+  default     = []
+}

@@ -45,4 +45,6 @@ module "web" {
   kms_key_arn      = module.kms_platform.key_arn
   writer_role_arns = local.deploy_role_arns
   distribution_arn = local.firm_distribution_arn
+  # G-04-T22: the console edge reads the same bucket (console.html and its assets).
+  extra_distribution_arns = local.console_edge ? [module.console_edge[0].distribution_arn] : []
 }
