@@ -155,3 +155,17 @@ export interface SheetTrailingColumn {
   width: number;
   render: (row: SheetGridRow) => ReactNode;
 }
+
+/** K-03-T09 (SH-1, C23; F-08 §4): the sheet as the server sends it, in the kit's own shapes, so a
+ * `SheetLayout` grid takes it as it comes (`toSheetVM` in apps/web maps the generated client). */
+export interface SheetVM {
+  sheetId: string;
+  workItemId: string;
+  title: string;
+  columns: readonly SheetGridColumn[];
+  sections: readonly SheetSection[];
+  rows: readonly SheetGridRow[];
+  status: SheetStatus;
+  signedOff: boolean;
+  allowedActions: readonly string[];
+}

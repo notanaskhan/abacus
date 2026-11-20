@@ -104,7 +104,10 @@ from abacus.modules.workpapers.tie_out import (
 register_engagement_owners(AUDIT_KINDS, audit_owners)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.workpapers.sheets_contract import sheets_router  # noqa: E402
+
 ROUTERS: tuple[AbacusRouter, ...] = (
+    sheets_router,  # K-03-T09: SH-1 sheets (stub; dark)
     router,
     checks_router,
     a04_router,  # A-04-T01 workpaper core stub (docs/contracts/workpapers-core.md)
