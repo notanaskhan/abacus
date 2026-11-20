@@ -602,6 +602,18 @@ async def test_ac4_1_1_every_registered_kind_with_its_default(world: World) -> N
         "archive_deadline_risk",
         # P-05-T06 (P-05 AC-18): "Marcus gets one `todo_assigned` notification and one email".
         "todo_assigned",
+        # S48 to S51 kinds their epics email by default (the S51 rows end pass caught the list up):
+        # G-04 plan requests, support replies and usage alerts; T-08 amendments and cohorts;
+        # engagement budgets (W-03); a failed W1 post (C-02-T18).
+        "plan_request_applied",
+        "plan_request_awaiting_partner",
+        "plan_request_decided",
+        "support_replied",
+        "usage_threshold_crossed",
+        "amendment_approval_requested",
+        "season_cohort_ready_for_approval",
+        "engagement_budget_threshold_crossed",
+        "posting_failed",
     }
     assert {k: choices[k] for k in emailed} == dict.fromkeys(emailed, (True, True))
     assert {k: v for k, v in choices.items() if k not in emailed} == dict.fromkeys(

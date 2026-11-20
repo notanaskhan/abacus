@@ -69,8 +69,8 @@ class ConsultationLogOut(BaseModel):
 
     model_config = _cfg()
 
-    items: list[ConsultationLogRowOut]
-    counts: ConsultationCountsOut
+    items: Annotated[list[ConsultationLogRowOut], classified("internal")]
+    counts: Annotated[ConsultationCountsOut, classified("internal")]
 
 
 class ConsultationLinkOut(BaseModel):
@@ -112,9 +112,9 @@ class ConsultationDetailOut(BaseModel):
     implemented: Annotated[bool, Internal]
     implemented_reference: Annotated[str | None, Field(max_length=200), Internal]
     reopened_at: Annotated[datetime | None, Internal]
-    links: list[ConsultationLinkOut]
-    positions: list[ConsultationPositionOut]
-    resolution: ConsultationResolutionOut | None
+    links: Annotated[list[ConsultationLinkOut], classified("internal")]
+    positions: Annotated[list[ConsultationPositionOut], classified("confidential")]
+    resolution: Annotated[ConsultationResolutionOut | None, classified("confidential")]
     difference_unresolved: Annotated[bool, Internal]
 
 

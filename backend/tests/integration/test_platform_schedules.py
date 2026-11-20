@@ -49,6 +49,14 @@ IDS = (
     "ses_events:platform",
     "signatures-evidence-integrity",  # N-02-T38: every envelope's evidence re-hashed, nightly
     "spend_anomaly:platform",
+    # Later sprints' batch jobs (the S51 rows end pass caught the list behind; DEC-5734).
+    "confirmation_follow_up:platform",  # A-08-T18: a sent confirmation's follow-up prompt
+    "component_late:platform",  # A-09-T28: component deliverables go late at 06:00 firm time
+    "integration_health:platform",  # W-01-T13: every live firm token install, probed
+    "usage_alerts:platform",  # G-04-T12: the nightly usage-alert reconcile
+    "destruction_assemble:platform",  # Q-05-T11 (DEC-5725): the quarter's destruction batch
+    "agent_monitoring:platform",  # Q-05-T08 (DEC-5727): nightly QM monitoring
+    "filing_deadlines_recompute:platform",  # T-08-T10 (DEC-5732): filing deadlines, nightly
 )
 BACKGROUND = (
     "access_end:platform",

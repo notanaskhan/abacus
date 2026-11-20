@@ -30,13 +30,14 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Final
+from typing import Annotated, Final
 from uuid import UUID
 
 from sqlalchemy import text
 
 from abacus.kernel import clock
 from abacus.kernel._statuses import ProposedEntryStatus as S
+from abacus.kernel.classification import classified
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import DomainEvent, Scope, Target, uow
@@ -74,20 +75,20 @@ class EntryApprovalDecided(DomainEvent):
     """A close approval, Undo or withdrawal: HOME-02 recomputes the entry's gate (C-02-T14)."""
 
     event_type = "proposed_entry.approval_decided"
-    proposed_entry_id: UUID
-    engagement_id: UUID
-    work_item_id: UUID
+    proposed_entry_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
 
 
 class EntryApprovalRequested(DomainEvent):
     """C16 `entry_approval_requested` and the HOME-02 gate (identifiers only, DEC-60)."""
 
     event_type = "proposed_entry.approval_requested"
-    proposed_entry_id: UUID
-    engagement_id: UUID
-    work_item_id: UUID
-    recipient_user_ids: list[UUID]
-    by_user: UUID
+    proposed_entry_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    recipient_user_ids: Annotated[list[UUID], classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]
 
 
 @dataclass(frozen=True)

@@ -43,6 +43,7 @@ from abacus.modules.platform.api import (
     SpendAnomalyWorkflow,
     TenantKeyWorkflow,
     TenantProvisioningWorkflow,
+    UsageAlertReconcileWorkflow,
     WispPackWorkflow,
     configure_tenant_key_ops,
     entitlement,
@@ -131,6 +132,7 @@ async def worker(temporal: Client, key_ops: InMemoryTenantKeyOps) -> AsyncIterat
         ReferenceSetFanOutWorkflow: "background",  # K-02-T12: a published set's fan-out
         SearchReindexWorkflow: "batch",  # P-02-T06: a firm's or a type's reindex
         SearchDriftCheckWorkflow: "batch",  # P-02-T06: the nightly drift check, on its Schedule
+        UsageAlertReconcileWorkflow: "batch",  # G-04-T12: the nightly usage-alert reconcile
     } == WORKFLOWS
     activities = cast("list[Callable[..., object]]", list(ACTIVITIES))
     # Two pools, as in production: the general one and the keyops one (P-65).

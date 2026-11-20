@@ -1167,7 +1167,14 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         # A-01-T05 (0134): the EBP profile facts and the version; `phase` moves only through an
         # assurance phase event's SECURITY DEFINER trigger (DEC-262).
         "assurance_work_items": frozenset(
-            {"auto_mode", "ebp_plan_kind", "limited_scope_103a3c", "standards_set_id", "version"}
+            {
+                "auto_mode",
+                "ebp_plan_kind",
+                "is_group_audit",
+                "limited_scope_103a3c",
+                "standards_set_id",
+                "version",
+            }
         ),
         "trial_balances": frozenset({"current_version_no"}),  # SPEC-309 (TASK-320)
         "tie_out_checks": frozenset(  # SPEC-310 (TASK-321)
@@ -1227,7 +1234,17 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             # P-07-T07 (0103): the sealed TIN set, written only by P-07-T10's sealing.
             | {"tin_sealed", "tin_last4", "tin_kind", "tin_status", "tin_fingerprint"}
         ),
-        "entity_relationships": frozenset({"effective_to"}),  # P-07-T07 (0103)
+        "entity_relationships": frozenset(
+            {
+                "effective_to",
+                "end_reason",
+                "ended_at",
+                "ended_by",
+                "note",
+                "percent",
+                "version",
+            }
+        ),  # P-07-T07 (0103)
         "approval_grants": frozenset({"used_at", "consumer_ref", "voided_at"}),  # P-04-T10
         "email_suppressions": frozenset({"lifted_at", "lifted_by"}),  # Q-01-T46 (0104)
         "secure_links": frozenset({"token_sha256", "revoked_at"}),  # P-08-T21 (0156)
@@ -1811,7 +1828,25 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"content_hash", "current_version_no", "drafted_run_id", "figure_fingerprint"}
             | {"updated_at"}
         ),
-        "planning_opportunities": frozenset({"body", "citation_ids", "title", "updated_at"}),
+        "planning_opportunities": frozenset(
+            {
+                "body",
+                "citation_ids",
+                "client_draft_suggestion_id",
+                "est_savings",
+                "owner_user_id",
+                "previous_status",
+                "project_engagement_id",
+                "raised_message_id",
+                "rationale_suggestion_id",
+                "row_version",
+                "savings_basis",
+                "status",
+                "talking_points_suggestion_id",
+                "title",
+                "updated_at",
+            }
+        ),
         "ownership_periods": frozenset(
             {"capital_pct", "loss_pct", "period_from", "period_to", "profit_pct"}
         ),
@@ -1903,7 +1938,21 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "attribute_tests": frozenset({"attributes", "content_hash", "version_no"}),
         # A-06-T03 (0643): a proposed entry and its lines are edited until decided.
         "proposed_entries": frozenset(
-            {"account_class", "amount", "description", "status", "version"}
+            {
+                "account_class",
+                "amount",
+                "description",
+                "external_txn_ref",
+                "posting_batch_id",
+                "recorded_externally_at",
+                "recorded_externally_evidence_id",
+                "recorded_externally_match_ref",
+                "reversal_of_id",
+                "reverses_on",
+                "status",
+                "txn_date",
+                "version",
+            }
         ),
         "proposed_entry_lines": frozenset(
             {"account_code", "account_name", "credit", "debit", "fs_line_key"}
@@ -1922,7 +1971,16 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"severity_concluded", "severity_proposed", "severity_proposed_by_kind"}
             | {"severity_suggestion_id", "status", "version"}
         ),
-        "consultations": frozenset({"concluded_at", "conclusion_sealed", "status"}),
+        "consultations": frozenset(
+            {
+                "concluded_at",
+                "conclusion_sealed",
+                "implemented",
+                "implemented_reference",
+                "reopened_at",
+                "status",
+            }
+        ),
         # N-04-T03 (0650): notices v1, their intakes and responses.
         "notices": frozenset(
             {
@@ -2775,6 +2833,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "reviewed_by",
                 "row_version",
                 "status",
+                "went_late_at",
             }
         ),
         # A-09-T12 (0898)
@@ -2848,6 +2907,424 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         # A-08-T18 (0932, DEC-5324): a confirmation authorization gains its envelope, then its
         # completion; nothing else on the row ever changes.
         "confirmation_authorizations": frozenset({"envelope_id", "completed_at"}),
+        # S47 to S51 registries caught up (S51 rows end pass, DEC-5734): each table's updatable
+        # columns as its epic's registry declares them (the services' UPDATE grants).
+        "aaa_lines": frozenset(
+            {
+                "col_aaa",
+                "col_e_and_p",
+                "col_oaa",
+                "col_pti",
+                "source_ref",
+            }
+        ),
+        "aar_adjustments": frozenset({"amount", "description"}),
+        "agent_output_outcomes": frozenset(
+            {
+                "decided_at",
+                "decided_by",
+                "outcome",
+                "reason_code",
+            }
+        ),
+        "allocation_runs": frozenset({"proposal_id", "status"}),
+        "amendments": frozenset(
+            {
+                "baseline_checkpoint_id",
+                "row_version",
+            }
+        ),
+        "analytics_explanations": frozenset({"accepted_at", "accepted_by"}),
+        "analytics_sets": frozenset(
+            {
+                "computed_at",
+                "content_hash",
+                "failure_code",
+                "inputs_hash",
+                "status",
+                "superseded_by",
+                "tb_balanced",
+            }
+        ),
+        "annual_evaluations": frozenset(
+            {
+                "checklist",
+                "decision_card_id",
+                "memo_evidence_version_id",
+                "root_cause_reviewed_at",
+                "root_cause_reviewed_by",
+            }
+        ),
+        "basis_schedules": frozenset(
+            {
+                "computed_at",
+                "difference",
+                "engine_name",
+                "engine_version",
+                "inputs_hash",
+                "inside_share",
+                "outside_basis",
+                "s743b_placeholder",
+                "s752_share",
+                "status",
+                "tax_capital",
+            }
+        ),
+        "book_tax_items": frozenset(
+            {
+                "col_a",
+                "col_b",
+                "col_c",
+                "col_d",
+                "computed_at",
+                "description",
+                "engine_name",
+                "engine_version",
+                "inputs_hash",
+                "kind",
+                "source_ref",
+            }
+        ),
+        "close_deliverables": frozenset(
+            {
+                "c10_deliverable_ref",
+                "c18_approval_ref",
+                "client_approved_at",
+                "client_approved_by_contact_id",
+                "current_version_no",
+                "released_at",
+                "released_by",
+                "status",
+            }
+        ),
+        "closing_date_conflicts": frozenset(
+            {
+                "communication_ref",
+                "resolved_at",
+                "resolved_by",
+                "status",
+            }
+        ),
+        "component_instruction_sends": frozenset(
+            {
+                "completed_at",
+                "grant_id",
+                "undone_at",
+            }
+        ),
+        "connection_engagement_settings": frozenset(
+            {
+                "posting_enabled",
+                "posting_enabled_at",
+                "posting_enabled_by",
+                "version",
+            }
+        ),
+        "deferred_tax_items": frozenset(
+            {
+                "amount",
+                "rate",
+                "temporary_difference",
+            }
+        ),
+        "destruction_batches": frozenset(
+            {
+                "certificate_id",
+                "destroyed_count",
+                "held_excluded_count",
+                "hold_recheck_at",
+                "status",
+                "version",
+            }
+        ),
+        "draft_final_field_facts": frozenset(
+            {
+                "agent_drafted",
+                "changed_before_filing",
+                "filed_at",
+            }
+        ),
+        "evidence_versions": frozenset(
+            {
+                "destroyed_at",
+                "destruction_certificate_id",
+            }
+        ),
+        "filing_deadlines": frozenset(
+            {
+                "client_id",
+                "computed_at",
+                "done_at",
+                "due_on",
+                "extended_due_on",
+                "extension_filed_on",
+                "extension_form",
+                "inputs_hash",
+                "internal_target_on",
+                "office_id",
+                "original_due_on",
+                "owner_user_ids",
+                "postponed_from",
+                "postponement_notice_id",
+                "reference_set_version_ids",
+                "rule_key",
+                "service_line",
+                "signer_user_id",
+                "stage_code",
+                "work_item_id",
+            }
+        ),
+        "fixed_assets": frozenset(
+            {
+                "accum_bop",
+                "accum_eop",
+                "acquired_on",
+                "binding_contract_on",
+                "bonus_pct",
+                "book_equals_tax",
+                "computed_at",
+                "convention",
+                "cost",
+                "current_year",
+                "date_citation_id",
+                "description",
+                "engine_name",
+                "engine_version",
+                "inputs_hash",
+                "method",
+                "placed_in_service_on",
+                "property_id",
+                "recovery_class",
+                "sec179",
+                "status",
+                "status_reason_code",
+                "version",
+            }
+        ),
+        "form_diagnostics": frozenset(
+            {
+                "facts",
+                "issue_id",
+                "severity",
+                "status",
+            }
+        ),
+        "form_page_renders": frozenset(
+            {
+                "generated_document_version_id",
+                "render_hash",
+                "status",
+            }
+        ),
+        "functional_expense_lines": frozenset(
+            {
+                "allocation_basis",
+                "fundraising",
+                "label",
+                "management_general",
+                "program",
+                "source_memo_evidence_version_id",
+                "time_study",
+                "total",
+            }
+        ),
+        "inspections": frozenset(
+            {
+                "concluded_on",
+                "due_on",
+                "inspector_user_id",
+                "status",
+                "version",
+            }
+        ),
+        "ledger_write_operations": frozenset(
+            {
+                "attempt",
+                "external_ref",
+                "finished_at",
+                "provider_request_id",
+                "started_at",
+                "status",
+            }
+        ),
+        "liability_shares": frozenset({"method", "share_bop", "share_eop"}),
+        "nexus_facts": frozenset(
+            {
+                "conclusion",
+                "evidence_version_id",
+                "fact",
+                "owner_user_id",
+            }
+        ),
+        "post_issuance_events": frozenset(
+            {
+                "decided_actor_kind",
+                "decided_at",
+                "decided_by",
+                "decision",
+                "rationale_sealed",
+                "status",
+            }
+        ),
+        "posting_batches": frozenset(
+            {
+                "closing_date_set_at",
+                "failure_count",
+                "first_external_ref",
+                "last_external_ref",
+                "posted_at",
+                "resolved_failure_count",
+                "status",
+                "version",
+            }
+        ),
+        "ptet_elections": frozenset(
+            {
+                "amount",
+                "base",
+                "election",
+                "rate",
+                "rounding_rule",
+                "version",
+            }
+        ),
+        "ptet_partner_credits": frozenset(
+            {
+                "amount",
+                "override_reason",
+                "rounding_rule",
+            }
+        ),
+        "public_support_tests": frozenset(
+            {
+                "pct",
+                "public_support",
+                "threshold_met",
+                "total_support",
+            }
+        ),
+        "qm_findings": frozenset(
+            {
+                "due_on",
+                "owner_user_id",
+                "remediated_at",
+                "remediation_note_sealed",
+                "remediation_sealed",
+                "root_cause_category",
+                "root_cause_sealed",
+                "status",
+                "version",
+            }
+        ),
+        "qm_objectives": frozenset(
+            {
+                "active",
+                "health_flag",
+                "note_sealed",
+                "owner_user_id",
+                "version",
+            }
+        ),
+        "qm_responses": frozenset({"frequency", "owner_user_id", "title"}),
+        "qm_risks": frozenset({"title"}),
+        "qm_settings": frozenset(
+            {
+                "evaluation_as_of_month_day",
+                "operational_owner_user_id",
+                "ultimate_responsible_user_id",
+                "updated_at",
+            }
+        ),
+        "rate_recon_items": frozenset(
+            {
+                "amount",
+                "classification",
+                "description",
+                "proposal_id",
+                "rate_effect",
+            }
+        ),
+        "relationship_graph_layouts": frozenset({"positions", "updated_at"}),
+        "season_asks": frozenset(
+            {
+                "answered_at",
+                "answered_by",
+                "answered_option",
+            }
+        ),
+        "season_cohorts": frozenset({"approver_user_id", "status"}),
+        "season_manifest_rows": frozenset(
+            {
+                "exception_codes",
+                "excluded_at",
+                "excluded_by",
+                "exclusion_reason",
+                "preparer_user_id",
+                "reviewer_user_id",
+                "row_version",
+                "signer_user_id",
+            }
+        ),
+        "season_manifests": frozenset({"planner_run_id", "status"}),
+        "shareholder_allocations": frozenset(
+            {
+                "days",
+                "distributions",
+                "interest",
+                "nondeductible",
+                "ordinary_income",
+                "pct",
+                "shares",
+            }
+        ),
+        "sourcing_positions": frozenset({"decided_at", "decided_by", "status"}),
+        "ssars_inquiry_programs": frozenset({"published_at", "published_by"}),
+        "standards_run_items": frozenset(
+            {
+                "checks_passed",
+                "checks_total",
+                "completed_at",
+                "status",
+            }
+        ),
+        "standards_runs": frozenset({"completed_at", "status"}),
+        "state_apportionments": frozenset(
+            {
+                "denominator",
+                "nexus_basis",
+                "numerator",
+                "return_form",
+                "share",
+                "status",
+            }
+        ),
+        "tax_properties": frozenset(
+            {
+                "city",
+                "form8825_property_no",
+                "land_value",
+                "name",
+                "source_ref",
+                "state",
+                "use",
+                "version",
+            }
+        ),
+        "tax_provisions": frozenset(
+            {
+                "blended_rate",
+                "current_tax",
+                "deferred_tax",
+                "etr",
+                "off_amount",
+                "permanent_total",
+                "pretax_book_income",
+                "recon_status",
+                "taxable_income",
+                "temporary_total",
+                "total_provision",
+            }
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -2956,21 +3433,34 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
 
 IMMUTABLE_FUNCTION = "evidence_versions_immutable"
 LEDGER_FUNCTION = "ledger_immutable"
+# 0968 (S50) split the row trigger: DELETE always raises; UPDATE raises unless it is the
+# destruction tombstone write. The fixture restores that migrated state after each test.
+_TOMBSTONE = (
+    "current_setting('app.archived_write', true) = 'destruction_tombstone'"
+    " AND OLD.destroyed_at IS NULL AND NEW.destroyed_at IS NOT NULL"
+    " AND OLD.destruction_certificate_id IS NULL AND NEW.destruction_certificate_id IS NOT NULL"
+    " AND (to_jsonb(NEW) - 'destroyed_at' - 'destruction_certificate_id')"
+    " = (to_jsonb(OLD) - 'destroyed_at' - 'destruction_certificate_id')"
+)
 RESTORE_EVIDENCE = [
-    "DROP TRIGGER IF EXISTS evidence_versions_no_update_or_delete ON evidence_versions",
+    "DROP TRIGGER IF EXISTS evidence_versions_no_update ON evidence_versions",
+    "DROP TRIGGER IF EXISTS evidence_versions_no_delete ON evidence_versions",
     "DROP TRIGGER IF EXISTS evidence_versions_no_truncate ON evidence_versions",
     "DROP TRIGGER IF EXISTS zz_evidence_after ON evidence_versions",
     "DROP TRIGGER IF EXISTS zz_evidence_other ON evidence_versions",
     "DROP FUNCTION IF EXISTS zz_evidence_other_fn()",
     "CREATE OR REPLACE FUNCTION evidence_versions_immutable() RETURNS trigger "
-    "LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'evidence versions are immutable (ADR-004)' "
+    "LANGUAGE plpgsql SET search_path = pg_catalog, public, pg_temp AS $$ BEGIN "
+    "RAISE EXCEPTION 'evidence versions are immutable (ADR-004)' "
     "USING ERRCODE = 'insufficient_privilege'; END $$",
-    "CREATE TRIGGER evidence_versions_no_update_or_delete BEFORE UPDATE OR DELETE ON "
-    "evidence_versions FOR EACH ROW EXECUTE FUNCTION evidence_versions_immutable()",
+    "CREATE TRIGGER evidence_versions_no_delete BEFORE DELETE ON evidence_versions "
+    "FOR EACH ROW EXECUTE FUNCTION evidence_versions_immutable()",
+    "CREATE TRIGGER evidence_versions_no_update BEFORE UPDATE ON evidence_versions "
+    f"FOR EACH ROW WHEN (NOT ({_TOMBSTONE})) EXECUTE FUNCTION evidence_versions_immutable()",
     "CREATE TRIGGER evidence_versions_no_truncate BEFORE TRUNCATE ON evidence_versions "
     "FOR EACH STATEMENT EXECUTE FUNCTION evidence_versions_immutable()",
 ]
-ROW_TRIGGER = "evidence_versions_no_update_or_delete"
+ROW_TRIGGERS = ("evidence_versions_no_update", "evidence_versions_no_delete")
 TRUNCATE_TRIGGER = "evidence_versions_no_truncate"
 
 
@@ -3109,6 +3599,47 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "support_messages": "support_messages_immutable",  # 0920 (G-04-T04)
         "status_incident_updates": "status_incident_updates_immutable",  # 0920 (G-04-T04)
         "platform_audit_events": "platform_audit_events_immutable",  # 0920 (G-04-T04)
+        # S47 to S51 insert-only tables caught up (S51 rows end pass, DEC-5734): each table's
+        # immutability trigger function as its migration attaches it.
+        "aar_elections": "aar_elections_immutable",
+        "amendment_explanation_versions": "amendment_explanation_versions_immutable",
+        "close_deliverable_versions": "close_deliverable_versions_immutable",
+        "close_reopenings": "close_reopenings_immutable",
+        "closing_date_events": "closing_date_events_immutable",
+        "connection_write_grants": "connection_write_grants_immutable",
+        "destruction_approvals": "destruction_approvals_immutable",
+        "destruction_batch_items": "destruction_batch_items_immutable",
+        "destruction_certificates": "destruction_certificates_immutable",
+        "destruction_item_exclusions": "destruction_item_exclusions_immutable",
+        "entity_relationship_events": "entity_relationship_events_immutable",
+        "filing_deadline_alerts": "filing_deadline_alerts_immutable",
+        "firm_write_capabilities": "firm_write_capabilities_immutable",
+        "fixed_asset_dispositions": "fixed_asset_dispositions_immutable",
+        "fixed_asset_versions": "fixed_asset_versions_immutable",
+        "inspection_selection_rules": "inspection_selection_rules_immutable",
+        "ledger_write_evidence": "ledger_write_evidence_immutable",
+        "planning_opportunity_events": "planning_opportunity_events_immutable",
+        "planning_screens": "planning_screens_immutable",
+        "posting_results": "posting_results_immutable",
+        "ptet_payments": "ptet_payments_immutable",
+        "qm_finding_evaluations": "qm_finding_evaluations_immutable",
+        "qm_finding_links": "qm_finding_links_immutable",
+        "qm_register_imports": "qm_register_imports_immutable",
+        "qm_risk_assessment_reviews": "qm_risk_assessment_reviews_immutable",
+        "return_supersessions": "return_supersessions_immutable",
+        "season_cohort_approvals": "season_cohort_approvals_immutable",
+        "season_cohort_withdrawals": "season_cohort_withdrawals_immutable",
+        "season_row_steps": "season_row_steps_immutable",
+        "standards_check_confirmations": "standards_check_confirmations_immutable",
+        "standards_check_results": "standards_check_results_immutable",
+        "tax_handoffs": "tax_handoffs_immutable",
+        "tb_handoff_account_choices": "tb_handoff_account_choices_immutable",
+        "tb_handoff_schedules": "tb_handoff_schedules_immutable",
+        "tb_handoff_supersessions": "tb_handoff_supersessions_immutable",
+        "tb_handoff_tax_items": "tb_handoff_tax_items_immutable",
+        "tb_handoffs": "tb_handoffs_immutable",
+        "variance_explanation_acceptances": "variance_explanation_acceptances_immutable",
+        "variance_explanation_versions": "variance_explanation_versions_immutable",
     }
     assert _evidence_problems(evidence) == []
 
@@ -3121,14 +3652,17 @@ def test_ac20_a_dropped_truncate_trigger_is_reported(evidence: sc.Database) -> N
 def test_ac20_a_dropped_update_delete_trigger_reports_both_operations(
     evidence: sc.Database,
 ) -> None:
-    _sql(evidence.superuser_dsn, f"DROP TRIGGER {ROW_TRIGGER} ON evidence_versions")
+    _sql(
+        evidence.superuser_dsn,
+        *(f"DROP TRIGGER {t} ON evidence_versions" for t in ROW_TRIGGERS),
+    )
     assert sorted(_evidence_problems(evidence)) == sorted([_missing("UPDATE"), _missing("DELETE")])
 
 
 def test_ac20_both_triggers_dropped_reports_all_three_operations(evidence: sc.Database) -> None:
     _sql(
         evidence.superuser_dsn,
-        f"DROP TRIGGER {ROW_TRIGGER} ON evidence_versions",
+        *(f"DROP TRIGGER {t} ON evidence_versions" for t in ROW_TRIGGERS),
         f"DROP TRIGGER {TRUNCATE_TRIGGER} ON evidence_versions",
     )
     assert sorted(_evidence_problems(evidence)) == sorted(
@@ -3155,7 +3689,7 @@ def test_ac20_an_always_enabled_trigger_passes(evidence: sc.Database) -> None:
     _sql(
         evidence.superuser_dsn,
         f"ALTER TABLE evidence_versions ENABLE ALWAYS TRIGGER {TRUNCATE_TRIGGER}",
-        f"ALTER TABLE evidence_versions ENABLE ALWAYS TRIGGER {ROW_TRIGGER}",
+        *(f"ALTER TABLE evidence_versions ENABLE ALWAYS TRIGGER {t}" for t in ROW_TRIGGERS),
     )
     assert _evidence_problems(evidence) == []
 
@@ -3184,7 +3718,7 @@ def test_ac20_a_trigger_that_returns_after_raising_is_reported(evidence: sc.Data
 def test_ac20_an_after_trigger_does_not_count(evidence: sc.Database) -> None:
     _sql(
         evidence.superuser_dsn,
-        f"DROP TRIGGER {ROW_TRIGGER} ON evidence_versions",
+        *(f"DROP TRIGGER {t} ON evidence_versions" for t in ROW_TRIGGERS),
         "CREATE TRIGGER zz_evidence_after AFTER UPDATE OR DELETE ON evidence_versions "
         f"FOR EACH ROW EXECUTE FUNCTION {IMMUTABLE_FUNCTION}()",
     )
@@ -3557,6 +4091,16 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"platform_directory_upsert", "help_article_draft", "help_article_publish"}
         | {"help_article_withdraw", "status_incident_post", "status_incident_update"}
         | {"status_incident_resolve"}
+        # S50 and S51 definer functions caught up (S51 rows end pass, DEC-5734): 0969
+        # (G-04-T14) the console staff sessions; C-02's attest-client write grant guard and
+        # the C12 hand-off supersede; 0980 (G-04-T20) the platform content writers; 0982
+        # (Q-05-T31) the retention floor source and its reads.
+        | {"platform_staff_session_start", "platform_staff_session_rotate"}
+        | {"platform_staff_session_set_refresh", "platform_staff_session_end"}
+        | {"platform_staff_session_revoke"}
+        | {"connection_write_grants_not_attest", "tax_handoffs_supersede"}
+        | {"status_component_upsert", "platform_region_upsert", "platform_setting_put"}
+        | {"retention_floor_differences", "retention_floor_source", "retention_minimums_in_effect"}
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 

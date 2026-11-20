@@ -27,12 +27,13 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import ClassVar, Final, cast
+from typing import Annotated, ClassVar, Final, cast
 from uuid import UUID
 
 from sqlalchemy import text
 
 from abacus.kernel import clock
+from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, uow
@@ -91,10 +92,10 @@ class PostingBatchPosted(DomainEvent):
 
     event_type: ClassVar[str] = "posting_batch.posted"
 
-    batch_id: UUID
-    work_item_id: UUID
-    period: str
-    closing_date: date | None
+    batch_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    period: Annotated[str, classified("internal")]
+    closing_date: Annotated[date | None, classified("internal")]
 
 
 @dataclass(frozen=True)
