@@ -23,7 +23,7 @@
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a, b, c, e | C (locked in C-01-T50) | not run (handoff baselines not on this machine; axe light and forced colors in `e2e/screens/CLS-01.spec.ts`) | hover and open-menu states are out of pixels |
+| a, b, c, e | C (locked; C-01-T50) | not run (handoff baselines not on this machine; axe light and forced colors in `e2e/screens/CLS-01.spec.ts`) | hover and open-menu states are out of pixels |
 | d, f | C (report only) | not run | f runs through its interact script |
 | host | D | — | toolbar 46; tiles; DataTable rows 38/40/44 by grammar |
 

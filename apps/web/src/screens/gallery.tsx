@@ -2,7 +2,7 @@ import { publishPortalSettings } from "@abacus/api-client";
 import { AppShell, time, toast } from "@abacus/ui";
 import { KNW03_TAILORING } from "../fixtures/seed/knw03";
 import { type JSX, useEffect, useMemo, useState } from "react";
-import { installFixtureMode, type Scenario } from "../app-core/fixture-mode";
+import { installFixtureMode, json, type Scenario } from "../app-core/fixture-mode";
 import { useSession } from "../app-core/session";
 import { type FixtureParams, registerScreen } from "../gallery/fixture-mode";
 import { useFirmToolbar } from "../shell/firm/ToolbarData";
@@ -312,6 +312,8 @@ import {
   scenarios as shl05Scenarios,
 } from "./SHL-05/scenarios";
 import { POR23 } from "./POR-23";
+import { POR17 } from "./POR-17";
+import { POR17_SUMMIT_TRAIL } from "../fixtures/seed/fieldwork";
 import { ADM14 } from "./ADM-14";
 import { scenarios as adm14Scenarios } from "./ADM-14/scenarios";
 import { STATES as POR23_STATES, scenarios as por23Scenarios } from "./POR-23/scenarios";
@@ -2812,21 +2814,36 @@ registerScreen("AUD-35", {
 });
 registerScreen("AUD-12", {
   title: "Testing workspace · details · controls · JE",
-  Component: ({ params }: { params: FixtureParams }) => <TestingWorkspace st={params.st} />,
+  // A-08-T37: the artboard wrapper the screen specs and the parity report read.
+  Component: ({ params }: { params: FixtureParams }) => (
+    <div data-artboard={params.st ?? "a"}>
+      <TestingWorkspace st={params.st} />
+    </div>
+  ),
 });
 registerScreen("AUD-13", {
   title: "Analytics · preliminary · substantive · final",
-  Component: ({ params }: { params: FixtureParams }) => <AnalyticsWorkspace st={params.st} />,
+  Component: ({ params }: { params: FixtureParams }) => (
+    <div data-artboard={params.st ?? "a"}>
+      <AnalyticsWorkspace st={params.st} />
+    </div>
+  ),
 });
 registerScreen("AUD-14", {
   title: "Confirmations — Granite Peak FY2026",
   Component: ({ params }: { params: FixtureParams }) => (
-    <ConfirmationsWorkspace st={params.st} note={AUD14_FIXTURE_NOTE} />
+    <div data-artboard={params.st ?? "a"}>
+      <ConfirmationsWorkspace st={params.st} note={AUD14_FIXTURE_NOTE} />
+    </div>
   ),
 });
 registerScreen("AUD-26", {
   title: "Review, compilation & preparation workspace",
-  Component: ({ params }: { params: FixtureParams }) => <SsarsWorkspace st={params.st} />,
+  Component: ({ params }: { params: FixtureParams }) => (
+    <div data-artboard={params.st ?? "a"}>
+      <SsarsWorkspace st={params.st} />
+    </div>
+  ),
 });
 registerScreen("PLT-01", {
   title: "Accrued tenant console",
@@ -4279,6 +4296,22 @@ registerScreen("POR-11", {
         />
       );
     },
+  ),
+});
+// A-08-T37: POR-17's respondent page, the states its one view read draws on its own: a (the open
+// request, Summit Trail), d (expired) and e (already answered). b, c and f need the respondent's
+// own typing or another respondent's seed (A-08-T37 gaps).
+const POR17_VIEWS: Record<string, unknown> = {
+  a: POR17_SUMMIT_TRAIL,
+  d: { state: "expired", request: null, receipt: null, answered_on: null },
+  e: { state: "answered", request: null, receipt: null, answered_on: "2026-09-25" },
+};
+registerScreen("POR-17", {
+  title: "Confirmation response · Summit Trail Outfitters",
+  Component: portalArtboard(
+    ["a", "d", "e"],
+    (st) => ({ state: st, handlers: { "GET /v1/confirm/{token}": () => json(POR17_VIEWS[st]) } }),
+    () => <POR17 token="fixture-token" />,
   ),
 });
 // A-09-T42 (TASK-8702): POR-23 a-f for j20 7 (the room has no portal path of its own yet).

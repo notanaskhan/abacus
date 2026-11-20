@@ -25,7 +25,7 @@
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a, d | C (locked in C-01-T50) | not run (handoff baselines not on this machine; axe light and forced colors in `e2e/screens/CLS-10.spec.ts`) | — |
+| a, d | C (locked; C-01-T50) | not run (handoff baselines not on this machine; axe light and forced colors in `e2e/screens/CLS-10.spec.ts`) | — |
 | b, c, e | C (report only) | not run | — |
 | host | D | — | pane header 46 at 14.5/500; DataTable rows by grammar |
 
