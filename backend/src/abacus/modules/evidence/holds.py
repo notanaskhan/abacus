@@ -53,7 +53,10 @@ from abacus.modules.identity.api import (
 )
 
 ScopeKind = Literal["client", "client_tax_year", "engagement", "work_item"]
-ReasonCode = Literal["irs_examination", "litigation", "regulatory_inquiry", "subpoena", "other"]
+ReasonCode = Literal[
+    "irs_examination", "litigation", "regulatory_inquiry", "subpoena", "other",
+    "state_controversy", "client_dispute",  # Q-05-T13 (0964 widened the CHECK)
+]
 HoldStatus = Literal["applying", "active", "releasing", "released"]
 OPEN: Final = ("applying", "active")  # holds that cover new versions
 BATCH: Final = 200  # stored versions per activity call
@@ -209,6 +212,10 @@ async def place_hold(
     reason_code: ReasonCode,
     details: str | None,
     notify_user_ids: Sequence[UUID],
+    *,
+    document_classes: Sequence[str] | None = None,
+    until_released: bool = True,
+    display_name: str | None = None,
 ) -> HoldView:
     """A partner, security admin or firm admin, with fresh MFA, holds a scope: every version in it
     is counted at once and `LegalHoldApply` sets the S3 holds (started from the outbox)."""
@@ -226,9 +233,10 @@ async def place_hold(
         await tx.session.execute(
             text(
                 "INSERT INTO legal_holds (id, tenant_id, scope_kind, client_id, tax_year, "
-                "engagement_id, work_item_id, reason_code, details, notify_user_ids, placed_by) "
+                "engagement_id, work_item_id, reason_code, details, notify_user_ids, placed_by, "
+                "document_classes, until_released, display_name) "
                 "VALUES (:id, :tenant, :kind, :client, :year, :engagement, :work_item, :reason, "
-                ":details, CAST(:notify AS uuid[]), :by)"
+                ":details, CAST(:notify AS uuid[]), :by, CAST(:classes AS text[]), :until, :name)"
             ),
             {
                 "id": hold_id,
@@ -242,6 +250,10 @@ async def place_hold(
                 "details": details,
                 "notify": [str(u) for u in notify],
                 "by": ctx.user_id,
+                # Q-05-T13 (FIL-02h): client > year > work item > document classes.
+                "classes": None if not document_classes else sorted(set(document_classes)),
+                "until": until_released,
+                "name": display_name,
             },
         )
         counted = await _add_objects(tx.session, hold_id, engagements)

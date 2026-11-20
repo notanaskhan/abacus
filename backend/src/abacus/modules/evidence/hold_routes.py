@@ -52,6 +52,16 @@ class LegalHoldIn(BaseModel):
     notify_user_ids: Annotated[
         list[UUID], Field(default_factory=list, max_length=50), classified("internal")
     ]
+    # Q-05-T13 (FIL-02h, additive): narrow to document classes; held until released.
+    document_classes: Annotated[
+        list[Annotated[str, Field(pattern=r"^[a-z][a-z_]{1,59}$")]] | None,
+        Field(default=None, max_length=20),
+        classified("internal"),
+    ] = None
+    until_released: Annotated[bool, classified("internal")] = True
+    display_name: Annotated[
+        str | None, Field(default=None, min_length=1, max_length=200), classified("confidential")
+    ] = None
 
 
 class LegalHoldReleaseIn(BaseModel):
@@ -131,6 +141,9 @@ async def place_legal_hold_route(
         body.reason_code,
         body.details,
         body.notify_user_ids,
+        document_classes=body.document_classes,
+        until_released=body.until_released,
+        display_name=body.display_name,
     )
     return _out(view)
 

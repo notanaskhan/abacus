@@ -1211,6 +1211,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "proposed_entry.exported",
         "proposed_entry.recorded_externally",
         "proposed_entry.reversal_linked",
+        "retention_policy.text_recorded",  # Q-05-T13 (TASK-8817): FIL-02g's version drawer
         # reviewed 2026-11-20 (C-02-T25, TASK-8810): ADR-344's switches show on ADM-08b, the
         # engagement's ledger settings and POR-16's consent history.
         "connection.write_granted",
