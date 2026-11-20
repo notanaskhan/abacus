@@ -252,7 +252,10 @@ register_standards_providers()
 
 # The routers the API mounts, in order (P-39; F-03-T07). K-01-T01's stubs follow the live
 # SPEC-008 routes.
+from abacus.modules.methodology.templates_v2_contract import templates_v2_router  # noqa: E402
+
 ROUTERS: tuple[AbacusRouter, ...] = (
+    templates_v2_router,  # K-03-T08: TV-1 templates v2 (stub; dark)
     methodology_router,
     methodology_lifecycle_router,
     programs_router,
