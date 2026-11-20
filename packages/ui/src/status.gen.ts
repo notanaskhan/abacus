@@ -7293,6 +7293,80 @@ export const STATUS_REGISTRY = {
       "terminal": true,
       "derived": false
     }
+  },
+  "sheet_cell": {
+    "suggested": {
+      "label": "Suggested",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "atom"
+    },
+    "adopted": {
+      "label": "Adopted by {initials}",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "check_olive"
+    },
+    "edited": {
+      "label": "Edited by {initials}",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "was": "Edited by {initials} · was {value}"
+      }
+    }
+  },
+  "board_drop": {
+    "moved": {
+      "label": "Moved",
+      "variant": "neutral",
+      "terminal": true,
+      "derived": true,
+      "contextLabels": {
+        "to": "Moved to {column}"
+      }
+    },
+    "dispatched": {
+      "label": "Dispatched",
+      "variant": "state",
+      "terminal": true,
+      "derived": true
+    },
+    "guarded": {
+      "label": "Needs sign-off",
+      "variant": "amber",
+      "terminal": true,
+      "derived": true
+    }
+  },
+  "addin_sync": {
+    "synced": {
+      "label": "Synced",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true,
+      "contextLabels": {
+        "at": "Synced {time}"
+      }
+    },
+    "offline": {
+      "label": "Offline",
+      "variant": "muted",
+      "terminal": false,
+      "derived": true
+    },
+    "changes_waiting": {
+      "label": "Changes waiting",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true,
+      "contextLabels": {
+        "n": "{n} changes waiting"
+      }
+    }
   }
 } as const;
 

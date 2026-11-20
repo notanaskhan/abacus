@@ -2,13 +2,14 @@
 // adopt. A suggested cell stays suggested while onAdopt is pending or after it rejects; "Edited by
 // HL · was Properly included" survives an edit; no citation marker renders without typed
 // locators, even when the value contains "[1]"; no approve, sign off, release, send, adopt or
-// accept control renders on an agent-owned element. Status words are the kit-local draft
-// SheetCellState until F-08-T04's generated codes land.
+// accept control renders on an agent-owned element. Status words are the generated `sheet_cell`
+// codes (F-08-T04) plus the two non-status states.
 import { act, cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SheetGrid } from "../SheetGrid";
 import type { Actor } from "../../attribution/actor";
 import type { SheetCellState } from "../types";
+import { STATUS_REGISTRY } from "../../status.gen";
 import { COLE, cellOf, grid, surlRow } from "./fixtures";
 
 afterEach(cleanup);
@@ -20,6 +21,13 @@ const DRAFT_WORDS: readonly SheetCellState[] = [
   "adopted",
   "edited",
 ];
+describe("sheet_cell status words come from the registry (F-08-T04)", () => {
+  it("labels suggested, adopted and edited from the generated registry", () => {
+    expect(STATUS_REGISTRY.sheet_cell.suggested.label).toBe("Suggested");
+    expect(STATUS_REGISTRY.sheet_cell.adopted.label).toBe("Adopted by {initials}");
+    expect(STATUS_REGISTRY.sheet_cell.edited.label).toBe("Edited by {initials}");
+  });
+});
 const RUNNING = { running: true }; // a stable snapshot (useSyncExternalStore)
 const HUMAN_ONLY = /\b(approve|sign off|release|send|adopt|accept)\b/i;
 
