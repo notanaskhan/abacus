@@ -33,6 +33,7 @@ from abacus.modules.connections.connector import (
     RawPayload,
     Unavailable,
 )
+from abacus.modules.connections.connect import LogEntry, register_access_log_writes
 from abacus.modules.connections.connectors import quickbooks_online
 from abacus.modules.connections.qbo_format import (
     QboVendor,
@@ -213,6 +214,8 @@ register_engagement_owners(AUDIT_KINDS - {"connection"}, audit_owners)
 register_entity_owners({"connection"}, audit_entities)
 
 __all__ = [
+    "LogEntry",
+    "register_access_log_writes",
     "QboVendor",
     "QboVendorPayment",
     "parse_qbo_vendor_payments",

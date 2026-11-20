@@ -20,6 +20,7 @@ import base64
 import hashlib
 import re
 import secrets
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Final
@@ -482,15 +483,31 @@ async def connection_of(ctx: AuthContext, engagement_id: UUID) -> ConnectionView
     )
 
 
+# C-02-T25 (ADR-040, ADR-344 §6): the owner of W1 writes (`integrations`) registers a reader of the
+# writes to an entity's books; the client-visible log lists them beside the pulls.
+WriteLogReader = Callable[[TenantContext, UUID], Awaitable[Sequence[LogEntry]]]
+_write_logs: list[WriteLogReader] = []
+
+
+def register_access_log_writes(reader: WriteLogReader) -> None:
+    _write_logs.append(reader)
+
+
 async def access_log(ctx: AuthContext, engagement_id: UUID, page: int) -> list[LogEntry]:
-    """AC-5: every pull for the engagement, newest first, 50 a page."""
+    """AC-5: every pull for the engagement, newest first, 50 a page; from C-02-T25 the first page
+    also lists every write to the entity's books (`write:<operation>`)."""
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, "connection.read_log", ref.resource())
     async with tenant_session(ctx.tenant) as session:
         runs = await list_access_log(
             session, ctx, engagement_id, limit=LOG_PAGE, offset=page * LOG_PAGE
         )
-    return [_entry(run) for run in runs]
+    entries = [_entry(run) for run in runs]
+    if page == 0:
+        for reader in _write_logs:
+            entries.extend(await reader(ctx.tenant, ref.client_entity_id))
+        entries.sort(key=lambda e: (e.started_at, str(e.id)), reverse=True)
+    return entries
 
 
 def _entry(run: SyncRun) -> LogEntry:

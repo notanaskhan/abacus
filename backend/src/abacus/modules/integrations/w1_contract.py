@@ -25,7 +25,7 @@ from pydantic.config import JsonDict
 
 from abacus.kernel._flags import CLOSES_GL_CONSOLE
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
 
@@ -384,8 +384,12 @@ async def posting_batch_route(batch_id: UUID, ctx: Ctx) -> W1PostingLogRowOut:
 )
 async def enable_capability_route(body: W1CapabilitySwitchIn, ctx: Ctx) -> W1CapabilitySwitchOut:
     """The firm switch; 409 `write_capability_not_released` while the registry is off."""
+    from abacus.modules.integrations import w1_switches
+
     await _human(ctx, "write_capability.enable")
-    raise NotImplementedYet
+    return await _switch_out(
+        ctx, await w1_switches.set_firm_switch(ctx, enabled=True, reason=body.reason)
+    )
 
 
 @w1_router.post(
@@ -396,8 +400,31 @@ async def enable_capability_route(body: W1CapabilitySwitchIn, ctx: Ctx) -> W1Cap
 )
 async def disable_capability_route(body: W1CapabilitySwitchIn, ctx: Ctx) -> W1CapabilitySwitchOut:
     """Turning the switch off always succeeds and refuses every in-flight batch's next entry."""
+    from abacus.modules.integrations import w1_switches
+
     await _human(ctx, "write_capability.enable")
-    raise NotImplementedYet
+    return await _switch_out(
+        ctx, await w1_switches.set_firm_switch(ctx, enabled=False, reason=body.reason)
+    )
+
+
+async def _switch_out(ctx: AuthContext, found: object) -> W1CapabilitySwitchOut:
+    from abacus.modules.identity.api import display_names
+    from abacus.modules.integrations.w1_switches import Switch
+
+    switch = cast(Switch, found)
+    names = (
+        await display_names([switch.changed_by])
+        if switch.changed_by is not None
+        else {}
+    )
+    return W1CapabilitySwitchOut(
+        capability_id="ledger_post_journal_entries",
+        enabled=switch.enabled,
+        released=switch.released,
+        changed_by=names.get(switch.changed_by) if switch.changed_by is not None else None,
+        changed_at=switch.changed_at,
+    )
 
 
 @w1_router.get(
@@ -407,8 +434,13 @@ async def disable_capability_route(body: W1CapabilitySwitchIn, ctx: Ctx) -> W1Ca
     errors=(501,),
 )
 async def gl_posting_settings_route(ctx: Ctx) -> W1GlPostingSettingsOut:
+    from abacus.modules.integrations import w1_switches
+
     await _console_on(ctx)
-    raise NotImplementedYet
+    found = await w1_switches.gl_settings(ctx)
+    return W1GlPostingSettingsOut(
+        memo_prefix=found.memo_prefix, post_as=found.post_as, version=found.version
+    )
 
 
 @w1_router.put(
@@ -420,8 +452,16 @@ async def gl_posting_settings_route(ctx: Ctx) -> W1GlPostingSettingsOut:
 async def gl_posting_settings_update_route(
     body: W1GlPostingSettingsIn, ctx: Ctx
 ) -> W1GlPostingSettingsOut:
+    from abacus.modules.integrations import w1_switches
+
     await _human(ctx, "gl_posting_settings.update")
-    raise NotImplementedYet
+    found = await w1_switches.update_gl_settings(
+        ctx, memo_prefix=body.memo_prefix, post_as=body.post_as,
+        expected_version=body.expected_version,
+    )  # fmt: skip
+    return W1GlPostingSettingsOut(
+        memo_prefix=found.memo_prefix, post_as=found.post_as, version=found.version
+    )
 
 
 @w1_router.put(
@@ -433,9 +473,18 @@ async def gl_posting_settings_update_route(
 async def engagement_ledger_settings_route(
     engagement_id: UUID, body: W1EngagementLedgerSettingsIn, ctx: Ctx
 ) -> W1EngagementLedgerSettingsOut:
-    """The engagement's `posting_enabled` (partner or manager)."""
+    """The engagement's `posting_enabled` (partner or manager); never for an attest client."""
+    from abacus.modules.integrations import w1_switches
+
     await _human(ctx, "engagement_ledger_settings.update")
-    raise NotImplementedYet
+    found = await w1_switches.set_posting_enabled(
+        ctx, engagement_id, body.connection_id, posting_enabled=body.posting_enabled,
+        expected_version=body.expected_version,
+    )  # fmt: skip
+    return W1EngagementLedgerSettingsOut(
+        engagement_id=found.engagement_id, connection_id=found.connection_id,
+        posting_enabled=found.posting_enabled, version=found.version,
+    )  # fmt: skip
 
 
 @w1_portal_router.post(
@@ -449,8 +498,11 @@ async def grant_write_route(
     connection_id: UUID, body: W1WriteGrantIn, ctx: Ctx
 ) -> W1WriteGrantOut:
     """The client owner grants posting with a fresh MFA; refused for an attest client."""
+    from abacus.modules.integrations import w1_switches
+
     await _portal_on(ctx, "connection.grant_write")
-    raise NotImplementedYet
+    found = await w1_switches.grant_write(ctx, connection_id, body.consent_copy_version)
+    return _grant_out(found)
 
 
 @w1_portal_router.delete(
@@ -461,5 +513,19 @@ async def grant_write_route(
 )
 async def revoke_write_route(connection_id: UUID, ctx: Ctx) -> W1WriteGrantOut:
     """The client owner revokes; the next entry of any in-flight batch is `write_grant_missing`."""
+    from abacus.modules.integrations import w1_switches
+
     await _portal_on(ctx, "connection.revoke_write")
-    raise NotImplementedYet
+    return _grant_out(await w1_switches.revoke_write(ctx, connection_id))
+
+
+def _grant_out(found: object) -> W1WriteGrantOut:
+    from abacus.modules.integrations.w1_switches import Grant
+
+    grant = cast(Grant, found)
+    return W1WriteGrantOut(
+        connection_id=grant.connection_id,
+        event=cast(GrantEvent, grant.event),
+        at=grant.at,
+        consent_copy_version=cast(ConsentCopy, grant.consent_copy_version),
+    )
