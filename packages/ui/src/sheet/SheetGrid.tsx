@@ -345,6 +345,7 @@ export function SheetGrid({
     setAnnounce(`Editing ${column.label}`);
   }
 
+  /** Paste or cut into a signed-off row: refused with the lock copy (F-08 §3 A2). */
   function onCellPaste(e: ClipboardEvent<HTMLElement>, row: SheetGridRow): void {
     if (!row.locked) return;
     e.preventDefault();
@@ -518,6 +519,9 @@ export function SheetGrid({
                           onCellKey(e, row, rowAt, c, colAt);
                         }}
                         onPaste={(e) => {
+                          onCellPaste(e, row);
+                        }}
+                        onCut={(e) => {
                           onCellPaste(e, row);
                         }}
                         style={{ width: c.width, minWidth: c.width, left }}

@@ -23,3 +23,4 @@ Enter/F2, Esc, Tab/Enter and arrow keys work under role=grid, and locked rows re
 
 ## Progress log
 - `2026-11-19` — Built; sheet tests 12 passed, tsc and eslint clean. Gates and tests run once at the S51 end pass (build first, test last).
+- `2026-11-20` — F-08-T11 (TASK-8750) AC tests run against this kit: cut on a locked row was not refused and a no-citation tooltip read "0 citations"; both fixed in #2389 (DEC-5740).
