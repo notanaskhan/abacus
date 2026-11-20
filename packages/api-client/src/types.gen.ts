@@ -1333,6 +1333,136 @@ export type AgentCapabilitiesOut = {
 };
 
 /**
+ * AgentColumnIn
+ */
+export type AgentColumnIn = {
+    /**
+     * Default Scope
+     */
+    default_scope?: 'all' | 'empty_only' | 'selected';
+    /**
+     * Instruction
+     */
+    instruction: string;
+    /**
+     * Options
+     */
+    options?: Array<SheetColumnOptionOut>;
+    /**
+     * Output Type
+     */
+    output_type: 'single_select' | 'text';
+};
+
+/**
+ * AgentColumnOut
+ *
+ * SHT-04: the instruction (sanitised; @mentions are column refs), output, scope, status.
+ */
+export type AgentColumnOut = {
+    /**
+     * Column Id
+     */
+    column_id: string;
+    /**
+     * Default Scope
+     */
+    default_scope?: 'all' | 'empty_only' | 'selected';
+    /**
+     * Instruction
+     */
+    instruction: string;
+    /**
+     * Mention Refs
+     */
+    mention_refs?: Array<string>;
+    /**
+     * Options
+     */
+    options?: Array<SheetColumnOptionOut>;
+    /**
+     * Output Type
+     */
+    output_type: 'single_select' | 'text';
+    /**
+     * Saved At
+     */
+    saved_at?: string | null;
+    /**
+     * Saved By
+     */
+    saved_by?: string | null;
+    /**
+     * Status
+     */
+    status: 'draft' | 'saved';
+};
+
+/**
+ * AgentColumnRunOut
+ *
+ * SHT-04c: Running 4 of 11; 29 on evidence arrival.
+ */
+export type AgentColumnRunOut = {
+    /**
+     * Done
+     */
+    done?: number;
+    /**
+     * Rows Now
+     */
+    rows_now: number;
+    /**
+     * Rows On Arrival
+     */
+    rows_on_arrival: number;
+    /**
+     * Rows Targeted
+     */
+    rows_targeted: number;
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Status
+     */
+    status: 'queued' | 'running' | 'stopped' | 'succeeded' | 'failed';
+};
+
+/**
+ * AgentEstimateIn
+ */
+export type AgentEstimateIn = {
+    /**
+     * Row Ids
+     */
+    row_ids?: Array<string>;
+    /**
+     * Scope
+     */
+    scope: 'all' | 'empty_only' | 'selected';
+};
+
+/**
+ * AgentEstimateOut
+ */
+export type AgentEstimateOut = {
+    /**
+     * Agent Minutes
+     */
+    agent_minutes: number;
+    /**
+     * Rows
+     */
+    rows: number;
+    /**
+     * Within Budget
+     */
+    within_budget: boolean;
+};
+
+/**
  * AgentFeedbackIn
  */
 export type AgentFeedbackIn = {
@@ -1392,6 +1522,50 @@ export type AgentOut = {
      * Reason
      */
     reason: string | null;
+};
+
+/**
+ * AgentPreviewIn
+ */
+export type AgentPreviewIn = {
+    /**
+     * Row Ids
+     */
+    row_ids?: Array<string>;
+};
+
+/**
+ * AgentPreviewOut
+ *
+ * Preview on 3 rows: writes nothing to the sheet.
+ */
+export type AgentPreviewOut = {
+    /**
+     * Preview Id
+     */
+    preview_id: string;
+    /**
+     * Rows
+     */
+    rows: Array<AgentPreviewRowOut>;
+};
+
+/**
+ * AgentPreviewRowOut
+ */
+export type AgentPreviewRowOut = {
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * Row Id
+     */
+    row_id: string;
+    /**
+     * Value
+     */
+    value: string;
 };
 
 /**
@@ -1481,6 +1655,20 @@ export type AgentReadOut = {
      * Read At
      */
     read_at: string;
+};
+
+/**
+ * AgentRunIn
+ */
+export type AgentRunIn = {
+    /**
+     * Row Ids
+     */
+    row_ids?: Array<string>;
+    /**
+     * Scope
+     */
+    scope: 'all' | 'empty_only' | 'selected';
 };
 
 /**
@@ -11128,6 +11316,24 @@ export type CodeVerifyIn = {
      * Code
      */
     code: string;
+};
+
+/**
+ * ColumnUsageOut
+ */
+export type ColumnUsageOut = {
+    /**
+     * Filled Rows
+     */
+    filled_rows: number;
+    /**
+     * In Use
+     */
+    in_use: boolean;
+    /**
+     * Views
+     */
+    views: number;
 };
 
 /**
@@ -58440,6 +58646,154 @@ export type SeverityIn = {
 };
 
 /**
+ * SheetCellOut
+ *
+ * SheetCell: value, state, raw, by, at, was, citations, exception.
+ */
+export type SheetCellOut = {
+    /**
+     * At
+     */
+    at?: string | null;
+    /**
+     * By
+     */
+    by?: string | null;
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * Exception
+     */
+    exception?: boolean;
+    /**
+     * Raw
+     */
+    raw?: string | null;
+    /**
+     * State
+     */
+    state: 'empty' | 'human' | 'suggested' | 'adopted' | 'edited';
+    /**
+     * Value
+     */
+    value: string;
+    /**
+     * Was
+     */
+    was?: string | null;
+};
+
+/**
+ * SheetColumnIn
+ */
+export type SheetColumnIn = {
+    /**
+     * Classification Reason
+     */
+    classification_reason?: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Type
+     */
+    type: 'text' | 'number' | 'currency' | 'date' | 'single_select' | 'person' | 'linked_evidence' | 'linked_request' | 'linked_risk' | 'sign_off' | 'agent';
+    /**
+     * Width
+     */
+    width?: number;
+};
+
+/**
+ * SheetColumnOptionOut
+ */
+export type SheetColumnOptionOut = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Value
+     */
+    value: string;
+};
+
+/**
+ * SheetColumnOut
+ *
+ * SheetVM.columns (SheetGridColumn): key, type, label, width, frozen, agent, options.
+ */
+export type SheetColumnOut = {
+    /**
+     * Agent Name
+     */
+    agent_name?: string | null;
+    /**
+     * Agent Unavailable
+     */
+    agent_unavailable?: 'real_client_data' | 'consent_7216' | null;
+    /**
+     * Column Id
+     */
+    column_id: string;
+    /**
+     * Frozen
+     */
+    frozen?: boolean;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Options
+     */
+    options?: Array<SheetColumnOptionOut>;
+    /**
+     * Type
+     */
+    type: 'text' | 'number' | 'currency' | 'date' | 'single_select' | 'person' | 'linked_evidence' | 'linked_request' | 'linked_risk' | 'sign_off' | 'agent';
+    /**
+     * Width
+     */
+    width: number;
+};
+
+/**
+ * SheetCreateIn
+ */
+export type SheetCreateIn = {
+    /**
+     * Procedure Id
+     */
+    procedure_id: string;
+    /**
+     * Sheet Definition Ref
+     */
+    sheet_definition_ref: string;
+};
+
+/**
+ * SheetFromSampleIn
+ */
+export type SheetFromSampleIn = {
+    /**
+     * Sample Set Id
+     */
+    sample_set_id: string;
+};
+
+/**
  * SheetOut
  */
 export type SheetOut = {
@@ -58481,6 +58835,243 @@ export type SheetPreviewOut = {
      * Suggested Tier
      */
     suggested_tier: number | null;
+};
+
+/**
+ * SheetRowIn
+ */
+export type SheetRowIn = {
+    /**
+     * Cells
+     */
+    cells?: {
+        [key: string]: string;
+    };
+    /**
+     * Section Key
+     */
+    section_key: string;
+};
+
+/**
+ * SheetRowListOut
+ */
+export type SheetRowListOut = {
+    /**
+     * Items
+     */
+    items: Array<SheetRowOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+};
+
+/**
+ * SheetRowOut
+ *
+ * SheetGridRow: key, section_key, locked, cells, version.
+ */
+export type SheetRowOut = {
+    /**
+     * Cells
+     */
+    cells: {
+        [key: string]: SheetCellOut;
+    };
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Locked
+     */
+    locked: boolean;
+    /**
+     * Row Id
+     */
+    row_id: string;
+    /**
+     * Section Key
+     */
+    section_key: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * SheetRowPatchIn
+ */
+export type SheetRowPatchIn = {
+    /**
+     * Cells
+     */
+    cells: {
+        [key: string]: string;
+    };
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * SheetSectionOut
+ *
+ * SheetVM.sections: "STRATUM 1 — ≥ 50,000 (24)" 3,286,400.00.
+ */
+export type SheetSectionOut = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Sub
+     */
+    sub?: boolean;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Total
+     */
+    total?: string | null;
+};
+
+/**
+ * SheetStatusOut
+ *
+ * The status bar: "40 rows · 1 exception · View: Default".
+ */
+export type SheetStatusOut = {
+    /**
+     * Agent Running
+     */
+    agent_running?: boolean;
+    /**
+     * Agent Summary
+     */
+    agent_summary?: string | null;
+    /**
+     * Exceptions
+     */
+    exceptions: number;
+    /**
+     * Rows
+     */
+    rows: number;
+    /**
+     * View
+     */
+    view: string;
+};
+
+/**
+ * SheetViewIn
+ */
+export type SheetViewIn = {
+    /**
+     * Filters
+     */
+    filters?: Array<{
+        [key: string]: string;
+    }>;
+    /**
+     * Hidden
+     */
+    hidden?: Array<string>;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Sort
+     */
+    sort?: Array<{
+        [key: string]: string;
+    }>;
+};
+
+/**
+ * SheetViewListOut
+ */
+export type SheetViewListOut = {
+    /**
+     * Items
+     */
+    items: Array<SheetViewOut>;
+};
+
+/**
+ * SheetViewOut
+ */
+export type SheetViewOut = {
+    /**
+     * Filters
+     */
+    filters?: Array<{
+        [key: string]: string;
+    }>;
+    /**
+     * Hidden
+     */
+    hidden?: Array<string>;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Sort
+     */
+    sort?: Array<{
+        [key: string]: string;
+    }>;
+    /**
+     * View Id
+     */
+    view_id: string;
+};
+
+/**
+ * SheetVmOut
+ */
+export type SheetVmOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    /**
+     * Columns
+     */
+    columns: Array<SheetColumnOut>;
+    /**
+     * Sections
+     */
+    sections: Array<SheetSectionOut>;
+    /**
+     * Sheet Id
+     */
+    sheet_id: string;
+    /**
+     * Signed Off
+     */
+    signed_off?: boolean;
+    status: SheetStatusOut;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
 };
 
 /**
@@ -159346,6 +159937,1189 @@ export type SeasonManifestExportResponses = {
 
 export type SeasonManifestExportResponse = SeasonManifestExportResponses[keyof SeasonManifestExportResponses];
 
+export type SheetData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}';
+};
+
+export type SheetErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SheetError = SheetErrors[keyof SheetErrors];
+
+export type SheetResponses = {
+    /**
+     * Successful Response
+     */
+    200: SheetVmOut;
+};
+
+export type SheetResponse = SheetResponses[keyof SheetResponses];
+
+export type SheetColumnCreateData = {
+    body: SheetColumnIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/columns';
+};
+
+export type SheetColumnCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SheetColumnCreateError = SheetColumnCreateErrors[keyof SheetColumnCreateErrors];
+
+export type SheetColumnCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: SheetColumnOut;
+};
+
+export type SheetColumnCreateResponse = SheetColumnCreateResponses[keyof SheetColumnCreateResponses];
+
+export type SheetColumnDeleteData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+        /**
+         * Column Id
+         */
+        column_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/columns/{column_id}';
+};
+
+export type SheetColumnDeleteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SheetColumnDeleteError = SheetColumnDeleteErrors[keyof SheetColumnDeleteErrors];
+
+export type SheetColumnDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    200: ColumnUsageOut;
+};
+
+export type SheetColumnDeleteResponse = SheetColumnDeleteResponses[keyof SheetColumnDeleteResponses];
+
+export type SheetColumnPatchData = {
+    body: SheetColumnIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+        /**
+         * Column Id
+         */
+        column_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/columns/{column_id}';
+};
+
+export type SheetColumnPatchErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SheetColumnPatchError = SheetColumnPatchErrors[keyof SheetColumnPatchErrors];
+
+export type SheetColumnPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: SheetColumnOut;
+};
+
+export type SheetColumnPatchResponse = SheetColumnPatchResponses[keyof SheetColumnPatchResponses];
+
+export type AgentColumnData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+        /**
+         * Column Id
+         */
+        column_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/columns/{column_id}/agent';
+};
+
+export type AgentColumnErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AgentColumnError = AgentColumnErrors[keyof AgentColumnErrors];
+
+export type AgentColumnResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentColumnOut;
+};
+
+export type AgentColumnResponse = AgentColumnResponses[keyof AgentColumnResponses];
+
+export type AgentColumnPutData = {
+    body: AgentColumnIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+        /**
+         * Column Id
+         */
+        column_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/columns/{column_id}/agent';
+};
+
+export type AgentColumnPutErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AgentColumnPutError = AgentColumnPutErrors[keyof AgentColumnPutErrors];
+
+export type AgentColumnPutResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentColumnOut;
+};
+
+export type AgentColumnPutResponse = AgentColumnPutResponses[keyof AgentColumnPutResponses];
+
+export type AgentColumnEstimateData = {
+    body: AgentEstimateIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+        /**
+         * Column Id
+         */
+        column_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/columns/{column_id}/agent/estimate';
+};
+
+export type AgentColumnEstimateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AgentColumnEstimateError = AgentColumnEstimateErrors[keyof AgentColumnEstimateErrors];
+
+export type AgentColumnEstimateResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentEstimateOut;
+};
+
+export type AgentColumnEstimateResponse = AgentColumnEstimateResponses[keyof AgentColumnEstimateResponses];
+
+export type AgentColumnPreviewData = {
+    body: AgentPreviewIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+        /**
+         * Column Id
+         */
+        column_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/columns/{column_id}/agent/preview';
+};
+
+export type AgentColumnPreviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AgentColumnPreviewError = AgentColumnPreviewErrors[keyof AgentColumnPreviewErrors];
+
+export type AgentColumnPreviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentPreviewOut;
+};
+
+export type AgentColumnPreviewResponse = AgentColumnPreviewResponses[keyof AgentColumnPreviewResponses];
+
+export type AgentColumnRunData = {
+    body: AgentRunIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+        /**
+         * Column Id
+         */
+        column_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/columns/{column_id}/agent/runs';
+};
+
+export type AgentColumnRunErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AgentColumnRunError = AgentColumnRunErrors[keyof AgentColumnRunErrors];
+
+export type AgentColumnRunResponses = {
+    /**
+     * Successful Response
+     */
+    202: AgentColumnRunOut;
+};
+
+export type AgentColumnRunResponse = AgentColumnRunResponses[keyof AgentColumnRunResponses];
+
+export type AgentColumnStopData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+        /**
+         * Column Id
+         */
+        column_id: string;
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/columns/{column_id}/agent/runs/{run_id}/stop';
+};
+
+export type AgentColumnStopErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AgentColumnStopError = AgentColumnStopErrors[keyof AgentColumnStopErrors];
+
+export type AgentColumnStopResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentColumnRunOut;
+};
+
+export type AgentColumnStopResponse = AgentColumnStopResponses[keyof AgentColumnStopResponses];
+
+export type SheetColumnUsageData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+        /**
+         * Column Id
+         */
+        column_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/columns/{column_id}/usage';
+};
+
+export type SheetColumnUsageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SheetColumnUsageError = SheetColumnUsageErrors[keyof SheetColumnUsageErrors];
+
+export type SheetColumnUsageResponses = {
+    /**
+     * Successful Response
+     */
+    200: ColumnUsageOut;
+};
+
+export type SheetColumnUsageResponse = SheetColumnUsageResponses[keyof SheetColumnUsageResponses];
+
+export type SheetExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/export.xlsx';
+};
+
+export type SheetExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SheetExportError = SheetExportErrors[keyof SheetExportErrors];
+
+export type SheetExportResponses = {
+    /**
+     * Response Sheet Export
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type SheetExportResponse = SheetExportResponses[keyof SheetExportResponses];
+
+export type SheetRowsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+    };
+    query?: {
+        /**
+         * View
+         */
+        view?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/sheets/{sheet_id}/rows';
+};
+
+export type SheetRowsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SheetRowsError = SheetRowsErrors[keyof SheetRowsErrors];
+
+export type SheetRowsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SheetRowListOut;
+};
+
+export type SheetRowsResponse = SheetRowsResponses[keyof SheetRowsResponses];
+
+export type SheetRowCreateData = {
+    body: SheetRowIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/rows';
+};
+
+export type SheetRowCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SheetRowCreateError = SheetRowCreateErrors[keyof SheetRowCreateErrors];
+
+export type SheetRowCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: SheetRowOut;
+};
+
+export type SheetRowCreateResponse = SheetRowCreateResponses[keyof SheetRowCreateResponses];
+
+export type SheetRowsFromSampleData = {
+    body: SheetFromSampleIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/rows/from-sample';
+};
+
+export type SheetRowsFromSampleErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SheetRowsFromSampleError = SheetRowsFromSampleErrors[keyof SheetRowsFromSampleErrors];
+
+export type SheetRowsFromSampleResponses = {
+    /**
+     * Successful Response
+     */
+    201: SheetRowListOut;
+};
+
+export type SheetRowsFromSampleResponse = SheetRowsFromSampleResponses[keyof SheetRowsFromSampleResponses];
+
+export type SheetRowPatchData = {
+    body: SheetRowPatchIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+        /**
+         * Row Id
+         */
+        row_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/rows/{row_id}';
+};
+
+export type SheetRowPatchErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SheetRowPatchError = SheetRowPatchErrors[keyof SheetRowPatchErrors];
+
+export type SheetRowPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: SheetRowOut;
+};
+
+export type SheetRowPatchResponse = SheetRowPatchResponses[keyof SheetRowPatchResponses];
+
+export type SheetViewsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/views';
+};
+
+export type SheetViewsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SheetViewsError = SheetViewsErrors[keyof SheetViewsErrors];
+
+export type SheetViewsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SheetViewListOut;
+};
+
+export type SheetViewsResponse = SheetViewsResponses[keyof SheetViewsResponses];
+
+export type SheetViewCreateData = {
+    body: SheetViewIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/views';
+};
+
+export type SheetViewCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SheetViewCreateError = SheetViewCreateErrors[keyof SheetViewCreateErrors];
+
+export type SheetViewCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: SheetViewOut;
+};
+
+export type SheetViewCreateResponse = SheetViewCreateResponses[keyof SheetViewCreateResponses];
+
+export type SheetViewPatchData = {
+    body: SheetViewIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+        /**
+         * View Id
+         */
+        view_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/views/{view_id}';
+};
+
+export type SheetViewPatchErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SheetViewPatchError = SheetViewPatchErrors[keyof SheetViewPatchErrors];
+
+export type SheetViewPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: SheetViewOut;
+};
+
+export type SheetViewPatchResponse = SheetViewPatchResponses[keyof SheetViewPatchResponses];
+
 export type SignOffLadderData = {
     body?: never;
     headers?: {
@@ -177170,6 +178944,66 @@ export type SampleSetCreateResponses = {
 };
 
 export type SampleSetCreateResponse = SampleSetCreateResponses[keyof SampleSetCreateResponses];
+
+export type SheetCreateData = {
+    body: SheetCreateIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/sheets';
+};
+
+export type SheetCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SheetCreateError = SheetCreateErrors[keyof SheetCreateErrors];
+
+export type SheetCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: SheetVmOut;
+};
+
+export type SheetCreateResponse = SheetCreateResponses[keyof SheetCreateResponses];
 
 export type SignOffMatrixData = {
     body?: never;
