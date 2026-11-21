@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 from pathlib import Path
@@ -47,6 +48,25 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     selected = [Path(str(arg).split("::", 1)[0]).resolve() for arg in session.config.args]
     if not any(any(p.rglob("test_*.py")) if p.is_dir() else p.exists() for p in selected):
         session.exitstatus = pytest.ExitCode.OK
+
+
+_DURATIONS_OUT = os.environ.get("ABACUS_DURATIONS_OUT")
+
+
+def pytest_runtest_logreport(report: pytest.TestReport) -> None:
+    """TASK-8868: with `ABACUS_DURATIONS_OUT` set, append each test phase's time as one JSON line
+    to `<ABACUS_DURATIONS_OUT>.jsonl`, as the run goes, so a shard cancelled at its timeout still
+    records what it ran (`abacus_tools.ci.shard --record-runs`). Under pytest-xdist the controller
+    receives every worker's reports, so only it writes (one file, no interleaving)."""
+    if not _DURATIONS_OUT or os.environ.get("PYTEST_XDIST_WORKER"):
+        return
+    row = {
+        "file": report.nodeid.split("::", 1)[0],
+        "when": report.when,
+        "seconds": round(report.duration, 3),
+    }
+    with Path(f"{_DURATIONS_OUT}.jsonl").open("a", encoding="utf-8") as out:
+        out.write(json.dumps(row) + "\n")
 
 
 async def _no_switches() -> Active:
