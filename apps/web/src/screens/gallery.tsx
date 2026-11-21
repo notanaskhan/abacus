@@ -1,9 +1,12 @@
 import { publishPortalSettings } from "@abacus/api-client";
-import { AppShell, time, toast } from "@abacus/ui";
+import { AppShell, PortalBrandProvider, time, toast } from "@abacus/ui";
 import { KNW03_TAILORING } from "../fixtures/seed/knw03";
 import { type JSX, useEffect, useMemo, useState } from "react";
 import { installFixtureMode, json, type Scenario } from "../app-core/fixture-mode";
 import { useSession } from "../app-core/session";
+import { useFlag } from "../app-core/flags";
+import { useOpenHref } from "../app-core/open";
+import { useTodayBrief } from "../domain/today";
 import { type FixtureParams, registerScreen } from "../gallery/fixture-mode";
 import { useFirmToolbar } from "../shell/firm/ToolbarData";
 import { ADM01 } from "./ADM-01";
@@ -236,6 +239,11 @@ import {
 import { HOME01 } from "./HOME-01";
 import { HOME05 } from "./HOME-05";
 import { scenarios as home05Scenarios } from "../fixtures/scenarios/HOME-05";
+import { scenarios as shl23Scenarios } from "../fixtures/scenarios/SHL-23";
+import { BRIGHTWATER_BRANDING } from "../fixtures/seed/portal-home";
+import { ridgelineDrill } from "../fixtures/seed/today";
+import { brandOf } from "../domain/portal";
+import { TodayPaneLive } from "./SHL-23/live";
 import { TXP04_REVIEW } from "../fixtures/scenarios/TXP-04";
 import {
   type Home01State,
@@ -1893,12 +1901,61 @@ function Home05Artboard({ params }: { params: FixtureParams }): JSX.Element | nu
   if (ready !== state) return null;
   return (
     <div data-artboard={state} className="flex min-h-0 flex-1 flex-col">
-      <HOME05 key={state} initialCollapsed={state === "c"} />
+      <Home05Frame key={state} collapsed={state === "c"} />
     </div>
   );
 }
 
+// As `/home` draws it: HOME-05 behind `today_brief.enabled`, HOME-01 alone when off (f).
+function Home05Frame({ collapsed }: { collapsed: boolean }): JSX.Element {
+  const on = useFlag("today_brief.enabled") === true;
+  return on ? <HOME05 initialCollapsed={collapsed} /> : <HOME01 />;
+}
+
 registerScreen("HOME-05", { title: "Home with Today brief", Component: Home05Artboard });
+
+// SHL-23's states full and 1–7 on their fixture scenarios: the Today panel as HOME-05 docks it
+// (470 wide), for the Today specs' axe and J20 8. Nothing registered it before (TASK-8867).
+const SHL23_STATES = ["full", "1", "2", "3", "4", "5", "6", "7"] as const;
+type Shl23State = (typeof SHL23_STATES)[number];
+
+function Shl23Frame({ state }: { state: Shl23State }): JSX.Element {
+  const brief = useTodayBrief();
+  const open = useOpenHref();
+  return (
+    <TodayPaneLive
+      vm={brief.data}
+      {...(state === "2" ? { initialDrill: ridgelineDrill().work_item_id } : {})}
+      onOpen={(href) => {
+        open(href);
+      }}
+    />
+  );
+}
+
+function Shl23Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl23State = SHL23_STATES.find((s) => s === params.st) ?? "full";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl23Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div data-artboard={state} className="flex h-[860px] w-[470px] flex-col bg-shell">
+      <Shl23Frame key={state} state={state} />
+    </div>
+  );
+}
+
+registerScreen("SHL-23", { title: "Today brief panel", Component: Shl23Artboard });
 
 function Home02Frame({ state }: { state: Home02State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
@@ -2812,11 +2869,21 @@ registerScreen("TXT-03", {
 });
 registerScreen("AUD-34", {
   title: "Group scoping & component materiality — Harlow & Pike",
-  Component: ({ params }: { params: FixtureParams }) => <GroupScoping st={params.st} />,
+  // The artboard wrapper the J20 journey and the parity report read (as AUD-12).
+  Component: ({ params }: { params: FixtureParams }) => (
+    <div data-artboard={params.st ?? "a"}>
+      <GroupScoping st={params.st} />
+    </div>
+  ),
 });
 registerScreen("AUD-35", {
   title: "Component auditors — Harlow & Pike",
-  Component: ({ params }: { params: FixtureParams }) => <ComponentAuditors st={params.st} />,
+  // The artboard wrapper the J20 journey and the parity report read (as AUD-12).
+  Component: ({ params }: { params: FixtureParams }) => (
+    <div data-artboard={params.st ?? "a"}>
+      <ComponentAuditors st={params.st} />
+    </div>
+  ),
 });
 registerScreen("AUD-12", {
   title: "Testing workspace · details · controls · JE",
@@ -4294,12 +4361,15 @@ registerScreen("POR-11", {
     (st) => por11Scenarios[st as keyof typeof por11Scenarios],
     (st, mobile) => {
       const sound = copperleafPortalQuestions().items[2]?.question_id;
+      // Under the firm's brand, as PortalRoot mounts it (POR-03 below the questions reads it).
       return (
-        <POR11
-          period="2026-08"
-          mobile={mobile}
-          {...(st === "b" && sound !== undefined ? { questionId: sound } : {})}
-        />
+        <PortalBrandProvider brand={brandOf(BRIGHTWATER_BRANDING)}>
+          <POR11
+            period="2026-08"
+            mobile={mobile}
+            {...(st === "b" && sound !== undefined ? { questionId: sound } : {})}
+          />
+        </PortalBrandProvider>
       );
     },
   ),
