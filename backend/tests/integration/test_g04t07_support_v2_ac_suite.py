@@ -137,8 +137,10 @@ async def _flag_on(seed: Seeder, firm: uuid.UUID, name: str = "support.panel_v2"
 async def _tax_firm(seed: Seeder) -> uuid.UUID:
     firm = await seed.firm()
     await seed.run(
-        "INSERT INTO tenant_entitlements (tenant_id, module, enabled, set_by) "
-        "VALUES ($1, 'tax_returns', true, 'ac-suite')",
+        # valid from yesterday: the column defaults to the UTC date, and the entitlement reads the
+        # firm's Central-time date, so between midnight UTC and midnight CT it was not yet valid.
+        "INSERT INTO tenant_entitlements (tenant_id, module, enabled, set_by, valid_from) "
+        "VALUES ($1, 'tax_returns', true, 'ac-suite', CURRENT_DATE - 1)",
         firm,
     )
     return firm

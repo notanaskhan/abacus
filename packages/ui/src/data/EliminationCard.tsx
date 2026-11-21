@@ -1,6 +1,8 @@
 import type { JSX, ReactNode } from "react";
 import { AgentText } from "../agent-text";
 import { cn } from "../cn";
+import { type Actor } from "../attribution/actor";
+import { HumanAction } from "../attribution/human-action";
 import { Amount } from "../components/amount";
 import { Button } from "../components/button";
 import { Pill } from "../components/pill";
@@ -37,6 +39,8 @@ export interface EliminationCardProps {
   selected?: boolean;
   onToggle?: () => void;
   onApprove?: () => void;
+  /** The person viewing: Approve is a human-only verb (INV-1), drawn only for a person. */
+  actor?: Actor;
   onEdit?: () => void;
   onReject?: () => void;
   /** Words for the controls (the screen's copy). */
@@ -155,14 +159,15 @@ export function EliminationCard(p: EliminationCardProps): JSX.Element {
       )}
       {p.status === "proposed" && (
         <div className="mt-[8px] flex gap-[6px]">
-          <Button
+          <HumanAction
+            verb="Approve"
+            label={W.approve}
+            actor={p.actor ?? { kind: "system" }}
             variant="primary"
             size="sm"
             disabled={off || p.onApprove === undefined}
             onClick={p.onApprove}
-          >
-            {W.approve}
-          </Button>
+          />
           <Button variant="ghost" size="sm" onClick={p.onEdit}>
             {W.edit}
           </Button>

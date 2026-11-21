@@ -5,6 +5,7 @@ import {
   groupProposeEliminationsMutation,
 } from "@abacus/api-client/query";
 import {
+  type Actor,
   Amount,
   Button,
   ConsolidationWorksheet,
@@ -27,6 +28,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { useOpenOverlay } from "../../app-core/open";
+import { useSession } from "../../app-core/session";
 import type { OverlayRenderProps } from "../../app-core/overlays";
 import { ov } from "../../routes/to";
 import { COPY } from "./copy";
@@ -156,6 +158,9 @@ function Drawer({
   /** A-09-T38: the consolidation the agent proposes for; absent in fixture frames. */
   consolidationId?: string | undefined;
 }): JSX.Element {
+  const session = useSession();
+  const actor: Actor =
+    session.user === null ? { kind: "system" } : { kind: "human", name: session.user.displayName };
   const D = COPY.drawer;
   const count = (s: string) => items.filter((e) => e.status === s).length;
   return (
@@ -211,6 +216,7 @@ function Drawer({
             {items.map((e) => (
               <EliminationCard
                 key={e.id}
+                actor={actor}
                 code={e.display_code}
                 level={e.consolidation_level}
                 description={e.description}
