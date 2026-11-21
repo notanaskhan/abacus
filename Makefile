@@ -202,14 +202,14 @@ XDIST_INTEGRATION = -n $(PYTEST_INTEGRATION_WORKERS) --dist loadgroup -m "not se
 SERIAL = -n 0 -m serial
 
 ci-unit:
-	cd backend && files="$$(uv run python -m abacus_tools.ci.shard $(SHARD) $(SHARDS) $(UNIT_TESTS))" && \
+	cd backend && files="$$(uv run python -m abacus_tools.ci.shard --by-count $(SHARD) $(SHARDS) $(UNIT_TESTS))" && \
 		test -n "$$files" && COVERAGE_FILE=.coverage.unit-$(SHARD) \
 		uv run pytest $(XDIST) --cov --cov-report= --cov-fail-under=0 $$files && \
 		{ COVERAGE_FILE=.coverage.unit-$(SHARD) uv run pytest $(SERIAL) --cov --cov-append \
 			--cov-report= --cov-fail-under=0 $$files || [ $$? -eq 5 ]; }
 
 ci-integration:
-	cd backend && files="$$(uv run python -m abacus_tools.ci.shard $(SHARD) $(SHARDS) $(INTEGRATION_TESTS))" && \
+	cd backend && files="$$(uv run python -m abacus_tools.ci.shard --by-count $(SHARD) $(SHARDS) $(INTEGRATION_TESTS))" && \
 		test -n "$$files" && COVERAGE_FILE=.coverage.integration-$(SHARD) \
 		uv run pytest $(XDIST_INTEGRATION) --cov --cov-report= --cov-fail-under=0 $$files && \
 		{ COVERAGE_FILE=.coverage.integration-$(SHARD) uv run pytest $(SERIAL) --cov --cov-append \

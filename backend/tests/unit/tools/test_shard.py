@@ -93,3 +93,38 @@ def test_main_records_durations(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr(shard, "DURATIONS", out)
     assert shard.main(["--record", str(report)]) == 0
     assert json.loads(out.read_text(encoding="utf-8")) == {"tests/a/test_z.py": 2.0}
+
+
+def test_a_runs_lines_sum_per_file() -> None:
+    lines = "\n".join(
+        json.dumps(row)
+        for row in (
+            {"file": "tests/a/test_x.py", "when": "setup", "seconds": 1.5},
+            {"file": "tests/a/test_x.py", "when": "call", "seconds": 2.0},
+            {"file": "tests/b/test_y.py", "when": "call", "seconds": 0.25},
+        )
+    )
+    assert shard.run_durations(lines + "\n\n") == {
+        "tests/a/test_x.py": 3.5,
+        "tests/b/test_y.py": 0.25,
+    }
+
+
+def test_a_complete_run_replaces_and_a_partial_run_only_raises() -> None:
+    recorded = {"a": 10.0, "b": 2.0, "gone": 5.0}
+    ran = {"a": 4.0, "b": 3.0, "new": 1.0}
+    present = {"a", "b", "new"}
+    assert shard.merge(recorded, ran, present, partial=False) == {"a": 4.0, "b": 3.0, "new": 1.0}
+    assert shard.merge(recorded, ran, present, partial=True) == {"a": 10.0, "b": 3.0, "new": 1.0}
+
+
+def test_by_count_an_unrecorded_file_weighs_its_tests_at_the_recorded_rate() -> None:
+    durations = {"a": 10.0}  # 10 tests: one second per test
+    counts = {"a": 10, "matrix": 13_140, "b": 5, "c": 5}
+    split = shard.split(["a", "b", "c", "matrix"], durations, 2, counts)
+    assert ["matrix"] in split  # the big parametrized file gets a shard to itself
+
+
+def test_by_count_with_nothing_recorded_weighs_by_tests() -> None:
+    counts = {"a": 3, "b": 2, "c": 1}
+    assert shard.split(["a", "b", "c"], {}, 2, counts) == [["a"], ["b", "c"]]

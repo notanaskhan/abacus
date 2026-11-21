@@ -103,17 +103,19 @@ jobs:
         run: python3 -m abacus_tools.ci.paths "$BASE" "$GITHUB_SHA" | tee -a "$GITHUB_OUTPUT"
 
   unit:
-    name: stage 2 unit tests (${{ matrix.shard }}/2)
+    name: stage 2 unit tests (${{ matrix.shard }}/3)
     needs: [changes]
     runs-on: ubuntu-24.04
     # S8 wave A grew the suite past 15 minutes per shard (#395 cancelled at 91-93%, no failures);
     # pytest-xdist workers (DEC-335) bring it back down. S41 (run 43457012689): shard 1 was
     # cancelled at 99% after 35 minutes; 45 until the shards are rebalanced (DEC-4735).
+    # TASK-8868 (DEC-5865): b86661661 cut shard 2 (33,705 tests) at 99% while shard 1 (30,617)
+    # took 32 minutes, so three shards, split by each file's collected test count.
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3]
     steps:
       - if: needs.changes.outputs.backend != 'true'
         run: echo "no backend paths changed (abacus_tools.ci.paths), so nothing to run"
@@ -136,7 +138,19 @@ jobs:
         run: make setup
       - if: needs.changes.outputs.backend == 'true'
         # pytest-xdist on the runner's 4 cores (DEC-335).
-        run: make ci-unit SHARD=${{ matrix.shard }} SHARDS=2 PYTEST_WORKERS=4
+        # TASK-8868: each test's time, written as the run goes (tests/conftest.py), uploaded even
+        # when the shard is cancelled; `abacus_tools.ci.shard --record-runs` merges them into
+        # backend/tests/durations.json.
+        env:
+          ABACUS_DURATIONS_OUT: durations-unit-${{ matrix.shard }}
+        run: make ci-unit SHARD=${{ matrix.shard }} SHARDS=3 PYTEST_WORKERS=4
+      - if: always() && needs.changes.outputs.backend == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: durations-unit-${{ matrix.shard }}
+          path: backend/durations-unit-${{ matrix.shard }}.jsonl
+          if-no-files-found: ignore
+          retention-days: 14
       - if: needs.changes.outputs.backend == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -191,7 +205,7 @@ jobs:
         run: make golden-render
 
   integration:
-    name: stage 2 integration tests (${{ matrix.shard }}/10)
+    name: stage 2 integration tests (${{ matrix.shard }}/20)
     needs: [changes]
     runs-on: ubuntu-24.04
     # Headroom for a shard's slowest files (TASK-422); the split is balanced by
@@ -203,11 +217,16 @@ jobs:
     # recorded yet), so 60 minutes until durations.json is re-recorded.
     # 100 (was 75) by founder decision, 2026-11-06 (TASK-3385): shard 9 cancelled at 94% with no
     # failures, while shard 5 took 25 minutes. Re-recording durations.json is still owed.
+    # TASK-8868 (DEC-5865): durations.json knew 89 of 748 files, so one shard drew 14,147 tests
+    # (13,140 in the permission matrix) and eight were cancelled at 100 minutes (b86661661). Now
+    # twenty shards, split by each file's collected test count until the recorder's artifacts
+    # refill durations.json (`shard --record-runs`): about 625 tests a shard, where shard 1 ran
+    # 676 in 47 minutes.
     timeout-minutes: 100
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
     steps:
       - if: needs.changes.outputs.backend != 'true'
         run: echo "no backend paths changed (abacus_tools.ci.paths), so nothing to run"
@@ -230,7 +249,19 @@ jobs:
         run: make setup
       - if: needs.changes.outputs.backend == 'true'
         # Two workers, each with its own Postgres, S3 and Temporal containers, on 4 cores (DEC-335).
-        run: make ci-integration SHARD=${{ matrix.shard }} SHARDS=10 PYTEST_INTEGRATION_WORKERS=2
+        # TASK-8868: each test's time, written as the run goes (tests/conftest.py), uploaded even
+        # when the shard is cancelled; `abacus_tools.ci.shard --record-runs` merges them into
+        # backend/tests/durations.json.
+        env:
+          ABACUS_DURATIONS_OUT: durations-integration-${{ matrix.shard }}
+        run: make ci-integration SHARD=${{ matrix.shard }} SHARDS=20 PYTEST_INTEGRATION_WORKERS=2
+      - if: always() && needs.changes.outputs.backend == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: durations-integration-${{ matrix.shard }}
+          path: backend/durations-integration-${{ matrix.shard }}.jsonl
+          if-no-files-found: ignore
+          retention-days: 14
       - if: needs.changes.outputs.backend == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
