@@ -35,7 +35,7 @@ from temporalio.common import RetryPolicy
 
 from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.dispatch import register_work_classes
+from abacus.kernel.dispatch import WorkClass, register_work_classes
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, uow
 from abacus.modules.tax.standards_run_workflow import (
@@ -396,7 +396,7 @@ async def finish_activity(given: list[str]) -> str:
     return await finish(UUID(given[0]), UUID(given[1]))
 
 
-WORKFLOWS: Final[dict[type, str]] = {StandardsRunWorkflow: "background"}
+WORKFLOWS: Final[dict[type, WorkClass]] = {StandardsRunWorkflow: "background"}
 ACTIVITIES: Final[tuple[object, ...]] = (items_activity, item_activity, finish_activity)
 
 

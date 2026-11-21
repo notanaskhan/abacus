@@ -77,8 +77,16 @@ async def test_the_connector_is_the_port_and_nothing_more(target: targets.Target
     capabilities = connector.capabilities()
     # C-01-T16 (C9 v2.1, DEC-5022): the chart of accounts, a month's trial balance and the GL
     # detail join the year's trial balance, read incrementally through CDC; still no attachments.
+    # C-02-T26 (S52): the vendor list and vendor payments for CLS-13, read-only.
     assert capabilities.datasets == frozenset(
-        {"trial_balance", "accounts", "gl_detail", "trial_balance_month"}
+        {
+            "trial_balance",
+            "accounts",
+            "gl_detail",
+            "trial_balance_month",
+            "vendors",
+            "vendor_payments",
+        }
     )
     assert (capabilities.oauth, capabilities.incremental, capabilities.attachments) == (
         True,

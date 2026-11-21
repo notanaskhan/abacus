@@ -83,7 +83,7 @@ export function EliminationCard(p: EliminationCardProps): JSX.Element {
     <article
       data-elimination={p.code}
       data-status={p.status}
-      aria-selected={p.selected === true}
+      aria-current={p.selected === true ? "true" : undefined}
       className={cn(
         "rounded-[10px] bg-card px-[12px] py-[10px] shadow-e1",
         p.selected === true && "inset-ring-[1.5px] inset-ring-espresso",

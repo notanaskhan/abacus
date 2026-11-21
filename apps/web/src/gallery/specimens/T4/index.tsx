@@ -214,7 +214,7 @@ function SessionsFrame({
                 />
               ) : empty ? (
                 <ContextPicker
-                  trigger={<span />}
+                  trigger={<span role="button" tabIndex={-1} aria-label="Attach context" />}
                   open={pickerOpen}
                   onOpenChange={setPickerOpen}
                   kind={pickerKind}

@@ -109,7 +109,7 @@ AwsError = (ClientError, BotoCoreError)
 def destruction_s3_client(role_arn: str, batch_ref: str, *, region: str | None = None) -> object:
     """Q-05-T15 (ADR-179 / OQ-1): an S3 client under the destruction role, assumed with the
     batch's `destruction_batch` session tag (the role's trust refuses an untagged assumption)."""
-    client = boto3.client("sts", region_name=region, config=_service_config())  # pyright: ignore[reportUnknownMemberType] -- boto3 is untyped
+    client = boto3.client("sts", region_name=region, config=_service_config())  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType] -- boto3 is untyped
     sts = cast(Any, client)  # Any: boto3's untyped STS client
     found = sts.assume_role(
         RoleArn=role_arn,

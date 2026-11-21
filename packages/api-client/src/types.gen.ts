@@ -1427,7 +1427,7 @@ export type AgentColumnRunOut = {
     /**
      * Status
      */
-    status: 'queued' | 'running' | 'stopped' | 'succeeded' | 'failed';
+    status: 'queued' | 'running' | 'cancelled' | 'succeeded' | 'failed';
 };
 
 /**

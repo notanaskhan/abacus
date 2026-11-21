@@ -1413,9 +1413,17 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "portal_preferences": frozenset(  # P-08-T05 (0111)
             {"welcome_dismissed_at", "version", "updated_at"}
         ),
-        "retention_policies": frozenset(  # Q-02-T23 (0112)
+        "retention_policies": frozenset(  # Q-02-T23 (0112); Q-05-T13 (0994): the policy text
             {"firm_years", "clock_start_event", "lock", "basis", "updated_by", "updated_at"}
+            | {"policy_text", "effective_from"}
         ),
+        # S52: C-02-T25's GL-posting settings (0992), Q-05-T16's inspection grants (0995, a
+        # revocation only) and F-08-T13's presence heartbeat (1001, the anchor and its time).
+        "gl_posting_settings": frozenset(
+            {"memo_prefix", "post_as", "version", "updated_by", "updated_at"}
+        ),
+        "inspection_access_grants": frozenset({"revoked_at", "revoked_by"}),
+        "presence_heartbeats": frozenset({"anchor_kind", "anchor_key", "seen_at"}),
         "legal_holds": frozenset(  # Q-02-T29 (0126): status forward only, person bound
             {"status", "applied_at", "released_by", "released_at", "release_reason"}
         ),

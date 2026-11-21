@@ -607,6 +607,10 @@ HOME_OBJECTS = {
 NOT_A_STATUS = {
     # T-06-T07 (S49): TXP-09's per-state row is keyed by the two-letter US state code.
     "TaxDepthStateOut.state": "a two-letter US state code (TXP-09), not a status",
+    # T-06-T36 (S52): a nexus fact's state is the two-letter US state code too.
+    "TaxDepthNexusOut.state": "a two-letter US state code (TXP-09 d), not a status",
+    # K-03-T09 (S52): the SheetVM's status bar (rows, exceptions, view), an object, not a word.
+    "SheetVmOut.status": "the sheet's status bar object (SheetStatusOut), not a status word",
     # W-01-T03 (S45, DEC-5046): the OAuth `state` round-trip of a personal connect, never a
     # status; and a capability's grant on WB-11's "may do" card (allowed, off for this firm,
     # never).

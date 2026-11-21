@@ -46,6 +46,9 @@ ALLOWLIST = {
     "src/abacus/modules/assurance/post_issuance.py",
     "src/abacus/modules/evidence/retention_extend.py",
     "src/abacus/modules/evidence/destruction.py",
+    # S52 (DEC-5862): Q-05-T15's tombstones and Q-05-T17's reissue and intake source.
+    "src/abacus/modules/evidence/destruction_execute.py",
+    "src/abacus/modules/assurance/post_issuance_reissue.py",
 }
 
 
