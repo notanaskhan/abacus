@@ -12,6 +12,13 @@ one process (`-n 0`: under pytest-xdist workers contend for the cores and each w
 fixtures, its containers among them, are charged to the first file it runs; DEC-335):
 pytest -n 0 --durations=0 --durations-min=0 > report.txt, then
 python -m abacus_tools.ci.shard --record report.txt
+
+CI records them on every run instead (abacus_tools.ci.record) and checks the shards' records:
+python -m abacus_tools.ci.shard --verify <suite> <shards> <record dir> <root>...
+  fails unless the records `shard-<suite>-<n>.json` of all shards together ran every test file
+  under the roots exactly once (a file lost from the split, run twice, or never reported);
+python -m abacus_tools.ci.shard --merge <record dir> <out>
+  writes the timings with every record's files updated: main saves it for the next runs' splits.
 """
 
 from __future__ import annotations
@@ -22,6 +29,7 @@ import statistics
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import cast
 
 DURATIONS = Path(__file__).resolve().parents[3] / "tests" / "durations.json"
 
@@ -62,7 +70,53 @@ def file_durations(report: str) -> dict[str, float]:
     return {f: round(t, 2) for f, t in sorted(totals.items())}
 
 
+def _records(directory: Path, suite: str = "*") -> dict[str, dict[str, float]]:
+    return {
+        path.stem: cast(dict[str, dict[str, float]], json.loads(path.read_text("utf-8")))["files"]
+        for path in sorted(directory.glob(f"shard-{suite}-*.json"))
+    }
+
+
+def verify(suite: str, shards: int, directory: Path, roots: list[Path]) -> list[str]:
+    """Problems with the shards' records of `suite`; empty when every file ran exactly once."""
+    records = _records(directory, suite)
+    expected = {f"shard-{suite}-{n}" for n in range(1, shards + 1)}
+    problems = [f"no record from {name}" for name in sorted(expected - records.keys())]
+    problems += [f"unexpected record {name}" for name in sorted(records.keys() - expected)]
+    ran: defaultdict[str, list[str]] = defaultdict(list)
+    for name, files in records.items():
+        for f in files:
+            ran[f].append(name)
+    wanted = set(test_files(roots))
+    problems += [f"{f} ran in no shard" for f in sorted(wanted - ran.keys())]
+    problems += [f"{f} ran in {', '.join(ran[f])}" for f in sorted(wanted) if len(ran[f]) > 1]
+    problems += [f"{f} is not under {suite}'s roots" for f in sorted(ran.keys() - wanted)]
+    return problems
+
+
+def merged(directory: Path, durations: dict[str, float]) -> dict[str, float]:
+    out = dict(durations)
+    for files in _records(directory).values():
+        out.update(files)
+    return dict(sorted(out.items()))
+
+
 def main(argv: list[str]) -> int:
+    if len(argv) >= 5 and argv[0] == "--verify":
+        problems = verify(argv[1], int(argv[2]), Path(argv[3]), [Path(r) for r in argv[4:]])
+        for problem in problems:
+            print(problem, file=sys.stderr)
+        if not problems:
+            print(f"{argv[1]}: every test file ran in exactly one of {argv[2]} shards")
+        return 1 if problems else 0
+    if len(argv) == 3 and argv[0] == "--merge":
+        current: dict[str, float] = (
+            json.loads(DURATIONS.read_text("utf-8")) if DURATIONS.exists() else {}
+        )
+        Path(argv[2]).write_text(
+            json.dumps(merged(Path(argv[1]), current), indent=1) + "\n", encoding="utf-8"
+        )
+        return 0
     if len(argv) == 2 and argv[0] == "--record":
         recorded = file_durations(Path(argv[1]).read_text(encoding="utf-8"))
         DURATIONS.write_text(json.dumps(recorded, indent=1) + "\n", encoding="utf-8")

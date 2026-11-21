@@ -43,3 +43,7 @@ test-results/
 # Visual-parity harness (F-05-T16): fetched handoff baselines, base-commit regression baselines, report
 .visual/
 parity-report/
+
+# CI shard records and merged timings (abacus_tools.ci.record, make ci-shard-timings)
+backend/.shard-records/
+backend/.shard-timings.json

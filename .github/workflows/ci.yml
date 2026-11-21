@@ -28,6 +28,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0 # the expand-only guard diffs against the PR's base (Q-03-T081)
+          filter: blob:none # history without file contents; git fetches a blob when read
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
@@ -101,6 +102,31 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
           PYTHONPATH: backend/src
         run: python3 -m abacus_tools.ci.paths "$BASE" "$GITHUB_SHA" | tee -a "$GITHUB_OUTPUT"
+      # The shard timings for this run (TASK-017): the latest main run's records
+      # (abacus_tools.ci.record, saved by shard-timings below), else the committed
+      # tests/durations.json. Picked once here and handed to every shard, so all shards split the
+      # same file list the same way; ci-coverage proves every file still ran exactly once.
+      - name: latest shard timings from main
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: backend/.shard-timings.json
+          key: shard-timings-${{ github.sha }}
+          restore-keys: shard-timings-
+      - name: hand the timings to the shards
+        shell: bash
+        run: |
+          if [ -s backend/.shard-timings.json ]; then
+            cp backend/.shard-timings.json backend/tests/durations.json
+            echo "shard timings: the latest main run's records"
+          else
+            echo "shard timings: the committed tests/durations.json"
+          fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: shard-timings
+          path: backend/tests/durations.json
+          if-no-files-found: error
+          retention-days: 1
 
   unit:
     name: stage 2 unit tests (${{ matrix.shard }}/2)
@@ -135,8 +161,21 @@ jobs:
       - if: needs.changes.outputs.backend == 'true'
         run: make setup
       - if: needs.changes.outputs.backend == 'true'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: shard-timings
+          path: backend/tests
+      - if: needs.changes.outputs.backend == 'true'
         # pytest-xdist on the runner's 4 cores (DEC-335).
         run: make ci-unit SHARD=${{ matrix.shard }} SHARDS=2 PYTEST_WORKERS=4
+      - if: always() && needs.changes.outputs.backend == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: shard-records-unit-${{ matrix.shard }}
+          path: backend/.shard-records/shard-unit-${{ matrix.shard }}.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
       - if: needs.changes.outputs.backend == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -229,8 +268,21 @@ jobs:
       - if: needs.changes.outputs.backend == 'true'
         run: make setup
       - if: needs.changes.outputs.backend == 'true'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: shard-timings
+          path: backend/tests
+      - if: needs.changes.outputs.backend == 'true'
         # Two workers, each with its own Postgres, S3 and Temporal containers, on 4 cores (DEC-335).
         run: make ci-integration SHARD=${{ matrix.shard }} SHARDS=10 PYTEST_INTEGRATION_WORKERS=2
+      - if: always() && needs.changes.outputs.backend == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: shard-records-integration-${{ matrix.shard }}
+          path: backend/.shard-records/shard-integration-${{ matrix.shard }}.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
       - if: needs.changes.outputs.backend == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -530,7 +582,46 @@ jobs:
           path: backend
           merge-multiple: true
       - if: needs.changes.outputs.backend == 'true'
-        run: make ci-coverage
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: shard-records-*
+          path: backend/.shard-records
+          merge-multiple: true
+      - if: needs.changes.outputs.backend == 'true'
+        # First: every unit and integration test file ran in exactly one shard (TASK-017).
+        run: make ci-coverage UNIT_SHARDS=2 INTEGRATION_SHARDS=10
+
+  # The next runs' shard timings: every main run's records, merged over the timings this run used
+  # and saved to the cache that `changes` restores. Also after a failed or cancelled shard: the
+  # records that exist still improve the split.
+  shard-timings:
+    name: save shard timings
+    needs: [changes, unit, integration]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: shard-timings
+          path: backend/tests
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: shard-records-*
+          path: backend/.shard-records
+          merge-multiple: true
+      - run: make ci-shard-timings
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: backend/.shard-timings.json
+          key: shard-timings-${{ github.sha }}
 
   # Stage 3 (SPEC-005 AC-10; TASK-020b): the fast evaluation subset, only when the change touches
   # what an agent's behaviour depends on (ADR-082). Fake model until a provider exists; a

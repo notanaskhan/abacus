@@ -25,8 +25,11 @@ from .support import Env, Migrated, Net, Seeder
 
 @pytest.fixture(scope="session")
 def migrated_db() -> Iterator[Migrated]:
-    """Fresh Postgres in a container, migrated to head (the same path as `schema_check`)."""
-    with provisioned_database() as database:
+    """Fresh Postgres in a container, migrated to head (the same path as `schema_check`).
+
+    No down-and-up round trip per worker: the schema_check gate proves that once per run.
+    """
+    with provisioned_database(roundtrip=False, isolated=True) as database:
         configure_engine(database.app_url)
         configure_relay_engine(database.relay_url)
         configure_identity_engine(database.identity_url)

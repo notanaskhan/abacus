@@ -398,7 +398,7 @@ def test_ac20_truncate_or_trigger_on_a_tenant_table_is_reported(
 
 
 def test_ac20_bootstrap_run_twice_still_passes_the_check() -> None:
-    with provisioned_database(roundtrip=False) as database:
+    with provisioned_database(roundtrip=False, isolated=True) as database:
         script = (REPO / "backend" / "migrations" / "bootstrap.sql").read_text("utf-8")
         _sql(database.superuser_dsn, script, script)
         assert sc.check(database.owner_url, database.app_url) == []
@@ -3474,7 +3474,7 @@ TRUNCATE_TRIGGER = "evidence_versions_no_truncate"
 
 @pytest.fixture(scope="module")
 def evidence_db() -> Iterator[sc.Database]:
-    with provisioned_database(roundtrip=False) as database:
+    with provisioned_database(roundtrip=False, isolated=True) as database:
         yield database
 
 

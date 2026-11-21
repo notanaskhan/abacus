@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: a07-shadow refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics pilot-read m12-pack go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check-fast-frontend check-docs check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast evals-blocks-fast evals-trajectory-fast evals-conformance-fast evals-tax-fast evals-entity-fast evals-close-fast evals-close-full evals-fiduciary-fast evals-completion-fast generate migrate db-reset loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check dark-merge-audit release-pr golden-render form-fixtures
+.PHONY: a07-shadow refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics pilot-read m12-pack go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check-fast-frontend check-docs check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-shard-timings ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast evals-blocks-fast evals-trajectory-fast evals-conformance-fast evals-tax-fast evals-entity-fast evals-close-fast evals-close-full evals-fiduciary-fast evals-completion-fast generate migrate db-reset loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check dark-merge-audit release-pr golden-render form-fixtures
 
 setup:
 	cd backend && uv sync --locked
@@ -201,22 +201,41 @@ XDIST_INTEGRATION = -n $(PYTEST_INTEGRATION_WORKERS) --dist loadgroup -m "not se
 # never decides them (DEC-335). Exit 5 is pytest's "nothing collected" for a shard without one.
 SERIAL = -n 0 -m serial
 
+# Each shard records the files it ran and their times (abacus_tools.ci.record) in
+# backend/.shard-records; ci-coverage checks the records of all shards (every test file ran in
+# exactly one) and ci-shard-timings merges them into the timings main saves for the next runs.
+SHARD_RECORDS = .shard-records
+UNIT_SHARDS ?= 2
+INTEGRATION_SHARDS ?= 10
+RECORD = -p abacus_tools.ci.record
+
 ci-unit:
-	cd backend && files="$$(uv run python -m abacus_tools.ci.shard $(SHARD) $(SHARDS) $(UNIT_TESTS))" && \
+	cd backend && mkdir -p $(SHARD_RECORDS) && \
+		export ABACUS_SHARD_RECORD="$$PWD/$(SHARD_RECORDS)/shard-unit-$(SHARD).json" && \
+		files="$$(uv run python -m abacus_tools.ci.shard $(SHARD) $(SHARDS) $(UNIT_TESTS))" && \
 		test -n "$$files" && COVERAGE_FILE=.coverage.unit-$(SHARD) \
-		uv run pytest $(XDIST) --cov --cov-report= --cov-fail-under=0 $$files && \
-		{ COVERAGE_FILE=.coverage.unit-$(SHARD) uv run pytest $(SERIAL) --cov --cov-append \
-			--cov-report= --cov-fail-under=0 $$files || [ $$? -eq 5 ]; }
+		uv run pytest $(RECORD) $(XDIST) --cov --cov-report= --cov-fail-under=0 $$files && \
+		{ COVERAGE_FILE=.coverage.unit-$(SHARD) uv run pytest $(RECORD) $(SERIAL) --cov \
+			--cov-append --cov-report= --cov-fail-under=0 $$files || [ $$? -eq 5 ]; }
 
 ci-integration:
-	cd backend && files="$$(uv run python -m abacus_tools.ci.shard $(SHARD) $(SHARDS) $(INTEGRATION_TESTS))" && \
+	cd backend && mkdir -p $(SHARD_RECORDS) && \
+		export ABACUS_SHARD_RECORD="$$PWD/$(SHARD_RECORDS)/shard-integration-$(SHARD).json" && \
+		files="$$(uv run python -m abacus_tools.ci.shard $(SHARD) $(SHARDS) $(INTEGRATION_TESTS))" && \
 		test -n "$$files" && COVERAGE_FILE=.coverage.integration-$(SHARD) \
-		uv run pytest $(XDIST_INTEGRATION) --cov --cov-report= --cov-fail-under=0 $$files && \
-		{ COVERAGE_FILE=.coverage.integration-$(SHARD) uv run pytest $(SERIAL) --cov --cov-append \
-			--cov-report= --cov-fail-under=0 $$files || [ $$? -eq 5 ]; }
+		uv run pytest $(RECORD) $(XDIST_INTEGRATION) --cov --cov-report= --cov-fail-under=0 $$files && \
+		{ COVERAGE_FILE=.coverage.integration-$(SHARD) uv run pytest $(RECORD) $(SERIAL) --cov \
+			--cov-append --cov-report= --cov-fail-under=0 $$files || [ $$? -eq 5 ]; }
+
+ci-shard-timings:
+	cd backend && uv run python -m abacus_tools.ci.shard --merge $(SHARD_RECORDS) .shard-timings.json
 
 # The floor (95) with DEC-10's dated exception, if any: backend/coverage-exception.toml.
 ci-coverage:
+	cd backend && uv run python -m abacus_tools.ci.shard --verify unit $(UNIT_SHARDS) \
+		$(SHARD_RECORDS) $(UNIT_TESTS)
+	cd backend && uv run python -m abacus_tools.ci.shard --verify integration $(INTEGRATION_SHARDS) \
+		$(SHARD_RECORDS) $(INTEGRATION_TESTS)
 	cd backend && uv run coverage combine && uv run python -m abacus_tools.ci.coverage_floor
 	cd backend && uv run python -m abacus_tools.quality.coverage_floors --measure
 
