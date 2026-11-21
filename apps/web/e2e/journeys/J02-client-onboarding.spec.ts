@@ -237,7 +237,9 @@ test.describe("J02 · close plan", () => {
     });
     await journey.step("j02 7: the Close Planner drafts v1 (CLS-09 c)", async (page) => {
       await expect(page.getByText(/Draft v1 · Close Planner/).first()).toBeVisible();
-      await expect(page.getByRole("button", { name: /^Publish/ })).toHaveCount(0);
+      // CLS-09 c (handoff state A/B): "Publish v1" is drawn but disabled until each drafted row
+      // is adopted; agent drafts are never published as they are.
+      await expect(page.getByRole("button", { name: /^Publish/ })).toBeDisabled();
     });
   });
 });

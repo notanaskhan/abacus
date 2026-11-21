@@ -119,7 +119,7 @@ describe("AUD-33 Consolidated trial balance", () => {
         '[data-row="Intercompany receivable"] [data-tag="E4"]',
       ) as HTMLElement,
     );
-    expect(document.querySelector('[data-elimination="E4"]')?.getAttribute("aria-selected")).toBe(
+    expect(document.querySelector('[data-elimination="E4"]')?.getAttribute("aria-current")).toBe(
       "true",
     );
   });

@@ -289,7 +289,7 @@ class AgentColumnRunOut(BaseModel):
     model_config = _cfg()
 
     run_id: Annotated[UUID, Internal]
-    status: Annotated[Literal["queued", "running", "stopped", "succeeded", "failed"], Internal]
+    status: Annotated[Literal["queued", "running", "cancelled", "succeeded", "failed"], Internal]
     rows_targeted: Count
     rows_now: Count
     rows_on_arrival: Count

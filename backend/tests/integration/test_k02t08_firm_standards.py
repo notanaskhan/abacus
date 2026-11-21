@@ -418,6 +418,8 @@ async def test_ac32_the_diff_names_the_changed_cells_and_discard_hides_the_draft
 async def test_ac33_examples_are_empty_until_a_provider_registers(
     world: World, as_: Callable[[object], Call], monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # C-02 (S52) registers the AJE-thresholds provider at import; the empty state is the slot's.
+    monkeypatch.delitem(standards._EXAMPLES, "aje_thresholds", raising=False)  # pyright: ignore[reportPrivateUsage] -- the slot, cleared for one test
     with frozen(DEMO):
         empty = (
             await as_(world.cole)("GET", f"/v1/standards/{world.standard_id}/examples")

@@ -160,6 +160,11 @@ def firm(monkeypatch: pytest.MonkeyPatch) -> Iterator[Firm]:
     monkeypatch.setattr(authz, "member_facts", member_facts)
     monkeypatch.setattr(authz, "firm_policy", firm_policy)
     monkeypatch.setattr(authz, "_independence", (None, confirmed))
+
+    async def no_inspection_grant(*_: object) -> bool:
+        return False  # Q-05-T16: no live inspection grant (the grant table is DB-only)
+
+    monkeypatch.setattr(authz, "inspector_of", no_inspection_grant)
     monkeypatch.setattr(client_access, "active_grants", active_grants)
     monkeypatch.setattr(client_access, "resolve_scope", resolve_scope)
     monkeypatch.setattr(client_access, "engagement_client", engagement_client)
