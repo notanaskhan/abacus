@@ -160,7 +160,7 @@ function SlotRow({
         <span
           role="cell"
           style={indent}
-          className="flex items-center gap-[8px] text-[12.5px] text-ink-4"
+          className="flex items-center gap-[8px] text-[12.5px] text-ink-3" // ink-4 fails AA for content (axe, J20 2)
         >
           {COPY.noTb}
           <span>{`${COPY.labels[t.label] ?? t.label} · ${day(t.period_end)}`}</span>

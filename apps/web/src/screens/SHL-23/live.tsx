@@ -27,6 +27,8 @@ export interface TodayPaneLiveProps {
   onOpen?: (href: string) => void;
   onRebuild?: () => void;
   onHighlight?: (refs: readonly string[] | null) => void;
+  /** Open on a work item's drill-in (the SHL-23 2 specimen) instead of the day. */
+  initialDrill?: string;
 }
 
 export function TodayPaneLive({
@@ -35,8 +37,13 @@ export function TodayPaneLive({
   onOpen,
   onRebuild,
   onHighlight,
+  initialDrill,
 }: TodayPaneLiveProps): JSX.Element {
-  const [view, setView] = useState<View>({ kind: "day" });
+  const [view, setView] = useState<View>(
+    initialDrill === undefined
+      ? { kind: "day" }
+      : { kind: "drill", workItemId: initialDrill, assign: false },
+  );
   const drill = useTodayDrill(view.kind === "drill" ? view.workItemId : null);
   const history = useTodayHistory(view.kind === "history");
   const past = usePastBrief(view.kind === "past" ? view.briefId : null);

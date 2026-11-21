@@ -13,7 +13,7 @@ function owner(description: string): { annotation: { type: string; description: 
   return { annotation: { type: "owner", description } };
 }
 
-type Screen = "AUD-32" | "AUD-33" | "AUD-34" | "AUD-35" | "POR-23";
+type Screen = "AUD-32" | "AUD-33" | "AUD-34" | "AUD-35" | "POR-23" | "SHL-23";
 
 async function artboard(journey: Journey, who: PersonaSlug, screen: Screen, st: string) {
   await journey.page.setViewportSize({ width: 1440, height: 900 });
@@ -125,10 +125,15 @@ test.describe("J20 · A-09 screens", () => {
   test("j20 8 (late): Today lists the late memo; Margaret sends the follow-up", async ({
     journey,
   }) => {
-    await journey.as("margaret-okonkwo", "/?today=open", { scenario: "SHL-23:5" });
+    // SHL-23 5 on its artboard (Margaret's Dec 1 brief), the way the Today specs open it.
+    await artboard(journey, "margaret-okonkwo", "SHL-23", "5");
     await journey.step("j20 8: the Pruett & Lang memo in Margaret's Dec 1 brief", async (page) => {
+      // Bands other than High risk open on a click (SHL-23 GroupBand).
+      await board(page, "5").locator("[data-group='late'] > button").click();
       await expect(
-        page.getByText("Pruett & Lang interim memo — Harlow & Pike Distribution, Inc.").first(),
+        board(page, "5")
+          .getByText("Pruett & Lang interim memo — Harlow & Pike Distribution, Inc.")
+          .first(),
       ).toBeVisible();
     });
   });

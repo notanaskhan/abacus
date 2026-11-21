@@ -36,7 +36,7 @@ import {
   useCloses,
   useRunningCloses,
 } from "../../domain/closes";
-import { to } from "../../routes/to";
+import { hrefOf, to } from "../../routes/to";
 import { COPY } from "./copy";
 
 // CLS-01 · Closes index (C-01-T33; SPEC-655 AC-1 to AC-6; docs/screens/CLS-01.md). T1 over
@@ -285,7 +285,20 @@ export function CLS01({
       key: "client",
       header: COPY.columns.client,
       width: 300,
-      cell: (r) => <span className="block truncate font-medium">{r.client_name}</span>,
+      // The row's link to its close (handoff link graph: the Copperleaf row opens CLS-02; j16 8).
+      cell: (r) => (
+        <a
+          href={hrefOf(to.CLS02({ closeId: r.close_id }))}
+          className="block truncate font-medium text-ink hover:underline"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onOpen(r.close_id);
+          }}
+        >
+          {r.client_name}
+        </a>
+      ),
     },
     {
       key: "period",

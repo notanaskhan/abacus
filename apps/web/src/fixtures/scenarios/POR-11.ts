@@ -3,12 +3,26 @@
 // an answer comes back answered with its receipt time, the way the sealed answer route returns it.
 // The request cards are POR-03's on the close's binder and join with the Copperleaf close binder
 // seed (C-01-T44's CAS slice); until then those states show the questions card only.
-import type { PortalAnswerIn, PortalQuestionOut } from "@abacus/api-client";
+import type { PortalAnswerIn, PortalBinderRefOut, PortalQuestionOut } from "@abacus/api-client";
 import { type Scenario, defineScenarios, json } from "../../app-core/fixture-mode";
 import { copperleafPortalQuestions } from "../seed/close-book";
+import { CLOSE_IDS } from "../seed/closes";
+import { stableId } from "../seed/prng";
 
 const PERSONA = "ben-ashby";
 const ANSWERED_AT = "2026-09-14T13:12:00-05:00";
+
+// The close's binder in Ben's picker (POR-11 finds it by `period`; docs/screens/POR-11.md title).
+// Without it POR-11 waited on the binders list and drew its skeleton only (TASK-8867).
+const AUGUST_BINDER: PortalBinderRefOut = {
+  id: stableId("portal-binder:copperleaf:2026-08"),
+  title: "Copperleaf August 2026",
+  close_id: CLOSE_IDS.august,
+  period: "2026-08",
+  year: 2026,
+  closed: false,
+  read_only: false,
+};
 
 function questions(answered: readonly string[]): PortalQuestionOut[] {
   return copperleafPortalQuestions().items.map((q) =>
@@ -24,6 +38,7 @@ function at(state: string, clock: string, answered: readonly string[] = []): Sce
     persona: PERSONA,
     clock,
     handlers: {
+      "GET /v1/portal/binders": () => json({ items: [AUGUST_BINDER], total: 1 }),
       "GET /v1/portal/closes/{close_id}/questions": () => json({ items: questions(answered) }),
       "POST /v1/portal/questions/{question_id}/answer": ({ params, body }) => {
         const q = questions(answered).find((x) => x.question_id === params.question_id);

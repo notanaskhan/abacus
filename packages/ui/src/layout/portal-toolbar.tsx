@@ -72,6 +72,8 @@ export function PortalToolbar({
     <button
       type="button"
       aria-haspopup="menu"
+      // Named while the signed-in person's name loads (axe button-name; J20 POR-23 b).
+      {...(user === "" ? { "aria-label": "Account" } : {})}
       data-pressed={userOn}
       className={cn(
         "inline-flex h-[30px] flex-none items-center gap-[7px] rounded-pill bg-nav-fill pr-[9px] pl-[10px] text-nav text-ink shadow-e1 hover:bg-sel-bg data-[pressed=true]:bg-sel-bg data-[state=open]:bg-sel-bg",
