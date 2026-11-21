@@ -232,8 +232,10 @@ def migrated_db() -> Iterator[MigratedDatabase]:
     their own event loops may call it again to get a fresh pool.
     """
     with ExitStack() as stack:
+        # Its own container: tests on it may change roles. No down-and-up round trip per worker:
+        # the schema_check gate (`make ci-contracts`) proves migrations reversible once per run.
         with _SLOW.pause():  # migrations are not a test's statements (Q-03-T028)
-            database = stack.enter_context(provisioned_database())
+            database = stack.enter_context(provisioned_database(roundtrip=False, isolated=True))
         # A test that disposes the engines (`dispose_engine()` resets all three) and reaches one
         # it didn't configure again would fall back to the settings, whose local defaults name
         # the dev database on 55432: present on a laptop, absent on CI, so the result depended

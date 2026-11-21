@@ -93,3 +93,61 @@ def test_main_records_durations(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr(shard, "DURATIONS", out)
     assert shard.main(["--record", str(report)]) == 0
     assert json.loads(out.read_text(encoding="utf-8")) == {"tests/a/test_z.py": 2.0}
+
+
+def _write_record(directory: Path, name: str, files: dict[str, float]) -> None:
+    (directory / f"{name}.json").write_text(json.dumps({"files": files}), encoding="utf-8")
+
+
+def _suite(tmp_path: Path) -> tuple[Path, list[str]]:
+    root = tmp_path / "suite"
+    root.mkdir()
+    for i in range(3):
+        (root / f"test_{i}.py").write_text("", encoding="utf-8")
+    return root, shard.test_files([root])
+
+
+def test_verify_passes_when_every_file_ran_once(tmp_path: Path) -> None:
+    root, files = _suite(tmp_path)
+    records = tmp_path / "records"
+    records.mkdir()
+    _write_record(records, "shard-unit-1", {files[0]: 1.0, files[1]: 2.0})
+    _write_record(records, "shard-unit-2", {files[2]: 3.0})
+    assert shard.verify("unit", 2, records, [root]) == []
+
+
+def test_verify_names_a_lost_a_doubled_and_a_stray_file(tmp_path: Path) -> None:
+    root, files = _suite(tmp_path)
+    records = tmp_path / "records"
+    records.mkdir()
+    _write_record(records, "shard-unit-1", {files[0]: 1.0, "tests/elsewhere/test_q.py": 1.0})
+    _write_record(records, "shard-unit-2", {files[0]: 1.0, files[1]: 1.0})
+    problems = shard.verify("unit", 2, records, [root])
+    assert f"{files[2]} ran in no shard" in problems
+    assert f"{files[0]} ran in shard-unit-1, shard-unit-2" in problems
+    assert "tests/elsewhere/test_q.py is not under unit's roots" in problems
+
+
+def test_verify_names_a_missing_shard(tmp_path: Path) -> None:
+    root, files = _suite(tmp_path)
+    records = tmp_path / "records"
+    records.mkdir()
+    _write_record(records, "shard-unit-1", dict.fromkeys(files, 1.0))
+    assert shard.verify("unit", 2, records, [root]) == ["no record from shard-unit-2"]
+
+
+def test_main_merges_records_over_the_timings(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    durations = tmp_path / "durations.json"
+    durations.write_text(json.dumps({"tests/a/test_old.py": 9.0, "tests/a/test_x.py": 1.0}))
+    monkeypatch.setattr(shard, "DURATIONS", durations)
+    records = tmp_path / "records"
+    records.mkdir()
+    _write_record(records, "shard-integration-1", {"tests/a/test_x.py": 4.0})
+    out = tmp_path / "merged.json"
+    assert shard.main(["--merge", str(records), str(out)]) == 0
+    assert json.loads(out.read_text(encoding="utf-8")) == {
+        "tests/a/test_old.py": 9.0,
+        "tests/a/test_x.py": 4.0,
+    }

@@ -29,11 +29,13 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import atexit
 import importlib
+import os
 import re
 import sys
 from collections.abc import Generator
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
@@ -605,8 +607,27 @@ def migrate(owner_url: str, revision: str, *, down: bool = False) -> None:
 
 
 @contextmanager
-def provisioned_database(*, roundtrip: bool = True) -> Generator[Database]:
-    """Fresh Postgres from the compose image, bootstrapped and migrated to head."""
+def provisioned_database(*, roundtrip: bool = True, isolated: bool = False) -> Generator[Database]:
+    """Fresh Postgres database from the compose image, bootstrapped and migrated to head.
+
+    `roundtrip` also migrates down to base and up again (every migration must be reversible).
+    Without it, and unless `isolated`, the database is a copy of a template this process migrated
+    once (`CREATE DATABASE ... TEMPLATE`, about a second instead of a container start and a full
+    migration). The copies share one Postgres cluster, so cluster-level state (roles, role
+    memberships and settings, the list of databases) must come back unchanged: a caller that
+    changes it fails at exit and must pass `isolated=True` for a container of its own.
+    ABACUS_TEST_DB_ISOLATED=1 makes every call isolated (to compare the two paths).
+    """
+    if roundtrip or isolated or os.environ.get("ABACUS_TEST_DB_ISOLATED") == "1":
+        with _container_database(roundtrip=roundtrip) as database:
+            yield database
+        return
+    with _shared_cluster().clone() as database:
+        yield database
+
+
+@contextmanager
+def _container_database(*, roundtrip: bool) -> Generator[Database]:
     with PostgresContainer(
         compose_image("db"), username="postgres", password="postgres", dbname="abacus", driver=None
     ) as container:
@@ -625,6 +646,156 @@ def provisioned_database(*, roundtrip: bool = True) -> Generator[Database]:
             migrate(url(OWNER), "base", down=True)
             migrate(url(OWNER), "head")
         yield Database(url(OWNER), url(APP), url(RELAY), url(IDENTITY), superuser)
+
+
+# The template the copies come from, and the database-level grants bootstrap.sql makes on
+# `current_database()`: pg_database's ACL is the one bootstrap result a template copy lacks.
+_TEMPLATE = "abacus_template"
+_COPY_PREFIX = "abacus_copy_"
+_DATABASE_GRANTS = (
+    'GRANT CONNECT, TEMPORARY ON DATABASE "{db}" TO abacus_owner',
+    'GRANT CONNECT ON DATABASE "{db}" TO abacus_app, abacus_relay, abacus_identity, abacus_ops',
+    'REVOKE CREATE, TEMPORARY ON DATABASE "{db}" FROM PUBLIC',
+)
+_DATABASE_ACL = """
+SELECT coalesce(array_agg(a::text ORDER BY a::text), '{}') FROM pg_database d,
+LATERAL unnest(coalesce(d.datacl, acldefault('d', d.datdba))) a WHERE d.datname = $1
+"""
+# What the copies share. Role passwords are in it, so a test that sets one (even to the same
+# value: SCRAM salts differ) needs `isolated=True`.
+_CLUSTER_STATE = r"""
+SELECT json_build_object(
+  'roles', (SELECT json_agg(r ORDER BY r.rolname) FROM (
+    SELECT rolname, rolsuper, rolinherit, rolcreaterole, rolcreatedb, rolcanlogin, rolreplication,
+           rolbypassrls, rolconnlimit, rolpassword, rolvaliduntil FROM pg_authid) r),
+  'members', (SELECT json_agg(m ORDER BY m.role, m.member) FROM (
+    SELECT roleid::regrole::text AS role, member::regrole::text AS member, admin_option
+    FROM pg_auth_members) m),
+  'settings', (SELECT json_agg(s ORDER BY s.role) FROM (
+    SELECT setrole::regrole::text AS role, setconfig FROM pg_db_role_setting
+    WHERE setdatabase = 0) s),
+  'databases', (SELECT json_agg(datname ORDER BY datname) FROM pg_database
+    WHERE datname NOT LIKE 'abacus_copy_%')
+)::text
+"""
+
+
+class ClusterStateChangedError(AssertionError):
+    """A template copy's user changed what all copies share (see `provisioned_database`)."""
+
+
+class _SharedCluster:
+    """One Postgres container per process, its template migrated to head once."""
+
+    def __init__(self) -> None:
+        self._stack = ExitStack()
+        container = self._stack.enter_context(
+            PostgresContainer(
+                compose_image("db"),
+                username="postgres",
+                password="postgres",
+                dbname=_TEMPLATE,
+                driver=None,
+            )
+        )
+        self._host = container.get_container_host_ip()
+        self._port = container.get_exposed_port(5432)
+        migrations = BACKEND / "migrations"
+        asyncio.run(
+            _run_sql(
+                self.superuser(_TEMPLATE),
+                migrations / "bootstrap.sql",
+                migrations / "bootstrap-local.sql",
+            )
+        )
+        migrate(self.url(OWNER, _TEMPLATE), "head")
+        self._template_acl = asyncio.run(self._fetchval(_DATABASE_ACL, _TEMPLATE))
+        self._baseline = asyncio.run(self._fetchval(_CLUSTER_STATE))
+        self._copies = 0
+        self.broken = False
+
+    def url(self, role: str, db: str) -> str:
+        password = _LOCAL_PASSWORDS[role]
+        return f"postgresql+asyncpg://{role}:{password}@{self._host}:{self._port}/{db}"
+
+    def superuser(self, db: str) -> str:
+        return f"postgresql://postgres:postgres@{self._host}:{self._port}/{db}"
+
+    async def _fetchval(self, query: str, *args: object) -> object:
+        conn = await connect_db(self.superuser("postgres"))
+        try:
+            return await conn.fetchval(query, *args)
+        finally:
+            await conn.close()
+
+    async def _execute(self, db: str, *statements: str) -> None:
+        conn = await connect_db(self.superuser(db))
+        try:
+            for statement in statements:
+                await conn.execute(statement)
+        finally:
+            await conn.close()
+
+    async def _create(self, name: str) -> None:
+        await self._execute(
+            "postgres",
+            # A pooled connection alembic left open would block the copy.
+            "SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
+            "WHERE datname = 'abacus_template' AND pid <> pg_backend_pid()",
+            f'CREATE DATABASE "{name}" TEMPLATE "{_TEMPLATE}"',
+            *(grant.format(db=name) for grant in _DATABASE_GRANTS),
+        )
+        acl = await self._fetchval(_DATABASE_ACL, name)
+        if acl != self._template_acl:  # bootstrap.sql's database grants changed: copy them here
+            raise ClusterStateChangedError(
+                f"database grants of {name} {acl} differ from the template's {self._template_acl}"
+            )
+
+    @contextmanager
+    def clone(self) -> Generator[Database]:
+        self._copies += 1
+        name = f"{_COPY_PREFIX}{os.getpid()}_{self._copies}"
+        asyncio.run(self._create(name))
+        try:
+            yield Database(
+                self.url(OWNER, name),
+                self.url(APP, name),
+                self.url(RELAY, name),
+                self.url(IDENTITY, name),
+                self.superuser(name),
+            )
+        finally:
+            asyncio.run(
+                self._execute("postgres", f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)')
+            )
+            state = asyncio.run(self._fetchval(_CLUSTER_STATE))
+            if state != self._baseline:
+                self.broken = True  # the next caller gets a fresh cluster
+                raise ClusterStateChangedError(
+                    "this test changed cluster-level state (roles, memberships, role settings or "
+                    "databases) on the shared template cluster; pass isolated=True to "
+                    f"provisioned_database().\nbefore: {self._baseline}\nafter:  {state}"
+                )
+
+    def close(self) -> None:
+        self._stack.close()
+
+
+_SHARED: list[_SharedCluster] = []
+
+
+def _shared_cluster() -> _SharedCluster:
+    if _SHARED and _SHARED[0].broken:
+        _SHARED.pop().close()
+    if not _SHARED:
+        _SHARED.append(_SharedCluster())
+        atexit.register(_close_shared)
+    return _SHARED[0]
+
+
+def _close_shared() -> None:
+    while _SHARED:
+        _SHARED.pop().close()
 
 
 _TABLES = """

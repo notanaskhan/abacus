@@ -35,7 +35,7 @@ BUCKET = f"drill-{uuid.uuid4().hex[:12]}"
 
 @pytest.fixture(scope="module")
 def source() -> Iterator[Database]:
-    with provisioned_database(roundtrip=False) as database:
+    with provisioned_database(roundtrip=False, isolated=True) as database:
         yield database
 
 
