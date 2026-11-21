@@ -87,8 +87,10 @@ describe("AUD-33 Consolidated trial balance", () => {
     await at("c");
     const e3 = document.querySelector('[data-elimination="E3"]') as HTMLElement;
     expect(e3.querySelector("[data-off]")?.textContent).toBe("Off 10,000 · debits ≠ credits");
+    // Approve is a person's (HumanAction, INV-1): it appears once the session names the viewer.
     expect(
-      within(e3).getByRole<HTMLButtonElement>("button", { name: COPY.card.approve }).disabled,
+      (await within(e3).findByRole<HTMLButtonElement>("button", { name: COPY.card.approve }))
+        .disabled,
     ).toBe(true);
     expect(screen.getByText("off 10,000")).toBeDefined();
   });

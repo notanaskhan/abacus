@@ -5,6 +5,7 @@ import { EliminationCard } from "../data/EliminationCard";
 import { type EntityNode, EntityTree } from "../data/EntityTree";
 import { type Milestone, MilestoneTimeline } from "../data/MilestoneTimeline";
 import { Row, Sheet } from "./frame";
+import { STAFF } from "./seed-figures";
 
 // The A-09 L2 kits (A-09-T08) on Harlow & Pike's FY2026 group (the handoff's AUD-32, AUD-34 and
 // AUD-35 figures): the five-entity, three-tier structure; the Pruett & Lang milestones; the
@@ -213,6 +214,7 @@ export function EliminationCardSpecimen(): JSX.Element {
         <div className="w-[396px]">
           <EliminationCard
             code="E4"
+            actor={{ kind: "human", name: STAFF.hannah }}
             level={2}
             description="Intercompany balances"
             amount="2400000.00"
