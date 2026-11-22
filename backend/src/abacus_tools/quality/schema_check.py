@@ -32,11 +32,11 @@ import asyncio
 import importlib
 import re
 import sys
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import cast
+from typing import Final, cast
 
 import asyncpg
 import yaml
@@ -624,7 +624,27 @@ def provisioned_database(*, roundtrip: bool = True) -> Generator[Database]:
         if roundtrip:
             migrate(url(OWNER), "base", down=True)
             migrate(url(OWNER), "head")
+        asyncio.run(_run_statements(superuser, _WAIT_LIMITS))
         yield Database(url(OWNER), url(APP), url(RELAY), url(IDENTITY), superuser)
+
+
+# TASK-8870: on these throwaway databases a lock wait fails after two minutes (naming the lock)
+# and a session left idle inside a transaction is ended after five, so a test that leaks an open
+# transaction makes the next one fail instead of hanging its CI shard (52a135ea7, ae1d847b0).
+# Database-level settings: every connection opened after provisioning carries them.
+_WAIT_LIMITS: Final = (
+    "ALTER DATABASE abacus SET lock_timeout = '120s'",
+    "ALTER DATABASE abacus SET idle_in_transaction_session_timeout = '300s'",
+)
+
+
+async def _run_statements(dsn: str, statements: Sequence[str]) -> None:
+    conn = await connect_db(dsn)
+    try:
+        for statement in statements:
+            await conn.execute(statement)
+    finally:
+        await conn.close()
 
 
 _TABLES = """
