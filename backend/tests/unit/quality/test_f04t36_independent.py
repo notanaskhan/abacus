@@ -227,8 +227,11 @@ def test_t17_clock001_allows_the_clock_itself_and_its_two_doors(tmp_path: Path) 
     assert "CLOCK-001" not in [v.rule_id for v in bp.scan(tmp_path)]
 
 
-def test_t11_t17_main_has_no_direct_now_anywhere_in_src() -> None:
-    found = [v for v in bp.scan(BACKEND) if v.rule_id == "CLOCK-001"]
+@pytest.mark.xdist_group("banned-patterns-real-scan")
+def test_t11_t17_main_has_no_direct_now_anywhere_in_src(
+    real_banned_scan: tuple[bp.Violation, ...],
+) -> None:
+    found = [v for v in real_banned_scan if v.rule_id == "CLOCK-001"]
     assert found == []
 
 

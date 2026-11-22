@@ -96681,7 +96681,7 @@
         "description": "CLS-07c2: \"Post 6 entries ($35,300.00) to QuickBooks Online \u00b7 Copperleaf Coffee\nRoasters? The closing date will be set to Aug 31, 2026.\" No write happens.",
         "examples": [
           {
-            "client_entity_name": "Copperleaf Coffee Roasters",
+            "client_entity_name": "Example Client, Inc.",
             "closing_date_target": "2026-08-31",
             "entry_count": 6,
             "ledger_label": "QuickBooks Online",
@@ -153294,7 +153294,7 @@
             "attest_posting_disabled": true,
             "human_approved_only": true,
             "memo_prefix": "Accrued",
-            "post_as": "Brightwater Hale LLP",
+            "post_as": "Example Firm LLP",
             "version": 1
           }
         ],

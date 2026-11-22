@@ -197,6 +197,11 @@ PYTEST_WORKERS ?= auto
 PYTEST_INTEGRATION_WORKERS ?= 4
 XDIST = -n $(PYTEST_WORKERS) --dist loadgroup -m "not serial"
 XDIST_INTEGRATION = -n $(PYTEST_INTEGRATION_WORKERS) --dist loadgroup -m "not serial"
+# TASK-8869: a test that runs past 25 minutes dumps every thread's stack and ends its worker, so
+# a hang fails that one test (xdist reports the crash and starts a new worker) instead of holding
+# the shard to its 100-minute cancel, as seven shards were on 52a135ea7. The longest real test is
+# one test_identity.py case, about 18 minutes under CI coverage.
+HANG_GUARD = -o faulthandler_timeout=1500 -o faulthandler_exit_on_timeout=true
 # Wall-clock budget tests (`@pytest.mark.serial`) run after the workers, alone, so contention
 # never decides them (DEC-335). Exit 5 is pytest's "nothing collected" for a shard without one.
 SERIAL = -n 0 -m serial
@@ -211,8 +216,8 @@ ci-unit:
 ci-integration:
 	cd backend && files="$$(uv run python -m abacus_tools.ci.shard --by-count $(SHARD) $(SHARDS) $(INTEGRATION_TESTS))" && \
 		test -n "$$files" && COVERAGE_FILE=.coverage.integration-$(SHARD) \
-		uv run pytest $(XDIST_INTEGRATION) --cov --cov-report= --cov-fail-under=0 $$files && \
-		{ COVERAGE_FILE=.coverage.integration-$(SHARD) uv run pytest $(SERIAL) --cov --cov-append \
+		uv run pytest $(XDIST_INTEGRATION) $(HANG_GUARD) --cov --cov-report= --cov-fail-under=0 $$files && \
+		{ COVERAGE_FILE=.coverage.integration-$(SHARD) uv run pytest $(SERIAL) $(HANG_GUARD) --cov --cov-append \
 			--cov-report= --cov-fail-under=0 $$files || [ $$? -eq 5 ]; }
 
 # The floor (95) with DEC-10's dated exception, if any: backend/coverage-exception.toml.

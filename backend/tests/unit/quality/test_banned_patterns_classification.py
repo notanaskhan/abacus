@@ -50,5 +50,6 @@ def test_classified_with_flags_is_fine(tmp_path: Path) -> None:
     assert _count(tmp_path, MODULE, source) == 0
 
 
-def test_the_repository_is_clean() -> None:
-    assert [v for v in bp.scan() if v.rule_id == RULE] == []
+@pytest.mark.xdist_group("banned-patterns-real-scan")
+def test_the_repository_is_clean(real_banned_scan: tuple[bp.Violation, ...]) -> None:
+    assert [v for v in real_banned_scan if v.rule_id == RULE] == []

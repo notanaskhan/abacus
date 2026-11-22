@@ -55,7 +55,7 @@ async def seed_synthetic_plan(tenant_id: UUID, plan: SeedPlan, rules: Sequence[S
                 "INSERT INTO plan_entitlements (tenant_id, plan_code, term_start, term_end, "
                 "renewal_on, usage_month_anchor_day, included_agent_minutes, seats_total, "
                 "changed_by_staff, change_reason) VALUES (:t, :code, :ts, :te, :r, :a, :m, :s, "
-                "'scenario', 'Brightwater Hale synthetic plan at term start (G-04-T13)')"
+                "'scenario', 'Synthetic plan at term start (G-04-T13)')"
             ),
             {"t": tenant_id, "code": plan.plan_code, "ts": plan.term_start, "te": plan.term_end,
              "r": plan.renewal_on, "a": plan.usage_month_anchor_day,

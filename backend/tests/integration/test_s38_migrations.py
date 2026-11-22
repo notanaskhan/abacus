@@ -11,6 +11,7 @@ memo versions refuse UPDATE and DELETE."
 from __future__ import annotations
 
 import asyncio
+import re
 from collections.abc import Iterator
 
 import pytest
@@ -176,16 +177,26 @@ def test_adopting_and_approving_a_memo_are_a_persons_events(private_db: sc.Datab
 
 
 def test_planning_opportunities_are_open_only_in_t05(private_db: sc.Database) -> None:
-    definition = " ".join(
-        str(d)
-        for d in asyncio.run(
-            Seeder(private_db.superuser_dsn).rows(
-                "SELECT pg_get_constraintdef(c.oid) AS d FROM pg_constraint c "
-                "JOIN pg_class t ON t.oid = c.conrelid WHERE t.relname = 'planning_opportunities'"
-            )
+    """0830 opened `planning_opportunities.status` with `open` only (T-05); 0961 (T-08-T06,
+    DEC-5605) widened it additively to exactly six statuses, so T-05's `open` rows stay valid.
+    TASK-8869: the head database holds the widened check, never a seventh status."""
+    definition = str(
+        _value(
+            private_db,
+            "SELECT pg_get_constraintdef(c.oid) FROM pg_constraint c "
+            "JOIN pg_class t ON t.oid = c.conrelid "
+            "WHERE t.relname = 'planning_opportunities' "
+            "AND c.conname = 'planning_opportunities_status_check'",
         )
     )
-    assert "'open'" in definition and "raised" not in definition
+    assert set(re.findall(r"'([a-z_]+)'::text", definition)) == {
+        "open",
+        "raised",
+        "accepted",
+        "declined",
+        "not_screened",
+        "dismissed",
+    }
 
 
 def test_a_partner_tin_is_sealed_never_plain(private_db: sc.Database) -> None:

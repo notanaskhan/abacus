@@ -19,6 +19,7 @@ from abacus.modules.platform import g04_fixtures as fx
 from abacus.modules.platform.console_contract import router as console_router
 from abacus.modules.platform.plan_usage_contract import router as plan_router
 from abacus.modules.platform.support_contract import router as support_router
+from abacus_tools.synthetic import g04_tenants
 
 FIRM_ROUTES = [r for r in (*plan_router.routes, *support_router.routes) if isinstance(r, APIRoute)]
 STAFF_ROUTES = [r for r in console_router.routes if isinstance(r, APIRoute)]
@@ -77,7 +78,7 @@ def test_ac15_no_console_route_decides_a_support_session() -> None:
 
 
 def test_fixture_figures_tie_to_the_handoff() -> None:
-    assert fx.tiles() == {
+    assert g04_tenants.tiles() == {
         "tenants": 6,
         "healthy": 4,
         "degraded": 1,
@@ -85,7 +86,7 @@ def test_fixture_figures_tie_to_the_handoff() -> None:
         "seats_used": 404,
         "seats_provisioned": 490,
     }
-    assert fx.seats_footer() == (
+    assert g04_tenants.seats_footer() == (
         "Seats used 46 + 128 + 212 + 18 + 0 = 404 of 490 provisioned (sandbox excluded)."
     )
     assert fx.used_oct_1() == 14_920

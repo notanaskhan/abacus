@@ -69,6 +69,17 @@ def pytest_runtest_logreport(report: pytest.TestReport) -> None:
         out.write(json.dumps(row) + "\n")
 
 
+@pytest.fixture(scope="session")
+def real_banned_scan() -> tuple[object, ...]:
+    """TASK-8869: the banned-pattern scan of the live backend tree, once per worker. Each full
+    `banned_patterns.scan()` took up to 27 minutes under CI's branch coverage and seven tests ran
+    their own to filter one rule; they share this one, marked
+    `xdist_group("banned-patterns-real-scan")` so a shard runs it on one worker."""
+    from abacus_tools.quality import banned_patterns
+
+    return tuple(banned_patterns.scan())
+
+
 async def _no_switches() -> Active:
     return frozenset()
 

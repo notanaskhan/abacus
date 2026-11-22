@@ -196,6 +196,9 @@ def test_formula_001_flags_eval_in_a_compute_package(tmp_path: Path) -> None:
     assert [finding.line for finding in findings] == [2]
 
 
-def test_formula_001_passes_on_the_real_package() -> None:
-    violations = [v for v in banned_patterns.scan() if v.rule_id == "FORMULA-001"]
+@pytest.mark.xdist_group("banned-patterns-real-scan")
+def test_formula_001_passes_on_the_real_package(
+    real_banned_scan: tuple[banned_patterns.Violation, ...],
+) -> None:
+    violations = [v for v in real_banned_scan if v.rule_id == "FORMULA-001"]
     assert violations == []

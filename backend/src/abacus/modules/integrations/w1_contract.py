@@ -169,7 +169,7 @@ class W1GlPostingSettingsOut(BaseModel):
     """ADM-08b: two locked rows ("Post only human-approved batches", "Attest posting disabled"),
     the memo prefix and the "Post as" label."""
 
-    model_config = _cfg({"memo_prefix": "Accrued", "post_as": "Brightwater Hale LLP",
+    model_config = _cfg({"memo_prefix": "Accrued", "post_as": "Example Firm LLP",
                          "human_approved_only": True, "attest_posting_disabled": True,
                          "version": 1})  # fmt: skip
 
