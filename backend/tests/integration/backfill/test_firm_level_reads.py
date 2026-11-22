@@ -115,11 +115,14 @@ async def test_ac1_ac2_each_firm_level_read_follows_the_matrix_for_each_engageme
         entry = MATRIX[action]
         # A fresh-MFA person; a read that also needs a reason is never reached by role alone. A
         # `scope_only` read names its target and is never granted from roles on the firm's other
-        # engagements (A-02 security review, DEC-316: `authz._roles`).
+        # engagements (A-02 security review, DEC-316: `authz._roles`). A `consent` read binds
+        # the target's data subjects (T-01-T11, C19, ADR P-12): a firm-level target names none, so
+        # it fails closed for every role (TASK-8870).
         expected = (
             entry.get(role) == "allow"
             and entry.get("requires") != "reason"
             and entry.get("scope_only") != "required"
+            and entry.get("consent") is None
         )
         if await _allowed(member, action) != expected:
             wrong.append(f"{action}: expected {expected}")

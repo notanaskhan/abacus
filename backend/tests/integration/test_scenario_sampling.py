@@ -21,7 +21,7 @@ own bucket on the session's S3 (the census and predecessor uploads are evidence)
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from decimal import Decimal
 from typing import TYPE_CHECKING, Final
 
@@ -29,7 +29,7 @@ import pytest
 
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
-from abacus.kernel.db import configure_engine
+from abacus.kernel.db import configure_engine, dispose_engine
 from abacus.kernel.storage import s3_client
 from abacus.modules.evidence import storage
 from abacus_tools.quality.schema_check import Database, provisioned_database
@@ -76,10 +76,23 @@ def wired(s3_settings: dict[str, str]) -> Iterator[None]:
     reset_key_service()
 
 
-async def test_the_sampling_slice_loads_the_participants_sample_through_services(
-    own_db: Database, wired: None
-) -> None:
+@pytest.fixture
+async def own_engines(own_db: Database, monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[None]:
+    """The app and identity engines on this module's database, built on this test's loop
+    (TASK-8870). Only the app engine was pointed here: the identity engine kept a pool from an
+    earlier test's closed loop and the session's database ("Event loop is closed" on CI)."""
+    monkeypatch.setenv("ABACUS_IDENTITY_DATABASE_URL", own_db.identity_url)
+    settings.cache_clear()
+    await dispose_engine()  # the identity engine reads the new URL when next asked
     configure_engine(own_db.app_url)
+    yield
+    await dispose_engine()
+    settings.cache_clear()
+
+
+async def test_the_sampling_slice_loads_the_participants_sample_through_services(
+    own_db: Database, wired: None, own_engines: None
+) -> None:
     seed = Seeder(own_db.superuser_dsn)
     slices = loader.expand_slices(SLICES)
     events = build(SNAPSHOT, slices=("audit_core", *slices)).events

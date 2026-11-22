@@ -154,7 +154,8 @@ CASES: tuple[Case, ...] = (
         "ORDER BY effective_from, id LIMIT 51",
         "entity_relationships_from",
         "from_entity_id",
-        {"from_entity_id": SCOPED, "kind": "'owner_of'"},
+        # 0954 (relationship depth): the target is an entity or an external party, exactly one.
+        {"from_entity_id": SCOPED, "kind": "'owner_of'", "to_entity_id": "gen_random_uuid()"},
     ),
     Case(
         "GET /v1/decision-cards (stub)",
