@@ -8,6 +8,7 @@ from datetime import date
 
 from abacus.modules.platform import g04_fixtures as fx
 from abacus.modules.platform.plan_usage import rule_minutes
+from abacus_tools.synthetic import g04_tenants
 from abacus_tools.synthetic.scenarios.brightwater_hale import plan_usage_slice as s
 from abacus_tools.synthetic.scenarios.brightwater_hale import usage_slice
 
@@ -34,5 +35,8 @@ def test_the_alerts_are_codes_thresholds_and_the_ledger_reaches_them() -> None:
 
 
 def test_the_console_goldens_hold() -> None:
-    assert fx.tiles()["tenants"] == 6 == 4 + 1 + 1
-    assert (fx.tiles()["seats_used"], fx.tiles()["seats_provisioned"]) == (404, 490)
+    assert g04_tenants.tiles()["tenants"] == 6 == 4 + 1 + 1
+    assert (g04_tenants.tiles()["seats_used"], g04_tenants.tiles()["seats_provisioned"]) == (
+        404,
+        490,
+    )

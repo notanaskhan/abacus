@@ -27,6 +27,7 @@
       "citations": [],
       "computed_size": 40,
       "confidence": null,
+      "expected_misstatement": null,
       "expected_rate": null,
       "final_size": 40,
       "method": "threshold_random_stratified",
@@ -34,10 +35,12 @@
       "override_size": null,
       "rmm": null,
       "sampler_version": "2.3",
+      "sampling_interval": null,
       "seed": 8139188,
       "seed_hex": "0x7C31B4",
       "seed_source": "scenario",
       "statistical_crosscheck_size": null,
+      "tolerable_misstatement": null,
       "tolerable_rate": null
     },
     "population": {

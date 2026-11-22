@@ -329,10 +329,11 @@ def test_ac20_main_exits_0_when_clean(
 
 
 @pytest.mark.source_scan
-def test_ac20_repository_backend_is_clean() -> None:
+@pytest.mark.xdist_group("banned-patterns-real-scan")
+def test_ac20_repository_backend_is_clean(real_banned_scan: tuple[bp.Violation, ...]) -> None:
     # Deliberately depends on live repo state: this is the AC-20 claim itself, and duplicates
     # the banned-pattern step of `make check-fast`.
-    assert bp.scan() == []
+    assert list(real_banned_scan) == []
 
 
 # --- SKIP-001 (ADR-079) -----------------------------------------------------------------------
@@ -2426,8 +2427,11 @@ def test_ac20_wf_001_reports_one_finding_per_violation_with_its_line(tmp_path: P
 
 
 @pytest.mark.source_scan
-def test_ac20_wf_001_is_clean_on_the_real_workflows() -> None:
-    assert [v for v in bp.scan() if v.rule_id == "WF-001"] == []
+@pytest.mark.xdist_group("banned-patterns-real-scan")
+def test_ac20_wf_001_is_clean_on_the_real_workflows(
+    real_banned_scan: tuple[bp.Violation, ...],
+) -> None:
+    assert [v for v in real_banned_scan if v.rule_id == "WF-001"] == []
 
 
 # --- DISPATCH-001 (TASK-018; ADR-071): workflows start only through kernel.dispatch --------------
@@ -2545,8 +2549,11 @@ def test_ac3_dispatch_001_flags_the_task_queue_keyword_on_its_line(tmp_path: Pat
     assert [v.line for v in bp.scan(tmp_path) if v.rule_id == "DISPATCH-001"] == [2]
 
 
-def test_ac3_dispatch_001_is_clean_on_the_real_source() -> None:
-    assert [v for v in bp.scan() if v.rule_id == "DISPATCH-001"] == []
+@pytest.mark.xdist_group("banned-patterns-real-scan")
+def test_ac3_dispatch_001_is_clean_on_the_real_source(
+    real_banned_scan: tuple[bp.Violation, ...],
+) -> None:
+    assert [v for v in real_banned_scan if v.rule_id == "DISPATCH-001"] == []
 
 
 def test_ac3_dispatch_001_is_registered_for_adr_071() -> None:

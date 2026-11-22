@@ -34,6 +34,7 @@
       ],
       "computed_size": 25,
       "confidence": "0.90",
+      "expected_misstatement": null,
       "expected_rate": "0",
       "final_size": 25,
       "method": "attribute_nonstatistical",
@@ -41,10 +42,12 @@
       "override_size": null,
       "rmm": "moderate",
       "sampler_version": "2.3",
+      "sampling_interval": null,
       "seed": 6171281,
       "seed_hex": "0x5E2A91",
       "seed_source": "scenario",
       "statistical_crosscheck_size": 22,
+      "tolerable_misstatement": null,
       "tolerable_rate": "0.10"
     },
     "population": {

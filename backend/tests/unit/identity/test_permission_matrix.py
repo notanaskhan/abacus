@@ -18,6 +18,9 @@ import yaml
 from sqlalchemy import ColumnElement, Uuid, column, literal_column
 
 from abacus.kernel.db import TenantContext
+from abacus.modules.engagements import (  # registers the client-wide grant scopes (DEC-211)
+    api as _engagements,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- TASK-8869
+)
 from abacus.modules.identity import authz
 from abacus.modules.identity.api import (
     MFA_RECENT,

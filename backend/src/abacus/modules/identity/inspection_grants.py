@@ -112,8 +112,21 @@ async def revoke_for_inspection(tx: UnitOfWork, inspection_id: UUID, by: str) ->
     return len(rows)
 
 
+_DUE: Final = text(
+    "SELECT 1 FROM inspection_access_grants WHERE revoked_at IS NULL "
+    "AND expires_at <= clock_timestamp() LIMIT 1"
+)
+
+
 async def sweep(tenant: TenantContext) -> int:
-    """The nightly sweep: grants past their expiry are revoked (`system:sweep`)."""
+    """The nightly sweep: grants past their expiry are revoked (`system:sweep`).
+
+    TASK-8869: a firm with nothing due writes nothing. The unit of work opened unconditionally
+    and, with no grant to revoke, recorded no audit event, so it raised `MissingAuditEvent`; the
+    access-end pass runs this first for every firm, so every firm's pass failed (G-01-T15)."""
+    async with tenant_session(tenant) as session:
+        if await session.scalar(_DUE) is None:
+            return 0
     async with uow(tenant) as tx:
         rows = list(
             await tx.session.scalars(

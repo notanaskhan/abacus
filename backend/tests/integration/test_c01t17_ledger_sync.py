@@ -20,7 +20,12 @@ from abacus.kernel import clock
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
 from abacus.modules.closes import service as closes_service
 from abacus.modules.connections import ledger_sync
-from abacus.modules.connections.connector import ConnectorError, Period, RawPayload
+from abacus.modules.connections.connector import (
+    Capabilities,
+    ConnectorError,
+    Period,
+    RawPayload,
+)
 from abacus.modules.evidence.api import StoredObject
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.ledger.month_ledger import MonthAccount, MonthRegisterLine
@@ -42,6 +47,15 @@ class _Stub:
         self.calls = 0
         self.changed: tuple[str, ...] = ("gl_detail", "trial_balance_month")
         self.fail: str | None = None
+
+    def capabilities(self) -> Capabilities:
+        """The ledger datasets only: no vendor reads (C-02-T26 asks before pulling them)."""
+        return Capabilities(
+            datasets=frozenset(ledger_sync.DATASETS),
+            oauth=True,
+            incremental=True,
+            attachments=False,
+        )
 
     async def changes_since(self, since: datetime) -> Sequence[str]:
         self.calls += 1

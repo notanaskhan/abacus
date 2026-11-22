@@ -885,9 +885,11 @@ async def activate_support_session(
 ) -> None:
     await session.execute(
         text(
+            # One clock read for both ends, so the window is exactly the duration (TASK-8869).
             "UPDATE support_sessions SET status = 'active', approved_by_kind = :kind, "
-            "approved_by = :by, starts_at = clock_timestamp(), "
-            "expires_at = clock_timestamp() + make_interval(mins => duration_minutes) "
+            "approved_by = :by, starts_at = now_.t, "
+            "expires_at = now_.t + make_interval(mins => duration_minutes) "
+            "FROM (SELECT clock_timestamp() AS t) AS now_ "
             "WHERE id = :id AND status = 'requested'"
         ),
         {"id": session_id, "kind": by_kind, "by": by},

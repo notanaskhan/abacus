@@ -66,8 +66,11 @@ def tax_host_literals(root: Path) -> Iterator[tuple[Path, int, str]]:
 # --- NEVER-ERO-001 ------------------------------------------------------------------------------
 
 
-def test_never_ero_001_holds_on_the_product_tree() -> None:
-    found = [v for v in bp.scan(BACKEND) if v.rule_id == "NEVER-ERO-001"]
+@pytest.mark.xdist_group("banned-patterns-real-scan")
+def test_never_ero_001_holds_on_the_product_tree(
+    real_banned_scan: tuple[bp.Violation, ...],
+) -> None:
+    found = [v for v in real_banned_scan if v.rule_id == "NEVER-ERO-001"]
     assert found == [], found
 
 

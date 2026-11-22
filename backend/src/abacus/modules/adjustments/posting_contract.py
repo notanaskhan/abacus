@@ -250,7 +250,7 @@ class PostingDryRunOut(BaseModel):
             "entry_count": 6,
             "total_amount": "35300.00",
             "ledger_label": "QuickBooks Online",
-            "client_entity_name": "Copperleaf Coffee Roasters",
+            "client_entity_name": "Example Client, Inc.",
             "closing_date_target": "2026-08-31",
             "results": [],
         }
