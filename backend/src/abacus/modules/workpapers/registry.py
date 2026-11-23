@@ -135,3 +135,254 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         }
     ),
 }
+
+# K-03-T13 (1012, TASK-8903): the Sheets engine core
+TABLES = TABLES | frozenset(
+    {
+        "agent_column_previews",
+        "agent_column_run_rows",
+        "agent_column_runs",
+        "agent_columns",
+        "sheet_cells",
+        "sheet_columns",
+        "sheet_row_links",
+        "sheet_rows",
+        "sheet_sections",
+        "sheet_views",
+        "sheets",
+    }
+)
+INSERT_COLUMNS["agent_column_previews"] = frozenset(
+    {
+        "agent_column_id",
+        "created_by",
+        "engagement_id",
+        "id",
+        "instruction_hash",
+        "row_ids",
+        "sheet_id",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["agent_column_previews"] = frozenset({"agent_run_id", "results", "status"})
+INSERT_COLUMNS["agent_column_run_rows"] = frozenset(
+    {"engagement_id", "row_id", "run_id", "sheet_id", "state", "tenant_id", "work_item_id"}
+)
+UPDATE_COLUMNS["agent_column_run_rows"] = frozenset(
+    {"child_run_id", "evidence_version_id", "failure_code", "state", "suggestion_id", "updated_at"}
+)
+INSERT_COLUMNS["agent_column_runs"] = frozenset(
+    {
+        "agent_column_id",
+        "budget_override_by",
+        "engagement_id",
+        "estimate_minutes",
+        "id",
+        "initiator_kind",
+        "rows_now",
+        "rows_on_arrival",
+        "rows_targeted",
+        "run_number",
+        "scope",
+        "sheet_id",
+        "started_by",
+        "tenant_id",
+        "trigger_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["agent_column_runs"] = frozenset(
+    {
+        "agent_run_id",
+        "finished_at",
+        "rows_now",
+        "rows_on_arrival",
+        "status",
+        "stopped_at",
+        "stopped_by",
+    }
+)
+INSERT_COLUMNS["agent_columns"] = frozenset(
+    {
+        "default_scope",
+        "engagement_id",
+        "instruction_doc",
+        "instruction_hash",
+        "mention_refs",
+        "options",
+        "output_type",
+        "runs_as_capability",
+        "sheet_column_id",
+        "sheet_id",
+        "skill_key",
+        "skill_version_id",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["agent_columns"] = frozenset(
+    {
+        "default_scope",
+        "instruction_doc",
+        "instruction_hash",
+        "mention_refs",
+        "options",
+        "output_type",
+        "saved_at",
+        "saved_by",
+        "saved_preview_id",
+        "skill_key",
+        "skill_version_id",
+        "status",
+        "version",
+    }
+)
+INSERT_COLUMNS["sheet_cells"] = frozenset(
+    {
+        "column_id",
+        "engagement_id",
+        "last_edited_at",
+        "last_edited_by",
+        "previous_value",
+        "row_id",
+        "sheet_id",
+        "suggestion_id",
+        "tenant_id",
+        "value",
+        "value_state",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["sheet_cells"] = frozenset(
+    {"last_edited_at", "last_edited_by", "previous_value", "suggestion_id", "value", "value_state"}
+)
+INSERT_COLUMNS["sheet_columns"] = frozenset(
+    {
+        "classification",
+        "classification_reason",
+        "client_visible",
+        "column_key",
+        "config",
+        "default_value",
+        "description",
+        "engagement_id",
+        "frozen",
+        "id",
+        "name",
+        "origin",
+        "position",
+        "required",
+        "sheet_id",
+        "template_column_ref",
+        "tenant_id",
+        "type",
+        "validation",
+        "width",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["sheet_columns"] = frozenset(
+    {
+        "classification",
+        "classification_reason",
+        "client_visible",
+        "config",
+        "default_value",
+        "deleted_at",
+        "deleted_by",
+        "description",
+        "frozen",
+        "name",
+        "position",
+        "required",
+        "validation",
+        "version",
+        "width",
+    }
+)
+INSERT_COLUMNS["sheet_row_links"] = frozenset(
+    {
+        "engagement_id",
+        "kind",
+        "linked_by",
+        "row_id",
+        "sheet_id",
+        "target_id",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["sheet_rows"] = frozenset(
+    {
+        "created_by",
+        "engagement_id",
+        "id",
+        "position",
+        "row_key",
+        "scoped_out_by_rule",
+        "section_key",
+        "sheet_id",
+        "source_ref",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["sheet_rows"] = frozenset(
+    {"position", "row_version", "scoped_out_by_rule", "section_key"}
+)
+INSERT_COLUMNS["sheet_sections"] = frozenset(
+    {
+        "engagement_id",
+        "parent_section_key",
+        "position",
+        "section_key",
+        "sheet_id",
+        "tenant_id",
+        "title",
+        "totals_spec",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["sheet_sections"] = frozenset({"position", "title", "totals_spec"})
+INSERT_COLUMNS["sheet_views"] = frozenset(
+    {
+        "created_by",
+        "engagement_id",
+        "filters",
+        "group_by",
+        "id",
+        "name",
+        "shared",
+        "sheet_id",
+        "sort",
+        "tenant_id",
+        "view_key",
+        "visible_columns",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["sheet_views"] = frozenset(
+    {"filters", "group_by", "name", "shared", "sort", "version", "visible_columns"}
+)
+INSERT_COLUMNS["sheets"] = frozenset(
+    {
+        "created_by",
+        "engagement_id",
+        "id",
+        "kind",
+        "procedure_id",
+        "sample_set_id",
+        "sample_version",
+        "sheet_definition_id",
+        "sheet_key",
+        "template_version_id",
+        "tenant_id",
+        "title",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["sheets"] = frozenset({"sample_set_id", "sample_version", "title", "version"})
+UPDATE_COLUMNS["program_procedures"] = UPDATE_COLUMNS["program_procedures"] | frozenset(
+    {"scoped_out_by_rule"}
+)  # K-03-T13 (1012, TASK-8903): the Sheets engine core
