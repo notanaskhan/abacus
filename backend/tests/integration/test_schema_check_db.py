@@ -1187,7 +1187,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "program_procedures": frozenset(
             {"tailored", "tailored_rationale", "status", "linked_work"}
             | {"row_version"}  # 0614 (A-04-T07, DEC-1867): a tailoring names its version
-        ),
+        )
+        | frozenset({"scoped_out_by_rule"}),
         "grouping_set_versions": frozenset(  # SPEC-316 (TASK-345): published once
             # A-03-T06 (0521): the publish also sets the dated effective_from.
             {"status", "published_by", "published_at", "published_actor_kind", "effective_from"}
@@ -1575,6 +1576,81 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             }
         ),
         "template_rollouts": frozenset({"completed_at", "started_at", "started_by", "status"}),
+        # K-03-T13 (1012, TASK-8903): the Sheets engine core
+        "agent_column_previews": frozenset({"agent_run_id", "results", "status"}),
+        "agent_column_run_rows": frozenset(
+            {
+                "child_run_id",
+                "evidence_version_id",
+                "failure_code",
+                "state",
+                "suggestion_id",
+                "updated_at",
+            }
+        ),
+        "agent_column_runs": frozenset(
+            {
+                "agent_run_id",
+                "finished_at",
+                "rows_now",
+                "rows_on_arrival",
+                "status",
+                "stopped_at",
+                "stopped_by",
+            }
+        ),
+        "agent_columns": frozenset(
+            {
+                "default_scope",
+                "instruction_doc",
+                "instruction_hash",
+                "mention_refs",
+                "options",
+                "output_type",
+                "saved_at",
+                "saved_by",
+                "saved_preview_id",
+                "skill_key",
+                "skill_version_id",
+                "status",
+                "version",
+            }
+        ),
+        "sheet_cells": frozenset(
+            {
+                "last_edited_at",
+                "last_edited_by",
+                "previous_value",
+                "suggestion_id",
+                "value",
+                "value_state",
+            }
+        ),
+        "sheet_columns": frozenset(
+            {
+                "classification",
+                "classification_reason",
+                "client_visible",
+                "config",
+                "default_value",
+                "deleted_at",
+                "deleted_by",
+                "description",
+                "frozen",
+                "name",
+                "position",
+                "required",
+                "validation",
+                "version",
+                "width",
+            }
+        ),
+        "sheet_rows": frozenset({"position", "row_version", "scoped_out_by_rule", "section_key"}),
+        "sheet_sections": frozenset({"position", "title", "totals_spec"}),
+        "sheet_views": frozenset(
+            {"filters", "group_by", "name", "shared", "sort", "version", "visible_columns"}
+        ),
+        "sheets": frozenset({"sample_set_id", "sample_version", "title", "version"}),
         # K-01-T02 (0180): guarded lifecycle transitions (ED-111: declared without this row).
         "methodology_version_states": frozenset(
             {
