@@ -48,7 +48,7 @@ services:
 
   temporal:
     # Temporal dev server (ADR-017); UI on 8233
-    image: temporalio/temporal:1.10.0@sha256:003508da05989e7cf0d583cfce521c4bb2732e733574e3040db8f1284783baa2
+    image: temporalio/temporal:1.10.1@sha256:b228dadf9cdb6c7c02a1394b89dd76f827aac9760e458fce42f0899a10141225
     # In-memory: workflow history is lost on restart, which is fine locally (no root, no volume).
     command: ["server", "start-dev", "--ip", "0.0.0.0"]
     ports:
