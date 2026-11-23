@@ -1150,7 +1150,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"title", "category_id", "firm_owner_user_id", "period_start", "period_end"}
             | {"wave", "supports_ref", "linked_ref", "sent_by", "deleted_at", "deleted_by"}
             | {"description"}  # P-06-T10 (0113)
-        ),
+        )
+        | frozenset({"shown_by_rule_id"}),
         "request_lists": frozenset(  # F-05: the binder's list is published and marked done
             {"status", "default_due_on", "published_at", "published_by"}
             | {"marked_done_at", "marked_done_by"}
@@ -1545,6 +1546,35 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "status",
             }
         ),
+        # K-03-T12 (1011, TASK-8902): template links, rollouts, updates and scoping evaluations
+        "engagement_template_links": frozenset(
+            {
+                "held_at",
+                "held_by",
+                "held_reason",
+                "pinned_at",
+                "row_version",
+                "state",
+                "template_id",
+                "template_version_id",
+                "updated_from_version_id",
+            }
+        ),
+        "template_update_changes": frozenset({"applied_at", "status"}),
+        "template_updates": frozenset({"applied_at", "applied_count", "failure_code", "status"}),
+        "template_rollout_actions": frozenset(
+            {
+                "action",
+                "manager_notified_user_id",
+                "notified_at",
+                "reason",
+                "row_version",
+                "set_at",
+                "set_by",
+                "suggested_action",
+            }
+        ),
+        "template_rollouts": frozenset({"completed_at", "started_at", "started_by", "status"}),
         # K-01-T02 (0180): guarded lifecycle transitions (ED-111: declared without this row).
         "methodology_version_states": frozenset(
             {

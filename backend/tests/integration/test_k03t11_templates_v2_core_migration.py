@@ -168,9 +168,7 @@ def test_ac_a_pinned_draft_version_is_wrapped_too(private_db: sc.Database) -> No
 async def _draft_with_components(
     app: Seeder, seed: Seeder, tenant: uuid.UUID, person: Person
 ) -> tuple[uuid.UUID, uuid.UUID, uuid.UUID]:
-    template = await seed.value(
-        "SELECT id FROM engagement_templates WHERE tenant_id = $1", tenant
-    )
+    template = await seed.value("SELECT id FROM engagement_templates WHERE tenant_id = $1", tenant)
     actor = ("human", str(person.user_id))
     draft = uuid.uuid4()
     await app.as_actor(
@@ -262,7 +260,7 @@ def test_ac_a_published_version_and_its_components_refuse_update_and_delete(
             (
                 "INSERT INTO scoping_rules (tenant_id, template_version_id, position, "
                 "conditions, effect, target_kind, target_ref) VALUES ($2, $1, 1, "
-                "'[{\"source_path\": \"x\", \"operator\": \"is\", \"value\": 1}]', 'show', "
+                '\'[{"source_path": "x", "operator": "is", "value": 1}]\', \'show\', '
                 "'step', '430')",
                 draft,
                 tenant,
@@ -332,7 +330,9 @@ def test_ac_a_column_needs_a_classification_and_one_of_eleven_types(
         with pytest.raises(asyncpg.NotNullViolationError):
             await app.as_actor(tenant, actor, base, tenant, draft, sheet, "a", "text", None)
         with pytest.raises(asyncpg.CheckViolationError):
-            await app.as_actor(tenant, actor, base, tenant, draft, sheet, "b", "formula", "internal")
+            await app.as_actor(
+                tenant, actor, base, tenant, draft, sheet, "b", "formula", "internal"
+            )
 
     asyncio.run(columns())
 

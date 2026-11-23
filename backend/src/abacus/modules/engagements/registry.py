@@ -398,3 +398,71 @@ INSERT_COLUMNS["season_row_steps"] = frozenset(
 # The tables this module owns and its insert-only tables, after S50 (one definition each).
 TABLES: frozenset[str] = _TABLES_PRE_S50 | T08T05_TABLES
 INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1
+
+# K-03-T12 (1011, TASK-8902): template links, rollouts, updates and scoping evaluations
+TABLES = TABLES | frozenset(
+    {
+        "engagement_template_links",
+        "template_link_events",
+        "template_update_changes",
+        "template_updates",
+    }
+)
+INSERT_ONLY = INSERT_ONLY | frozenset({"template_link_events"})
+INSERT_COLUMNS["engagement_template_links"] = frozenset(
+    {"engagement_id", "id", "state", "template_id", "template_version_id", "tenant_id"}
+)
+UPDATE_COLUMNS["engagement_template_links"] = frozenset(
+    {
+        "held_at",
+        "held_by",
+        "held_reason",
+        "pinned_at",
+        "row_version",
+        "state",
+        "template_id",
+        "template_version_id",
+        "updated_from_version_id",
+    }
+)
+INSERT_COLUMNS["template_link_events"] = frozenset(
+    {
+        "actor_kind",
+        "actor_user_id",
+        "engagement_id",
+        "kind",
+        "link_id",
+        "reason",
+        "template_version_id",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["template_update_changes"] = frozenset(
+    {
+        "change_key",
+        "component",
+        "effect_here",
+        "engagement_id",
+        "item_ref",
+        "kind",
+        "tenant_id",
+        "update_id",
+    }
+)
+UPDATE_COLUMNS["template_update_changes"] = frozenset({"applied_at", "status"})
+INSERT_COLUMNS["template_updates"] = frozenset(
+    {
+        "change_count",
+        "change_list",
+        "engagement_id",
+        "from_version_id",
+        "id",
+        "started_by",
+        "tenant_id",
+        "to_version_id",
+        "workflow_id",
+    }
+)
+UPDATE_COLUMNS["template_updates"] = frozenset(
+    {"applied_at", "applied_count", "failure_code", "status"}
+)

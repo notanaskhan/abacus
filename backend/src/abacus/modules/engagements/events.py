@@ -85,3 +85,17 @@ class ClientImportCompleted(DomainEvent):
     event_type: ClassVar[str] = "client_import.completed"
 
     import_id: Annotated[UUID, classified("internal")]
+
+
+class TemplateUpdateAvailable(DomainEvent):
+    """K-03-T12 (DEC-5904; K-03 §4.8): a rollout set an engagement to Update now, so its link reads
+    update_available; the manager the rollout row names is told (`template_update_available`,
+    C16; deep link to SHL-22). Emitted by K-03-T32's rollout start, one per engagement."""
+
+    event_type: ClassVar[str] = "template_update.available"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    rollout_id: Annotated[UUID, classified("internal")]
+    to_version_id: Annotated[UUID, classified("internal")]
+    recipient_user_ids: Annotated[list[UUID], classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]

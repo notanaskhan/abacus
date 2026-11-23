@@ -223,3 +223,9 @@ UPDATE_COLUMNS["transaction_questions"] = frozenset(
     {"status", "answer_sealed", "answered_by_contact_id", "answered_at"}
     | {"fulfils_request_item_id", "row_version"}
 )
+INSERT_COLUMNS["request_items"] = INSERT_COLUMNS["request_items"] | frozenset(
+    {"shown_by_rule_id"}
+)  # K-03-T12 (1011, TASK-8902): template links, rollouts, updates and scoping evaluations
+UPDATE_COLUMNS["request_items"] = UPDATE_COLUMNS["request_items"] | frozenset(
+    {"shown_by_rule_id"}
+)  # K-03-T12 (1011, TASK-8902): template links, rollouts, updates and scoping evaluations
