@@ -1444,6 +1444,107 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"mandatory", "lock_note"}  # K-01-T14 (0464): a lock and its note
             | {"template_refs"}  # 0614 (A-04-T07, DEC-1867): the templates a step points at
         ),
+        # K-03-T11 (1010): templates v2 core; drafts edit their components, published versions
+        # move only their deprecate and retire fields.
+        "engagement_templates": frozenset(
+            {"engagement_types", "name", "owner_user_id", "service_line"}
+        ),
+        "scoping_rules": frozenset(
+            {"conditions", "effect", "group_op", "label", "position", "target_kind", "target_ref"}
+        ),
+        "template_agent_column_defs": frozenset(
+            {
+                "default_scope",
+                "instruction_doc",
+                "options",
+                "output_type",
+                "runs_as_capability",
+                "sheet_column_id",
+                "skill_key",
+            }
+        ),
+        "template_form_fields": frozenset(
+            {
+                "classification",
+                "config",
+                "field_key",
+                "form_id",
+                "label",
+                "position",
+                "required",
+                "type",
+            }
+        ),
+        "template_forms": frozenset({"form_key", "position", "title"}),
+        "template_report_template_refs": frozenset(
+            {"report_template_id", "report_template_version_id", "role"}
+        ),
+        "template_requests": frozenset(
+            {
+                "group_key",
+                "methodology_request_item_id",
+                "position",
+                "request_key",
+                "shown_by_rule_id",
+                "step_key",
+                "title",
+            }
+        ),
+        "template_sheet_columns": frozenset(
+            {
+                "classification",
+                "classification_reason",
+                "client_visible",
+                "column_key",
+                "config",
+                "default_value",
+                "description",
+                "name",
+                "position",
+                "required",
+                "sheet_definition_id",
+                "source_binding",
+                "type",
+                "validation",
+            }
+        ),
+        "template_sheet_definitions": frozenset(
+            {"position", "row_source", "sections", "sheet_key", "step_key", "title"}
+        ),
+        "template_sheet_views": frozenset(
+            {
+                "filters",
+                "group_by",
+                "name",
+                "position",
+                "sheet_definition_id",
+                "sort",
+                "view_key",
+                "visible_columns",
+            }
+        ),
+        "template_skill_pins": frozenset({"skill_key", "skill_version_id"}),
+        "template_trigger_defaults": frozenset(
+            {"capability_key", "condition_value", "enabled", "event", "target_ref"}
+        ),
+        "template_versions": frozenset(
+            {
+                "change_summary",
+                "deprecated_at",
+                "deprecated_by",
+                "draft_etag",
+                "effective_from",
+                "effective_to",
+                "fingerprint",
+                "label",
+                "methodology_version_id",
+                "overlay_stats",
+                "published_at",
+                "published_by",
+                "retired_at",
+                "status",
+            }
+        ),
         # K-01-T02 (0180): guarded lifecycle transitions (ED-111: declared without this row).
         "methodology_version_states": frozenset(
             {

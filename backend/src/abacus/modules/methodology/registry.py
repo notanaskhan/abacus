@@ -197,3 +197,314 @@ INSERT_COLUMNS["statement_note_template_versions"] = frozenset(
 UPDATE_COLUMNS["statement_note_template_versions"] = frozenset(
     {"published_at", "published_by", "status"}
 )
+
+# K-03-T11 (1010, TASK-8901; SPEC-720 §4): templates v2 core. Components move only while their
+# version is a draft (template_component_guard); a published version moves only its deprecate and
+# retire fields (template_version_guard).
+TABLES = TABLES | frozenset(
+    {
+        "agent_skill_versions",
+        "agent_skills",
+        "engagement_templates",
+        "scoping_rules",
+        "template_agent_column_defs",
+        "template_changes",
+        "template_form_fields",
+        "template_forms",
+        "template_report_template_refs",
+        "template_requests",
+        "template_sheet_columns",
+        "template_sheet_definitions",
+        "template_sheet_views",
+        "template_skill_pins",
+        "template_trigger_defaults",
+        "template_versions",
+    }
+)
+INSERT_ONLY = INSERT_ONLY | frozenset({"agent_skills", "agent_skill_versions", "template_changes"})
+INSERT_COLUMNS["agent_skill_versions"] = frozenset(
+    {
+        "body_md",
+        "body_sha256",
+        "created_by",
+        "eval_passed",
+        "eval_total",
+        "id",
+        "linked_step_keys",
+        "pass_bar",
+        "published_at",
+        "published_by",
+        "skill_id",
+        "source",
+        "status",
+        "tenant_id",
+        "version",
+    }
+)
+INSERT_COLUMNS["agent_skills"] = frozenset(
+    {"created_by", "id", "name", "skill_group", "skill_key", "tenant_id"}
+)
+INSERT_COLUMNS["engagement_templates"] = frozenset(
+    {
+        "engagement_types",
+        "family",
+        "id",
+        "methodology_template_id",
+        "name",
+        "owner_user_id",
+        "service_line",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["scoping_rules"] = frozenset(
+    {
+        "conditions",
+        "effect",
+        "group_op",
+        "id",
+        "label",
+        "position",
+        "target_kind",
+        "target_ref",
+        "template_version_id",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["template_agent_column_defs"] = frozenset(
+    {
+        "default_scope",
+        "id",
+        "instruction_doc",
+        "options",
+        "output_type",
+        "runs_as_capability",
+        "sheet_column_id",
+        "skill_key",
+        "template_version_id",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["template_changes"] = frozenset(
+    {
+        "change_key",
+        "component",
+        "from_version_id",
+        "item_ref",
+        "kind",
+        "summary",
+        "tenant_id",
+        "to_version_id",
+    }
+)
+INSERT_COLUMNS["template_form_fields"] = frozenset(
+    {
+        "classification",
+        "config",
+        "field_key",
+        "form_id",
+        "id",
+        "label",
+        "position",
+        "required",
+        "template_version_id",
+        "tenant_id",
+        "type",
+    }
+)
+INSERT_COLUMNS["template_forms"] = frozenset(
+    {"form_key", "id", "position", "template_version_id", "tenant_id", "title"}
+)
+INSERT_COLUMNS["template_report_template_refs"] = frozenset(
+    {
+        "id",
+        "report_template_id",
+        "report_template_version_id",
+        "role",
+        "template_version_id",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["template_requests"] = frozenset(
+    {
+        "group_key",
+        "id",
+        "methodology_request_item_id",
+        "position",
+        "request_key",
+        "shown_by_rule_id",
+        "step_key",
+        "template_version_id",
+        "tenant_id",
+        "title",
+    }
+)
+INSERT_COLUMNS["template_sheet_columns"] = frozenset(
+    {
+        "classification",
+        "classification_reason",
+        "client_visible",
+        "column_key",
+        "config",
+        "default_value",
+        "description",
+        "id",
+        "name",
+        "position",
+        "required",
+        "sheet_definition_id",
+        "source_binding",
+        "template_version_id",
+        "tenant_id",
+        "type",
+        "validation",
+    }
+)
+INSERT_COLUMNS["template_sheet_definitions"] = frozenset(
+    {
+        "id",
+        "position",
+        "row_source",
+        "sections",
+        "sheet_key",
+        "step_key",
+        "template_version_id",
+        "tenant_id",
+        "title",
+    }
+)
+INSERT_COLUMNS["template_sheet_views"] = frozenset(
+    {
+        "filters",
+        "group_by",
+        "id",
+        "name",
+        "position",
+        "sheet_definition_id",
+        "sort",
+        "template_version_id",
+        "tenant_id",
+        "view_key",
+        "visible_columns",
+    }
+)
+INSERT_COLUMNS["template_skill_pins"] = frozenset(
+    {"id", "skill_key", "skill_version_id", "template_version_id", "tenant_id"}
+)
+INSERT_COLUMNS["template_trigger_defaults"] = frozenset(
+    {
+        "capability_key",
+        "condition_value",
+        "enabled",
+        "event",
+        "id",
+        "target_ref",
+        "template_version_id",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["template_versions"] = frozenset(
+    {
+        "based_on_version_id",
+        "change_summary",
+        "content_pack_release_ref",
+        "created_by",
+        "effective_from",
+        "id",
+        "label",
+        "methodology_version_id",
+        "seq",
+        "status",
+        "template_id",
+        "tenant_id",
+    }
+)
+UPDATE_COLUMNS["engagement_templates"] = frozenset(
+    {"engagement_types", "name", "owner_user_id", "service_line"}
+)
+UPDATE_COLUMNS["scoping_rules"] = frozenset(
+    {"conditions", "effect", "group_op", "label", "position", "target_kind", "target_ref"}
+)
+UPDATE_COLUMNS["template_agent_column_defs"] = frozenset(
+    {
+        "default_scope",
+        "instruction_doc",
+        "options",
+        "output_type",
+        "runs_as_capability",
+        "sheet_column_id",
+        "skill_key",
+    }
+)
+UPDATE_COLUMNS["template_form_fields"] = frozenset(
+    {"classification", "config", "field_key", "form_id", "label", "position", "required", "type"}
+)
+UPDATE_COLUMNS["template_forms"] = frozenset({"form_key", "position", "title"})
+UPDATE_COLUMNS["template_report_template_refs"] = frozenset(
+    {"report_template_id", "report_template_version_id", "role"}
+)
+UPDATE_COLUMNS["template_requests"] = frozenset(
+    {
+        "group_key",
+        "methodology_request_item_id",
+        "position",
+        "request_key",
+        "shown_by_rule_id",
+        "step_key",
+        "title",
+    }
+)
+UPDATE_COLUMNS["template_sheet_columns"] = frozenset(
+    {
+        "classification",
+        "classification_reason",
+        "client_visible",
+        "column_key",
+        "config",
+        "default_value",
+        "description",
+        "name",
+        "position",
+        "required",
+        "sheet_definition_id",
+        "source_binding",
+        "type",
+        "validation",
+    }
+)
+UPDATE_COLUMNS["template_sheet_definitions"] = frozenset(
+    {"position", "row_source", "sections", "sheet_key", "step_key", "title"}
+)
+UPDATE_COLUMNS["template_sheet_views"] = frozenset(
+    {
+        "filters",
+        "group_by",
+        "name",
+        "position",
+        "sheet_definition_id",
+        "sort",
+        "view_key",
+        "visible_columns",
+    }
+)
+UPDATE_COLUMNS["template_skill_pins"] = frozenset({"skill_key", "skill_version_id"})
+UPDATE_COLUMNS["template_trigger_defaults"] = frozenset(
+    {"capability_key", "condition_value", "enabled", "event", "target_ref"}
+)
+UPDATE_COLUMNS["template_versions"] = frozenset(
+    {
+        "change_summary",
+        "deprecated_at",
+        "deprecated_by",
+        "draft_etag",
+        "effective_from",
+        "effective_to",
+        "fingerprint",
+        "label",
+        "methodology_version_id",
+        "overlay_stats",
+        "published_at",
+        "published_by",
+        "retired_at",
+        "status",
+    }
+)
