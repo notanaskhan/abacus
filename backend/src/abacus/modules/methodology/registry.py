@@ -508,3 +508,33 @@ UPDATE_COLUMNS["template_versions"] = frozenset(
         "status",
     }
 )
+
+# K-03-T12 (1011, TASK-8902): template links, rollouts, updates and scoping evaluations
+TABLES = TABLES | frozenset(
+    {"scoping_evaluations", "template_rollout_actions", "template_rollouts"}
+)
+INSERT_ONLY = INSERT_ONLY | frozenset({"scoping_evaluations"})
+INSERT_COLUMNS["scoping_evaluations"] = frozenset(
+    {"engagement_id", "inputs_hash", "result", "rule_id", "template_version_id", "tenant_id"}
+)
+INSERT_COLUMNS["template_rollout_actions"] = frozenset(
+    {"engagement_id", "id", "rollout_id", "suggested_action", "tenant_id"}
+)
+UPDATE_COLUMNS["template_rollout_actions"] = frozenset(
+    {
+        "action",
+        "manager_notified_user_id",
+        "notified_at",
+        "reason",
+        "row_version",
+        "set_at",
+        "set_by",
+        "suggested_action",
+    }
+)
+INSERT_COLUMNS["template_rollouts"] = frozenset(
+    {"created_by", "from_version_id", "id", "template_id", "tenant_id", "to_version_id"}
+)
+UPDATE_COLUMNS["template_rollouts"] = frozenset(
+    {"completed_at", "started_at", "started_by", "status"}
+)

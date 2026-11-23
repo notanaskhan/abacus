@@ -783,6 +783,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "human_gate.reassigned": Kind(
         "gate_reassigned", _reassigned_to, "engagement", "engagement_id"
     ),
+    # K-03-T12 (DEC-5904): a rollout's Update now row; the manager it names (K-03 §4.8).
+    "template_update.available": Kind(
+        "template_update_available", _listed, "engagement", "engagement_id"
+    ),
     "methodology.review_requested": Kind(
         "methodology_review_requested",
         _quality_reviewers,
@@ -1048,6 +1052,7 @@ TEMPLATES: Final[dict[str, str]] = {
     "sample_set.approval_requested": "A sample on {engagement} is waiting for your approval.",
     "independence.reminded": "Reminder: confirm your independence for {engagement}.",
     "human_gate.reassigned": "Something on {engagement} was reassigned to you.",
+    "template_update.available": "Template update available for {engagement}.",
     "methodology.review_requested": "A methodology version is waiting for your review.",
     "independence.conclusion_due": (
         "Every member confirmed independence on {engagement}: it is ready for your conclusion."
