@@ -66293,6 +66293,10 @@ export type TaxPracticeTwoYearLineOut = {
      */
     flagged: boolean;
     /**
+     * Group
+     */
+    group?: 'income' | 'deductions' | 'tax_and_payments' | null;
+    /**
      * Label
      */
     label: string;
@@ -66301,6 +66305,10 @@ export type TaxPracticeTwoYearLineOut = {
      */
     line_key: string;
     /**
+     * Line Ref
+     */
+    line_ref?: string | null;
+    /**
      * Prior
      */
     prior: string;
@@ -66308,6 +66316,10 @@ export type TaxPracticeTwoYearLineOut = {
      * State
      */
     state?: 'unexplained' | 'proposed' | 'accepted' | 'stale' | null;
+    /**
+     * Total
+     */
+    total?: 'total' | 'grand' | null;
     /**
      * Values Hash
      */
@@ -66344,6 +66356,14 @@ export type TaxPracticeTwoYearOut = {
      * Explain Available
      */
     explain_available: boolean;
+    /**
+     * Explain Unavailable Reason
+     */
+    explain_unavailable_reason?: 'agents_off_for_taxpayer' | 'ai_unavailable' | null;
+    /**
+     * Explaining
+     */
+    explaining?: boolean;
     /**
      * Filter
      */

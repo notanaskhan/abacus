@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/TAX-10 Return - Review - 2-Year Comparison - Feld 2025 Form 1040/` |
 | Epic and tasks | T-08 · SPEC-710; T-08-T01 (TASK-8600); stubs T-08-T04; screens and live swap per `docs/plan/epics/T-08.tasks.csv` |
-| Manifest status | planned |
+| Manifest status | fixture (T-08-T22, DEC-5938; live over `GET …/two-year` behind `tax.two_year`) |
 
 Parity tier target: C (T-08 §5.5). Copy keys live in `apps/web/src/screens/TAX-10/copy.ts` when the screen task builds it; words from the handoff and the status vocabulary only. Fixtures come from the Python scenario through `make fixtures` (F-04-T31), never hand-written.
 
@@ -22,6 +22,7 @@ Parity tier target: C (T-08 §5.5). Copy keys live in `apps/web/src/screens/TAX-
 | x1 | Composed DF-04: agents off for this taxpayer | `feld-two-year-agents-off` | Samuel Ito | Mon Sep 14, 10:05 AM | planned | AY |
 
 ## Deviations
+- T-08-T22 (DEC-5938): built a–e and x1 at `/tax-returns/$returnId/review/two-year`; copy in `screens/TAX-10/copy.ts`; fixtures from `two_year_slice.py` (`seed/scenario.tax10.json`). "7 of 8" is a value card (no tally word); citation chips are tags until SHL-08 lands; the line label links to TAX-05 once it is built.
 - DF-39: the Review sub-navigation becomes SheetTabs inside the sheets pane (T-08-T02).
 - OQ-2: the threshold popover names the source actually used (checklist v6 > $1,000 and > 10%, else the variance policy).
 

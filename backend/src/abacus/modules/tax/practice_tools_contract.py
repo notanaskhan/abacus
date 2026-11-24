@@ -104,6 +104,11 @@ class TaxPracticeTwoYearLineOut(BaseModel):
     accepted_at: Annotated[datetime | None, Internal] = None
     values_hash: Hash
     allowed_actions: Annotated[list[str], Internal] = []
+    # T-08-T22 (TAX-10's statement grammar): the line's printed reference ("1a", "Sch A 11"), its
+    # group band and whether it is a total (stroke rule) or the grand total (double rule).
+    line_ref: Annotated[str | None, Field(max_length=24), Internal] = None
+    group: Annotated[Literal["income", "deductions", "tax_and_payments"] | None, Internal] = None
+    total: Annotated[Literal["total", "grand"] | None, Internal] = None
 
 
 class TaxPracticeTwoYearOut(BaseModel):
@@ -126,6 +131,11 @@ class TaxPracticeTwoYearOut(BaseModel):
     accepted: Count
     explain_available: Annotated[bool, Internal]
     allowed_actions: Annotated[list[str], Internal] = []
+    # T-08-T22 (TAX-10 e, DF-04 x1): an explain run in flight, and why Explain is not offered.
+    explaining: Annotated[bool, Internal] = False
+    explain_unavailable_reason: Annotated[
+        Literal["agents_off_for_taxpayer", "ai_unavailable"] | None, Internal
+    ] = None
 
 
 class TaxPracticeExplainIn(BaseModel):
@@ -446,6 +456,7 @@ _A = TAX_AMENDMENTS
 
 
 def _two_year_out(found: object, view: TwoYearFilter) -> TaxPracticeTwoYearOut:
+    from abacus.modules.tax.compute.two_year_lines import LINE_GROUPS, LINE_REFS, LINE_TOTALS
     from abacus.modules.tax.two_year_service import Comparison
 
     c = cast(Comparison, found)
@@ -457,6 +468,9 @@ def _two_year_out(found: object, view: TwoYearFilter) -> TaxPracticeTwoYearOut:
         TaxPracticeTwoYearLineOut(
             line_key=ln.line.code,
             label=ln.line.label,
+            line_ref=LINE_REFS.get(ln.line.code),
+            group=cast(Any, LINE_GROUPS.get(ln.line.code)),  # Any: one of the three bands
+            total=cast(Any, LINE_TOTALS.get(ln.line.code)),  # Any: "total" or "grand"
             current=ln.line.current,
             prior=ln.line.prior,
             delta=ln.line.delta,

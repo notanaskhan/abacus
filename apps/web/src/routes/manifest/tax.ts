@@ -52,10 +52,11 @@ export const taxScreens = {
     status: "fixture",
     path: null,
   },
+  // T-08-T22 (DEC-5938): a–e and x1 live over `GET …/two-year` behind `tax.two_year`.
   "TAX-10": {
     name: "Return › Review › 2-Year Comparison · Feld 2025 Form 1040",
-    status: "planned",
-    path: null,
+    status: "fixture",
+    path: "/tax-returns/$returnId/review/$section", // `section: "two-year"`
   },
   "TAX-11": {
     name: "Form preview · Ridgeline 2025 Form 1065 with K-1s",

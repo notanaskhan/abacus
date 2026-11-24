@@ -94,6 +94,8 @@ describe("T-04-T12 review workspace frame", () => {
       "/tax-returns/$returnId/review/instrument",
       // T-07-T17: TXT-02, behind tax.fiduciary_workpapers; static, so before $section too.
       "/tax-returns/$returnId/review/trust-calculation",
+      // T-06-T45 (DEC-5937): TXP-13 d, the 1120 workpapers fed by a hand-off (static, before $section).
+      "/tax-returns/$returnId/review/workpapers",
       "/tax-returns/$returnId/review/$section",
       "/tax-returns/$returnId/issues",
       "/tax-returns/$returnId/activity",
