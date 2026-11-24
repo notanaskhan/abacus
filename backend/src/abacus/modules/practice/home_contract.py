@@ -119,11 +119,15 @@ class DeadlineRowOut(BaseModel):
     risk: Annotated[DueRisk, classified("internal")]
     # N-04-T22: which screen the row opens; HOME-01 links a notice to NOT-02.
     kind: Annotated[str | None, classified("internal")] = None
+    # T-08-T20 (additive): the HOME-03 row it is, once the pane reads `filing_deadlines`
+    # (`work_item_id` is then the deadline's own id when it has no work item).
+    deadline_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class DeadlinesOut(BaseModel):
-    """The viewer's next 14 days (interim source: work items' `due_on` and milestones; T-08 moves
-    it to `filing_deadlines` without a shape change). `next` is the first one past the window."""
+    """The viewer's next 14 days: `filing_deadlines` rows (the HOME-03 read model, the viewer as
+    owner or signer) once `practice.filing_deadlines` is on (T-08-T20), work items' `due_on`
+    before. `next` is the first one past the window."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -223,13 +227,14 @@ def _tile(t: Tile) -> HomeTileOut:
 
 def _deadline(d: DeadlineRow) -> DeadlineRowOut:
     return DeadlineRowOut(
-        work_item_id=d.work.work_item_id,
+        work_item_id=d.work_item_id,
         due_on=d.due_on,
         client=d.client,
-        filing_label=d.work.name,
-        status=d.work.status,
+        filing_label=d.filing_label,
+        status=d.status,
         risk=d.risk,
-        kind=d.work.kind,
+        kind=d.kind,
+        deadline_id=d.deadline_id,
     )
 
 

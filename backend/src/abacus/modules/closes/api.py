@@ -135,8 +135,8 @@ from abacus.modules.closes.package_render import ACTIVITIES as _PACKAGE_ACTIVITI
 from abacus.modules.closes.package_render import FINISH as PACKAGE_FINISH  # noqa: E402
 from abacus.modules.closes.package_render import PackageAssemblyWorkflow  # noqa: E402
 from abacus.modules.closes.release import register as _register_release  # noqa: E402
-from abacus.modules.closes.vendor_tins import __all__ as _VENDOR_TINS  # noqa: E402, F401
 from abacus.modules.closes.vendor_screen import register as _register_vendor_screen  # noqa: E402
+from abacus.modules.closes.vendor_tins import __all__ as _VENDOR_TINS  # noqa: E402, F401
 
 _register_release()  # C-02-T29: C18's fs_package provider
 _register_vendor_screen()  # C-02-T34: the vendor screen's tools and its suggestion applier
@@ -205,3 +205,8 @@ from abacus.modules.closes import delivery_errors as delivery_errors  # noqa: E4
 from abacus.modules.closes import handoff_gate as _handoff_gate  # noqa: E402
 
 _handoff_gate.register()
+
+# T-08-T20 (DEC-5917): this module's due dates on HOME-03 through platform's filing-deadline slot.
+from abacus.modules.closes import deadline_sources as _filing_deadline_sources  # noqa: E402
+
+_filing_deadline_sources.register()

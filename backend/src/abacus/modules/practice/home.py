@@ -66,10 +66,14 @@ class WorkRow:
 
 @dataclass(frozen=True)
 class DeadlineRow:
-    work: AssignedWork
+    work_item_id: UUID  # the work item, or the deadline itself when it has none
     due_on: date
     client: str
+    filing_label: str
+    status: str
     risk: DueRisk
+    kind: str | None
+    deadline_id: UUID | None = None  # T-08-T20: the `filing_deadlines` row it reads
 
 
 @dataclass(frozen=True)
@@ -104,6 +108,47 @@ def work_label(rows: list[AssignedWork]) -> str:
     return "home.your_work.mine"
 
 
+# HOME-01 opens a filing deadline's own screen: a return and a close by their work item, a notice
+# on NOT-02 (N-04-T22's kind), the rest on HOME-03.
+_KIND_OF_SOURCE: Final[dict[str, str]] = {
+    "tax_return": "tax_return", "extension": "tax_return", "fiduciary_statement": "tax_return",
+    "election_window": "tax_return", "close": "close", "notice_response": "notice",
+    "form_5500": "assurance", "assurance_report": "assurance",
+}  # fmt: skip
+
+
+async def _filing_deadlines(
+    ctx: AuthContext, office_id: UUID | None, today: date, horizon: date, clients: dict[UUID, str]
+) -> list[DeadlineRow] | None:
+    """T-08-T20 (DEC-5917): with `practice.filing_deadlines` on, the pane reads the same rows as
+    HOME-03 (the viewer as owner or signer, walls applied there), open ones overdue or due by the
+    horizon and the first one past it; None while the flag is off (the interim source)."""
+    from abacus.kernel._flags import PRACTICE_FILING_DEADLINES
+    from abacus.kernel.flags import flag_enabled
+    from abacus.modules.identity.api import Forbidden
+    from abacus.modules.practice.deadlines_service import rows as deadline_rows
+
+    if not await flag_enabled(ctx.tenant, PRACTICE_FILING_DEADLINES):
+        return None
+    try:
+        found = await deadline_rows(
+            ctx, today - timedelta(days=400), horizon + timedelta(days=400), office=office_id,
+            person=ctx.user_id,
+        )  # fmt: skip
+    except Forbidden:
+        return None
+    return [
+        DeadlineRow(
+            r.work_item_id or r.deadline_id, r.due_on,
+            clients.get(r.client_id, "") if r.client_id else "", r.filing_label, r.stage_code,
+            risk_of(r.due_on, today), _KIND_OF_SOURCE.get(r.source_kind, r.source_kind),
+            r.deadline_id,
+        )
+        for r in sorted(found, key=lambda r: (r.due_on, r.filing_label, str(r.deadline_id)))
+        if not r.done
+    ]  # fmt: skip
+
+
 async def home_view(ctx: AuthContext, office_id: UUID | None) -> HomeView:
     today = await clock.today(ctx.tenant)
     names = await names_of([ctx.user_id])
@@ -123,14 +168,19 @@ async def home_view(ctx: AuthContext, office_id: UUID | None) -> HomeView:
     clients = {n.client_id: n.name for n in await firm_names(ctx.tenant) if n.id == n.client_id}
     rows = [WorkRow(w, clients.get(w.client_id, "")) for w in work]
     horizon = today + timedelta(days=WINDOW)
-    dated = sorted(
-        (
-            DeadlineRow(w.work, w.work.due_on, w.client, risk_of(w.work.due_on, today))
-            for w in rows
-            if w.work.due_on is not None
-        ),
-        key=lambda d: (d.due_on, str(d.work.work_item_id)),
-    )
+    dated = await _filing_deadlines(ctx, office_id, today, horizon, clients)
+    if dated is None:  # the interim source until `practice.filing_deadlines` is on
+        dated = sorted(
+            (
+                DeadlineRow(
+                    w.work.work_item_id, w.work.due_on, w.client, w.work.name, w.work.status,
+                    risk_of(w.work.due_on, today), w.work.kind,
+                )
+                for w in rows
+                if w.work.due_on is not None
+            ),
+            key=lambda d: (d.due_on, str(d.work_item_id)),
+        )  # fmt: skip
     within = [d for d in dated if d.due_on <= horizon]
     beyond = next((d for d in dated if d.due_on > horizon), None)
     return HomeView(
