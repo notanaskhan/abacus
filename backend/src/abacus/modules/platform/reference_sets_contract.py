@@ -118,7 +118,10 @@ class LegalHoliday(BaseModel):
 
     date: Annotated[date, classified("public")]
     name: Annotated[str, Field(min_length=1, max_length=100), classified("public")]
-    jurisdiction: Annotated[Jurisdiction, classified("public")]  # DC Emancipation Day is "DC"
+    # "US" a federal holiday, "DC" a District one (Emancipation Day; both count for federal
+    # dates, QK-5), any other USPS code a state's own (T-08-T24, DEC-5919: it rolls only that
+    # state's due dates).
+    jurisdiction: Annotated[str, Field(pattern=r"^(US|[A-Z]{2})$"), classified("public")]
 
 
 class LegalHolidaysPayload(BaseModel):

@@ -57,6 +57,8 @@ REVIEW: Final[dict[str, tuple[str, ...]]] = {
         "Each date against OPM's federal holiday schedule and the DC government's holiday list.",
         "Any holiday added or moved by statute or proclamation for the year.",
         "A Saturday January 1 is observed on the prior December 31, which sits in this set.",
+        "Each pilot state's own holidays (IL 5 ILCS 490, NY Gen. Constr. Law § 24, CO C.R.S."
+        " 24-11-101) and how each state treats a holiday on a weekend.",
     ),
 }
 
@@ -113,6 +115,47 @@ def holidays(year: int) -> list[dict[str, object]]:
     return [{"date": d.isoformat(), "name": n, "jurisdiction": j} for d, n, j in sorted(rows)]
 
 
+# The pilot states' own legal holidays (T-08-T24, DEC-5919; K-02 QK-5, T-03 R19), each at its
+# observed date like the federal ones; federal holidays the state also keeps are the "US" rows.
+PILOT_STATES: Final = ("CO", "IL", "NY")
+
+
+def _general_election(year: int) -> date:
+    """The Tuesday after the first Monday in November."""
+    return _nth_weekday(year, 11, calendar.MONDAY, 1) + timedelta(days=1)
+
+
+def state_holidays(year: int, states: Sequence[str] = PILOT_STATES) -> list[dict[str, object]]:
+    """A pilot state's statutory holidays beyond the federal list: Illinois (5 ILCS 490:
+    Lincoln's Birthday, Casimir Pulaski Day, general election day in an even year), New York
+    (Gen. Constr. Law § 24: Lincoln's Birthday, general election day), Colorado (C.R.S.
+    24-11-101: Cesar Chavez Day, Frances Xavier Cabrini Day)."""
+    rows: list[tuple[date, str, str]] = []
+
+    def fixed(day: date, name: str, state: str) -> tuple[date, str, str]:
+        moved = observed(day)
+        return moved, name if moved == day else f"{name} (observed)", state
+
+    if "IL" in states:
+        rows += [
+            fixed(date(year, 2, 12), "Lincoln's Birthday", "IL"),
+            (_nth_weekday(year, 3, calendar.MONDAY, 1), "Casimir Pulaski Day", "IL"),
+        ]
+        if year % 2 == 0:
+            rows.append((_general_election(year), "General Election Day", "IL"))
+    if "NY" in states:
+        rows += [
+            fixed(date(year, 2, 12), "Lincoln's Birthday", "NY"),
+            (_general_election(year), "Election Day", "NY"),
+        ]
+    if "CO" in states:
+        rows += [
+            fixed(date(year, 3, 31), "Cesar Chavez Day", "CO"),
+            (_nth_weekday(year, 10, calendar.MONDAY, 1), "Frances Xavier Cabrini Day", "CO"),
+        ]
+    return [{"date": d.isoformat(), "name": n, "jurisdiction": j} for d, n, j in sorted(rows)]
+
+
 def roll(kind: str, payload: Mapping[str, object], to_year: int) -> dict[str, object]:
     """The draft for `to_year` from the version in effect (`legal_holidays` is computed)."""
     if kind not in ROLLED:
@@ -159,9 +202,12 @@ def write_draft(
 async def _main(args: argparse.Namespace) -> Path:
     kind, to_year = cast(str, args.kind), cast(int, args.to_year)
     if kind == "legal_holidays":
-        return write_draft(
-            args.out, kind, to_year, {"kind": kind, "rows": holidays(to_year)}, None
+        states = tuple(cast(str, args.states).split(",")) if args.states else ()
+        rows = sorted(
+            holidays(to_year) + state_holidays(to_year, states),
+            key=lambda r: (str(r["date"]), str(r["jurisdiction"])),
         )
+        return write_draft(args.out, kind, to_year, {"kind": kind, "rows": rows}, None)
     if not args.key:
         raise Refused(f"{kind} rolls from a published version: name it with --key")
     as_of = date.fromisoformat(cast(str, args.as_of)) if args.as_of else await today()
@@ -178,6 +224,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--key")
     parser.add_argument("--as-of")
     parser.add_argument("--out", type=Path, required=True)
+    # T-08-T24: `--states CO,IL,NY` adds the pilot states' own holidays to a legal_holidays draft.
+    parser.add_argument("--states")
     args = parser.parse_args(argv)
     try:
         print(asyncio.run(_main(args)))

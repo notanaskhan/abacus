@@ -7,8 +7,9 @@ engine in `compute/calendar.py`. Which version answers (C21 `as_of`, DEC-1255):
   one that doesn't, then the latest effective.
 - Legal holidays and disaster postponements on the later of today (business time) and a fortnight
   past the latest unrolled due date, so the year's holiday list is in effect when a date rolls
-  and a postponement published mid-season reaches every return it covers. Every holiday set
-  counts, federal and DC (IRC §7503; QK-5).
+  and a postponement published mid-season reaches every return it covers. A federal date counts
+  every federal and DC holiday (IRC §7503; QK-5); a state's date counts the federal holidays and
+  that state's own (T-08-T24, DEC-5919), and a version contributes only the rows it counted.
 
 Every result names the versions it read and hashes its inputs with them (INV-2), so the same
 inputs and the same published rules always give the same answer and the same hash.
@@ -89,12 +90,29 @@ async def _rule_for(
     raise LookupError(f"due_date_rules:{form}")
 
 
-async def _holidays(as_of: date) -> tuple[frozenset[date], list[UUID]]:
+FEDERAL: Final = frozenset({"US", "DC"})
+
+
+def counted(row_jurisdiction: str, jurisdiction: str) -> bool:
+    """IRC §7503 for federal dates counts federal and DC holidays (QK-5); a state's date counts
+    the federal holidays and that state's own (T-08-T24, DEC-5919). A state's holiday never
+    rolls a federal date or another state's."""
+    if jurisdiction in ("US", "federal"):
+        return row_jurisdiction in FEDERAL
+    return row_jurisdiction in ("US", jurisdiction.upper())
+
+
+async def _holidays(as_of: date, jurisdiction: str = "US") -> tuple[frozenset[date], list[UUID]]:
     days: set[date] = set()
     ids: list[UUID] = []
     for found in await references_in_effect("legal_holidays", as_of):
-        days.update(row.date for row in cast(LegalHolidaysPayload, found.payload).rows)
-        ids.append(found.version_id)
+        rows = [
+            row for row in cast(LegalHolidaysPayload, found.payload).rows
+            if counted(row.jurisdiction, jurisdiction)
+        ]  # fmt: skip
+        if rows:
+            days.update(row.date for row in rows)
+            ids.append(found.version_id)
     return frozenset(days), ids
 
 
@@ -148,7 +166,7 @@ async def _dates_under(
 ) -> DueDates:
     unrolled = calendar.due_dates(rule, period_end, frozenset())
     as_of = await _roll_as_of(unrolled.extended_due_on or unrolled.original_due_on)
-    holidays, holiday_ids = await _holidays(as_of)
+    holidays, holiday_ids = await _holidays(as_of, jurisdiction)
     postponements: list[calendar.Postponement] = []
     postponement_ids: list[UUID] = []
     place: calendar.Place | None = None
@@ -199,7 +217,9 @@ async def installments_for(
     if not rule.installments:
         raise LookupError(f"installments:{form}")
     unrolled = calendar.installment_dates(rule, end, frozenset())
-    holidays, holiday_ids = await _holidays(await _roll_as_of(max(i.due_on for i in unrolled)))
+    holidays, holiday_ids = await _holidays(
+        await _roll_as_of(max(i.due_on for i in unrolled)), jurisdiction
+    )
     found = calendar.installment_dates(rule, end, holidays)
     version_ids = (rules.version_id, *sorted(holiday_ids))
     return InstallmentDueDates(
@@ -223,9 +243,11 @@ async def installments_for(
 
 async def add_business_days(start: date, n: int, jurisdiction: str = "US") -> date:
     """`start` plus `n` business days, skipping weekends and the legal holidays in effect
-    (federal and DC; `jurisdiction` is kept for state holidays, T-08)."""
+    (federal and DC; a state's own as well for its `jurisdiction`, T-08-T24)."""
     # Two calendar days per business day covers every weekend and holiday run.
-    holidays, _ = await _holidays(await _roll_as_of(start + timedelta(days=2 * max(n, 0))))
+    holidays, _ = await _holidays(
+        await _roll_as_of(start + timedelta(days=2 * max(n, 0))), jurisdiction
+    )
     return calendar.add_business_days(start, n, holidays)
 
 
@@ -236,7 +258,7 @@ async def business_days_between(start: date, end: date, jurisdiction: str = "US"
     past due this way."""
     if end <= start:
         return 0
-    holidays, _ = await _holidays(await _roll_as_of(end))
+    holidays, _ = await _holidays(await _roll_as_of(end), jurisdiction)
     return sum(
         calendar.is_business_day(start + timedelta(days=d), holidays)
         for d in range(1, (end - start).days + 1)
