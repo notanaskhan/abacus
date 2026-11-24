@@ -2,8 +2,10 @@
 export {
   ADDIN_TABS,
   ADDIN_W,
+  AddinCard,
   type AddinChange,
   AddinChrome,
+  AddinKv,
   AddinPane,
   type AddinPaneProps,
   type AddinSignOff,

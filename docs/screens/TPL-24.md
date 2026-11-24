@@ -36,3 +36,9 @@ The designed links of the handoff link graph (link-contract rule 5); each is wir
 | tooltip or toast inside kits/Addin Specimen | SHL-08 | designed (handoff link graph) |
 | tooltip or toast inside kits/Addin Specimen | SHT-01 | designed (handoff link graph) |
 | tooltip or toast inside kits/Addin Specimen | FSP-01 | designed (handoff link graph) |
+
+## Built (F-08-T19, DEC-5928)
+
+Gallery specimen at `/components/screens/TPL-24?st=a…g` (`apps/web/src/gallery/specimens/TPL-24`), on the Granite Peak AP leadsheet seed (`fixtures/seed/granite-peak-fy2026-ap-leadsheet.ts`, footed by `insights-addin.foot.test.ts`). The drawn hosts are `HostWindow`, `ExcelGrid` and `WordPage` from the specimens entry (`@abacus/ui/specimens`; greys only: band-hd, nav-fill, nested, chip, surface-deep), with the C-39 `AddinChrome` and the exported `AddinCard` / `AddinKv`. The manifest stays `planned` with no path, as TPL-23 (gallery only).
+
+Deviations: the reviewer's ring and the preparer's signed chip are drawn in the pane (C-25's `SignOffSlots` carries actor and checks a workbook pane does not have); the Word page shows only the two lines the seed holds (the two incoming changes' "before" values), the first on the amber tint; the copy keys live in the specimen's `copy.ts`.

@@ -67,7 +67,8 @@ export interface AddinPaneProps {
   onOpenInAccrued?: () => void;
 }
 
-function Card({
+/** A pane card (radius 10, e1): a 13/500 title, an optional 11.5 meta line, then the body. */
+export function AddinCard({
   title,
   meta,
   children,
@@ -91,7 +92,8 @@ function Card({
   );
 }
 
-function Kv({ k, v }: { k: string; v: ReactNode }): JSX.Element {
+/** A 30 key-value row in a pane card. */
+export function AddinKv({ k, v }: { k: string; v: ReactNode }): JSX.Element {
   return (
     <div className="flex h-[30px] items-center justify-between">
       <span className="text-[12px] text-ink-2">{k}</span>
@@ -199,7 +201,7 @@ export function AddinPane(p: AddinPaneProps): JSX.Element {
     return (
       <AddinChrome context={p.context} syncedAt={p.syncedAt} onOpenInAccrued={p.onOpenInAccrued}>
         <div className="flex flex-1 items-center justify-center">
-          <Card title="Sign in to Accrued">
+          <AddinCard title="Sign in to Accrued">
             <p className="text-[12.5px] text-ink-2">
               Use your firm&apos;s single sign-on. Links, tickmarks and sign-offs stay with the
               workpaper.
@@ -208,7 +210,7 @@ export function AddinPane(p: AddinPaneProps): JSX.Element {
               variant="primary"
               onClick={p.onSignIn}
             >{`Sign in with ${p.firmName} SSO`}</Button>
-          </Card>
+          </AddinCard>
         </div>
       </AddinChrome>
     );
@@ -229,9 +231,9 @@ export function AddinPane(p: AddinPaneProps): JSX.Element {
         <p className="text-[12px] text-amber-ink">{`${String(p.queued)} changes waiting to sync`}</p>
       ) : null}
       {p.host === "word" && p.incoming && p.incoming.length > 0 ? (
-        <Card title={`Incoming changes (${String(p.incoming.length)})`}>
+        <AddinCard title={`Incoming changes (${String(p.incoming.length)})`}>
           {p.incoming.map((c) => (
-            <Kv key={c.cell} k={c.cell} v={`${c.from} → ${c.to}`} />
+            <AddinKv key={c.cell} k={c.cell} v={`${c.from} → ${c.to}`} />
           ))}
           <Button variant="primary" onClick={p.onUpdateDocument}>
             Update document
@@ -239,12 +241,12 @@ export function AddinPane(p: AddinPaneProps): JSX.Element {
           <Button variant="secondary" onClick={p.onChangeHistory}>
             Change history
           </Button>
-        </Card>
+        </AddinCard>
       ) : null}
       {p.tab === "Link" ? (
-        <Card title="Link" {...(p.selection ? { meta: p.selection.cell } : {})}>
+        <AddinCard title="Link" {...(p.selection ? { meta: p.selection.cell } : {})}>
           {p.selection?.linked ? (
-            <Kv
+            <AddinKv
               k="Linked to evidence"
               v={`${p.selection.linked.file} · p.${String(p.selection.linked.page)}`}
             />
@@ -254,10 +256,10 @@ export function AddinPane(p: AddinPaneProps): JSX.Element {
           <Button variant="primary" disabled={!p.selection || locked} onClick={p.onLink}>
             Link to evidence…
           </Button>
-        </Card>
+        </AddinCard>
       ) : null}
       {p.tab === "Tickmarks" ? (
-        <Card title="Tickmarks">
+        <AddinCard title="Tickmarks">
           {TICKMARKS.map((t) => (
             <Button
               key={t.label}
@@ -269,11 +271,11 @@ export function AddinPane(p: AddinPaneProps): JSX.Element {
               {`${t.glyph} ${t.label}`}
             </Button>
           ))}
-        </Card>
+        </AddinCard>
       ) : null}
       {p.tab === "Sign-off" ? (
-        <Card title="Sign-off" meta="Preparer">
-          <Kv
+        <AddinCard title="Sign-off" meta="Preparer">
+          <AddinKv
             k="P"
             v={
               p.signOff.state === "stale" ? (
@@ -299,19 +301,19 @@ export function AddinPane(p: AddinPaneProps): JSX.Element {
                 : "Sign off…"}
             </Button>
           )}
-        </Card>
+        </AddinCard>
       ) : null}
       {p.tab === "Changes" ? (
-        <Card
+        <AddinCard
           title="Changes"
           meta={
             p.changes.length ? `${String(p.changes.length)} changed after sign-off` : "No changes"
           }
         >
           {p.changes.map((c) => (
-            <Kv key={c.cell} k={c.cell} v={`${c.from} → ${c.to} · ${c.by}`} />
+            <AddinKv key={c.cell} k={c.cell} v={`${c.from} → ${c.to} · ${c.by}`} />
           ))}
-        </Card>
+        </AddinCard>
       ) : null}
     </AddinChrome>
   );

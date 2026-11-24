@@ -531,3 +531,12 @@ export { FORM_PAGE_PNG, STATEMENT_PAGE_PNG } from "./viewer-pages";
 // F-07-T08: one T5 artboard on its own, for the T4 gallery's Agents and Connect tabs.
 export { T5Board };
 export { TPL08_CLIENTS, type Tpl08Message, tpl08Messages } from "./tpl08-data";
+// F-08-T19 (DEC-5928): the drawn Excel and Word host frames for the T22 add-in specimens.
+export {
+  ExcelGrid,
+  type ExcelGridProps,
+  type HostCell,
+  HostWindow,
+  type HostWindowProps,
+  WordPage,
+} from "./host-frames";

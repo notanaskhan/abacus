@@ -12,6 +12,7 @@ import { Tpl16Artboard } from "./TPL-16";
 import { Tpl19Artboard } from "./TPL-19";
 import { Tpl20Artboard } from "./TPL-20";
 import { Tpl23Artboard } from "./TPL-23";
+import { Tpl24Artboard } from "./TPL-24";
 import { T4Artboard, Tpl04Artboard } from "./T4";
 
 registerScreen("TPL-16", {
@@ -87,4 +88,10 @@ registerScreen("TPL-04", {
 registerScreen("TPL-20", {
   title: "T18 Sheet specimen · Granite Peak FY2026 · BH-FS-430",
   Component: Tpl20Artboard,
+});
+
+// F-08-T19 (TASK-8926): TPL-24, the T22 add-in pane on the drawn Excel and Word hosts, a to g.
+registerScreen("TPL-24", {
+  title: "Accrued add-in · AP leadsheet.xlsx",
+  Component: Tpl24Artboard,
 });
