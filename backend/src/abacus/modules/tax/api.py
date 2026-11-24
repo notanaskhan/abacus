@@ -4,6 +4,7 @@ Pre-registered (F-03-T08; ADR-140). T-01-T02: the engine-bridge and e-file-recor
 (`engine_contract`). T-01-T18: final approval and its blocker slot (`approval`).
 """
 
+from collections.abc import Awaitable, Callable
 from datetime import date
 from uuid import UUID
 
@@ -204,7 +205,7 @@ async def _on_sign_off_recorded(event: OutboxEvent) -> None:
         await fiduciary_service.recompute_after_approval(event.tenant_id, UUID(target))
 
 
-SUBSCRIPTIONS = {
+SUBSCRIPTIONS: dict[str, Callable[[OutboxEvent], Awaitable[None]]] = {
     "reference_set.published": _reference_set_published,
     "filing.acknowledged": _filing_acknowledged,
     # T-01-T36: a return's approved checkpoint rechecks its 8879 binding (I-8879-DRIFT).
@@ -685,6 +686,14 @@ _register_hooks(
 # loader (tooling reaches tax only through this file).
 # T-06-T03 (DEC-5511): error codes declared before their services.
 # T-06-T05/T07 (DEC-5514, DEC-5516): the C12 and entity-depth models, for seed and consumers.
+# T-08-T19 (DEC-5916): TAX-15's planning service. Screens follow a return's approval and
+# acceptance and a completed consent set; `engagement.created` carrying a planning source makes
+# the opportunity Accepted. The "Planning conversation" text is the firm's (database content).
+
+
+from abacus.modules.communications.api import (  # noqa: E402
+    register_email_template as _register_email_template,
+)
 from abacus.modules.tax import entity_depth_contract as entity_depth_contract  # noqa: E402
 from abacus.modules.tax import entity_depth_errors as entity_depth_errors  # noqa: E402
 
@@ -708,3 +717,37 @@ from abacus.modules.tax.compute import provision as provision_engine  # noqa: E4
 from abacus.modules.tax.compute import s_corp as s_corp_engine  # noqa: E402
 from abacus.modules.tax.entity_run_plan import DEPTH as ENTITY_RUN_DEPTH  # noqa: E402
 from abacus.modules.tax.entity_run_plan import STEPS as ENTITY_RUN_STEPS  # noqa: E402
+from abacus.modules.tax.planning import service as planning_service  # noqa: E402
+
+_register_email_template(
+    planning_service.TEMPLATE_KEY,
+    ("client",),
+    ("client_first_name", "firm_name", "work_item", "staff_name"),
+    (),
+    ("TAX-15",),
+    firm_editable=True,
+    name="Planning conversation",
+    used_by_label="TAX-15 Raise with client",
+)
+
+
+_Handler = Callable[[OutboxEvent], Awaitable[None]]
+
+
+def _chain(*handlers: _Handler) -> _Handler:
+    async def run(event: OutboxEvent) -> None:
+        for handler in handlers:
+            await handler(event)
+
+    return run
+
+
+SUBSCRIPTIONS["filing.acknowledged"] = _chain(
+    SUBSCRIPTIONS["filing.acknowledged"], planning_service.on_filing_acknowledged
+)
+SUBSCRIPTIONS["envelope.completed"] = _chain(
+    SUBSCRIPTIONS["envelope.completed"], planning_service.on_consent_completed
+)
+for _name, _handler in planning_service.SUBSCRIPTIONS.items():
+    _prior = SUBSCRIPTIONS.get(_name)
+    SUBSCRIPTIONS[_name] = _handler if _prior is None else _chain(_prior, _handler)

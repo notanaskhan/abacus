@@ -35,7 +35,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.clock import now
 from abacus.kernel.config import settings
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainRateLimited, NotFound
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Target, UnitOfWork, audit_of_targets, uow
@@ -386,3 +386,28 @@ async def send_test(
     if not sent:
         _log.info("email_template.test_not_delivered", message_id=message_id)
     return SentTest(message_id, to, subject)
+
+
+@dataclass(frozen=True)
+class TemplateDraft:
+    """A firm template's version in use, filled for one recipient as editable text (T-08-T19)."""
+
+    version_id: UUID
+    subject: str
+    body: str
+
+
+async def template_draft(
+    tenant: TenantContext, key: str, values: Mapping[str, str]
+) -> TemplateDraft | None:
+    """T-08-T19 (TAX-15 b; DEC-79): the version `key` would send now (the firm's published one,
+    else the platform default), rendered as plain text with code's values, for a person to edit
+    and send through `message.send`; None when the key has no version. The caller authorised the
+    act it prepares; nothing is sent or recorded here."""
+    registration = editable(key)
+    async with tenant_session(tenant) as session:
+        found = await template_store.resolve(session, tenant.tenant_id, key)
+    if found is None or found.content is None:
+        return None
+    rendered = _render(registration, found.content, values, 600)
+    return TemplateDraft(found.version_id, rendered.subject, rendered.text)

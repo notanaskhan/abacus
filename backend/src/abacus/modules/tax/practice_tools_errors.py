@@ -34,3 +34,25 @@ class NotBbaSigner(DomainConflict):
     """Only the AAR return's signer decides the BBA election (AC6.6)."""
 
     code = "not_bba_signer"
+
+
+# --- T-08-T19 planning (DEC-5916) ---------------------------------------------------------------
+
+
+class OpportunityStateInvalid(DomainConflict):
+    """The opportunity's status does not allow this move (`facts.status`)."""
+
+    code = "opportunity_state_invalid"
+
+
+class RecipientNotClient(DomainInvalid):
+    """A raise names a contact who is not the opportunity's client's."""
+
+    code = "recipient_not_client"
+
+
+class PlanningTemplateMissing(DomainConflict):
+    """The firm has no version of the "Planning conversation" template to start the message
+    from (DEC-79: no model text reaches a client)."""
+
+    code = "planning_template_missing"

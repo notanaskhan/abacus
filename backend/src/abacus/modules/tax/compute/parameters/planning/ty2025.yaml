@@ -1,0 +1,64 @@
+# Planning screening parameters, TY2025 returns (T-08-T19; TAX-15; DEC-76 / ADR P-62 second
+# category: engine-parameter files reviewed yearly with the tax CPA, never firm content).
+# PROTECTED (docs/architecture/protected-paths.md, DEC-5511): a change needs the CPA review note in
+# its PR and its goldens (tests/unit/tax/test_t08t19_planning.py) in the same diff.
+#
+# Screening a TY2025 return looks at the next two planning years (2026–2027) "at 2025 figures":
+# the return's own figures and the 2025 limits below, plus the 2026 rules already enacted (the
+# 0.5% floor on itemized charitable gifts and the 7,500 dependent care limit, OBBBA).
+version: 1
+tax_year: 2025
+planning_years: [2026, 2027]
+reviewed_by: null   # the tax CPA's handle once the TY2025 planning memo is signed (DEC-5916)
+source: "Rev. Proc. 2024-40 as amended by Pub. L. 119-21 (OBBBA) §§70102, 70425, 70404; IRC §§1, 63, 129, 170, 401(k), 408(d)(8); Notice 2024-80"
+
+# IRC §63(c), 2025 as amended by OBBBA §70102.
+standard_deduction:
+  mfj: "31500"
+  single: "15750"
+  hoh: "23625"
+  mfs: "15750"
+
+# IRC §1(j), 2025: the top of each bracket of taxable income, then its rate (the last bracket has
+# no top). A return's marginal rate is the rate of the bracket its line 15 falls in.
+brackets:
+  mfj:    [["23850", "10"], ["96950", "12"], ["206700", "22"], ["394600", "24"], ["501050", "32"], ["751600", "35"], [null, "37"]]
+  single: [["11925", "10"], ["48475", "12"], ["103350", "22"], ["197300", "24"], ["250525", "32"], ["626350", "35"], [null, "37"]]
+  hoh:    [["17000", "10"], ["64850", "12"], ["103350", "22"], ["197300", "24"], ["250500", "32"], ["626350", "35"], [null, "37"]]
+  mfs:    [["11925", "10"], ["48475", "12"], ["103350", "22"], ["197300", "24"], ["250525", "32"], ["375800", "35"], [null, "37"]]
+
+# Bunching gifts through a donor-advised fund (IRC §170(b)(1)(I), from 2026: itemizers lose the
+# first 0.5% of AGI in charitable gifts). The rule surfaces when itemized deductions without gifts
+# are below the standard deduction and two years of gifts in one year itemize above it.
+daf_bunching:
+  floor_pct: "0.5"
+  min_annual_gifts: "2500"
+  years: 2
+
+# Solo 401(k) for self-employment income with no retirement-plan deduction (IRC §402(g)(1),
+# Notice 2024-80): the elective deferral, capped at the net profit.
+solo_401k:
+  elective_deferral: "23500"
+  min_net_profit: "30000"
+
+# Dependent care FSA (IRC §129(a)(2)(A) as amended by OBBBA §70404: 7,500 from 2026), when the
+# return shows qualifying expenses and no employer-provided benefits.
+dependent_care_fsa:
+  limit: "7500"
+
+# Reasonable compensation (1120-S): officer compensation below this share of compensation plus
+# ordinary business income is a risk-reduction review, never a savings estimate.
+reasonable_compensation:
+  min_comp_share_pct: "30"
+  min_ordinary_income: "100000"
+
+# Qualified charitable distributions (IRC §408(d)(8)): from age 70½, up to the limit.
+qcd:
+  min_age_months: 846
+  annual_limit: "108000"
+
+# Roth conversion window: room below the next bracket that is at least this much, with IRA or
+# pension income on the return.
+roth_conversion:
+  min_bracket_room: "20000"
+  max_rate_pct: "24"

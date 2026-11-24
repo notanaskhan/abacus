@@ -159,14 +159,17 @@ from abacus.modules.organisations.service import (
     entity_display_name,
     entity_tin_kind,
     entity_tin_last4s,
+    entity_type_of,
     find_clients,
     firm_names,
     firm_offices,
     normalise,
+    open_consent_envelope,
     portal_activation,
     set_client_record,
     set_entity_attributes,
     signer_contacts,
+    unit_signer_contacts,
 )
 from abacus.modules.organisations.settings_contract import offices_glance, org_settings_router
 from abacus.modules.organisations.slots import (
@@ -361,6 +364,7 @@ __all__ = [
     "entity_plan_number",
     "entity_tin_kind",
     "entity_tin_last4s",
+    "entity_type_of",
     "envelope_completed",
     "filing_unit",
     "find_clients",
@@ -370,6 +374,7 @@ __all__ = [
     "normalise",
     "normalise_tin",
     "office_name_column",
+    "open_consent_envelope",
     "portal_activation",
     "readable_client",
     "record_request",
@@ -396,6 +401,7 @@ __all__ = [
     "signer_contacts",
     "standing_conflict_results",
     "tri_consent_verdict",
+    "unit_signer_contacts",
 ]
 
 # Q-03-T235 (DEC-3304): ADM-07 and AUD-29 name this module's targets through the platform slot.

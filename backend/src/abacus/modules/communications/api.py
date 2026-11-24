@@ -159,6 +159,7 @@ from abacus.modules.communications.sink import (
 )
 from abacus.modules.communications.template_import import BundleEntry as EmailTemplateBundleEntry
 from abacus.modules.communications.template_import import import_bundle as import_email_templates
+from abacus.modules.communications.template_preview import TemplateDraft, template_draft
 from abacus.modules.communications.template_registry import (
     VARIABLES as TEMPLATE_VARIABLES,
 )
@@ -369,6 +370,7 @@ __all__ = [
     "SesIdentityUnavailable",
     "TemplateBlockContent",
     "TemplateContent",
+    "TemplateDraft",
     "TemplateRegistrationInvalid",
     "TemplateVariable",
     "Transport",
@@ -429,6 +431,7 @@ __all__ = [
     "ses_identities",
     "sink_address",
     "sink_domain",
+    "template_draft",
     "template_key",
     "template_version_in_use",
     "template_version_number_in_use",
