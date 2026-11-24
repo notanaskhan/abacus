@@ -483,3 +483,5 @@ export * from "./sheet";
 
 // ChartKit C-36 (F-08-T10)
 export * from "./charts";
+// F-08-T24 (DEC-5932): the C-28 presence kit.
+export * from "./collab/presence";
