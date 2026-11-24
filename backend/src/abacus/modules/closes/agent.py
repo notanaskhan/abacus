@@ -51,8 +51,10 @@ from abacus.kernel.errors import DomainConflict
 from abacus.modules.identity.api import AgentContext
 
 CAPABILITY: Final = "close.agent"
-Mode = Literal["run", "intake", "bank_rec", "aje", "flux", "planner"]
-MODES: Final[tuple[Mode, ...]] = ("run", "intake", "bank_rec", "aje", "flux", "planner")
+Mode = Literal["run", "intake", "bank_rec", "aje", "flux", "planner", "vendor_screen"]
+MODES: Final[tuple[Mode, ...]] = (
+    "run", "intake", "bank_rec", "aje", "flux", "planner", "vendor_screen",
+)  # fmt: skip
 PROMPTS: Final[Mapping[Mode, str]] = {mode: f"close.agent.{mode}@v1" for mode in MODES}
 TOOLS: Final = frozenset(
     {
@@ -62,6 +64,10 @@ TOOLS: Final = frozenset(
         "close.read_upload_table",
         "close.plan_history_profile",
         "close.propose_aje",
+        # C-02-T34 (DEC-5908): the vendor screen's masked reads and its one propose tool.
+        "close.read_vendor_facts",
+        "close.read_vendor_document",
+        "close.propose_vendor_classification",
     }
 )
 # `trial_balance.read`: C-01-T30 (DEC-5413), so the run's `ledger_line` citations to register
@@ -133,6 +139,7 @@ class CloseAgentInput(BaseModel):
     untrusted: Annotated[list[str], Field(max_length=250), Conf] = []
     choices: Annotated[list[PlanChoiceIn], Field(max_length=120), Int] = []
     repair: Annotated[Literal["drivers_do_not_foot"] | None, Int] = None
+    pages: Annotated[list[int], Field(max_length=20), Int] = []  # vendor screen: the W-9's pages
 
 
 class DriverOut(BaseModel):
@@ -152,6 +159,33 @@ class PlanRowOut(BaseModel):
     source: Annotated[str, Field(max_length=40), Int]
 
 
+# C-02-T34: the vendor screen's closed sets (the W-9's line 3a, and an exemption only from the
+# W-9's exemption codes); `unknown` is the screen's "needs input".
+VENDOR_EXEMPTIONS: Final = ("exempt_payee_code", "tax_exempt_organization", "government_entity")
+_DIGITS: Final = re.compile(r"\d{4,}")
+
+
+class W9QuoteOut(BaseModel):
+    """One quote from the vendor's W-9 (its masked text), which code verifies on the page."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    page: Annotated[int, Field(ge=1, le=20), Int]
+    quote: Annotated[str, Field(min_length=3, max_length=200), Conf]
+
+
+class VendorScreenOut(BaseModel):
+    """The vendor screen's proposal: entity type (an offered option), the attorney flag and an
+    exemption (offered or none), each supported by at least one W-9 quote."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    entity_type: Annotated[str, Field(max_length=40), Int]
+    is_attorney: Annotated[bool, Int]
+    exempt_reason: Annotated[str | None, Field(max_length=40), Int] = None
+    quotes: Annotated[list[W9QuoteOut], Field(min_length=1, max_length=6), Int]
+
+
 class CloseAgentOutput(BaseModel):
     """The model's answer: AgentBlocks (`blocks`), and, where code offered options, one of them."""
 
@@ -161,6 +195,7 @@ class CloseAgentOutput(BaseModel):
     option: Annotated[str | None, Field(max_length=80), Int] = None
     drivers: Annotated[list[DriverOut], Field(max_length=MAX_DRIVERS), Int] = []
     rows: Annotated[list[PlanRowOut], Field(max_length=120), Int] = []
+    screen: Annotated[VendorScreenOut | None, Int] = None
 
 
 @dataclass(frozen=True)
@@ -177,6 +212,7 @@ class Settled:
     option: str | None
     drivers: tuple[Driver, ...] = ()
     rows: tuple[PlanRowOut, ...] = ()
+    screen: VendorScreenOut | None = None
 
 
 def _money(value: str) -> Decimal:
@@ -238,6 +274,24 @@ def settle_rows(given: CloseAgentInput, answer: CloseAgentOutput) -> tuple[PlanR
     return tuple(answer.rows)
 
 
+def settle_screen(given: CloseAgentInput, answer: CloseAgentOutput) -> VendorScreenOut:
+    """Vendor screen: the entity type is one offered, an exemption one of the W-9's codes, every
+    quote names an offered page, and no answer carries four digits in a row (a TIN never
+    passes, masked or not: `tin_in_output`)."""
+    screen = answer.screen
+    if screen is None:
+        raise OutputRefused(facts={"reason": "screen_required"})
+    if screen.entity_type not in given.options:
+        raise OutputRefused(facts={"reason": "option_not_offered"})
+    if screen.exempt_reason is not None and screen.exempt_reason not in VENDOR_EXEMPTIONS:
+        raise OutputRefused(facts={"reason": "option_not_offered"})
+    if any(q.page not in given.pages for q in screen.quotes):
+        raise OutputRefused(facts={"reason": "page_not_offered"})
+    if any(_DIGITS.search(q.quote) for q in screen.quotes) or _DIGITS.search(str(answer.blocks)):
+        raise OutputRefused(facts={"reason": "tin_in_output"})
+    return screen
+
+
 def settle(given: CloseAgentInput, answer: CloseAgentOutput) -> Settled:
     """Code settles the answer: blocks validate against the run's facts and verified citations
     (a number outside a fact token, an unknown fact or citation, markup or a claimed human act is
@@ -259,9 +313,12 @@ def settle(given: CloseAgentInput, answer: CloseAgentOutput) -> Settled:
         raise OutputRefused(facts={"reason": "drivers_outside_flux"})
     if given.mode != "planner" and answer.rows:
         raise OutputRefused(facts={"reason": "rows_outside_planner"})
+    if given.mode != "vendor_screen" and answer.screen is not None:
+        raise OutputRefused(facts={"reason": "screen_outside_vendor_screen"})
     drivers = settle_drivers(given, answer) if given.mode == "flux" else ()
     rows = settle_rows(given, answer) if given.mode == "planner" else ()
-    return Settled(given.mode, blocks, answer.option, drivers, rows)
+    screen = settle_screen(given, answer) if given.mode == "vendor_screen" else None
+    return Settled(given.mode, blocks, answer.option, drivers, rows, screen)
 
 
 async def answer(agent: AgentContext, given: CloseAgentInput) -> Settled:
@@ -419,5 +476,28 @@ FAKE_RESPONSES: Final[Mapping[Mode, CloseAgentOutput]] = {
             PlanRowOut(row_key="1000", procedure="reconciliation", source="bank_feed"),
             PlanRowOut(row_key="1350", procedure="amortization", source="accrued_register"),
         ],
+    ),
+    # C-02-T34: Copperleaf's Hartwell & Lowe LLP W-9 (the CLS-13 seed): a law partnership, so an
+    # attorney; the screen quotes line 3a and line 1 and never a TIN digit.
+    "vendor_screen": CloseAgentOutput(
+        blocks={
+            "version": 1,
+            "parts": [
+                _p(
+                    _t(
+                        "The form names a partnership as the federal tax classification and a "
+                        "law firm as the vendor, so the vendor is screened as an attorney."
+                    )
+                )
+            ],
+        },
+        screen=VendorScreenOut(
+            entity_type="partnership",
+            is_attorney=True,
+            quotes=[
+                W9QuoteOut(page=1, quote="Partnership"),
+                W9QuoteOut(page=1, quote="Hartwell & Lowe LLP"),
+            ],
+        ),
     ),
 }

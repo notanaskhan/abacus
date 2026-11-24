@@ -53,8 +53,10 @@ SPECS_V2: dict[str, dict[str, object]] = {   'briefing.today': {   'autonomy': '
                        'purpose': "Write the close run's, intake's, bank reconciliation's, AJE "
                                   "draft's and flux line's sentences over figures code computed, "
                                   'citing their sources, group register lines into flux drivers '
-                                  'that code foots, and draft close plan rows from the options '
-                                  'code offers, for a named person to decide.',
+                                  'that code foots, draft close plan rows from the options code '
+                                  "offers, and screen a 1099 vendor's masked W-9 for its entity "
+                                  'type, attorney flag and exemption, for a named person to '
+                                  'decide.',
                        'routes': ['bedrock', 'direct'],
                        'shape': 'workflow',
                        'task_scope': [   'close.read',
@@ -66,9 +68,16 @@ SPECS_V2: dict[str, dict[str, object]] = {   'briefing.today': {   'autonomy': '
                        'tools': {   'compute': [   'close.reconcile',
                                                    'close.read_upload_table',
                                                    'close.plan_history_profile'],
-                                    'propose': ['close.propose_aje'],
-                                    'read': ['close.read_checklist', 'close.read_register']},
-                       'untrusted_inputs': ['uploads', 'client_answers'],
+                                    'propose': [   'close.propose_aje',
+                                                   'close.propose_vendor_classification'],
+                                    'read': [   'close.read_checklist',
+                                                'close.read_register',
+                                                'close.read_vendor_facts',
+                                                'close.read_vendor_document']},
+                       'untrusted_inputs': [   'uploads',
+                                               'client_answers',
+                                               'w9_documents',
+                                               'vendor_names'],
                        'version': 1,
                        'work_class': 'background'},
     'consolidation.elimination_proposer': {   'autonomy': 'propose',

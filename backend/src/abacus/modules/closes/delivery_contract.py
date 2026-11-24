@@ -286,6 +286,17 @@ class DeliveryW9RecordIn(BaseModel):
     expected_version: Annotated[int, Field(ge=1), Internal]
 
 
+class DeliveryScreenOut(BaseModel):
+    """C-02-T34: one vendor-screen run's outcome. `succeeded` left a suggestion to adopt in the
+    drawer; `escalated` proposed nothing (`reason` is a code, never model text)."""
+
+    model_config = _cfg()
+
+    run_id: Annotated[UUID, Internal]
+    status: Annotated[Literal["succeeded", "escalated", "shadow"], Internal]
+    reason: Annotated[str | None, Field(max_length=60), Internal] = None
+
+
 class DeliveryRevealIn(BaseModel):
     model_config = _cfg()
 
@@ -619,6 +630,23 @@ async def vendor_patch_route(
 ) -> DeliveryVendorRowOut:
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "vendor_1099.update")
     return await mask_tins_for(ctx, _not_built(DeliveryVendorRowOut))
+
+
+@delivery_router.post(
+    "/vendors/{vendor_id}/screen", action="vendor_1099.screen", response_model=DeliveryScreenOut,
+    status_code=201, errors=(409,),
+)  # fmt: skip
+async def vendor_screen_route(vendor_id: UUID, ctx: Ctx) -> DeliveryScreenOut:
+    """C-02-T34: a person starts `close.agent` mode `vendor_screen` for one vendor (synthetic
+    firms only behind `closes.vendor_screen`: 404 off, 409 `agent_not_available` on a real firm,
+    409 `w9_not_on_file`). Proposals arrive as suggestions a person adopts (INV-1)."""
+    await _human(ctx, CLOSES_INFORMATION_RETURNS, "vendor_1099.screen")
+    from abacus.modules.closes import vendor_screen
+
+    outcome = await vendor_screen.screen_vendor(ctx, vendor_id)
+    return DeliveryScreenOut(
+        run_id=outcome.run_id, status=cast(Any, outcome.status), reason=outcome.reason
+    )
 
 
 @delivery_router.post(

@@ -1,0 +1,1 @@
+Suggest a vendor's entity type, attorney flag and exemption, each from the closed sets, with at least one quote copied exactly from its W-9 page. Code verifies every quote on the page; an unverified quote proposes nothing. This creates a suggestion for a person to adopt; it never changes the vendor.

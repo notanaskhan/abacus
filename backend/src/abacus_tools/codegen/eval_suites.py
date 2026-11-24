@@ -45,6 +45,8 @@ EXTRA_MODES: dict[str, dict[str, str]] = {
         # C-01-T30 (DEC-5413): the flux and planner modes, on the same frozen suite.
         "close.agent.flux@v1": "evals/close_agent",
         "close.agent.planner@v1": "evals/close_agent",
+        # C-02-T34 (DEC-5908): the vendor screen, on C-02-T51's frozen suite.
+        "close.agent.vendor_screen@v1": "evals/close_vendor_screen",
     },
 }
 

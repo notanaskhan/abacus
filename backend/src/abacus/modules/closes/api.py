@@ -136,8 +136,10 @@ from abacus.modules.closes.package_render import FINISH as PACKAGE_FINISH  # noq
 from abacus.modules.closes.package_render import PackageAssemblyWorkflow  # noqa: E402
 from abacus.modules.closes.release import register as _register_release  # noqa: E402
 from abacus.modules.closes.vendor_tins import __all__ as _VENDOR_TINS  # noqa: E402, F401
+from abacus.modules.closes.vendor_screen import register as _register_vendor_screen  # noqa: E402
 
 _register_release()  # C-02-T29: C18's fs_package provider
+_register_vendor_screen()  # C-02-T34: the vendor screen's tools and its suggestion applier
 
 WORKFLOWS: dict[type, WorkClass] = {
     RequestPublishWorkflow: "background",

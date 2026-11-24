@@ -2713,6 +2713,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/todos/{todo_id}/seen", "todo.read"),
     ("POST", "/v1/transcripts/{transcript_id}/comparisons", "transcript.compare"),
     ("POST", "/v1/vendors/{vendor_id}/backup-withholding", "backup_withholding.record"),
+    ("POST", "/v1/vendors/{vendor_id}/screen", "vendor_1099.screen"),
     ("POST", "/v1/vendors/{vendor_id}/tin-match-results", "tin_match.record"),
     ("POST", "/v1/vendors/{vendor_id}/tin:reveal", "tin.reveal"),
     ("POST", "/v1/walls", "wall.create"),
@@ -3003,6 +3004,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ),
     ("PUT", "/v1/template-versions/{version_id}/scoping-rules", "scoping_rule.edit"),
     ("PUT", "/v1/users/me/graph-layouts/{client_id}", "graph_layout.save"),
+    ("PUT", "/v1/vendors/{vendor_id}/w9", "vendor_1099.update"),
     ("PUT", "/v1/work-items/{work_item_id}/prior-year-figures", "analytics.configure"),
     (
         "PUT",
