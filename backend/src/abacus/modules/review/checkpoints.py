@@ -571,6 +571,36 @@ async def approved_values(
     return ApprovedValues(chosen.id, chosen.seq, _state_at(rows, diffs, chosen.seq))
 
 
+@dataclass(frozen=True)
+class CheckpointState:
+    """T-06-T44 (DEC-5915): one checkpoint's every field value, for an owner that renders from
+    it (the caller has authorised its own read of the target)."""
+
+    checkpoint_id: UUID
+    seq: int
+    status: str
+    recorded_at: datetime
+    values: dict[str, Value]
+
+
+async def checkpoint_state(
+    tenant: TenantContext, target_type: str, target_id: UUID, checkpoint_id: UUID | None
+) -> CheckpointState | None:
+    """The named checkpoint of the target (None when it is not the target's), or without a name
+    the newest approved one (None when there is none)."""
+    rows, diffs, _ = await _load(tenant, target_type, target_id)
+    if checkpoint_id is None:
+        chosen = next((r for r in reversed(rows) if r.status == "approved"), None)
+    else:
+        chosen = next((r for r in rows if r.id == checkpoint_id), None)
+    if chosen is None:
+        return None
+    return CheckpointState(
+        chosen.id, chosen.seq, chosen.status, chosen.created_at,
+        _state_at(rows, diffs, chosen.seq),
+    )  # fmt: skip
+
+
 # --- writes ------------------------------------------------------------------------------------
 
 

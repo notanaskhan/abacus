@@ -749,3 +749,26 @@ async def published_body(
             await session.execute(_PUBLISHED_BODY, {"id": version_id, "family": family})
         ).first()
     return None if row is None else cast("list[object]", row.body or [])
+
+
+async def published_form_face(
+    tenant: TenantContext, form: str, tax_year: int
+) -> TemplateParts | None:
+    """T-06-T44 (DEC-5915): the firm's published `tax_form_face` version for a form and tax year
+    (its manifest names them), or None (TAX-11's `form_template_missing`)."""
+    async with tenant_session(tenant) as session:
+        ids = list(
+            await session.scalars(
+                select(ReportTemplate.id).where(ReportTemplate.family == "tax_form_face")
+            )
+        )
+    for template_id in ids:
+        version_id = await current_version_id(tenant, template_id)
+        if version_id is None:
+            continue
+        async with tenant_session(tenant) as session:
+            parts = await version_parts(session, version_id)
+        manifest = None if parts is None else parts.field_manifest
+        if manifest and (manifest.get("form"), manifest.get("tax_year")) == (form, tax_year):
+            return parts
+    return None

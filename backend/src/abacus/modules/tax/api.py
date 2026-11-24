@@ -641,6 +641,7 @@ _run_steps.register()
 from abacus.modules.tax import allocation_structure as _allocation_structure  # noqa: E402
 
 _allocation_structure.register()
+from abacus.modules.tax import form_pages_service as form_pages_service  # noqa: E402
 from abacus.modules.tax import other_entities_service as _other_entities  # noqa: E402
 
 _other_entities.register()  # T-06-T42: the time-study allocation's adapter and line target

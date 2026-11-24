@@ -902,6 +902,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/tax-returns/{return_id}/fixed-assets/{asset_id}", "fixed_asset.read"),
     ("GET", "/v1/tax-returns/{return_id}/form-pages", "form_preview.read"),
     ("GET", "/v1/tax-returns/{return_id}/form-pages/{page_key}/fields", "form_preview.read"),
+    ("GET", "/v1/tax-returns/{return_id}/form-pages/{page_key}/image", "form_preview.read"),
     ("GET", "/v1/tax-returns/{return_id}/functional-expenses", "other_workpapers.read"),
     ("GET", "/v1/tax-returns/{return_id}/general-information", "tax_return.read"),
     ("GET", "/v1/tax-returns/{return_id}/handoff", "tax_return.read"),

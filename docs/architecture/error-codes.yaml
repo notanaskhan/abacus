@@ -565,6 +565,11 @@ codes:
     raised_by:
     - abacus.modules.review.checkpoints.CheckpointInvalid
     summary: A restore of a checkpoint that is not in effect, or of Current itself; an empty proposal.
+  checkpoint_required:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.form_pages_service.CheckpointMissing
+    summary: The return's workbook has no approved checkpoint to preview from.
   choice_invalid:
     status: 422
     raised_by:
