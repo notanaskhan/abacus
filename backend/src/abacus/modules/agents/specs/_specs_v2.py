@@ -5,7 +5,39 @@ Regenerate: python -m abacus_tools.codegen.agent_specs_v2
 
 # ruff: noqa: E501
 # fmt: off
-SPECS_V2: dict[str, dict[str, object]] = {   'briefing.today': {   'autonomy': 'propose',
+SPECS_V2: dict[str, dict[str, object]] = {   'assurance.post_issuance_analysis': {   'autonomy': 'propose',
+                                            'cheaper_tiers': [],
+                                            'client_data': 'none',
+                                            'data_classes': ['confidential'],
+                                            'escalation_tier': 'medium',
+                                            'essential': False,
+                                            'evaluation_suite': 'evals/post_issuance_analysis',
+                                            'id': 'assurance.post_issuance_analysis',
+                                            'input_schema': 'PostIssuanceAnalysisInput',
+                                            'limits': {   'max_cost_usd': '0.20',
+                                                          'max_output_tokens': 1500,
+                                                          'max_seconds': 120,
+                                                          'max_steps': 1,
+                                                          'max_tool_calls': 1},
+                                            'output_schema': 'PostIssuanceAnalysisOutput',
+                                            'plan': 'never',
+                                            'prompt': 'audit.post_issuance_analysis@v1',
+                                            'purpose': "Restate a post-issuance case's code "
+                                                       'comparison and evaluation by reference, '
+                                                       'cite both certifications and tag the '
+                                                       'option code marks eligible, ending that '
+                                                       'it has not decided, for the engagement '
+                                                       'partner to decide.',
+                                            'routes': ['bedrock', 'direct'],
+                                            'shape': 'single_call',
+                                            'task_scope': [],
+                                            'tier': 'medium',
+                                            'tools': {},
+                                            'untrusted_inputs': [   'corrected_certification',
+                                                                    'certified_trust_report'],
+                                            'version': 1,
+                                            'work_class': 'interactive'},
+    'briefing.today': {   'autonomy': 'propose',
                           'cheaper_tiers': [],
                           'client_data': 'none',
                           'data_classes': ['confidential', 'tri'],

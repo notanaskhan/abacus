@@ -146,6 +146,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/audits/{work_item_id}/parties-in-interest", "ebp.read"),
     ("GET", "/v1/audits/{work_item_id}/post-issuance/cases", "post_issuance.read"),
     ("GET", "/v1/audits/{work_item_id}/post-issuance/cases/{case_id}", "post_issuance.read"),
+    (
+        "GET",
+        "/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/analysis",
+        "post_issuance.read",
+    ),
     ("GET", "/v1/audits/{work_item_id}/related-parties", "related_party.read"),
     ("GET", "/v1/audits/{work_item_id}/release", "report.read"),
     ("GET", "/v1/audits/{work_item_id}/report", "report.read"),

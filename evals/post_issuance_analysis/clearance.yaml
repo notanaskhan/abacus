@@ -1,0 +1,15 @@
+# assurance.post_issuance_analysis clearance records (Q-05-T22; Q-05 §6; DEC-5911). PROTECTED
+# (ADR-079).
+#
+# A record is written here by a person, from a signed Bedrock report
+# (`python -m abacus_tools.evals --agent post_issuance_analysis --route bedrock`) whose
+# `clears_real_firms` is true: every frozen threshold passed at 1.0 and the golden PI-01 analysis
+# ends "I have not decided whether this needs action." Each record names the report's sha256 (of
+# the file as written), its signature, the date and who recorded it; the run's median cost goes
+# into `evals/baselines.yaml` in the same change.
+#
+# The spec's `client_data` turns `cleared` only once a record is here
+# (`tests/unit/assurance/test_q05t22_post_issuance_analysis.py`); until then real firms are refused
+# at the gateway and the route answers 409 `agent_not_available`.
+agent: assurance.post_issuance_analysis
+records: []

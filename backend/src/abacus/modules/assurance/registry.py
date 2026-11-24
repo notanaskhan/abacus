@@ -1686,3 +1686,6 @@ TABLES: frozenset[str] = (
 INSERT_ONLY: frozenset[str] = (
     _S46_INSERT_ONLY | A08T21_INSERT_ONLY | A08T24_TABLES | Q05T09_TABLES | Q05T12_INSERT_ONLY
 )
+UPDATE_COLUMNS["post_issuance_events"] = UPDATE_COLUMNS["post_issuance_events"] | frozenset(
+    {"analysis_citation_ids", "analysis_recommendation", "analysis_run_id", "analysis_sealed"}
+)  # Q-05-T22 (1014, TASK-8909): the case's latest analysis run

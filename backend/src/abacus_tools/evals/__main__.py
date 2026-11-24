@@ -136,8 +136,12 @@ def main(argv: list[str]) -> int:
         return filler_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
     if args.agent == "post_issuance_analysis":  # Q-05-T10 (DEC-5713): frozen before any prompt
         from abacus_tools.evals.post_issuance_analysis import main as pi_main
+        from abacus_tools.evals.post_issuance_analysis_run import main as pi_run
 
-        return pi_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
+        if args.route != "fake":  # Q-05-T22 (DEC-5911): the evaluation account's real runs
+            return pi_run(cast(str, args.route), cast(Path, args.out))
+        recorded = pi_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
+        return recorded or pi_run("fake", cast(Path, args.out))
     if args.agent == "workbook_fix":  # T-05-T50 rest (DEC-4927), frozen
         from abacus_tools.evals.workbook_fix import main as workbook_fix_main
 

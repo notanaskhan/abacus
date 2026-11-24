@@ -4,7 +4,8 @@ Regenerate: python -m abacus_tools.codegen.eval_suites
 """
 
 # fmt: off
-EVAL_SUITES: dict[str, tuple[str, int]] = {   'briefing.today': ('briefing.today@v1', 1),
+EVAL_SUITES: dict[str, tuple[str, int]] = {   'assurance.post_issuance_analysis': ('audit.post_issuance_analysis@v1', 1),
+    'briefing.today': ('briefing.today@v1', 1),
     'close.agent': ('close.agent.run@v1', 1),
     'consolidation.elimination_proposer': ('consolidation.elimination_proposer@v1', 1),
     'decisions.recommender': ('decisions.recommend@v1', 1),
