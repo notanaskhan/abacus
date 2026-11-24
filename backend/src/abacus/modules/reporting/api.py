@@ -96,6 +96,11 @@ from abacus.modules.reporting.engagement_letters import (
     lock_engagement_letter,
     render_engagement_letter,
 )
+from abacus.modules.reporting.form_face import FaceField as FaceField  # T-06-T44
+from abacus.modules.reporting.form_face import FacePage as FacePage
+from abacus.modules.reporting.form_face import face_html as face_html
+from abacus.modules.reporting.form_face import render_face as render_face
+from abacus.modules.reporting.form_face import render_face_isolated as render_face_isolated
 from abacus.modules.reporting.fs_captions import (
     checklist_counts as checklist_counts,
 )

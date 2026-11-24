@@ -21,12 +21,12 @@ from decimal import Decimal
 from typing import Annotated, Any, Literal, cast
 from uuid import UUID
 
-from fastapi import Depends, Header
+from fastapi import Depends, Header, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import TAX_ENTITY_DEPTH, TAX_FORM_PREVIEW, TAX_OTHER_ENTITY_WORKPAPERS
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
 
@@ -455,7 +455,7 @@ class TaxDepthK1PreviewsOut(BaseModel):
     tally: Annotated[Tally, Internal]
 
 
-# --- routes (each 501, one action) -------------------------------------------------------------
+# --- routes (one action each) -------------------------------------------------------------------
 
 entity_depth_router = AbacusRouter(prefix="/v1", tags=["tax"])
 _R = "/tax-returns/{return_id}"
@@ -986,67 +986,161 @@ async def allocation_run_route(
     f"{_R}/form-pages",
     action="form_preview.read",
     response_model=TaxDepthFormPagesOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def form_pages_route(
     return_id: UUID, ctx: Ctx, checkpoint: UUID | None = None
 ) -> TaxDepthFormPagesOut:
-    """409 `form_template_missing` for forms without a face template (DV-9)."""
+    """T-06-T44 (DEC-5915): the pages of the return's published form face at the checkpoint
+    (the newest approved one by default). 409 `form_template_missing` for forms without a face
+    template (DV-9); 409 `checkpoint_required` before the first approved checkpoint."""
     await _on(ctx, _F)
-    raise NotImplementedYet
+    from abacus.modules.tax import form_pages_service as fp
+
+    found = await fp.pages(ctx, return_id, checkpoint)
+    found_diagnostics = await fp.diagnostics(ctx.tenant, return_id, found.checkpoint_id)
+    rendered = await fp.rendered_pages(ctx.tenant, found)
+    return TaxDepthFormPagesOut(
+        checkpoint_id=found.checkpoint_id,
+        pages=[
+            TaxDepthFormPageOut(
+                page_key=key,
+                caption=title,
+                blocking=sum(
+                    1 for d in found_diagnostics if d.severity == "blocking" and d.page_key == key
+                ),
+                rendered=key in rendered,
+            )
+            for key, title in found.pages
+        ],
+        watermark="Draft — not for filing",
+    )
 
 
 @entity_depth_router.get(
     f"{_R}/form-pages/{{page_key}}/fields",
     action="form_preview.read",
     response_model=TaxDepthFieldsOut,
-    errors=(501,),
+    errors=(409,),
 )
-async def form_fields_route(return_id: UUID, page_key: str, ctx: Ctx) -> TaxDepthFieldsOut:
+async def form_fields_route(
+    return_id: UUID, page_key: str, ctx: Ctx, checkpoint: UUID | None = None
+) -> TaxDepthFieldsOut:
+    """The page's fields with their formatted values (TINs masked) and boxes."""
     await _on(ctx, _F)
-    raise NotImplementedYet
+    from abacus.modules.tax import form_pages_service as fp
+
+    found = await fp.preview(ctx, return_id, checkpoint)
+    return TaxDepthFieldsOut(
+        items=[
+            TaxDepthFieldOut(
+                field_key=f.key,
+                label=f.label,
+                value=f.value,
+                rect=[Decimal(str(x)) for x in f.box],
+            )
+            for f in fp.fields_of(found, page_key)
+        ]
+    )
+
+
+@entity_depth_router.get(
+    f"{_R}/form-pages/{{page_key}}/image",
+    action="form_preview.read",
+    response_model=bytes,
+    errors=(409,),
+)
+async def form_page_image_route(return_id: UUID, page_key: str, ctx: Ctx) -> Response:
+    """The page as a PNG, rasterised from the watermarked draft in the isolated child."""
+    await _on(ctx, _F)
+    from abacus.modules.tax import form_pages_service as fp
+
+    png = await fp.page_png(ctx, return_id, page_key)
+    return Response(content=png, media_type="image/png", headers={"Cache-Control": "no-store"})
 
 
 @entity_depth_router.get(
     f"{_R}/fields/{{field_key}}/trace",
     action="form_preview.read",
     response_model=TaxDepthTraceOut,
-    errors=(501,),
+    errors=(409,),
 )
-async def field_trace_route(return_id: UUID, field_key: str, ctx: Ctx) -> TaxDepthTraceOut:
+async def field_trace_route(
+    return_id: UUID, field_key: str, ctx: Ctx, checkpoint: UUID | None = None
+) -> TaxDepthTraceOut:
+    """Form field → workbook cell, or → the TB-mapped form line (SHL-09)."""
     await _on(ctx, _F)
-    raise NotImplementedYet
+    from abacus.modules.tax import form_pages_service as fp
+
+    cell_ref, tb_lines = fp.trace(await fp.preview(ctx, return_id, checkpoint), field_key)
+    return TaxDepthTraceOut(field_key=field_key, cell_ref=cell_ref, tb_lines=tb_lines)
 
 
 @entity_depth_router.get(
     f"{_R}/diagnostics",
     action="form_preview.read",
     response_model=TaxDepthDiagnosticsOut,
-    errors=(501,),
+    errors=(409,),
 )
 async def diagnostics_route(return_id: UUID, ctx: Ctx) -> TaxDepthDiagnosticsOut:
+    """The current approved checkpoint's form diagnostics."""
     await _on(ctx, _F)
-    raise NotImplementedYet
+    from abacus.modules.tax import form_pages_service as fp
+
+    found = await fp.preview(ctx, return_id, None)
+    items = await fp.diagnostics(ctx.tenant, return_id, found.checkpoint_id)
+    return TaxDepthDiagnosticsOut(
+        items=[
+            TaxDepthDiagnosticOut(
+                rule_key=d.rule_key, severity=cast(Severity, d.severity), issue_id=d.issue_id
+            )
+            for d in items
+        ],
+        blocking=sum(1 for d in items if d.severity == "blocking"),
+    )
 
 
 @entity_depth_router.get(
     f"{_R}/k1-previews",
     action="k1_package.read",
     response_model=TaxDepthK1PreviewsOut,
-    errors=(501,),
+    errors=(409,),
 )
 async def k1_previews_route(return_id: UUID, ctx: Ctx) -> TaxDepthK1PreviewsOut:
+    """Each recipient's box 2 from sheet 09 at the current approved checkpoint; Σ against
+    Schedule K line 2 (TAX-11 c)."""
     await _on(ctx, _F)
-    raise NotImplementedYet
+    from abacus.modules.tax import form_pages_service as fp
+
+    found = await fp.k1_previews(ctx, return_id)
+    return TaxDepthK1PreviewsOut(
+        items=[
+            TaxDepthK1PreviewOut(partner_id=pid, name=name, box_2=amount)
+            for pid, name, amount in found.items
+        ],
+        box_2_total=found.box_2_total,
+        schedule_k_line_2=found.schedule_k_line_2,
+        tally=cast(Tally, found.tally),
+    )
 
 
 @entity_depth_router.post(
     f"{_R}/form-pages:download-draft",
     action="form_preview.download_draft",
     response_model=bytes,
-    errors=(501,),
+    errors=(409,),
 )
-async def download_draft_route(return_id: UUID, ctx: Ctx) -> bytes:
+async def download_draft_route(return_id: UUID, ctx: Ctx) -> Response:
     """Watermarked PDF; fresh MFA; one `form_preview.downloaded` audit event (DEC-60)."""
     await _human(ctx, _F, "form_preview.download_draft")
-    raise NotImplementedYet
+    from abacus.modules.tax import form_pages_service as fp
+
+    content = await fp.download_draft(ctx, return_id)
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={
+            "Cache-Control": "no-store",
+            "Content-Disposition": 'attachment; filename="form-draft.pdf"',
+        },
+    )

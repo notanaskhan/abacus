@@ -13,9 +13,11 @@ from abacus.modules.review.checkpoints import (
     ApprovedValues,
     CheckpointChanged,
     CheckpointInvalid,
+    CheckpointState,
     ProposedChange,
     approved_values,
     checkpoint_deltas,
+    checkpoint_state,
     decide_import,
     follow_proposal_decision,
     list_checkpoints,  # T-04-T23: TAX-07's chip
@@ -275,6 +277,7 @@ __all__ = [
     "CheckpointChanged",
     "CheckpointInvalid",
     "CheckpointProposalHooks",
+    "CheckpointState",
     "ComputedCard",
     "ContentChanged",
     "DecidedCard",
@@ -334,6 +337,7 @@ __all__ = [
     "changed_since_any",
     "checkpoint_deltas",
     "checkpoint_recorded_at",
+    "checkpoint_state",
     "content_hash",
     "create_issue",  # P-04-T36: the scenario loader acts as the person named (as sign_target)
     "create_issue_in",  # A-06-T11: the finding and its issue in one unit of work

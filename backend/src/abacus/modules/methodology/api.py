@@ -115,6 +115,7 @@ from abacus.modules.methodology.report_templates import (
     published_body,
     published_clauses,
     published_consent_template,
+    published_form_face,
 )
 from abacus.modules.methodology.report_templates import TemplateBundle as ReportTemplateBundle
 from abacus.modules.methodology.report_templates import (
@@ -418,6 +419,7 @@ __all__ = [
     "published_checklists",
     "published_clauses",
     "published_consent_template",
+    "published_form_face",
     "published_notes",
     "record_progress",
     "register_catalog_provider",
