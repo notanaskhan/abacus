@@ -1697,6 +1697,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             }
         ),
         # Q-05-T22 (1014, TASK-8909): the case's latest analysis run
+        # T-06-T43 (1015, TASK-8912): a form face's field manifest
         # K-01-T02 (0180): guarded lifecycle transitions (ED-111: declared without this row).
         "methodology_version_states": frozenset(
             {

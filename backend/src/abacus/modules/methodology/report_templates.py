@@ -134,6 +134,7 @@ class TemplateBundle:
     sample_data: dict[str, object]
     content_sha256: str
     consent: ConsentTerms | None = None
+    field_manifest: object | None = None  # T-06-T43: a `tax_form_face` version's manifest
 
 
 @dataclass(frozen=True)
@@ -318,6 +319,7 @@ async def _store(ctx: AuthContext, bundle: TemplateBundle, source: Source) -> Im
                 source=source,
                 content_sha256=bundle.content_sha256,
                 imported_by_user_id=ctx.user_id,
+                field_manifest=bundle.field_manifest,
             )
         )
         if bundle.consent is not None:
@@ -569,6 +571,8 @@ class TemplateParts:
     # P-11-T11: the template the version belongs to and its synthetic sample data (the preview).
     template_id: UUID | None = None
     sample_data: dict[str, str] | None = None
+    # T-06-T43: a form face's field manifest (pages and fields), for the form pages service.
+    field_manifest: dict[str, object] | None = None
 
 
 async def version_parts(session: AsyncSession, version_id: UUID) -> TemplateParts | None:
@@ -592,7 +596,28 @@ async def version_parts(session: AsyncSession, version_id: UUID) -> TemplatePart
         variables=tuple(row.variables),
         template_id=row.template_id,
         sample_data={str(k): str(v) for k, v in dict(row.sample_data or {}).items()},
+        field_manifest=row.field_manifest,
     )
+
+
+async def latest_content(
+    ctx: AuthContext, family: str, name: str
+) -> tuple[str, dict[str, object] | None] | None:
+    """T-06-T43: the content hash and field manifest of a template's latest version, for an
+    import dry run's diff (the import's own authority already passed); None for a new one."""
+    async with tenant_session(ctx.tenant) as session:
+        row = (
+            await session.execute(
+                select(ReportTemplateVersion.content_sha256, ReportTemplateVersion.field_manifest)
+                .join(ReportTemplate, ReportTemplate.id == ReportTemplateVersion.template_id)
+                .where(ReportTemplate.family == family, ReportTemplate.name == name)
+                .order_by(ReportTemplateVersion.version_no.desc())
+                .limit(1)
+            )
+        ).first()
+    if row is None:
+        return None
+    return str(row[0]), row[1]
 
 
 # --- T-01-T10: what consent capture reads -------------------------------------------------------

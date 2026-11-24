@@ -351,6 +351,8 @@ class ReportTemplateVersion(Base):
     content_sha256: Mapped[str]
     imported_by_user_id: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    # T-06-T43 (1015): a `tax_form_face` version's field manifest; None for every other family.
+    field_manifest: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)
 
 
 class ReportTemplatePublication(Base):

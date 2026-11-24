@@ -53,8 +53,12 @@ GeneratedDocumentKind = Literal[
     "client_entries_journal",  # R-02-T14 remainder (0763): a C18 item's lines, composed by code
     "component_instructions",  # A-09-T27 (0944): the group's letter to a component auditor
     "close_package",  # C-02-T28 (0993): CLS-08's FS package, composed by code
+    "tax_form_face",  # T-06-T43 (1015): a form's page faces and field manifest (TAX-11)
 ]
-LayoutKey = Literal["letter", "consent_7216", "report", "notice_response", "package", "run_export"]
+LayoutKey = Literal[
+    "letter", "consent_7216", "report", "notice_response", "package", "run_export",
+    "tax_form_face",  # T-06-T43 (1015): drawn from a field manifest, never from blocks
+]  # fmt: skip
 RenderMode = Literal["draft", "final", "sample"]
 RenderFormat = Literal["pdf", "docx"]
 RequesterKind = Literal["human", "agent", "system"]
@@ -87,6 +91,9 @@ ImportErrorCode = Literal[
     "consent_terms_required",
     "recipients_block_required",
     "recipient_in_text",
+    # T-06-T43 (C11 v1.2 additive): a `tax_form_face` template's manifest rules.
+    "field_manifest_required",
+    "field_manifest_invalid",
 ]
 # T-01-T17: the one purpose a consent document asks for (C19's purposes; Rev. Proc. 2013-14).
 ConsentPurpose = Literal[
@@ -525,6 +532,61 @@ class ReportTemplateVersionOut(BaseModel):
     consent: Annotated[ConsentTermsOut | None, classified("internal")] = None
 
 
+FieldFormat = Literal["money", "whole_dollars", "text", "checkbox", "date", "percent", "tin"]
+BindingKind = Literal["workbook_cell", "tb_line", "return_fact"]
+
+
+class FormFacePageIn(BaseModel):
+    """One page of a form face (T-06-T43): its key, its number on the form and its title."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    page_key: Annotated[str, Field(pattern=r"^[a-z0-9_.-]{1,60}$"), classified("internal")]
+    page_no: Annotated[int, Field(ge=1, le=20), classified("internal")]
+    title: Annotated[str, Field(min_length=1, max_length=200), classified("internal")]
+
+
+class FieldBindingIn(BaseModel):
+    """Where a field's value comes from: a workbook cell (`06!C2`), a TB-mapped form line
+    (`L15`, the tax form lines reference set) or a return fact (`entity.name`)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    kind: Annotated[BindingKind, classified("internal")]
+    ref: Annotated[str, Field(min_length=1, max_length=80), classified("internal")]
+
+
+class FormFaceFieldIn(BaseModel):
+    """One field: its key, page, label (the form's own words), its box as fractions of the page
+    (x0, y0, x1, y1 from the top left), its format, its binding, and for a TIN the burned-in
+    mask (only the last four digits ever print on a draft)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    key: Annotated[str, Field(pattern=r"^[a-z0-9_.-]{1,80}$"), classified("internal")]
+    page_key: Annotated[str, Field(max_length=60), classified("internal")]
+    label: Annotated[str, Field(min_length=1, max_length=300), classified("internal")]
+    box: Annotated[list[float], Field(min_length=4, max_length=4), classified("internal")]
+    format: Annotated[FieldFormat, classified("internal")]
+    binding: Annotated[FieldBindingIn, classified("internal")]
+    mask: Annotated[bool, classified("internal")] = False
+
+
+class FieldManifestIn(BaseModel):
+    """A form face's manifest (T-06-T43): the form and tax year, its pages and fields."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    form: Annotated[str, Field(pattern=r"^[a-z0-9_.-]{1,40}$"), classified("internal")]
+    tax_year: Annotated[int, Field(ge=2020, le=2100), classified("internal")]
+    pages: Annotated[
+        list[FormFacePageIn], Field(min_length=1, max_length=20), classified("internal")
+    ]
+    fields: Annotated[
+        list[FormFaceFieldIn], Field(min_length=1, max_length=2000), classified("internal")
+    ]
+
+
 class TemplateImportIn(BaseModel):
     """A template bundle (AC-1): structured blocks, declared variables and synthetic sample data
     only (AC-2: no markup, no URL)."""
@@ -541,6 +603,8 @@ class TemplateImportIn(BaseModel):
     sample_data: Annotated[dict[str, str], classified("internal")] = {}
     # T-01-T17 (additive): required for the `consent_7216` family, refused for any other.
     consent: Annotated[ConsentTermsIn | None, classified("internal")] = None
+    # T-06-T43 (additive): required for the `tax_form_face` family, refused for any other.
+    field_manifest: Annotated[FieldManifestIn | None, classified("internal")] = None
 
 
 class ImportErrorOut(BaseModel):
@@ -557,6 +621,10 @@ class ImportReportOut(BaseModel):
     errors: Annotated[list[ImportErrorOut], classified("internal")]
     warnings: Annotated[list[str], classified("internal")]
     draft_version_id: Annotated[UUID | None, classified("internal")]
+    # T-06-T43 (additive): a dry run's diff against the template's latest version; empty when
+    # the import would store nothing new ("new_template", "content_changed", then per-field
+    # `added:<key>`, `removed:<key>`, `changed:<key>` for a form face).
+    changes: Annotated[list[str], classified("internal")] = []
 
 
 class PreviewPageOut(BaseModel):

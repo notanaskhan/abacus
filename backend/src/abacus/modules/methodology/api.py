@@ -134,6 +134,9 @@ from abacus.modules.methodology.report_templates import (
     import_template as import_report_template,
 )
 from abacus.modules.methodology.report_templates import (
+    latest_content as latest_report_template_content,
+)
+from abacus.modules.methodology.report_templates import (
     publish_version as publish_report_template,
 )
 from abacus.modules.methodology.report_templates import templates as report_templates_in_firm
@@ -392,6 +395,7 @@ __all__ = [
     "import_status",
     "import_template",
     "je_risk_criteria_version",
+    "latest_report_template_content",
     "latest_versions",
     "materiality_range_for",
     "methodology_router",

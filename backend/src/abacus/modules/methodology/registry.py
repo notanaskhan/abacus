@@ -538,3 +538,6 @@ INSERT_COLUMNS["template_rollouts"] = frozenset(
 UPDATE_COLUMNS["template_rollouts"] = frozenset(
     {"completed_at", "started_at", "started_by", "status"}
 )
+INSERT_COLUMNS["report_template_versions"] = INSERT_COLUMNS[
+    "report_template_versions"
+] | frozenset({"field_manifest"})  # T-06-T43 (1015, TASK-8912): a form face's field manifest

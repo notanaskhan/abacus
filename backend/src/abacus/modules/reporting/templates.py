@@ -58,6 +58,7 @@ from abacus.modules.reporting.contract import (
     ClauseBlock,
     DocBlock,
     EnclosuresBlock,
+    FieldManifestIn,
     HeadingBlock,
     ImportErrorCode,
     ImportErrorOut,
@@ -112,8 +113,63 @@ def content_sha256(body: TemplateImportIn) -> str:
             | {"sample_data": dumped["sample_data"]}
             # T-01-T17 (AC-28): a consent template's terms are content; others hash as before.
             | ({"consent": dumped["consent"]} if dumped.get("consent") is not None else {})
+            # T-06-T43: a form face's manifest is content too.
+            | (
+                {"field_manifest": dumped["field_manifest"]}
+                if dumped.get("field_manifest") is not None
+                else {}
+            )
         )
     ).hexdigest()
+
+
+# --- T-06-T43 (DEC-5914): a form face's field manifest -------------------------------------------
+
+FORM_FACE: Final = "tax_form_face"
+_CELL: Final = re.compile(r"^[0-9]{2}![A-Z]{1,3}[1-9][0-9]{0,3}$")
+_LINE: Final = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 .-]{0,15}$")  # a form-lines key: "K 1", "L14"
+_FACT: Final = re.compile(r"^[a-z][a-z0-9_]{1,30}(\.[a-z][a-z0-9_]{1,40}){1,2}$")
+
+
+def manifest_problems(manifest: FieldManifestIn) -> list[str]:
+    """Every rule a field manifest breaks, by path (code; listed at once): page keys and numbers
+    unique, a field's page declared, keys unique, a box inside the page with x0 < x1 and y0 < y1,
+    a binding ref of its kind's shape, a TIN masked and only a TIN masked, no markup in a label."""
+    out: list[str] = []
+    pages = [p.page_key for p in manifest.pages]
+    for i in _duplicates(pages):
+        out.append(f"field_manifest.pages[{i}].page_key")
+    for i in _duplicates([str(p.page_no) for p in manifest.pages]):
+        out.append(f"field_manifest.pages[{i}].page_no")
+    for i in _duplicates([f.key for f in manifest.fields]):
+        out.append(f"field_manifest.fields[{i}].key")
+    shapes = {"workbook_cell": _CELL, "tb_line": _LINE, "return_fact": _FACT}
+    for i, f in enumerate(manifest.fields):
+        at = f"field_manifest.fields[{i}]"
+        if f.page_key not in pages:
+            out.append(f"{at}.page_key")
+        x0, y0, x1, y1 = f.box
+        if not (0 <= x0 < x1 <= 1 and 0 <= y0 < y1 <= 1):
+            out.append(f"{at}.box")
+        if not shapes[f.binding.kind].fullmatch(f.binding.ref):
+            out.append(f"{at}.binding.ref")
+        if (f.format == "tin") != f.mask:
+            out.append(f"{at}.mask")
+        if has_markup(f.label):
+            out.append(f"{at}.label")
+    return out
+
+
+def manifest_diff(old: dict[str, object] | None, new: FieldManifestIn) -> list[str]:
+    """Per-field changes between a stored manifest and a new one, in key order."""
+    before = {
+        str(f["key"]): f for f in cast("list[dict[str, object]]", (old or {}).get("fields") or [])
+    }
+    after = {f.key: f.model_dump(mode="json") for f in new.fields}
+    out = [f"added:{k}" for k in sorted(after.keys() - before.keys())]
+    out += [f"removed:{k}" for k in sorted(before.keys() - after.keys())]
+    out += [f"changed:{k}" for k in sorted(after.keys() & before.keys()) if after[k] != before[k]]
+    return out
 
 
 class _Walk:
@@ -217,6 +273,14 @@ def validate(body: TemplateImportIn) -> tuple[list[ImportErrorOut], list[str]]:
         walk.add("layout_key", "unknown_layout")
     if body.layout_key not in LAYOUTS:
         walk.add("layout_key", "unknown_layout")
+    face = body.family == FORM_FACE
+    if face != (body.field_manifest is not None):
+        walk.add("field_manifest", "field_manifest_required")
+    if face != (body.layout_key == FORM_FACE):
+        walk.add("layout_key", "unknown_layout")
+    if body.field_manifest is not None:
+        for path in manifest_problems(body.field_manifest):
+            walk.add(path, "field_manifest_invalid")
     for field, value in (("name", body.name), ("description", body.description)):
         walk.wording(field, value)
     for i in _duplicates([v.key for v in body.variables]):
@@ -259,6 +323,23 @@ async def _gate(ctx: AuthContext, action: str | None) -> None:
         raise NotFound(REPORTING_GENERATED_DOCUMENTS.name)
 
 
+async def _changes(ctx: AuthContext, body: TemplateImportIn) -> list[str]:
+    """T-06-T43: what an import would store, against the template's latest version: nothing
+    (`[]`) when its content hash matches (a second load), else why."""
+    from abacus.modules.methodology.api import latest_report_template_content
+
+    latest = await latest_report_template_content(ctx, body.family, body.name)
+    if latest is None:
+        return ["new_template"]
+    sha, manifest = latest
+    if sha == content_sha256(body):
+        return []
+    out = ["content_changed"]
+    if body.field_manifest is not None:
+        out += manifest_diff(manifest, body.field_manifest)
+    return out
+
+
 async def import_bundle(
     ctx: AuthContext, body: TemplateImportIn, *, dry_run: bool
 ) -> ImportReportOut:
@@ -266,9 +347,11 @@ async def import_bundle(
     await _gate(ctx, "report_template.import")
     errors, warnings = validate(body)
     if errors or dry_run:
+        changes = [] if errors else await _changes(ctx, body)
         return ImportReportOut(
-            ok=not errors, errors=errors, warnings=warnings, draft_version_id=None
-        )
+            ok=not errors, errors=errors, warnings=warnings, draft_version_id=None,
+            changes=changes,
+        )  # fmt: skip
     dumped = body.model_dump(mode="json")
     stored = await import_report_template(
         ctx,
@@ -282,6 +365,7 @@ async def import_bundle(
             variables=cast(list[object], dumped["variables"]),
             sample_data=cast(dict[str, object], dumped["sample_data"]),
             content_sha256=content_sha256(body),
+            field_manifest=dumped.get("field_manifest"),
             consent=None
             if body.consent is None
             else ReportTemplateConsentTerms(
@@ -369,4 +453,4 @@ async def listing(ctx: AuthContext, family: str | None) -> ListPage[ReportTempla
     return ListPage[ReportTemplateOut](items=items, total=len(items))
 
 
-# --- A-07-T24 (DEC-2808): a family's published clauses, for a composer --------------------------
+# --- A-07-T24 (DEC-2808): a family's published clauses, for a composer ---------------------------
