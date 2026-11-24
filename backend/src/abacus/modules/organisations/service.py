@@ -546,6 +546,55 @@ async def entity_tin_kind(tenant: TenantContext, entity_id: UUID) -> str | None:
     return None if entity is None else entity.tin_kind
 
 
+async def entity_type_of(tenant: TenantContext, entity_id: UUID) -> str | None:
+    """T-08-T19: the entity's type (`individual`, `household_mfj`, `s_corp`, ...), for a caller
+    that already scoped the entity (a return's planning screen reads the filing unit's shape)."""
+    async with tenant_session(tenant) as session:
+        entity = await get_entity(session, entity_id)
+    return None if entity is None else entity.entity_type
+
+
+_UNIT_SIGNERS = text(
+    "SELECT DISTINCT c.id, c.display_name, r.role FROM contact_roles r "
+    "JOIN contacts c ON c.id = r.contact_id JOIN client_entities e ON e.id = :entity "
+    "WHERE ((r.scope_kind = 'client_entity' AND r.scope_id = e.id) "
+    "    OR (r.scope_kind = 'client' AND r.scope_id = e.client_id)) "
+    "AND r.role IN ('taxpayer', 'spouse', 'owner', 'cfo', 'controller', 'trustee', 'executor') "
+    "ORDER BY r.role DESC, c.display_name"
+)
+
+
+async def unit_signer_contacts(tenant: TenantContext, entity_id: UUID) -> list[tuple[UUID, str]]:
+    """T-08-T19 (TAX-15 b): who a message about the entity's return goes to by default: both
+    spouses of a joint unit, else its first signer (the consent capture's filing unit, read for
+    a caller that scoped the entity); (contact, name)."""
+    async with tenant_session(tenant) as session:
+        rows = (await session.execute(_UNIT_SIGNERS, {"entity": entity_id})).all()
+    seen: dict[UUID, tuple[str, str]] = {}
+    for row in rows:
+        seen.setdefault(row.id, (str(row.display_name), str(row.role)))
+    spouses = [(cid, name) for cid, (name, role) in seen.items() if role in ("taxpayer", "spouse")]
+    if spouses:
+        return spouses
+    return [(cid, name) for cid, (name, _role) in list(seen.items())[:1]]
+
+
+_OPEN_ENVELOPE = text(
+    "SELECT envelope_id FROM consents WHERE client_entity_id = :entity AND status = 'requested' "
+    "AND envelope_id IS NOT NULL AND CAST(:year AS integer) = ANY(tax_years) "
+    "ORDER BY envelope_id LIMIT 1"
+)
+
+
+async def open_consent_envelope(
+    tenant: TenantContext, entity_id: UUID, tax_year: int
+) -> UUID | None:
+    """T-08-T19 (TAX-15 d): the envelope of the entity's open §7216 consent request for the year,
+    for "Open consent envelope" on a consent-blocked opportunity; None when nothing is asked."""
+    async with tenant_session(tenant) as session:
+        return await session.scalar(_OPEN_ENVELOPE, {"entity": entity_id, "year": tax_year})
+
+
 async def firm_offices(tenant: TenantContext) -> list[tuple[UUID, str]]:
     """P-01-T04: the firm's offices for identity's `/v1/me` (registered as its office list)."""
     async with tenant_session(tenant) as session:

@@ -304,6 +304,8 @@ class TaxPracticeRaiseSheetOut(BaseModel):
     body: Annotated[str, Field(max_length=8000), Tri]
     draft_from_agent: Annotated[bool, Internal]
     recipients: Annotated[list[str], Tri]
+    # T-08-T19 (additive): the default recipients' contacts, in `recipients`' order.
+    recipient_contact_ids: Annotated[list[UUID], Internal] = []
 
 
 class TaxPracticeRaiseIn(BaseModel):
@@ -737,24 +739,74 @@ async def standards_check_confirm_route(
     )
 
 
+def _opportunity_out(
+    found: object, *, envelope: UUID | None, actions: list[str]
+) -> TaxPracticeOpportunityOut:
+    from abacus.modules.tax.planning.service import Opportunity
+
+    o = cast(Opportunity, found)
+    return TaxPracticeOpportunityOut(
+        opportunity_id=o.id,
+        client_id=o.client_id,
+        client_name=o.client_name,
+        work_item_id=o.work_item_id,
+        rule_key=o.rule_key,
+        category=o.category,
+        title=o.title,
+        status=o.status,
+        est_savings=o.est_savings,
+        rationale=o.rationale,
+        rationale_source=o.rationale_source,
+        consent_envelope_id=envelope,
+        raised_at=o.raised_at,
+        project_engagement_id=o.project_engagement_id,
+        row_version=o.row_version,
+        allowed_actions=actions,
+    )
+
+
+async def _opportunity(ctx: AuthContext, opportunity_id: UUID) -> TaxPracticeOpportunityOut:
+    from abacus.modules.tax.planning import service as ps
+
+    found = await ps.opportunity(ctx, opportunity_id)
+    return _opportunity_out(
+        found,
+        envelope=await ps.consent_envelope(ctx.tenant, found),
+        actions=await ps.allowed(ctx, found),
+    )
+
+
 @practice_tools_router.get(
     "/planning-summary",
     action="planning.read",
     response_model=TaxPracticePlanningSummaryOut,
-    errors=(501,),
 )
 async def planning_summary_route(
     ctx: Ctx, tax_year: int, partner_id: UUID | None = None
 ) -> TaxPracticePlanningSummaryOut:
+    """T-08-T19 (DEC-5916): the strip, by code over the viewer's visible returns (AC-27)."""
     await _on(ctx, _P)
-    raise NotImplementedYet
+    from abacus.modules.tax.planning import service as ps
+
+    found = await ps.summary(ctx, tax_year, partner_id)
+    return TaxPracticePlanningSummaryOut(
+        tax_year=found.tax_year,
+        clients_to_contact=found.clients_to_contact,
+        est_savings=found.est_savings,
+        talking_points=found.talking_points,
+        consent_blocked=found.consent_blocked,
+        opportunities=found.opportunities,
+        clients=found.clients,
+    )
+
+
+_PAGE = 50
 
 
 @practice_tools_router.get(
     "/planning-opportunities",
     action="planning.read",
     response_model=TaxPracticeOpportunityListOut,
-    errors=(501,),
 )
 async def planning_opportunities_route(
     ctx: Ctx,
@@ -764,98 +816,160 @@ async def planning_opportunities_route(
     include_dismissed: bool = False,
     cursor: str | None = None,
 ) -> TaxPracticeOpportunityListOut:
+    """The queue (TAX-15 a, e, f): keyset on the opportunity id, 50 a page; `total` counts
+    every match ("Showing 9 of 71")."""
     await _on(ctx, _P)
-    raise NotImplementedYet
+    from abacus.modules.tax.planning import service as ps
+
+    found = await ps.opportunities(
+        ctx, status=status, client_id=client_id, work_item_id=work_item_id,
+        include_dismissed=include_dismissed,
+    )  # fmt: skip
+    ordered = sorted(found, key=lambda o: str(o.id))
+    after = [o for o in ordered if cursor is None or str(o.id) > cursor]
+    page = after[:_PAGE]
+    items = [
+        _opportunity_out(
+            o, envelope=await ps.consent_envelope(ctx.tenant, o), actions=await ps.allowed(ctx, o)
+        )
+        for o in page
+    ]
+    more = len(after) > _PAGE
+    return TaxPracticeOpportunityListOut(
+        items=items, total=len(found), next_cursor=str(page[-1].id) if more and page else None
+    )
 
 
 @practice_tools_router.get(
     "/planning-opportunities/{opportunity_id}",
     action="planning.read",
     response_model=TaxPracticeOpportunityOut,
-    errors=(501,),
 )
 async def planning_opportunity_route(opportunity_id: UUID, ctx: Ctx) -> TaxPracticeOpportunityOut:
     await _on(ctx, _P)
-    raise NotImplementedYet
+    return await _opportunity(ctx, opportunity_id)
 
 
 @practice_tools_router.post(
     "/planning-opportunities/{opportunity_id}:prepare-raise",
     action="planning.raise",
     response_model=TaxPracticeRaiseSheetOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def planning_prepare_raise_route(
     opportunity_id: UUID, ctx: Ctx, key: IdempotencyKey
 ) -> TaxPracticeRaiseSheetOut:
+    """The send sheet on the firm's "Planning conversation" template (DEC-79; P-25 is not
+    accepted, so no agent draft); nothing is sent. 409 `planning_template_missing`."""
     await _human(ctx, _P, "planning.raise")
-    raise NotImplementedYet
+    from abacus.modules.tax.planning import service as ps
+
+    del key  # a read: repeating it changes nothing
+    sheet = await ps.prepare_raise(ctx, opportunity_id)
+    return TaxPracticeRaiseSheetOut(
+        template_id=sheet.template_version_id,
+        subject=sheet.subject,
+        body=sheet.body,
+        draft_from_agent=False,
+        recipients=[name for _c, name in sheet.recipients],
+        recipient_contact_ids=[c for c, _name in sheet.recipients],
+    )
 
 
 @practice_tools_router.post(
     "/planning-opportunities/{opportunity_id}:raise",
     action="planning.raise",
     response_model=TaxPracticeOpportunityOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def planning_raise_route(
     opportunity_id: UUID, body: TaxPracticeRaiseIn, ctx: Ctx, key: IdempotencyKey
 ) -> TaxPracticeOpportunityOut:
-    """Raised only after a person's send through `message.send` (AC-27)."""
+    """Raised only after a person's send through `message.send` (AC-27); a retry of a raised
+    opportunity answers it unchanged."""
     await _human(ctx, _P, "planning.raise")
-    raise NotImplementedYet
+    from abacus.modules.tax.planning import service as ps
+
+    del key
+    await ps.raise_with_client(
+        ctx, opportunity_id, subject=body.subject, body=body.body,
+        recipient_contact_ids=body.recipient_contact_ids,
+    )  # fmt: skip
+    return await _opportunity(ctx, opportunity_id)
 
 
 @practice_tools_router.post(
     "/planning-opportunities/{opportunity_id}:create-project",
     action="planning.create_project",
     response_model=TaxPracticeProjectPrefillOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def planning_create_project_route(
     opportunity_id: UUID, ctx: Ctx, key: IdempotencyKey
 ) -> TaxPracticeProjectPrefillOut:
+    """ENG-03's prefill; the opportunity becomes Accepted when the engagement is created."""
     await _human(ctx, _P, "planning.create_project")
-    raise NotImplementedYet
+    from abacus.modules.tax.planning import service as ps
+
+    del key
+    found = await ps.create_project(ctx, opportunity_id)
+    return TaxPracticeProjectPrefillOut(
+        engagement_name=found.engagement_name,
+        owner_user_id=found.owner_user_id,
+        client_id=found.client_id,
+        source_ref=found.source_ref,
+    )
 
 
 @practice_tools_router.post(
     "/planning-opportunities/{opportunity_id}:decline",
     action="planning.dismiss",
     response_model=TaxPracticeOpportunityOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def planning_decline_route(
     opportunity_id: UUID, ctx: Ctx, key: IdempotencyKey
 ) -> TaxPracticeOpportunityOut:
     await _human(ctx, _P, "planning.dismiss")
-    raise NotImplementedYet
+    from abacus.modules.tax.planning import service as ps
+
+    del key
+    await ps.decline(ctx, opportunity_id)
+    return await _opportunity(ctx, opportunity_id)
 
 
 @practice_tools_router.post(
     "/planning-opportunities/{opportunity_id}:dismiss",
     action="planning.dismiss",
     response_model=TaxPracticeOpportunityOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def planning_dismiss_route(
     opportunity_id: UUID, body: TaxPracticeDismissIn, ctx: Ctx, key: IdempotencyKey
 ) -> TaxPracticeOpportunityOut:
     await _human(ctx, _P, "planning.dismiss")
-    raise NotImplementedYet
+    from abacus.modules.tax.planning import service as ps
+
+    del key
+    await ps.dismiss(ctx, opportunity_id, body.reason, body.note)
+    return await _opportunity(ctx, opportunity_id)
 
 
 @practice_tools_router.post(
     "/planning-opportunities/{opportunity_id}:restore",
     action="planning.dismiss",
     response_model=TaxPracticeOpportunityOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def planning_restore_route(
     opportunity_id: UUID, ctx: Ctx, key: IdempotencyKey
 ) -> TaxPracticeOpportunityOut:
     await _human(ctx, _P, "planning.dismiss")
-    raise NotImplementedYet
+    from abacus.modules.tax.planning import service as ps
+
+    del key
+    await ps.restore(ctx, opportunity_id)
+    return await _opportunity(ctx, opportunity_id)
 
 
 @practice_tools_router.post(
@@ -863,13 +977,21 @@ async def planning_restore_route(
     action="planning.create",
     response_model=TaxPracticeOpportunityOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def planning_create_route(
     body: TaxPracticeOpportunityCreateIn, ctx: Ctx, key: IdempotencyKey
 ) -> TaxPracticeOpportunityOut:
+    """TXT-03's "Add to planning" or a TXP-01 memo item: Open, no model (AC5.7). The same
+    source item answers its existing opportunity."""
     await _human(ctx, _P, "planning.create")
-    raise NotImplementedYet
+    from abacus.modules.tax.planning import service as ps
+
+    del key
+    found = await ps.create_manual(
+        ctx, body.work_item_id, body.title, body.source, body.source_ref
+    )
+    return await _opportunity(ctx, found.id)
 
 
 @practice_tools_router.post(

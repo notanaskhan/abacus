@@ -13,6 +13,9 @@ class EngagementCreated(DomainEvent):
     event_type: ClassVar[str] = "engagement.created"
 
     engagement_id: Annotated[UUID, classified("internal")]
+    # T-08-T19 (additive): the record the engagement was opened from, when ENG-03 was prefilled
+    # by one (`planning_opportunity:<uuid>`: TAX-15 c's opportunity becomes Accepted).
+    source_ref: Annotated[str | None, classified("internal")] = None
 
 
 class IndependenceRequested(DomainEvent):

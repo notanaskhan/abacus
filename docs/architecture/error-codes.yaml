@@ -2851,6 +2851,11 @@ codes:
     raised_by:
     - abacus.modules.review.sign_offs.OpenReviewNotes
     summary: 'R-SO-4: open review notes on the target block L2 and above.'
+  opportunity_state_invalid:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.practice_tools_errors.OpportunityStateInvalid
+    summary: The opportunity's status does not allow this move (`facts.status`).
   org_structure_invalid:
     status: 422
     raised_by:
@@ -3081,6 +3086,12 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.fieldwork.planning.PlanningInvalid
+  planning_template_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.practice_tools_errors.PlanningTemplateMissing
+    summary: 'The firm has no version of the "Planning conversation" template to start the message from
+      (DEC-79: no model text reaches a client).'
   policy_locked:
     status: 422
     raised_by:
@@ -3291,6 +3302,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.component_auditors.RecipientInvalid
     summary: The recipient must be the component auditor's engagement-partner contact.
+  recipient_not_client:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.practice_tools_errors.RecipientNotClient
+    summary: A raise names a contact who is not the opportunity's client's.
   recipient_not_contact:
     status: 422
     raised_by:

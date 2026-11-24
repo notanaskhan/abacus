@@ -23,6 +23,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from typing import Final, Literal, cast
@@ -151,6 +152,12 @@ async def catalogue(ctx: AuthContext) -> list[CatalogueItem]:
 
 
 # --- drafts -------------------------------------------------------------------------------------
+
+
+def _source_ref(payload: Mapping[str, object]) -> str | None:
+    """T-08-T19: the prefilling record's reference, when the draft carries one."""
+    found = payload.get("source_ref")
+    return found if isinstance(found, str) and found else None
 
 
 @dataclass(frozen=True)
@@ -736,7 +743,7 @@ async def create_from_draft(
             target=Target("engagement", target.id),
             after=Ref(draft_id=draft_id, work_items=len(work)),
         )
-        tx.emit(EngagementCreated(engagement_id=target.id))
+        tx.emit(EngagementCreated(engagement_id=target.id, source_ref=_source_ref(d.payload)))
     return await _created(ctx, target.id, requested)
 
 
@@ -899,5 +906,5 @@ async def start_acceptance(ctx: AuthContext, draft_id: UUID) -> AcceptanceStarte
             target=Target("engagement_draft", draft_id),
             after=Ref(engagement_id=engagement_id),
         )
-        tx.emit(EngagementCreated(engagement_id=engagement_id))
+        tx.emit(EngagementCreated(engagement_id=engagement_id, source_ref=_source_ref(d.payload)))
     return AcceptanceStarted(draft_id, engagement_id, record_id, "prospect")

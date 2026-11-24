@@ -408,6 +408,13 @@ class EngagementDraftPayload(BaseModel):
     component_entity_ids: Annotated[list[UUID], Field(max_length=50), classified("internal")] = []
     portal_contact_ids: Annotated[list[UUID], Field(max_length=50), classified("internal")] = []
     prior_engagement_id: Annotated[UUID | None, classified("internal")] = None
+    # T-08-T19 (DEC-5916): the record that prefilled the wizard (TAX-15's "Create advisory
+    # project…"), carried on `engagement.created` so its owner can follow the engagement.
+    source_ref: Annotated[
+        str | None,
+        Field(default=None, pattern=r"^planning_opportunity:[0-9a-f-]{36}$"),
+        classified("internal"),
+    ]
 
 
 class EngagementDraftIn(BaseModel):

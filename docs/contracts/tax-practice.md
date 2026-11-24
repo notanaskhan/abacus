@@ -27,3 +27,15 @@ Every figure, explanation, rationale and name is TRI: agents read it only with �
 | `POST /v1/tax-returns/{id}/aars` · `GET /v1/aars/{xid}` · `POST …/recommendation:draft` | `aar.create` · `tax_return.read` | the election is the signer's `decision.decide` (409 `not_bba_signer`) |
 
 **Examples (foot):** AGI 598,030 = 268,400 + 6,910 + 14,820 + 307,900; 8 flagged; refund due 2,708 = 41,000 − 37,678 − 614; IL (495) = 11,999 − 12,494; 14,800 = 40,000 × 37%.
+
+## Planning, live (T-08-T19, DEC-5916)
+
+The planning routes answer from `tax/planning/service.py`; the flag still gates them (off: 404).
+
+- **Screens** are the system's, on `tax_return.approved`, `filing.acknowledged` (accepted) and `envelope.completed` (`consent_set`), only with `tax.planning` on. Code rules (`tax/planning/rules.py`: `daf_bunching`, `solo_401k`, `dependent_care_fsa`, `qcd`, `roth_conversion`, `reasonable_compensation`) run over the approved engine summary and the CPA-reviewed `tax/compute/parameters/planning/ty<year>.yaml`; estimates and their basis (calculator, input lines by key, parameter version) are code's. One opportunity per (return, rule); a re-screen refreshes only Open and Not screened rows.
+- **Consent filter.** A tax service to the same client needs no separate consent (§301.7216-2(h)). Without `use` and `ai_disclosure` in force for the filing unit (both spouses of a joint unit) the row is `not_screened`: no model call, no raise, `consent_envelope_id` names the open consent envelope. A `non_tax_product` row also needs `other_services_use` in force or it is never written.
+- **Raise** (`prepare-raise` then `raise`): the owner or the relationship partner; the sheet is the firm's `planning_conversation` template filled by code (`draft_from_agent` is always false until P-25), `recipient_contact_ids` additive (the filing unit's taxpayers). The send is `message.send` (portal, the outbound scope check), one message per recipient; Raised only after it. 409 `planning_template_missing` without a version; 422 `recipient_not_client`; 409 `opportunity_state_invalid` for a move the status does not allow.
+- **Create project** answers the ENG-03 prefill with `source_ref = planning_opportunity:<id>`; ENG-03 keeps it on the draft payload (`EngagementDraftPayload.source_ref`, additive) and `engagement.created` carries it (additive); the opportunity becomes Accepted with `project_engagement_id` when the engagement is the same client's.
+- **Decline, dismiss, restore** write one insert-only `planning_opportunity_events` row each; dismiss needs its reason; restore returns `previous_status`.
+- **Manual add** (`POST /v1/planning-opportunities`): Open, `rule_key = manual.<source>.<hash of source_ref>`, no estimate, no model; the same source item answers its existing row.
+- **Strip** (`planning-summary`): live = Open, Raised, Accepted, Not screened; `clients_to_contact` = clients with an Open, Raised or Not screened row; `est_savings` = Σ Open and Raised estimates; `consent_blocked` = clients with a Not screened row; `talking_points` = drafted when any rationale is the agent's, else template.
