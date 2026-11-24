@@ -16874,6 +16874,10 @@ export type DeliveryPackageEditIn = {
  */
 export type DeliveryPackageOut = {
     /**
+     * Approval Requested From
+     */
+    approval_requested_from?: Array<string>;
+    /**
      * Balance Sheet
      */
     balance_sheet?: Array<DeliveryStatementLineOut>;

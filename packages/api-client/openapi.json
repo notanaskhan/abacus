@@ -36073,6 +36073,15 @@
           }
         ],
         "properties": {
+          "approval_requested_from": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Approval Requested From",
+            "type": "array"
+          },
           "balance_sheet": {
             "cls": "internal",
             "default": [],

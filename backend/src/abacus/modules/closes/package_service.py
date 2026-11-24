@@ -16,6 +16,7 @@ otherwise), creating the deliverable on the first edit; a released package is no
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from typing import Any, Final, cast
@@ -45,6 +46,7 @@ LEGENDS: Final = {pkg.NO_ASSURANCE: "No assurance is provided."}
 
 _DELIVERABLE = text(
     "SELECT d.id, d.status, d.current_version_no, d.released_at, d.client_approved_at, "
+    "d.released_by, d.client_approved_by_contact_id, "
     "v.sections, v.cas_answer, v.content_hash, v.route, v.legend_key, v.posted_tb_ref, "
     "v.commentary FROM close_deliverables d "
     "LEFT JOIN close_deliverable_versions v ON v.deliverable_id = d.id "
@@ -183,6 +185,7 @@ async def get_package(ctx: AuthContext, close_id: UUID) -> DeliveryPackageOut:
     commentary = (
         str(stored["doc"]) if "doc" in stored else await drafted_commentary(ctx.tenant, close_id)
     )
+    people = await _people(ctx, close.engagement_id, row)
     return DeliveryPackageOut(
         close_id=close_id,
         status=row.status if row is not None else "drafting",
@@ -197,10 +200,57 @@ async def get_package(ctx: AuthContext, close_id: UUID) -> DeliveryPackageOut:
             DeliveryPreconditionOut(blocker=p.blocker, done=p.done, of=p.of) for p in reasons
         ],
         released_at=row.released_at if row is not None else None,
+        released_by=people.released_by,
         client_approved_at=row.client_approved_at if row is not None else None,
+        client_approved_by=people.client_approved_by,
+        approval_requested_from=list(people.requested_from),
         content_hash=pkg.content_hash(bs, inc, routed, sections),
         version=version_no,
         commentary=commentary if "commentary" in sections else None,
+    )
+
+
+@dataclass(frozen=True)
+class _People:
+    released_by: str | None = None
+    client_approved_by: str | None = None
+    requested_from: tuple[str, ...] = ()
+
+
+async def _people(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    row: Row[Any] | None,  # Any: a SQL row
+) -> _People:
+    """C-02-T37 (CLS-08 d, e; DEC-5925): who released the package, which client contact approved
+    it, and whom the approval was requested from (the owner and the approver of record, as the
+    release asked them), each name read now. Nothing before release."""
+    from abacus.modules.engagements.api import client_contact_names, engagement_contacts
+    from abacus.modules.identity.api import Forbidden, names_of
+
+    if row is None or row.released_by is None:
+        return _People()
+    released = (await names_of([row.released_by])).get(row.released_by)
+    try:
+        asked = [
+            c.contact_id
+            for c in await engagement_contacts(ctx, engagement_id)
+            if c.designation in ("approver_of_record", "owner")
+        ]
+    except Forbidden:  # a reader without `client_contact.read` sees no names
+        asked = []
+    wanted = [*asked]
+    if row.client_approved_by_contact_id is not None:
+        wanted.append(row.client_approved_by_contact_id)
+    names = await client_contact_names(ctx.tenant, engagement_id, wanted) if wanted else {}
+    approver = (
+        None if row.client_approved_by_contact_id is None
+        else names.get(row.client_approved_by_contact_id)
+    )  # fmt: skip
+    return _People(
+        released,
+        approver,
+        tuple(dict.fromkeys(n for c in asked if (n := names.get(c)) is not None)),
     )
 
 

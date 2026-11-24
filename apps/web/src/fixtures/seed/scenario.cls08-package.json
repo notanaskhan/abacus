@@ -35,6 +35,12 @@
   "legend": "No assurance is provided.",
   "released_at": "2026-09-14T16:25:00-05:00",
   "client_approved_at": "2026-09-15T08:42:00-05:00",
+  "released_by": "Priya Raman",
+  "approval_requested_from": [
+    "Tess Moreno",
+    "Ben Ashby"
+  ],
+  "client_approved_by": "Tess Moreno",
   "balance_sheet": [
     {
       "key": "cash",
