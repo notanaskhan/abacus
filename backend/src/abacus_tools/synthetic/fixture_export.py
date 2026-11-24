@@ -671,6 +671,7 @@ def scenario_files() -> dict[str, str]:
     from abacus_tools.synthetic.scenarios.brightwater_hale.cas_delivery_slice import (
         cls07_rows,
         cls08_package,
+        cls11_console,
     )
     from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import hub_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.usage_slice import adm14_rows
@@ -700,6 +701,18 @@ def scenario_files() -> dict[str, str]:
                 "slice": "cas_delivery",
                 "snapshot": "E0",
                 **cls08_package(),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        # C-02-T35 (DEC-5924): CLS-11's console, log, failures and sync events at 9:24 AM.
+        "scenario.cls11-console.json": json.dumps(
+            {
+                "scenario": SCENARIO_VERSION,
+                "slice": "cas_delivery",
+                "snapshot": "E0",
+                **cls11_console(),
             },
             indent=2,
             ensure_ascii=False,

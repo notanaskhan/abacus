@@ -234,6 +234,22 @@ class ReconnectRequestOut(BaseModel):
     requested_at: Annotated[datetime, classified("internal")]
 
 
+class ReconnectPreviewOut(BaseModel):
+    """C-02-T35 (CLS-11 d; DEC-5924): what "Request reconnect…" would send, before it is sent:
+    the owners it goes to and the first owner's Reconnect request email (POR-20's database
+    template, rendered as the send renders it). `template_missing`: the firm has no version, so
+    the send would be recorded blocked and the dialog says so."""
+
+    model_config = ConfigDict(frozen=True)
+
+    recipients: Annotated[list[str], classified("confidential")]
+    template_missing: Annotated[bool, classified("internal")]
+    subject: Annotated[str | None, classified("confidential")] = None
+    html: Annotated[str | None, classified("confidential")] = None
+    text: Annotated[str | None, classified("confidential")] = None
+    from_display: Annotated[str | None, classified("public")] = None
+
+
 class LedgerPullIn(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 

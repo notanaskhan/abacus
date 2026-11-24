@@ -813,6 +813,7 @@ function Body({
     case "rmm_matrix": // A-04-T13: read by AUD-08's register, not a KNW-04 section
     case "je_risk_criteria": // A-08-T12: read by AUD-12's JE test, not a KNW-04 section
     case "mus_confidence_factors": // A-08-T13: read by AUD-11's MUS sizing
+    case "deadline_overrides": // T-08-T44: read by the deadline recompute, not a KNW-04 section
       return null;
   }
 }

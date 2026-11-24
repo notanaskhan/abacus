@@ -33393,12 +33393,193 @@
         "title": "DeactivateIn",
         "type": "object"
       },
+      "DeadlineHolidayOut": {
+        "properties": {
+          "date": {
+            "cls": "public",
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "jurisdiction": {
+            "cls": "public",
+            "title": "Jurisdiction",
+            "type": "string"
+          },
+          "name": {
+            "cls": "public",
+            "title": "Name",
+            "type": "string"
+          },
+          "source": {
+            "cls": "internal",
+            "enum": [
+              "platform",
+              "firm"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "name",
+          "jurisdiction",
+          "source",
+          "version_id"
+        ],
+        "title": "DeadlineHolidayOut",
+        "type": "object"
+      },
+      "DeadlineOffsetRow": {
+        "additionalProperties": false,
+        "description": "DF-10: the firm's internal target for a form, this many days before the statutory due\ndate (moved earlier past a weekend or a firm closure day). HOME-03 keeps the statutory date.",
+        "properties": {
+          "form": {
+            "cls": "internal",
+            "pattern": "^[0-9A-Za-z-]{2,20}$",
+            "title": "Form",
+            "type": "string"
+          },
+          "internal_offset_days": {
+            "cls": "internal",
+            "maximum": 120.0,
+            "minimum": 1.0,
+            "title": "Internal Offset Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "form",
+          "internal_offset_days"
+        ],
+        "title": "DeadlineOffsetRow",
+        "type": "object"
+      },
+      "DeadlineOverridesPayload": {
+        "additionalProperties": false,
+        "description": "DF-10 firm overrides on top of the platform rules (T-08-T44; K-02 lifecycle: owner-drafted,\nowner-published, effective-dated). Platform rows stay read-only; these never change a\nstatutory date except through a person's per-client postponement application.",
+        "properties": {
+          "closures": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/FirmClosureRow"
+            },
+            "maxItems": 100,
+            "title": "Closures",
+            "type": "array"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "deadline_overrides",
+            "title": "Kind",
+            "type": "string"
+          },
+          "offsets": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/DeadlineOffsetRow"
+            },
+            "maxItems": 50,
+            "title": "Offsets",
+            "type": "array"
+          },
+          "postponements": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/FirmPostponementRow"
+            },
+            "maxItems": 100,
+            "title": "Postponements",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "DeadlineOverridesPayload",
+        "type": "object"
+      },
+      "DeadlinePostponementOut": {
+        "properties": {
+          "notice_id": {
+            "cls": "public",
+            "title": "Notice Id",
+            "type": "string"
+          },
+          "postponed_to": {
+            "cls": "public",
+            "format": "date",
+            "title": "Postponed To",
+            "type": "string"
+          },
+          "source": {
+            "cls": "internal",
+            "enum": [
+              "platform",
+              "firm"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          },
+          "window_end": {
+            "cls": "public",
+            "format": "date",
+            "title": "Window End",
+            "type": "string"
+          },
+          "window_start": {
+            "cls": "public",
+            "format": "date",
+            "title": "Window Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "notice_id",
+          "window_start",
+          "window_end",
+          "postponed_to",
+          "source",
+          "version_id"
+        ],
+        "title": "DeadlinePostponementOut",
+        "type": "object"
+      },
       "DeadlineRowOut": {
         "properties": {
           "client": {
             "cls": "confidential",
             "title": "Client",
             "type": "string"
+          },
+          "deadline_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Deadline Id"
           },
           "due_on": {
             "cls": "internal",
@@ -33457,8 +33638,73 @@
         "title": "DeadlineRowOut",
         "type": "object"
       },
+      "DeadlineRulesSectionOut": {
+        "description": "KNW-04 section j (T-08-T44, DF-10, DEC-5921): the platform's rules, holidays and relief\nnotices in effect, read-only, beside the firm's `deadline_overrides` standard (its version in\neffect, editable and published by its owner through the K-02 lifecycle).",
+        "properties": {
+          "firm_overrides": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeadlineOverridesPayload"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "firm_standard": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StandardOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "holidays": {
+            "cls": "public",
+            "items": {
+              "$ref": "#/components/schemas/DeadlineHolidayOut"
+            },
+            "title": "Holidays",
+            "type": "array"
+          },
+          "platform_read_only": {
+            "cls": "internal",
+            "const": true,
+            "default": true,
+            "title": "Platform Read Only",
+            "type": "boolean"
+          },
+          "platform_rules": {
+            "cls": "public",
+            "items": {
+              "$ref": "#/components/schemas/PlatformDeadlineRuleOut"
+            },
+            "title": "Platform Rules",
+            "type": "array"
+          },
+          "postponements": {
+            "cls": "public",
+            "items": {
+              "$ref": "#/components/schemas/DeadlinePostponementOut"
+            },
+            "title": "Postponements",
+            "type": "array"
+          }
+        },
+        "required": [
+          "platform_rules",
+          "holidays",
+          "postponements"
+        ],
+        "title": "DeadlineRulesSectionOut",
+        "type": "object"
+      },
       "DeadlinesOut": {
-        "description": "The viewer's next 14 days (interim source: work items' `due_on` and milestones; T-08 moves\nit to `filing_deadlines` without a shape change). `next` is the first one past the window.",
+        "description": "The viewer's next 14 days: `filing_deadlines` rows (the HOME-03 read model, the viewer as\nowner or signer) once `practice.filing_deadlines` is on (T-08-T20), work items' `due_on`\nbefore. `next` is the first one past the window.",
         "properties": {
           "next": {
             "anyOf": [
@@ -35148,6 +35394,19 @@
             "cls": "internal",
             "title": "Evidence Version Id"
           },
+          "notice_received_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Notice Received On"
+          },
           "reason": {
             "cls": "confidential",
             "maxLength": 500,
@@ -35312,9 +35571,66 @@
         "title": "DeliveryHandoffIn",
         "type": "object"
       },
+      "DeliveryHandoffItemOut": {
+        "additionalProperties": false,
+        "description": "A tax-relevant close item (CLS-12 a's \"Open tax-relevant items\").",
+        "properties": {
+          "create_tax_issue": {
+            "cls": "internal",
+            "default": true,
+            "title": "Create Tax Issue",
+            "type": "boolean"
+          },
+          "issue_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Issue Id",
+            "type": "string"
+          },
+          "resolved": {
+            "cls": "internal",
+            "title": "Resolved",
+            "type": "boolean"
+          },
+          "title": {
+            "cls": "confidential",
+            "maxLength": 500,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "issue_id",
+          "title",
+          "resolved"
+        ],
+        "title": "DeliveryHandoffItemOut",
+        "type": "object"
+      },
       "DeliveryHandoffOut": {
         "additionalProperties": false,
         "properties": {
+          "balanced": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Balanced"
+          },
+          "items": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/DeliveryHandoffItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
           "locked_at": {
             "anyOf": [
               {
@@ -36318,6 +36634,47 @@
         "title": "DeliveryScheduleOut",
         "type": "object"
       },
+      "DeliveryScreenOut": {
+        "additionalProperties": false,
+        "description": "C-02-T34: one vendor-screen run's outcome. `succeeded` left a suggestion to adopt in the\ndrawer; `escalated` proposed nothing (`reason` is a code, never model text).",
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason"
+          },
+          "run_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "succeeded",
+              "escalated",
+              "shadow"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "status"
+        ],
+        "title": "DeliveryScreenOut",
+        "type": "object"
+      },
       "DeliveryStatementLineOut": {
         "additionalProperties": false,
         "properties": {
@@ -36599,6 +36956,58 @@
           "version"
         ],
         "title": "DeliveryVendorRowOut",
+        "type": "object"
+      },
+      "DeliveryW9RecordIn": {
+        "additionalProperties": false,
+        "description": "C-02-T33 (DEC-5907): the TIN a person reads off the vendor's W-9, sealed on arrival and\nnever echoed; the W-9 itself is evidence on the close engagement.",
+        "properties": {
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "expected_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "signed_on": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Signed On",
+            "type": "string"
+          },
+          "tin": {
+            "cls": "restricted",
+            "format": "password",
+            "maxLength": 11,
+            "minLength": 9,
+            "title": "Tin",
+            "type": "string",
+            "writeOnly": true,
+            "x-pii-kind": "tin"
+          },
+          "tin_kind": {
+            "cls": "internal",
+            "enum": [
+              "ssn",
+              "ein"
+            ],
+            "title": "Tin Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tin",
+          "tin_kind",
+          "evidence_version_id",
+          "signed_on",
+          "expected_version"
+        ],
+        "title": "DeliveryW9RecordIn",
         "type": "object"
       },
       "DeliveryW9RequestIn": {
@@ -42480,6 +42889,19 @@
             ],
             "cls": "internal",
             "title": "Scope Code"
+          },
+          "source_ref": {
+            "anyOf": [
+              {
+                "pattern": "^planning_opportunity:[0-9a-f-]{36}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Source Ref"
           },
           "standards_code": {
             "anyOf": [
@@ -53061,6 +53483,35 @@
         "title": "FiduciaryTreeNodeOut",
         "type": "object"
       },
+      "FieldBindingIn": {
+        "additionalProperties": false,
+        "description": "Where a field's value comes from: a workbook cell (`06!C2`), a TB-mapped form line\n(`L15`, the tax form lines reference set) or a return fact (`entity.name`).",
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "workbook_cell",
+              "tb_line",
+              "return_fact"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "ref": {
+            "cls": "internal",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "ref"
+        ],
+        "title": "FieldBindingIn",
+        "type": "object"
+      },
       "FieldEditIn": {
         "additionalProperties": false,
         "description": "`PUT \u2026/value`: a person's edit. The citation note is required (the `fvv_human_edits_cite`\nCHECK); a stale `seen_seq` answers 409 `field_changed`.",
@@ -53257,6 +53708,53 @@
           "items"
         ],
         "title": "FieldLinksOut",
+        "type": "object"
+      },
+      "FieldManifestIn": {
+        "additionalProperties": false,
+        "description": "A form face's manifest (T-06-T43): the form and tax year, its pages and fields.",
+        "properties": {
+          "fields": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/FormFaceFieldIn"
+            },
+            "maxItems": 2000,
+            "minItems": 1,
+            "title": "Fields",
+            "type": "array"
+          },
+          "form": {
+            "cls": "internal",
+            "pattern": "^[a-z0-9_.-]{1,40}$",
+            "title": "Form",
+            "type": "string"
+          },
+          "pages": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/FormFacePageIn"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Pages",
+            "type": "array"
+          },
+          "tax_year": {
+            "cls": "internal",
+            "maximum": 2100.0,
+            "minimum": 2020.0,
+            "title": "Tax Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "form",
+          "tax_year",
+          "pages",
+          "fields"
+        ],
+        "title": "FieldManifestIn",
         "type": "object"
       },
       "FieldOut": {
@@ -55034,7 +55532,7 @@
           },
           "notice_id": {
             "cls": "internal",
-            "format": "uuid",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{1,39}$",
             "title": "Notice Id",
             "type": "string"
           },
@@ -55854,6 +56352,31 @@
           "name"
         ],
         "title": "FirmClientOut",
+        "type": "object"
+      },
+      "FirmClosureRow": {
+        "additionalProperties": false,
+        "description": "A day the firm is closed: an internal target never falls on it (statutory dates roll on\nthe platform's legal holidays only, IRC \u00a77503).",
+        "properties": {
+          "date": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "name": {
+            "cls": "internal",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "name"
+        ],
+        "title": "FirmClosureRow",
         "type": "object"
       },
       "FirmEmailTemplateImportIn": {
@@ -56819,6 +57342,88 @@
           "version"
         ],
         "title": "FirmPlanOut",
+        "type": "object"
+      },
+      "FirmPostponementArea": {
+        "additionalProperties": false,
+        "properties": {
+          "counties": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 300,
+            "title": "Counties",
+            "type": "array"
+          },
+          "state_code": {
+            "cls": "internal",
+            "pattern": "^[A-Z]{2}$",
+            "title": "State Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state_code"
+        ],
+        "title": "FirmPostponementArea",
+        "type": "object"
+      },
+      "FirmPostponementRow": {
+        "additionalProperties": false,
+        "description": "A relief notice the firm tracks that the platform set does not carry yet (a state's own\nnotice): applied to a client by its notice id, never to every return in the area.",
+        "properties": {
+          "areas": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/FirmPostponementArea"
+            },
+            "maxItems": 60,
+            "title": "Areas",
+            "type": "array"
+          },
+          "notice_id": {
+            "cls": "internal",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{1,39}$",
+            "title": "Notice Id",
+            "type": "string"
+          },
+          "postponed_to": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Postponed To",
+            "type": "string"
+          },
+          "title": {
+            "cls": "internal",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "window_end": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Window End",
+            "type": "string"
+          },
+          "window_start": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Window Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "notice_id",
+          "title",
+          "window_start",
+          "window_end",
+          "postponed_to"
+        ],
+        "title": "FirmPostponementRow",
         "type": "object"
       },
       "FirmRefIn": {
@@ -58846,6 +59451,108 @@
         "title": "Form8879SetPayload",
         "type": "object"
       },
+      "FormFaceFieldIn": {
+        "additionalProperties": false,
+        "description": "One field: its key, page, label (the form's own words), its box as fractions of the page\n(x0, y0, x1, y1 from the top left), its format, its binding, and for a TIN the burned-in\nmask (only the last four digits ever print on a draft).",
+        "properties": {
+          "binding": {
+            "$ref": "#/components/schemas/FieldBindingIn",
+            "cls": "internal"
+          },
+          "box": {
+            "cls": "internal",
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "title": "Box",
+            "type": "array"
+          },
+          "format": {
+            "cls": "internal",
+            "enum": [
+              "money",
+              "whole_dollars",
+              "text",
+              "checkbox",
+              "date",
+              "percent",
+              "tin"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "key": {
+            "cls": "internal",
+            "pattern": "^[a-z0-9_.-]{1,80}$",
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "mask": {
+            "cls": "internal",
+            "default": false,
+            "title": "Mask",
+            "type": "boolean"
+          },
+          "page_key": {
+            "cls": "internal",
+            "maxLength": 60,
+            "title": "Page Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "page_key",
+          "label",
+          "box",
+          "format",
+          "binding"
+        ],
+        "title": "FormFaceFieldIn",
+        "type": "object"
+      },
+      "FormFacePageIn": {
+        "additionalProperties": false,
+        "description": "One page of a form face (T-06-T43): its key, its number on the form and its title.",
+        "properties": {
+          "page_key": {
+            "cls": "internal",
+            "pattern": "^[a-z0-9_.-]{1,60}$",
+            "title": "Page Key",
+            "type": "string"
+          },
+          "page_no": {
+            "cls": "internal",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Page No",
+            "type": "integer"
+          },
+          "title": {
+            "cls": "internal",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "page_key",
+          "page_no",
+          "title"
+        ],
+        "title": "FormFacePageIn",
+        "type": "object"
+      },
       "FormatCheckOut": {
         "description": "A format check of the latest engine file: codes, never file content.",
         "properties": {
@@ -60258,7 +60965,8 @@
               "ebp_supplemental_schedule",
               "client_entries_journal",
               "component_instructions",
-              "close_package"
+              "close_package",
+              "tax_form_face"
             ],
             "title": "Kind",
             "type": "string"
@@ -65305,7 +66013,9 @@
               "too_large",
               "consent_terms_required",
               "recipients_block_required",
-              "recipient_in_text"
+              "recipient_in_text",
+              "field_manifest_required",
+              "field_manifest_invalid"
             ],
             "title": "Code",
             "type": "string"
@@ -65729,6 +66439,15 @@
       },
       "ImportReportOut": {
         "properties": {
+          "changes": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Changes",
+            "type": "array"
+          },
           "draft_version_id": {
             "anyOf": [
               {
@@ -75731,10 +76450,7 @@
           },
           "jurisdiction": {
             "cls": "public",
-            "enum": [
-              "US",
-              "DC"
-            ],
+            "pattern": "^(US|[A-Z]{2})$",
             "title": "Jurisdiction",
             "type": "string"
           },
@@ -91007,6 +91723,72 @@
         "title": "PlanningMaterialityVersionOut",
         "type": "object"
       },
+      "PlatformDeadlineRuleOut": {
+        "description": "A platform due-date rule, read-only in KNW-04 section j (DF-10).",
+        "properties": {
+          "authority": {
+            "cls": "public",
+            "title": "Authority",
+            "type": "string"
+          },
+          "day": {
+            "cls": "public",
+            "title": "Day",
+            "type": "integer"
+          },
+          "extension_form": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Extension Form"
+          },
+          "extension_months": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Extension Months"
+          },
+          "form": {
+            "cls": "public",
+            "title": "Form",
+            "type": "string"
+          },
+          "months_after_period_end": {
+            "cls": "public",
+            "title": "Months After Period End",
+            "type": "integer"
+          },
+          "version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "form",
+          "months_after_period_end",
+          "day",
+          "extension_form",
+          "extension_months",
+          "authority",
+          "version_id"
+        ],
+        "title": "PlatformDeadlineRuleOut",
+        "type": "object"
+      },
       "PlatformPlanRequestOut": {
         "properties": {
           "approved_by_display_name": {
@@ -95438,6 +96220,64 @@
         "title": "PortalVisibilityOut",
         "type": "object"
       },
+      "PostIssuanceAnalysisOut": {
+        "additionalProperties": false,
+        "description": "AUD-30 c: the case's kept analysis. `blocks` are AgentBlocks the screen renders through\nAgentText; `recommendation` is the code-eligible option the analysis tagged (\"Agent\nrecommendation\"), never a decision; the closing paragraph ends \"I have not decided whether\nthis needs action.\" (AC-16).",
+        "properties": {
+          "blocks": {
+            "additionalProperties": true,
+            "cls": "confidential",
+            "title": "Blocks",
+            "type": "object"
+          },
+          "case_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "citation_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "recommendation": {
+            "anyOf": [
+              {
+                "enum": [
+                  "no_action",
+                  "revise_and_reissue",
+                  "notify_users"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Recommendation"
+          },
+          "run_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id",
+          "run_id",
+          "blocks"
+        ],
+        "title": "PostIssuanceAnalysisOut",
+        "type": "object"
+      },
       "PostIssuanceCaseIn": {
         "additionalProperties": false,
         "description": "AUD-30 f: type, source, description.",
@@ -95983,6 +96823,19 @@
       "PostIssuanceRunOut": {
         "additionalProperties": false,
         "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason"
+          },
           "run_id": {
             "cls": "internal",
             "format": "uuid",
@@ -95993,6 +96846,17 @@
             "cls": "internal",
             "format": "date-time",
             "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "default": "succeeded",
+            "enum": [
+              "succeeded",
+              "escalated",
+              "shadow"
+            ],
+            "title": "Status",
             "type": "string"
           }
         },
@@ -96765,6 +97629,33 @@
           "entry_ids"
         ],
         "title": "PostingEntryIdsIn",
+        "type": "object"
+      },
+      "PostingLedgerMatchesOut": {
+        "additionalProperties": false,
+        "description": "C-02-T32: the journals in the client's synced ledger that carry the entry's accounts and\namounts (`qbo:<txn id>`), for the person who records it.",
+        "properties": {
+          "entry_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "match_refs": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Match Refs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "entry_id",
+          "match_refs"
+        ],
+        "title": "PostingLedgerMatchesOut",
         "type": "object"
       },
       "PostingPostBatchIn": {
@@ -104235,6 +105126,78 @@
         "title": "ReconcilingItemOut",
         "type": "object"
       },
+      "ReconnectPreviewOut": {
+        "description": "C-02-T35 (CLS-11 d; DEC-5924): what \"Request reconnect\u2026\" would send, before it is sent:\nthe owners it goes to and the first owner's Reconnect request email (POR-20's database\ntemplate, rendered as the send renders it). `template_missing`: the firm has no version, so\nthe send would be recorded blocked and the dialog says so.",
+        "properties": {
+          "from_display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "From Display"
+          },
+          "html": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Html"
+          },
+          "recipients": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Recipients",
+            "type": "array"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Subject"
+          },
+          "template_missing": {
+            "cls": "internal",
+            "title": "Template Missing",
+            "type": "boolean"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Text"
+          }
+        },
+        "required": [
+          "recipients",
+          "template_missing"
+        ],
+        "title": "ReconnectPreviewOut",
+        "type": "object"
+      },
       "ReconnectRequestOut": {
         "properties": {
           "connection_id": {
@@ -107433,7 +108396,8 @@
               "ebp_supplemental_schedule",
               "client_entries_journal",
               "component_instructions",
-              "close_package"
+              "close_package",
+              "tax_form_face"
             ],
             "title": "Family",
             "type": "string"
@@ -107571,7 +108535,8 @@
               "report",
               "notice_response",
               "package",
-              "run_export"
+              "run_export",
+              "tax_form_face"
             ],
             "title": "Layout Key",
             "type": "string"
@@ -122909,10 +123874,17 @@
             "type": "array"
           },
           "recipient_contact_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "internal",
-            "format": "uuid",
-            "title": "Recipient Contact Id",
-            "type": "string"
+            "title": "Recipient Contact Id"
           },
           "seen_versions": {
             "additionalProperties": {
@@ -122931,7 +123903,6 @@
         },
         "required": [
           "entry_ids",
-          "recipient_contact_id",
           "wording_template_version_id",
           "seen_versions"
         ],
@@ -129909,6 +130880,7 @@
               "review_levels",
               "return_approval_policy",
               "ssars_cas_settings",
+              "deadline_overrides",
               "aje_thresholds",
               "variance_thresholds",
               "materiality_ranges",
@@ -130009,6 +130981,7 @@
               "mapping": {
                 "aje_thresholds": "#/components/schemas/AjeThresholdsPayload",
                 "attribute_sample_sizes": "#/components/schemas/AttributeSampleSizesPayload-Input",
+                "deadline_overrides": "#/components/schemas/DeadlineOverridesPayload",
                 "document_confidence": "#/components/schemas/DocumentConfidencePayload-Input",
                 "je_risk_criteria": "#/components/schemas/JeRiskCriteriaPayload",
                 "materiality_ranges": "#/components/schemas/MaterialityRangesPayload-Input",
@@ -130058,6 +131031,9 @@
               },
               {
                 "$ref": "#/components/schemas/SsarsCasSettingsPayload"
+              },
+              {
+                "$ref": "#/components/schemas/DeadlineOverridesPayload"
               }
             ],
             "title": "Payload"
@@ -130369,6 +131345,7 @@
               "review_levels",
               "return_approval_policy",
               "ssars_cas_settings",
+              "deadline_overrides",
               "aje_thresholds",
               "variance_thresholds",
               "materiality_ranges",
@@ -130631,6 +131608,7 @@
               "mapping": {
                 "aje_thresholds": "#/components/schemas/AjeThresholdsPayload",
                 "attribute_sample_sizes": "#/components/schemas/AttributeSampleSizesPayload-Output",
+                "deadline_overrides": "#/components/schemas/DeadlineOverridesPayload",
                 "document_confidence": "#/components/schemas/DocumentConfidencePayload-Output",
                 "je_risk_criteria": "#/components/schemas/JeRiskCriteriaPayload",
                 "materiality_ranges": "#/components/schemas/MaterialityRangesPayload-Output",
@@ -130680,6 +131658,9 @@
               },
               {
                 "$ref": "#/components/schemas/SsarsCasSettingsPayload"
+              },
+              {
+                "$ref": "#/components/schemas/DeadlineOverridesPayload"
               }
             ],
             "title": "Payload"
@@ -137224,17 +138205,48 @@
       },
       "TaxDepthRunOut": {
         "additionalProperties": false,
+        "description": "T-06-T42 (DEC-5913): \"Explain\u2026\" answers the SHL-15 issue it created (no run until\nT-06-T54's agent path); the allocation answers its run and the proposal a person adopts.",
         "properties": {
-          "run_id": {
+          "issue_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "internal",
-            "format": "uuid",
-            "title": "Run Id",
-            "type": "string"
+            "title": "Issue Id"
+          },
+          "proposal_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Proposal Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Run Id"
           }
         },
-        "required": [
-          "run_id"
-        ],
         "title": "TaxDepthRunOut",
         "type": "object"
       },
@@ -139159,6 +140171,16 @@
             "cls": "internal",
             "title": "Draft From Agent",
             "type": "boolean"
+          },
+          "recipient_contact_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Recipient Contact Ids",
+            "type": "array"
           },
           "recipients": {
             "cls": "restricted",
@@ -143861,10 +144883,22 @@
               "ebp_supplemental_schedule",
               "client_entries_journal",
               "component_instructions",
-              "close_package"
+              "close_package",
+              "tax_form_face"
             ],
             "title": "Family",
             "type": "string"
+          },
+          "field_manifest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FieldManifestIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
           },
           "layout_key": {
             "cls": "internal",
@@ -152853,6 +153887,19 @@
             "cls": "internal",
             "title": "Count"
           },
+          "entry_ref": {
+            "anyOf": [
+              {
+                "maxLength": 12,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Entry Ref"
+          },
           "kind": {
             "cls": "internal",
             "enum": [
@@ -152966,6 +154013,19 @@
         "additionalProperties": false,
         "description": "Authorized by Tess Moreno (client portal) \u00b7 Mode \"Client-authorized: read ledger, post\napproved entries\" \u00b7 Last sync 9:02 AM \u00b7 1,214 transactions read (Aug 1-31) \u00b7 0 errors.",
         "properties": {
+          "authorized_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Authorized At"
+          },
           "authorized_by": {
             "anyOf": [
               {
@@ -153018,6 +154078,19 @@
             "cls": "confidential",
             "title": "Closing Date Set By"
           },
+          "company_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Company Name"
+          },
           "connection_id": {
             "cls": "internal",
             "format": "uuid",
@@ -153043,6 +154116,19 @@
             ],
             "title": "Health",
             "type": "string"
+          },
+          "last_failed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Last Failed At"
           },
           "last_sync_at": {
             "anyOf": [
@@ -153096,6 +154182,19 @@
             "cls": "internal",
             "title": "Next Sync At"
           },
+          "reconnect_requested_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reconnect Requested At"
+          },
           "retry_at": {
             "anyOf": [
               {
@@ -153108,6 +154207,19 @@
             ],
             "cls": "internal",
             "title": "Retry At"
+          },
+          "status_reason": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Status Reason"
           },
           "write_granted": {
             "cls": "internal",
@@ -153378,6 +154490,15 @@
             ],
             "cls": "internal"
           },
+          "failures": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/W1PostingFailureOut"
+            },
+            "title": "Failures",
+            "type": "array"
+          },
           "ledger_label": {
             "cls": "internal",
             "maxLength": 60,
@@ -153409,6 +154530,89 @@
           "tiles"
         ],
         "title": "W1LedgerConsoleOut",
+        "type": "object"
+      },
+      "W1PostingFailureOut": {
+        "additionalProperties": false,
+        "description": "CLS-11's Failures band: \"Aug 11, 2:38 PM \u00b7 2026-07-A \u00b7 AJE-03 Depreciation\" over the\nprovider's redacted message (client-system text, ADR-052: shown as text only), and when a\nlater attempt posted the entry, its time and the person who ran it (C-02-T35, DEC-5924).",
+        "properties": {
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "batch_code": {
+            "cls": "internal",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[A-Z]$",
+            "title": "Batch Code",
+            "type": "string"
+          },
+          "entry_description": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Entry Description"
+          },
+          "entry_ref": {
+            "cls": "internal",
+            "maxLength": 12,
+            "title": "Entry Ref",
+            "type": "string"
+          },
+          "provider_message": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Provider Message"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Resolved At"
+          },
+          "resolved_by": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Resolved By"
+          }
+        },
+        "required": [
+          "at",
+          "batch_code",
+          "entry_ref"
+        ],
+        "title": "W1PostingFailureOut",
         "type": "object"
       },
       "W1PostingLogOut": {
@@ -153453,6 +154657,19 @@
           }
         ],
         "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Amount"
+          },
           "approved_count": {
             "cls": "internal",
             "minimum": 0.0,
@@ -153506,6 +154723,32 @@
             "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
             "title": "Period",
             "type": "string"
+          },
+          "posted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Posted At"
+          },
+          "posted_by": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Posted By"
           },
           "resolved_failures": {
             "cls": "internal",
@@ -183645,8 +184888,123 @@
       }
     },
     "/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/analysis": {
+      "get": {
+        "description": "The kept analysis (404 when none was kept).",
+        "operationId": "post_issuance_analysis_read",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostIssuanceAnalysisOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Post Issuance Analysis Read Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "post_issuance.read"
+      },
       "post": {
-        "description": "409 `comparison_unavailable` (DV-9); the analysis ends with the not-decided sentence. The\nagent's analysis prompt lands with its capability task (ADR-079: after its eval suite,\nQ-05-T10): until then a compared case answers 501.",
+        "description": "409 `comparison_unavailable` (DV-9), 409 `agent_not_available` on a real firm; the\nanalysis ends with the not-decided sentence (Q-05-T22, `assurance.post_issuance_analysis`\nv1, synthetic firms only until its clearance record).",
         "operationId": "post_issuance_analysis",
         "parameters": [
           {
@@ -204431,7 +205789,7 @@
     },
     "/v1/closes/{close_id}/tax-handoff": {
       "get": {
-        "description": "Availability and preview; `handoff_not_available` before a locked December close.",
+        "description": "Availability and preview (C-02-T39, DEC-5922): `not_available` with its reason before a\nlocked December close; the schedules and tax-relevant items otherwise.",
         "operationId": "close_tax_handoff",
         "parameters": [
           {
@@ -204527,16 +205885,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Close Tax Handoff Route",
@@ -204546,7 +205894,7 @@
         "x-abacus-action": "tax_handoff.read"
       },
       "post": {
-        "description": "Publish through C12 `receive_tb_handoff` (C-02-T39).",
+        "description": "Publish through C12 (C-02-T39, DEC-5922): the year's TB lands as the return's UTB with its\nprovenance; 409 `handoff_not_available`, `handoff_preview_changed`.",
         "operationId": "close_tax_handoff_publish",
         "parameters": [
           {
@@ -204673,16 +206021,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Close Tax Handoff Publish Route",
@@ -211113,6 +212451,127 @@
           }
         },
         "summary": "Reconnect Request Route",
+        "tags": [
+          "connections"
+        ],
+        "x-abacus-action": "connection.reconnect_request"
+      }
+    },
+    "/v1/connections/{connection_id}/reconnect-requests/preview": {
+      "get": {
+        "description": "CLS-11 d's confirm dialog (C-02-T35): the Reconnect request email and its recipients, as\nthe request would send them; the request's own authorisation. Reads only.",
+        "operationId": "reconnect_preview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "connection_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Connection Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "width",
+            "required": false,
+            "schema": {
+              "default": 600,
+              "enum": [
+                600,
+                390
+              ],
+              "title": "Width",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReconnectPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Reconnect Preview Route",
         "tags": [
           "connections"
         ],
@@ -312159,6 +313618,7 @@
     },
     "/v1/planning-opportunities": {
       "get": {
+        "description": "The queue (TAX-15 a, e, f): keyset on the opportunity id, 50 a page; `total` counts\nevery match (\"Showing 9 of 71\").",
         "operationId": "planning_opportunities",
         "parameters": [
           {
@@ -312328,16 +313788,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Planning Opportunities Route",
@@ -312347,6 +313797,7 @@
         "x-abacus-action": "planning.read"
       },
       "post": {
+        "description": "TXT-03's \"Add to planning\" or a TXP-01 memo item: Open, no model (AC5.7). The same\nsource item answers its existing opportunity.",
         "operationId": "planning_create",
         "parameters": [
           {
@@ -312463,16 +313914,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Planning Create Route",
@@ -312579,16 +314020,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Planning Opportunity Route",
@@ -312600,6 +314031,7 @@
     },
     "/v1/planning-opportunities/{opportunity_id}:create-project": {
       "post": {
+        "description": "ENG-03's prefill; the opportunity becomes Accepted when the engagement is created.",
         "operationId": "planning_create_project",
         "parameters": [
           {
@@ -312716,16 +314148,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Planning Create Project Route",
@@ -312853,16 +314275,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Planning Decline Route",
@@ -313000,16 +314412,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Planning Dismiss Route",
@@ -313021,6 +314423,7 @@
     },
     "/v1/planning-opportunities/{opportunity_id}:prepare-raise": {
       "post": {
+        "description": "The send sheet on the firm's \"Planning conversation\" template (DEC-79; P-25 is not\naccepted, so no agent draft); nothing is sent. 409 `planning_template_missing`.",
         "operationId": "planning_prepare_raise",
         "parameters": [
           {
@@ -313137,16 +314540,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Planning Prepare Raise Route",
@@ -313158,7 +314551,7 @@
     },
     "/v1/planning-opportunities/{opportunity_id}:raise": {
       "post": {
-        "description": "Raised only after a person's send through `message.send` (AC-27).",
+        "description": "Raised only after a person's send through `message.send` (AC-27); a retry of a raised\nopportunity answers it unchanged.",
         "operationId": "planning_raise",
         "parameters": [
           {
@@ -313285,16 +314678,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Planning Raise Route",
@@ -313422,16 +314805,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Planning Restore Route",
@@ -313443,6 +314816,7 @@
     },
     "/v1/planning-summary": {
       "get": {
+        "description": "T-08-T19 (DEC-5916): the strip, by code over the viewer's visible returns (AC-27).",
         "operationId": "planning_summary",
         "parameters": [
           {
@@ -313554,16 +314928,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Planning Summary Route",
@@ -330775,7 +332139,7 @@
     },
     "/v1/postponement-applications": {
       "post": {
-        "description": "Human-only with fresh MFA (OQ-17); only that client's dates move.",
+        "description": "Human-only with fresh MFA (OQ-17); only that client's dates move (T-08-T44, DEC-5921).\n409 `postponement_notice_unknown` when the named version in effect carries no such notice;\nthe same notice again answers the first application.",
         "operationId": "postponement_application",
         "parameters": [
           {
@@ -330892,16 +332256,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Postponement Application Route",
@@ -332809,9 +334163,116 @@
         "x-abacus-action": "elimination.approve"
       }
     },
+    "/v1/proposed-entries/{entry_id}/ledger-matches": {
+      "get": {
+        "description": "Code's sync matches for one approved entry (C-02-T32); reads only.",
+        "operationId": "ledger_matches",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostingLedgerMatchesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ledger Matches Route",
+        "tags": [
+          "adjustments"
+        ],
+        "x-abacus-action": "proposed_entry.record_external"
+      }
+    },
     "/v1/proposed-entries/{entry_id}/record-external": {
       "post": {
-        "description": "Recorded in ledger (export path): evidence or a sync match (C-02-T24). Recorded by\n<client> for an attest client is C-02-T32's.",
+        "description": "Recorded in ledger (export path): evidence or a sync match (C-02-T24). An attest client's\nentry is \"Recorded by <client>\" once the client approved it (409 `client_approval_required`);\na sync match must be one code finds in the synced ledger (409 `ledger_match_not_found`)\n(C-02-T32).",
         "operationId": "record_external",
         "parameters": [
           {
@@ -340435,7 +341896,8 @@
                     "ebp_supplemental_schedule",
                     "client_entries_journal",
                     "component_instructions",
-                    "close_package"
+                    "close_package",
+                    "tax_form_face"
                   ],
                   "type": "string"
                 },
@@ -350513,6 +351975,7 @@
                     "review_levels",
                     "return_approval_policy",
                     "ssars_cas_settings",
+                    "deadline_overrides",
                     "aje_thresholds",
                     "variance_thresholds",
                     "materiality_ranges",
@@ -351555,6 +353018,103 @@
           "tax"
         ],
         "x-abacus-action": "standards_run.start"
+      }
+    },
+    "/v1/standards/deadline-rules": {
+      "get": {
+        "description": "KNW-04 section j (T-08-T44, DF-10): platform rows read-only beside the firm's overrides,\nwhich their owner drafts and publishes through the standard's own routes.",
+        "operationId": "deadline_rules_section",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeadlineRulesSectionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Deadline Rules Section Route",
+        "tags": [
+          "standards"
+        ],
+        "x-abacus-action": "firm_standard.read"
       }
     },
     "/v1/standards/imports": {
@@ -358579,6 +360139,7 @@
     },
     "/v1/tax-returns/{return_id}/diagnostics": {
       "get": {
+        "description": "The current approved checkpoint's form diagnostics.",
         "operationId": "diagnostics",
         "parameters": [
           {
@@ -358665,6 +360226,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -358674,16 +360245,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Diagnostics Route",
@@ -359348,6 +360909,7 @@
     },
     "/v1/tax-returns/{return_id}/fields/{field_key}/trace": {
       "get": {
+        "description": "Form field \u2192 workbook cell, or \u2192 the TB-mapped form line (SHL-09).",
         "operationId": "field_trace",
         "parameters": [
           {
@@ -359367,6 +360929,23 @@
             "schema": {
               "title": "Field Key",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "checkpoint",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Checkpoint"
             }
           },
           {
@@ -359443,6 +361022,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -359452,16 +361041,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Field Trace Route",
@@ -360480,7 +362059,7 @@
     },
     "/v1/tax-returns/{return_id}/form-pages": {
       "get": {
-        "description": "409 `form_template_missing` for forms without a face template (DV-9).",
+        "description": "T-06-T44 (DEC-5915): the pages of the return's published form face at the checkpoint\n(the newest approved one by default). 409 `form_template_missing` for forms without a face\ntemplate (DV-9); 409 `checkpoint_required` before the first approved checkpoint.",
         "operationId": "form_pages",
         "parameters": [
           {
@@ -360603,16 +362182,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Form Pages Route",
@@ -360624,6 +362193,7 @@
     },
     "/v1/tax-returns/{return_id}/form-pages/{page_key}/fields": {
       "get": {
+        "description": "The page's fields with their formatted values (TINs masked) and boxes.",
         "operationId": "form_fields",
         "parameters": [
           {
@@ -360643,6 +362213,23 @@
             "schema": {
               "title": "Page Key",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "checkpoint",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Checkpoint"
             }
           },
           {
@@ -360719,6 +362306,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -360728,8 +362325,86 @@
               }
             },
             "description": "Invalid request"
+          }
+        },
+        "summary": "Form Fields Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "form_preview.read"
+      }
+    },
+    "/v1/tax-returns/{return_id}/form-pages/{page_key}/image": {
+      "get": {
+        "description": "The page as a PNG, rasterised from the watermarked draft in the isolated child.",
+        "operationId": "form_page_image",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
           },
-          "501": {
+          {
+            "in": "path",
+            "name": "page_key",
+            "required": true,
+            "schema": {
+              "title": "Page Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Form Page Image",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
             "content": {
               "application/json": {
                 "schema": {
@@ -360737,10 +362412,50 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
           }
         },
-        "summary": "Form Fields Route",
+        "summary": "Form Page Image Route",
         "tags": [
           "tax"
         ],
@@ -360838,6 +362553,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -360847,16 +362572,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Download Draft Route",
@@ -360868,6 +362583,7 @@
     },
     "/v1/tax-returns/{return_id}/functional-expenses": {
       "get": {
+        "description": "TXP-13 c, c2 (T-06-T42): E12's Part IX foots and crossfoots; ratios by code.",
         "operationId": "functional_expenses",
         "parameters": [
           {
@@ -360977,16 +362693,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Functional Expenses Route",
@@ -361114,16 +362820,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Allocation Run Route",
@@ -362806,6 +364502,7 @@
     },
     "/v1/tax-returns/{return_id}/k1-previews": {
       "get": {
+        "description": "Each recipient's box 2 from sheet 09 at the current approved checkpoint; \u03a3 against\nSchedule K line 2 (TAX-11 c).",
         "operationId": "k1_previews",
         "parameters": [
           {
@@ -362892,6 +364589,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -362901,16 +364608,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "K1 Previews Route",
@@ -364236,6 +365933,7 @@
     },
     "/v1/tax-returns/{return_id}/provision": {
       "get": {
+        "description": "TXP-13 b, b2 (T-06-T42): current + deferred = total, the ETR and the tally.",
         "operationId": "provision",
         "parameters": [
           {
@@ -364346,16 +366044,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Provision Route",
@@ -364367,7 +366055,7 @@
     },
     "/v1/tax-returns/{return_id}/provision/items/{item_id}/explain": {
       "post": {
-        "description": "An SHL-15 issue; the classification arrives as a proposal (zero gateway calls without\nconsent).",
+        "description": "An SHL-15 issue (T-06-T42); the classification is a reviewer's, and the agent's suggestion\nfor it arrives with T-06-T54 (zero gateway calls here). 409 `return_locked`,\n`not_unclassified`.",
         "operationId": "provision_explain",
         "parameters": [
           {
@@ -364483,16 +366171,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Provision Explain Route",
@@ -364628,6 +366306,7 @@
     },
     "/v1/tax-returns/{return_id}/schedules/aaa": {
       "get": {
+        "description": "TXP-13 a (T-06-T42): E10's roll of the M-2 columns; `locked` once Filed or Accepted.",
         "operationId": "aaa",
         "parameters": [
           {
@@ -364723,16 +366402,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Aaa Route",
@@ -367311,7 +368980,7 @@
     },
     "/v1/tax-returns/{return_id}/two-year:explain": {
       "post": {
-        "description": "A person starts the run; 409 `consent_7216_missing` without both consents (AC-23).",
+        "description": "A person starts the run; 409 `consent_7216_missing` without both consents (AC-23), 409\n`agent_not_available` on a firm whose AI boundary is not cleared (DF-04). T-08-T26 (DEC-5923):\nthe run is inline; each flagged line gets a suggestion with verified citations and an agent\nexplanation version a reviewer accepts.",
         "operationId": "two_year_explain",
         "parameters": [
           {
@@ -383419,6 +385088,7 @@
     },
     "/v1/vendors/{vendor_id}": {
       "get": {
+        "description": "CLS-13's drawer (C-02-T33): the TIN's last four only, nulled for an offshore reader.",
         "operationId": "vendor",
         "parameters": [
           {
@@ -383515,7 +385185,7 @@
             },
             "description": "Invalid request"
           },
-          "501": {
+          "503": {
             "content": {
               "application/json": {
                 "schema": {
@@ -383523,7 +385193,7 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Service unavailable"
           }
         },
         "summary": "Vendor Route",
@@ -383784,16 +385454,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Backup Withholding Route",
@@ -383801,6 +385461,123 @@
           "closes"
         ],
         "x-abacus-action": "backup_withholding.record"
+      }
+    },
+    "/v1/vendors/{vendor_id}/screen": {
+      "post": {
+        "description": "C-02-T34: a person starts `close.agent` mode `vendor_screen` for one vendor (synthetic\nfirms only behind `closes.vendor_screen`: 404 off, 409 `agent_not_available` on a real firm,\n409 `w9_not_on_file`). Proposals arrive as suggestions a person adopts (INV-1).",
+        "operationId": "vendor_screen",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "vendor_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Vendor Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryScreenOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Vendor Screen Route",
+        "tags": [
+          "closes"
+        ],
+        "x-abacus-action": "vendor_1099.screen"
       }
     },
     "/v1/vendors/{vendor_id}/tin-match-results": {
@@ -383920,16 +385697,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Tin Match Route",
@@ -383941,7 +385708,7 @@
     },
     "/v1/vendors/{vendor_id}/tin:reveal": {
       "post": {
-        "description": "Logged; refused offshore (`tin_reveal_refused`). The one reveal payload (organisations'\n`TinRevealOut`, the vendor as `entity_id`): no second schema carries a TIN (DEC-141).",
+        "description": "Logged; refused offshore (`tin_reveal_refused`). The one reveal payload (organisations'\n`TinRevealOut`, the vendor as `entity_id`): no second schema carries a TIN (DEC-141).\nC-02-T33: P-03's field reveal (one `pii_reveals` row naming the person), `no-store`.",
         "operationId": "tin_reveal",
         "parameters": [
           {
@@ -384038,6 +385805,133 @@
             },
             "description": "Not found"
           },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too soon or too many: retry after Retry-After"
+          }
+        },
+        "summary": "Tin Reveal Route",
+        "tags": [
+          "closes"
+        ],
+        "x-abacus-action": "tin.reveal"
+      }
+    },
+    "/v1/vendors/{vendor_id}/w9": {
+      "put": {
+        "description": "C-02-T33: a person records the vendor's W-9; the TIN is sealed (ADR-167) and the answer\ncarries its last four only. 422 `tin_invalid` / `tin_kind_not_allowed`, 409 `tin_conflict` /\n`stale_version`.",
+        "operationId": "vendor_w9",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "vendor_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Vendor Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeliveryW9RecordIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryVendorRowOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
           "409": {
             "content": {
               "application/json": {
@@ -384057,23 +385951,13 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Tin Reveal Route",
+        "summary": "Vendor W9 Route",
         "tags": [
           "closes"
         ],
-        "x-abacus-action": "tin.reveal"
+        "x-abacus-action": "vendor_1099.update"
       }
     },
     "/v1/walls": {

@@ -162,7 +162,18 @@ BATCHES: Final = (
     Batch("2026-05-A", "2026-05", 5, D("26340.00"), "posted",
           datetime(2026, 6, 10, 15, 18, tzinfo=CT), "46310", "46314"),
 )  # fmt: skip
-BELOW_THE_FOLD_POSTED: Final = ("2026-01-A", "2026-02-A", "2026-03-A", "2026-04-A")
+# January to April, below the fold in CLS-11a (C-02-T35: the canvas shows their figures).
+BELOW_THE_FOLD_BATCHES: Final = (
+    Batch("2026-04-A", "2026-04", 5, D("25075.00"), "posted",
+          datetime(2026, 5, 11, 13, 36, tzinfo=CT), "45663", "45667"),
+    Batch("2026-03-A", "2026-03", 5, D("24410.00"), "posted",
+          datetime(2026, 4, 10, 10, 48, tzinfo=CT), "45024", "45028"),
+    Batch("2026-02-A", "2026-02", 5, D("21935.00"), "posted",
+          datetime(2026, 3, 27, 14, 55, tzinfo=CT), "44719", "44723"),
+    Batch("2026-01-A", "2026-01", 5, D("22860.00"), "posted",
+          datetime(2026, 3, 20, 16, 12, tzinfo=CT), "44568", "44572"),
+)  # fmt: skip
+BELOW_THE_FOLD_POSTED: Final = tuple(b.code for b in reversed(BELOW_THE_FOLD_BATCHES))
 AUGUST_POSTED_BATCH: Final = Batch(
     "2026-08-A", "2026-08", 6, D("35300.00"), "posted",
     datetime(2026, 9, 14, 10, 22, tzinfo=CT), "48213", "48218",
@@ -526,4 +537,94 @@ def cls08_package() -> dict[str, object]:
         "client_approved_at": CLIENT_APPROVED_AT.isoformat(),
         "balance_sheet": bs,
         "income_statement": inc,
+    }
+
+
+# --- CLS-11 ledger console (C-02-T35, DEC-5924) ------------------------------------------------
+
+CAS_SENIOR: Final = "Raj Malhotra"  # runs Copperleaf's posts and set the closing date
+CLIENT_OWNER: Final = "Tess Moreno"
+QBO_COMPANY: Final = "Copperleaf Coffee Roasters"  # the company name QuickBooks Online reports
+LAST_SYNC: Final = (datetime(2026, 9, 14, 9, 2, tzinfo=CT), 1214, 0)  # at, read, errors
+NEXT_SYNC: Final = datetime(2026, 9, 14, 10, 2, tzinfo=CT)  # hourly
+DEPENDENTS: Final = ("Close agent", "Close Planner", "1099 vendor screen")
+JULY_FAILURE: Final = (
+    datetime(2026, 8, 11, 14, 38, tzinfo=CT), "2026-07-A", "AJE-03", "Depreciation",
+    f"QuickBooks Online: account '{INACTIVE_ACCOUNT}' is inactive",
+    datetime(2026, 8, 11, 14, 41, tzinfo=CT),
+)  # fmt: skip
+
+
+def _batch_row(b: Batch) -> dict[str, object]:
+    return {
+        "batch_code": b.code, "period": b.period, "status": b.status, "entry_count": b.entries,
+        "approved_count": b.entries if b.status == "posted" else 0,
+        "first_external_ref": b.qbo_first, "last_external_ref": b.qbo_last,
+        "resolved_failures": b.resolved_failures,
+        "amount": None if b.amount is None else _money(b.amount),
+        "posted_at": None if b.posted_at is None else b.posted_at.isoformat(),
+        "posted_by": CAS_SENIOR if b.posted_at is not None else None,
+    }  # fmt: skip
+
+
+def cls11_console() -> dict[str, object]:
+    """CLS-11 a at 9:24 AM, Sep 14, 2026, as the console reads return it (C20 v2.1 W1 shapes,
+    with C-02-T35's additive fields): the tiles (batches, DEC-5924: 7 posted January to July, 1
+    proposed), the connection pane under Tess Moreno's Mar 9 grant, the eight batches (January to
+    April below the fold), the July failure resolved at 2:41 PM, and the sync events. `make
+    fixtures` writes it to `apps/web/src/fixtures/seed/scenario.cls11-console.json`; the CLS-11
+    scenarios vary it per state (c, d) and `screens/CLS-11` is held to it."""
+    at, read, errors = LAST_SYNC
+    posted = [b for b in BATCHES if b.status == "posted"]
+    failed_at, batch, ref, title, message, resolved_at = JULY_FAILURE
+    sync_rows: list[dict[str, object]] = []
+    for when, kind, n in SYNC_EVENTS:
+        row: dict[str, object] = {"at": when.isoformat(), "kind": kind}
+        if kind == "sync":
+            row["count"] = n
+        elif kind == "post":
+            row |= {"batch_code": batch, "count": n, "actor_name": CAS_SENIOR}
+        elif kind == "closing_date":
+            row["actor_name"] = CAS_SENIOR
+        else:
+            row |= {"batch_code": batch, "entry_ref": ref}
+        sync_rows.append(row)
+    return {
+        "client": COPPERLEAF,
+        "tiles": {
+            "posted": len(posted) + len(BELOW_THE_FOLD_BATCHES),
+            "proposed": sum(1 for b in BATCHES if b.status == "proposed"),
+            "failed_post": 0,
+            "resolved_failures": sum(b.resolved_failures for b in BATCHES),
+            "closing_date": CLOSING_DATES[0][0].isoformat(),
+        },
+        "connection": {
+            "health": "connected",
+            "company_name": QBO_COMPANY,
+            "authorized_by": CLIENT_OWNER,
+            "authorized_at": datetime.combine(WRITE_GRANT_ON, datetime.min.time(), CT).isoformat(),
+            "write_granted": True,
+            "last_sync_at": at.isoformat(),
+            "last_sync_transactions": read,
+            "last_sync_errors": errors,
+            "next_sync_at": NEXT_SYNC.isoformat(),
+            "closing_date": CLOSING_DATES[0][0].isoformat(),
+            "closing_date_set_by": CAS_SENIOR,
+            "closing_date_set_at": CLOSING_DATES[0][1].isoformat(),
+            "dependents": list(DEPENDENTS),
+        },
+        "batches": [_batch_row(b) for b in (*BATCHES, *BELOW_THE_FOLD_BATCHES)],
+        "august_posted": _batch_row(AUGUST_POSTED_BATCH),
+        "failures": [
+            {
+                "at": failed_at.isoformat(),
+                "batch_code": batch,
+                "entry_ref": ref,
+                "entry_description": title,
+                "provider_message": message,
+                "resolved_at": resolved_at.isoformat(),
+                "resolved_by": CAS_SENIOR,
+            },
+        ],
+        "activity": sync_rows,
     }

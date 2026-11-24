@@ -9,7 +9,7 @@ off), then acts (`client_connect`).
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends, Request
@@ -32,12 +32,13 @@ from abacus.modules.integrations.contract import (
     PortalConnectionCardOut,
     PortalConnectionDetailOut,
     PortalConnectionsOut,
+    ReconnectPreviewOut,
     ReconnectRequestOut,
     SyncRunRefOut,
     firm_router,
     portal_router,
 )
-from abacus.modules.integrations.reconnect import reconnect_request
+from abacus.modules.integrations.reconnect import reconnect_preview, reconnect_request
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 
@@ -113,6 +114,19 @@ async def disconnect_connection_route(
     """POR-16 f: "Disconnected" (neutral); the secret is crypto-erased and received data stays.
     409 `stale_version` on an old `seen_version`. Audited `connection.revoked`."""
     return await disconnect_card(ctx, connection_id, body.seen_version, idempotency_key)
+
+
+@firm_router.get(
+    "/connections/{connection_id}/reconnect-requests/preview",
+    action="connection.reconnect_request",
+    response_model=ReconnectPreviewOut,
+)
+async def reconnect_preview_route(
+    connection_id: UUID, ctx: Ctx, width: Literal[600, 390] = 600
+) -> ReconnectPreviewOut:
+    """CLS-11 d's confirm dialog (C-02-T35): the Reconnect request email and its recipients, as
+    the request would send them; the request's own authorisation. Reads only."""
+    return await reconnect_preview(ctx, connection_id, width)
 
 
 @firm_router.post(

@@ -19,6 +19,7 @@ import io
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Any, Final, cast
 from uuid import UUID
 
@@ -51,6 +52,21 @@ class LogRow:
     failure_count: int
     posted_at: datetime | None
     posted_by: UUID | None
+    amount: Decimal | None = None  # C-02-T35: the batch total
+
+
+@dataclass(frozen=True)
+class PostingFailure:
+    """One failed attempt (C-02-T35, DEC-5924): the entry, the provider's redacted message, and
+    when a later attempt of the same entry posted (the batch's runner resolved it)."""
+
+    at: datetime
+    batch_code: str
+    entry_ref: str
+    entry_description: str | None
+    provider_message: str | None
+    resolved_at: datetime | None
+    resolved_by: UUID | None
 
 
 @dataclass(frozen=True)
@@ -62,11 +78,13 @@ class ClosingDate:
 
 @dataclass(frozen=True)
 class PostingFacts:
-    """What adjustments answers about one entity's postings."""
+    """What adjustments answers about one entity's postings. `proposed_entries` is the number of
+    proposed batches (the tile; the name is C-02-T20's)."""
 
     rows: tuple[LogRow, ...]
     proposed_entries: int
     closing_date: ClosingDate | None
+    failures: tuple[PostingFailure, ...] = ()
 
 
 PostingLog = Callable[[TenantContext, UUID], Awaitable[PostingFacts]]
@@ -114,6 +132,7 @@ class Console:
     client_entity_name: str
     tiles: dict[str, object]
     connection: dict[str, object] | None
+    failures: tuple[dict[str, object], ...] = ()
 
 
 async def _qbo(ctx: AuthContext, client_entity_id: UUID) -> Any:  # noqa: ANN401 # Any: connections' view
@@ -124,7 +143,9 @@ async def _qbo(ctx: AuthContext, client_entity_id: UUID) -> Any:  # noqa: ANN401
 
 
 def _tiles(facts: PostingFacts) -> dict[str, object]:
-    posted = sum(r.entry_count for r in facts.rows if r.status == "posted")
+    """Batches, not entries (C-02-T35, DEC-5924): "7 Posted" is January to July, one batch per
+    delivered close, and "1 Proposed" is August (CLS-11: tile counts match the table)."""
+    posted = sum(1 for r in facts.rows if r.status == "posted")
     failed = sum(r.failure_count - r.resolved_failures for r in facts.rows)
     return {
         "posted": posted,
@@ -142,8 +163,9 @@ async def ledger_console(ctx: AuthContext, client_entity_id: UUID) -> Console:
     qbo = await _qbo(ctx, client_entity_id)  # authorises on the entity (walls: 404)
     facts = await posting_facts(ctx.tenant, client_entity_id)
     name = await entity_name(ctx.tenant, client_entity_id) or ""
+    failures = await _failures(facts)
     if qbo is None:
-        return Console(client_entity_id, name, _tiles(facts), None)
+        return Console(client_entity_id, name, _tiles(facts), None, failures)
     async with tenant_session(ctx.tenant) as session:
         grant = (
             await session.execute(
@@ -166,8 +188,29 @@ async def ledger_console(ctx: AuthContext, client_entity_id: UUID) -> Console:
         "closing_date_set_by": None if closing is None or closing.set_by is None
         else names.get(closing.set_by),
         "closing_date_set_at": None if closing is None else closing.at,
+        "authorized_at": grant.at if grant is not None and grant.event == "granted" else None,
+        "status_reason": qbo.status_reason if qbo.status == "needs_attention" else None,
+        "last_failed_at": qbo.last_failed_at,
+        "reconnect_requested_at": qbo.reauth_requested_at,
+        "company_name": qbo.display_label,
     }  # fmt: skip
-    return Console(client_entity_id, name, _tiles(facts), pane)
+    return Console(client_entity_id, name, _tiles(facts), pane, failures)
+
+
+async def _failures(facts: PostingFacts) -> tuple[dict[str, object], ...]:
+    """The Failures band, newest first, each resolver's name read now (C-02-T35)."""
+    people = sorted({f.resolved_by for f in facts.failures if f.resolved_by is not None}, key=str)
+    names = await names_of(people) if people else {}
+    ordered = sorted(facts.failures, key=lambda f: f.at, reverse=True)
+    return tuple(
+        {
+            "at": f.at, "batch_code": f.batch_code, "entry_ref": f.entry_ref,
+            "entry_description": f.entry_description, "provider_message": f.provider_message,
+            "resolved_at": f.resolved_at,
+            "resolved_by": None if f.resolved_by is None else names.get(f.resolved_by),
+        }
+        for f in ordered
+    )  # fmt: skip
 
 
 async def posting_log(
@@ -218,31 +261,39 @@ class LedgerEvent:
     batch_code: str | None = None
     count: int | None = None
     actor: UUID | None = None
+    provider_code: str | None = None
+    entry_ref: str | None = None
 
 
 async def ledger_activity(
     ctx: AuthContext, client_entity_id: UUID, *, kind: str | None
 ) -> list[tuple[LedgerEvent, str | None]]:
-    """Posts, failures, closing dates and the last sync, newest first, each with its actor's
-    name resolved at read time."""
+    """Sync events (CLS-11 a2), newest first, each actor's name resolved at read time: the
+    connection's finished runs (a failed one with its code, C-02-T35), each batch's post, each
+    failed attempt with its entry ("Failed post AJE-03") and the closing date."""
+    from abacus.modules.connections.api import finished_runs
+
     qbo = await _qbo(ctx, client_entity_id)
     facts = await posting_facts(ctx.tenant, client_entity_id)
     events: list[LedgerEvent] = []
     for r in facts.rows:
-        if r.posted_at is not None:
+        if r.posted_at is not None and r.status == "posted":
             events.append(
                 LedgerEvent(r.posted_at, "post", r.batch_code, r.entry_count, r.posted_by)
             )
-        if r.failure_count > r.resolved_failures and r.posted_at is not None:
-            open_failures = r.failure_count - r.resolved_failures
-            events.append(
-                LedgerEvent(r.posted_at, "sync_failed", r.batch_code, open_failures, r.posted_by)
-            )
+    for f in facts.failures:
+        events.append(LedgerEvent(f.at, "sync_failed", f.batch_code, None, None,
+                                  entry_ref=f.entry_ref))  # fmt: skip
     if facts.closing_date is not None:
         events.append(LedgerEvent(facts.closing_date.at, "closing_date", None, None,
                                facts.closing_date.set_by))  # fmt: skip
-    if qbo is not None and qbo.last_sync_at is not None:
-        events.append(LedgerEvent(qbo.last_sync_at, "sync"))
+    if qbo is not None:
+        for run in await finished_runs(ctx, client_entity_id, qbo.id):
+            if run.status == "succeeded":
+                events.append(LedgerEvent(run.finished_at, "sync"))
+            else:
+                events.append(LedgerEvent(run.finished_at, "sync_failed",
+                                          provider_code=run.failure_code))  # fmt: skip
     if kind is not None:
         events = [e for e in events if e.kind == kind]
     events.sort(key=lambda e: e.at, reverse=True)
@@ -257,6 +308,7 @@ __all__ = [
     "LedgerEvent",
     "LogRow",
     "PostingFacts",
+    "PostingFailure",
     "health_of",
     "ledger_activity",
     "ledger_console",

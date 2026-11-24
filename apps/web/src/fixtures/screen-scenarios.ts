@@ -32,6 +32,12 @@ import { scenarios as cls05 } from "./scenarios/CLS-05";
 import { scenarios as cls06 } from "./scenarios/CLS-06";
 import { scenarios as cls09 } from "./scenarios/CLS-09";
 import { scenarios as cls10 } from "./scenarios/CLS-10";
+import {
+  CLS11_CLIENT_ID,
+  CLS11_CLOSE_ID,
+  CLS11_ENTITY_ID,
+  scenarios as cls11,
+} from "./scenarios/CLS-11";
 import { ACCOUNT_4410 } from "./seed/close-accounts";
 import { CLOSE_IDS, copperleafAugust } from "./seed/closes";
 import { scenarios as ebp01 } from "./scenarios/EBP-01";
@@ -357,6 +363,20 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
     scenarios: cls10,
     opens: {},
     ids: idsOf(cls10, () => ({ closeId: CLOSE_IDS.august })),
+  },
+  // C-02-T35 (TASK-8922): CLS-11 a, a2, c, d, d2 on the live route
+  // (`/clients/_clientId_/entities/_entityId_/ledger`), opened from the August close; a2 on Sync
+  // events, d2 with the reconnect confirm open.
+  "CLS-11": {
+    scenarios: cls11,
+    opens: {
+      a: `?close=${CLS11_CLOSE_ID}`,
+      a2: `?close=${CLS11_CLOSE_ID}&log=events`,
+      c: `?close=${CLS11_CLOSE_ID}`,
+      d: `?close=${CLS11_CLOSE_ID}`,
+      d2: `?close=${CLS11_CLOSE_ID}&reconnect=1`,
+    },
+    ids: idsOf(cls11, () => ({ clientId: CLS11_CLIENT_ID, entityId: CLS11_ENTITY_ID })),
   },
   "BND-02": { scenarios: bnd02, opens: {}, ids: BND02_OPENS },
   // P-07-T53: the gates and access walk opens the live routes on the screens' own states.

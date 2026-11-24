@@ -78,6 +78,7 @@ from abacus.modules.integrations.ledger_console import (
     ClosingDate,
     LogRow,
     PostingFacts,
+    PostingFailure,
     register_batch_entity,
     register_posting_log,
 )
@@ -171,6 +172,7 @@ __all__ = [
     "LogRow",
     "Posted",
     "PostingFacts",
+    "PostingFailure",
     "QboTransport",
     "QuickBooksOnlineWriter",
     "ReadConnectorEntry",

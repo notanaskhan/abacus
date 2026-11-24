@@ -15558,6 +15558,105 @@ export type DeactivateIn = {
 };
 
 /**
+ * DeadlineHolidayOut
+ */
+export type DeadlineHolidayOut = {
+    /**
+     * Date
+     */
+    date: string;
+    /**
+     * Jurisdiction
+     */
+    jurisdiction: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Source
+     */
+    source: 'platform' | 'firm';
+    /**
+     * Version Id
+     */
+    version_id: string;
+};
+
+/**
+ * DeadlineOffsetRow
+ *
+ * DF-10: the firm's internal target for a form, this many days before the statutory due
+ * date (moved earlier past a weekend or a firm closure day). HOME-03 keeps the statutory date.
+ */
+export type DeadlineOffsetRow = {
+    /**
+     * Form
+     */
+    form: string;
+    /**
+     * Internal Offset Days
+     */
+    internal_offset_days: number;
+};
+
+/**
+ * DeadlineOverridesPayload
+ *
+ * DF-10 firm overrides on top of the platform rules (T-08-T44; K-02 lifecycle: owner-drafted,
+ * owner-published, effective-dated). Platform rows stay read-only; these never change a
+ * statutory date except through a person's per-client postponement application.
+ */
+export type DeadlineOverridesPayload = {
+    /**
+     * Closures
+     */
+    closures?: Array<FirmClosureRow>;
+    /**
+     * Kind
+     */
+    kind: 'deadline_overrides';
+    /**
+     * Offsets
+     */
+    offsets?: Array<DeadlineOffsetRow>;
+    /**
+     * Postponements
+     */
+    postponements?: Array<FirmPostponementRow>;
+};
+
+/**
+ * DeadlinePostponementOut
+ */
+export type DeadlinePostponementOut = {
+    /**
+     * Notice Id
+     */
+    notice_id: string;
+    /**
+     * Postponed To
+     */
+    postponed_to: string;
+    /**
+     * Source
+     */
+    source: 'platform' | 'firm';
+    /**
+     * Version Id
+     */
+    version_id: string;
+    /**
+     * Window End
+     */
+    window_end: string;
+    /**
+     * Window Start
+     */
+    window_start: string;
+};
+
+/**
  * DeadlineRowOut
  */
 export type DeadlineRowOut = {
@@ -15565,6 +15664,10 @@ export type DeadlineRowOut = {
      * Client
      */
     client: string;
+    /**
+     * Deadline Id
+     */
+    deadline_id?: string | null;
     /**
      * Due On
      */
@@ -15592,10 +15695,39 @@ export type DeadlineRowOut = {
 };
 
 /**
+ * DeadlineRulesSectionOut
+ *
+ * KNW-04 section j (T-08-T44, DF-10, DEC-5921): the platform's rules, holidays and relief
+ * notices in effect, read-only, beside the firm's `deadline_overrides` standard (its version in
+ * effect, editable and published by its owner through the K-02 lifecycle).
+ */
+export type DeadlineRulesSectionOut = {
+    firm_overrides?: DeadlineOverridesPayload | null;
+    firm_standard?: StandardOut | null;
+    /**
+     * Holidays
+     */
+    holidays: Array<DeadlineHolidayOut>;
+    /**
+     * Platform Read Only
+     */
+    platform_read_only?: true;
+    /**
+     * Platform Rules
+     */
+    platform_rules: Array<PlatformDeadlineRuleOut>;
+    /**
+     * Postponements
+     */
+    postponements: Array<DeadlinePostponementOut>;
+};
+
+/**
  * DeadlinesOut
  *
- * The viewer's next 14 days (interim source: work items' `due_on` and milestones; T-08 moves
- * it to `filing_deadlines` without a shape change). `next` is the first one past the window.
+ * The viewer's next 14 days: `filing_deadlines` rows (the HOME-03 read model, the viewer as
+ * owner or signer) once `practice.filing_deadlines` is on (T-08-T20), work items' `due_on`
+ * before. `next` is the first one past the window.
  */
 export type DeadlinesOut = {
     next: DeadlineRowOut | null;
@@ -16417,6 +16549,10 @@ export type DeliveryBackupWithholdingIn = {
      */
     evidence_version_id?: string | null;
     /**
+     * Notice Received On
+     */
+    notice_received_on?: string | null;
+    /**
      * Reason
      */
     reason: string;
@@ -16505,9 +16641,41 @@ export type DeliveryHandoffIn = {
 };
 
 /**
+ * DeliveryHandoffItemOut
+ *
+ * A tax-relevant close item (CLS-12 a's "Open tax-relevant items").
+ */
+export type DeliveryHandoffItemOut = {
+    /**
+     * Create Tax Issue
+     */
+    create_tax_issue?: boolean;
+    /**
+     * Issue Id
+     */
+    issue_id: string;
+    /**
+     * Resolved
+     */
+    resolved: boolean;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * DeliveryHandoffOut
  */
 export type DeliveryHandoffOut = {
+    /**
+     * Balanced
+     */
+    balanced?: boolean | null;
+    /**
+     * Items
+     */
+    items?: Array<DeliveryHandoffItemOut>;
     /**
      * Locked At
      */
@@ -16973,6 +17141,27 @@ export type DeliveryScheduleOut = {
 };
 
 /**
+ * DeliveryScreenOut
+ *
+ * C-02-T34: one vendor-screen run's outcome. `succeeded` left a suggestion to adopt in the
+ * drawer; `escalated` proposed nothing (`reason` is a code, never model text).
+ */
+export type DeliveryScreenOut = {
+    /**
+     * Reason
+     */
+    reason?: string | null;
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Status
+     */
+    status: 'succeeded' | 'escalated' | 'shadow';
+};
+
+/**
  * DeliveryStatementLineOut
  */
 export type DeliveryStatementLineOut = {
@@ -17088,6 +17277,31 @@ export type DeliveryVendorRowOut = {
      * W9 Status
      */
     w9_status: 'on_file' | 'requested' | 'tin_mismatch' | 'missing';
+};
+
+/**
+ * DeliveryW9RecordIn
+ *
+ * C-02-T33 (DEC-5907): the TIN a person reads off the vendor's W-9, sealed on arrival and
+ * never echoed; the W-9 itself is evidence on the close engagement.
+ */
+export type DeliveryW9RecordIn = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Signed On
+     */
+    signed_on: string;
+    /**
+     * Tin Kind
+     */
+    tin_kind: 'ssn' | 'ein';
 };
 
 /**
@@ -19902,6 +20116,10 @@ export type EngagementDraftPayload = {
      * Scope Code
      */
     scope_code?: string | null;
+    /**
+     * Source Ref
+     */
+    source_ref?: string | null;
     /**
      * Standards Code
      */
@@ -24636,6 +24854,23 @@ export type FiduciaryTreeNodeOut = {
 };
 
 /**
+ * FieldBindingIn
+ *
+ * Where a field's value comes from: a workbook cell (`06!C2`), a TB-mapped form line
+ * (`L15`, the tax form lines reference set) or a return fact (`entity.name`).
+ */
+export type FieldBindingIn = {
+    /**
+     * Kind
+     */
+    kind: 'workbook_cell' | 'tb_line' | 'return_fact';
+    /**
+     * Ref
+     */
+    ref: string;
+};
+
+/**
  * FieldEditIn
  *
  * `PUT …/value`: a person's edit. The citation note is required (the `fvv_human_edits_cite`
@@ -24749,6 +24984,30 @@ export type FieldLinksOut = {
      * Items
      */
     items: Array<FieldLinkOut>;
+};
+
+/**
+ * FieldManifestIn
+ *
+ * A form face's manifest (T-06-T43): the form and tax year, its pages and fields.
+ */
+export type FieldManifestIn = {
+    /**
+     * Fields
+     */
+    fields: Array<FormFaceFieldIn>;
+    /**
+     * Form
+     */
+    form: string;
+    /**
+     * Pages
+     */
+    pages: Array<FormFacePageIn>;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
 };
 
 /**
@@ -25950,6 +26209,23 @@ export type FirmClientOut = {
 };
 
 /**
+ * FirmClosureRow
+ *
+ * A day the firm is closed: an internal target never falls on it (statutory dates roll on
+ * the platform's legal holidays only, IRC §7503).
+ */
+export type FirmClosureRow = {
+    /**
+     * Date
+     */
+    date: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * FirmEmailTemplateImportIn
  *
  * A counsel-approved onboarding bundle (F-09-T115 pattern). Distinct from C16 v1's staff
@@ -26412,6 +26688,53 @@ export type FirmPlanOut = {
      * Workbench Active 30D
      */
     workbench_active_30d: number;
+};
+
+/**
+ * FirmPostponementArea
+ */
+export type FirmPostponementArea = {
+    /**
+     * Counties
+     */
+    counties?: Array<string>;
+    /**
+     * State Code
+     */
+    state_code: string;
+};
+
+/**
+ * FirmPostponementRow
+ *
+ * A relief notice the firm tracks that the platform set does not carry yet (a state's own
+ * notice): applied to a client by its notice id, never to every return in the area.
+ */
+export type FirmPostponementRow = {
+    /**
+     * Areas
+     */
+    areas?: Array<FirmPostponementArea>;
+    /**
+     * Notice Id
+     */
+    notice_id: string;
+    /**
+     * Postponed To
+     */
+    postponed_to: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Window End
+     */
+    window_end: string;
+    /**
+     * Window Start
+     */
+    window_start: string;
 };
 
 /**
@@ -27403,6 +27726,66 @@ export type Form8879SetPayload = {
 };
 
 /**
+ * FormFaceFieldIn
+ *
+ * One field: its key, page, label (the form's own words), its box as fractions of the page
+ * (x0, y0, x1, y1 from the top left), its format, its binding, and for a TIN the burned-in
+ * mask (only the last four digits ever print on a draft).
+ */
+export type FormFaceFieldIn = {
+    binding: FieldBindingIn;
+    /**
+     * Box
+     */
+    box: [
+        number,
+        number,
+        number,
+        number
+    ];
+    /**
+     * Format
+     */
+    format: 'money' | 'whole_dollars' | 'text' | 'checkbox' | 'date' | 'percent' | 'tin';
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Mask
+     */
+    mask?: boolean;
+    /**
+     * Page Key
+     */
+    page_key: string;
+};
+
+/**
+ * FormFacePageIn
+ *
+ * One page of a form face (T-06-T43): its key, its number on the form and its title.
+ */
+export type FormFacePageIn = {
+    /**
+     * Page Key
+     */
+    page_key: string;
+    /**
+     * Page No
+     */
+    page_no: number;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * FormatCheckOut
  *
  * A format check of the latest engine file: codes, never file content.
@@ -28103,7 +28486,7 @@ export type GeneratedDocumentOut = {
     /**
      * Kind
      */
-    kind: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions' | 'close_package';
+    kind: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions' | 'close_package' | 'tax_form_face';
     /**
      * Out Of Date
      */
@@ -30552,7 +30935,7 @@ export type ImportErrorOut = {
     /**
      * Code
      */
-    code: 'unknown_variable' | 'unknown_layout' | 'unknown_block' | 'markup_not_allowed' | 'clause_conflict' | 'too_large' | 'consent_terms_required' | 'recipients_block_required' | 'recipient_in_text';
+    code: 'unknown_variable' | 'unknown_layout' | 'unknown_block' | 'markup_not_allowed' | 'clause_conflict' | 'too_large' | 'consent_terms_required' | 'recipients_block_required' | 'recipient_in_text' | 'field_manifest_required' | 'field_manifest_invalid';
     /**
      * Path
      */
@@ -30748,6 +31131,10 @@ export type ImportRejectIn = {
  * ImportReportOut
  */
 export type ImportReportOut = {
+    /**
+     * Changes
+     */
+    changes?: Array<string>;
     /**
      * Draft Version Id
      */
@@ -35378,7 +35765,7 @@ export type LegalHoliday = {
     /**
      * Jurisdiction
      */
-    jurisdiction: 'US' | 'DC';
+    jurisdiction: string;
     /**
      * Name
      */
@@ -42744,6 +43131,42 @@ export type PlanningMaterialityVersionOut = {
 };
 
 /**
+ * PlatformDeadlineRuleOut
+ *
+ * A platform due-date rule, read-only in KNW-04 section j (DF-10).
+ */
+export type PlatformDeadlineRuleOut = {
+    /**
+     * Authority
+     */
+    authority: string;
+    /**
+     * Day
+     */
+    day: number;
+    /**
+     * Extension Form
+     */
+    extension_form: string | null;
+    /**
+     * Extension Months
+     */
+    extension_months: number | null;
+    /**
+     * Form
+     */
+    form: string;
+    /**
+     * Months After Period End
+     */
+    months_after_period_end: number;
+    /**
+     * Version Id
+     */
+    version_id: string;
+};
+
+/**
  * PlatformPlanRequestOut
  */
 export type PlatformPlanRequestOut = {
@@ -44884,6 +45307,39 @@ export type PortalVisibilityOut = {
 };
 
 /**
+ * PostIssuanceAnalysisOut
+ *
+ * AUD-30 c: the case's kept analysis. `blocks` are AgentBlocks the screen renders through
+ * AgentText; `recommendation` is the code-eligible option the analysis tagged ("Agent
+ * recommendation"), never a decision; the closing paragraph ends "I have not decided whether
+ * this needs action." (AC-16).
+ */
+export type PostIssuanceAnalysisOut = {
+    /**
+     * Blocks
+     */
+    blocks: {
+        [key: string]: unknown;
+    };
+    /**
+     * Case Id
+     */
+    case_id: string;
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * Recommendation
+     */
+    recommendation?: 'no_action' | 'revise_and_reissue' | 'notify_users' | null;
+    /**
+     * Run Id
+     */
+    run_id: string;
+};
+
+/**
  * PostIssuanceCaseIn
  *
  * AUD-30 f: type, source, description.
@@ -45126,6 +45582,10 @@ export type PostIssuanceReissueOut = {
  */
 export type PostIssuanceRunOut = {
     /**
+     * Reason
+     */
+    reason?: string | null;
+    /**
      * Run Id
      */
     run_id: string;
@@ -45133,6 +45593,10 @@ export type PostIssuanceRunOut = {
      * Started At
      */
     started_at: string;
+    /**
+     * Status
+     */
+    status?: 'succeeded' | 'escalated' | 'shadow';
 };
 
 /**
@@ -45464,6 +45928,23 @@ export type PostingEntryIdsIn = {
      * Entry Ids
      */
     entry_ids: Array<string>;
+};
+
+/**
+ * PostingLedgerMatchesOut
+ *
+ * C-02-T32: the journals in the client's synced ledger that carry the entry's accounts and
+ * amounts (`qbo:<txn id>`), for the person who records it.
+ */
+export type PostingLedgerMatchesOut = {
+    /**
+     * Entry Id
+     */
+    entry_id: string;
+    /**
+     * Match Refs
+     */
+    match_refs: Array<string>;
 };
 
 /**
@@ -49032,6 +49513,41 @@ export type ReconcilingItemOut = {
 };
 
 /**
+ * ReconnectPreviewOut
+ *
+ * C-02-T35 (CLS-11 d; DEC-5924): what "Request reconnect…" would send, before it is sent:
+ * the owners it goes to and the first owner's Reconnect request email (POR-20's database
+ * template, rendered as the send renders it). `template_missing`: the firm has no version, so
+ * the send would be recorded blocked and the dialog says so.
+ */
+export type ReconnectPreviewOut = {
+    /**
+     * From Display
+     */
+    from_display?: string | null;
+    /**
+     * Html
+     */
+    html?: string | null;
+    /**
+     * Recipients
+     */
+    recipients: Array<string>;
+    /**
+     * Subject
+     */
+    subject?: string | null;
+    /**
+     * Template Missing
+     */
+    template_missing: boolean;
+    /**
+     * Text
+     */
+    text?: string | null;
+};
+
+/**
  * ReconnectRequestOut
  */
 export type ReconnectRequestOut = {
@@ -50572,7 +51088,7 @@ export type ReportTemplateOut = {
     /**
      * Family
      */
-    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions' | 'close_package';
+    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions' | 'close_package' | 'tax_form_face';
     /**
      * Id
      */
@@ -50607,7 +51123,7 @@ export type ReportTemplateVersionOut = {
     /**
      * Layout Key
      */
-    layout_key: 'letter' | 'consent_7216' | 'report' | 'notice_response' | 'package' | 'run_export';
+    layout_key: 'letter' | 'consent_7216' | 'report' | 'notice_response' | 'package' | 'run_export' | 'tax_form_face';
     /**
      * Publications
      */
@@ -57674,7 +58190,7 @@ export type SendIn = {
     /**
      * Recipient Contact Id
      */
-    recipient_contact_id: string;
+    recipient_contact_id?: string | null;
     /**
      * Seen Versions
      */
@@ -61048,7 +61564,7 @@ export type StandardCreateIn = {
     /**
      * Kind
      */
-    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes' | 'rmm_matrix' | 'je_risk_criteria' | 'mus_confidence_factors';
+    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'deadline_overrides' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes' | 'rmm_matrix' | 'je_risk_criteria' | 'mus_confidence_factors';
     /**
      * Name
      */
@@ -61114,7 +61630,9 @@ export type StandardDraftPatchIn = {
         kind: 'return_approval_policy';
     } & ReturnApprovalPolicyPayload) | ({
         kind: 'ssars_cas_settings';
-    } & SsarsCasSettingsPayload);
+    } & SsarsCasSettingsPayload) | ({
+        kind: 'deadline_overrides';
+    } & DeadlineOverridesPayload);
 };
 
 /**
@@ -61260,7 +61778,7 @@ export type StandardOut = {
     /**
      * Kind
      */
-    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes' | 'rmm_matrix' | 'je_risk_criteria' | 'mus_confidence_factors';
+    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'deadline_overrides' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes' | 'rmm_matrix' | 'je_risk_criteria' | 'mus_confidence_factors';
     /**
      * Name
      */
@@ -61408,7 +61926,9 @@ export type StandardVersionOut = {
         kind: 'return_approval_policy';
     } & ReturnApprovalPolicyPayload) | ({
         kind: 'ssars_cas_settings';
-    } & SsarsCasSettingsPayload);
+    } & SsarsCasSettingsPayload) | ({
+        kind: 'deadline_overrides';
+    } & DeadlineOverridesPayload);
     /**
      * Payload Hash
      */
@@ -64444,12 +64964,23 @@ export type TaxDepthPtetIn = {
 
 /**
  * TaxDepthRunOut
+ *
+ * T-06-T42 (DEC-5913): "Explain…" answers the SHL-15 issue it created (no run until
+ * T-06-T54's agent path); the allocation answers its run and the proposal a person adopts.
  */
 export type TaxDepthRunOut = {
     /**
+     * Issue Id
+     */
+    issue_id?: string | null;
+    /**
+     * Proposal Id
+     */
+    proposal_id?: string | null;
+    /**
      * Run Id
      */
-    run_id: string;
+    run_id?: string | null;
 };
 
 /**
@@ -65322,6 +65853,10 @@ export type TaxPracticeRaiseSheetOut = {
      * Draft From Agent
      */
     draft_from_agent: boolean;
+    /**
+     * Recipient Contact Ids
+     */
+    recipient_contact_ids?: Array<string>;
     /**
      * Recipients
      */
@@ -67480,7 +68015,8 @@ export type TemplateImportIn = {
     /**
      * Family
      */
-    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions' | 'close_package';
+    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions' | 'close_package' | 'tax_form_face';
+    field_manifest?: FieldManifestIn | null;
     /**
      * Layout Key
      */
@@ -71782,6 +72318,10 @@ export type W1ActivityOut = {
      */
     count?: number | null;
     /**
+     * Entry Ref
+     */
+    entry_ref?: string | null;
+    /**
      * Kind
      */
     kind: 'sync' | 'sync_failed' | 'post' | 'closing_date' | 'write_grant' | 'reauth';
@@ -71837,6 +72377,10 @@ export type W1CapabilitySwitchOut = {
  */
 export type W1ConnectionPaneOut = {
     /**
+     * Authorized At
+     */
+    authorized_at?: string | null;
+    /**
      * Authorized By
      */
     authorized_by?: string | null;
@@ -71853,6 +72397,10 @@ export type W1ConnectionPaneOut = {
      */
     closing_date_set_by?: string | null;
     /**
+     * Company Name
+     */
+    company_name?: string | null;
+    /**
      * Connection Id
      */
     connection_id: string;
@@ -71864,6 +72412,10 @@ export type W1ConnectionPaneOut = {
      * Health
      */
     health: 'connected' | 'needs_attention' | 'needs_reauth' | 'disconnected';
+    /**
+     * Last Failed At
+     */
+    last_failed_at?: string | null;
     /**
      * Last Sync At
      */
@@ -71881,9 +72433,17 @@ export type W1ConnectionPaneOut = {
      */
     next_sync_at?: string | null;
     /**
+     * Reconnect Requested At
+     */
+    reconnect_requested_at?: string | null;
+    /**
      * Retry At
      */
     retry_at?: string | null;
+    /**
+     * Status Reason
+     */
+    status_reason?: string | null;
     /**
      * Write Granted
      */
@@ -72027,6 +72587,10 @@ export type W1LedgerConsoleOut = {
     client_entity_name: string;
     connection?: W1ConnectionPaneOut | null;
     /**
+     * Failures
+     */
+    failures?: Array<W1PostingFailureOut>;
+    /**
      * Ledger Label
      */
     ledger_label: string;
@@ -72035,6 +72599,44 @@ export type W1LedgerConsoleOut = {
      */
     posting_paused_by?: string | null;
     tiles: W1ConsoleTilesOut;
+};
+
+/**
+ * W1PostingFailureOut
+ *
+ * CLS-11's Failures band: "Aug 11, 2:38 PM · 2026-07-A · AJE-03 Depreciation" over the
+ * provider's redacted message (client-system text, ADR-052: shown as text only), and when a
+ * later attempt posted the entry, its time and the person who ran it (C-02-T35, DEC-5924).
+ */
+export type W1PostingFailureOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Batch Code
+     */
+    batch_code: string;
+    /**
+     * Entry Description
+     */
+    entry_description?: string | null;
+    /**
+     * Entry Ref
+     */
+    entry_ref: string;
+    /**
+     * Provider Message
+     */
+    provider_message?: string | null;
+    /**
+     * Resolved At
+     */
+    resolved_at?: string | null;
+    /**
+     * Resolved By
+     */
+    resolved_by?: string | null;
 };
 
 /**
@@ -72057,6 +72659,10 @@ export type W1PostingLogOut = {
  * 2026-07-A · Posted · QBO 47901-47906 · 1 failure resolved.
  */
 export type W1PostingLogRowOut = {
+    /**
+     * Amount
+     */
+    amount?: string | null;
     /**
      * Approved Count
      */
@@ -72085,6 +72691,14 @@ export type W1PostingLogRowOut = {
      * Period
      */
     period: string;
+    /**
+     * Posted At
+     */
+    posted_at?: string | null;
+    /**
+     * Posted By
+     */
+    posted_by?: string | null;
     /**
      * Resolved Failures
      */
@@ -76339,6 +76953,35 @@ export type AbacusModulesWorkpapersFieldworkTestsContractExceptionPrefillOut = {
      * Title
      */
     title: string;
+};
+
+/**
+ * DeliveryW9RecordIn
+ *
+ * C-02-T33 (DEC-5907): the TIN a person reads off the vendor's W-9, sealed on arrival and
+ * never echoed; the W-9 itself is evidence on the close engagement.
+ */
+export type DeliveryW9RecordInWritable = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Signed On
+     */
+    signed_on: string;
+    /**
+     * Tin
+     */
+    tin: string;
+    /**
+     * Tin Kind
+     */
+    tin_kind: 'ssn' | 'ein';
 };
 
 /**
@@ -86003,6 +86646,62 @@ export type PostIssuanceCaseResponses = {
 
 export type PostIssuanceCaseResponse = PostIssuanceCaseResponses[keyof PostIssuanceCaseResponses];
 
+export type PostIssuanceAnalysisReadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Case Id
+         */
+        case_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/post-issuance/cases/{case_id}/analysis';
+};
+
+export type PostIssuanceAnalysisReadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PostIssuanceAnalysisReadError = PostIssuanceAnalysisReadErrors[keyof PostIssuanceAnalysisReadErrors];
+
+export type PostIssuanceAnalysisReadResponses = {
+    /**
+     * Successful Response
+     */
+    200: PostIssuanceAnalysisOut;
+};
+
+export type PostIssuanceAnalysisReadResponse = PostIssuanceAnalysisReadResponses[keyof PostIssuanceAnalysisReadResponses];
+
 export type PostIssuanceAnalysisData = {
     body?: never;
     headers: {
@@ -95362,10 +96061,6 @@ export type CloseTaxHandoffErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CloseTaxHandoffError = CloseTaxHandoffErrors[keyof CloseTaxHandoffErrors];
@@ -95426,10 +96121,6 @@ export type CloseTaxHandoffPublishErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CloseTaxHandoffPublishError = CloseTaxHandoffPublishErrors[keyof CloseTaxHandoffPublishErrors];
@@ -98346,6 +99037,63 @@ export type ReconnectRequestResponses = {
 };
 
 export type ReconnectRequestResponse = ReconnectRequestResponses[keyof ReconnectRequestResponses];
+
+export type ReconnectPreviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Connection Id
+         */
+        connection_id: string;
+    };
+    query?: {
+        /**
+         * Width
+         */
+        width?: 600 | 390;
+    };
+    url: '/v1/connections/{connection_id}/reconnect-requests/preview';
+};
+
+export type ReconnectPreviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReconnectPreviewError = ReconnectPreviewErrors[keyof ReconnectPreviewErrors];
+
+export type ReconnectPreviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReconnectPreviewOut;
+};
+
+export type ReconnectPreviewResponse = ReconnectPreviewResponses[keyof ReconnectPreviewResponses];
 
 export type ImportConsentTemplatesData = {
     body: ConsentTemplateImportIn;
@@ -144280,10 +145028,6 @@ export type PlanningOpportunitiesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PlanningOpportunitiesError = PlanningOpportunitiesErrors[keyof PlanningOpportunitiesErrors];
@@ -144339,10 +145083,6 @@ export type PlanningCreateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PlanningCreateError = PlanningCreateErrors[keyof PlanningCreateErrors];
@@ -144395,10 +145135,6 @@ export type PlanningOpportunityErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PlanningOpportunityError = PlanningOpportunityErrors[keyof PlanningOpportunityErrors];
@@ -144459,10 +145195,6 @@ export type PlanningCreateProjectErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PlanningCreateProjectError = PlanningCreateProjectErrors[keyof PlanningCreateProjectErrors];
@@ -144523,10 +145255,6 @@ export type PlanningDeclineErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PlanningDeclineError = PlanningDeclineErrors[keyof PlanningDeclineErrors];
@@ -144587,10 +145315,6 @@ export type PlanningDismissErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PlanningDismissError = PlanningDismissErrors[keyof PlanningDismissErrors];
@@ -144651,10 +145375,6 @@ export type PlanningPrepareRaiseErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PlanningPrepareRaiseError = PlanningPrepareRaiseErrors[keyof PlanningPrepareRaiseErrors];
@@ -144715,10 +145435,6 @@ export type PlanningRaiseErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PlanningRaiseError = PlanningRaiseErrors[keyof PlanningRaiseErrors];
@@ -144779,10 +145495,6 @@ export type PlanningRestoreErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PlanningRestoreError = PlanningRestoreErrors[keyof PlanningRestoreErrors];
@@ -144839,10 +145551,6 @@ export type PlanningSummaryErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PlanningSummaryError = PlanningSummaryErrors[keyof PlanningSummaryErrors];
@@ -152816,10 +153524,6 @@ export type PostponementApplicationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PostponementApplicationError = PostponementApplicationErrors[keyof PostponementApplicationErrors];
@@ -153679,6 +154383,58 @@ export type GroupRejectEliminationResponses = {
 };
 
 export type GroupRejectEliminationResponse = GroupRejectEliminationResponses[keyof GroupRejectEliminationResponses];
+
+export type LedgerMatchesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Entry Id
+         */
+        entry_id: string;
+    };
+    query?: never;
+    url: '/v1/proposed-entries/{entry_id}/ledger-matches';
+};
+
+export type LedgerMatchesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type LedgerMatchesError = LedgerMatchesErrors[keyof LedgerMatchesErrors];
+
+export type LedgerMatchesResponses = {
+    /**
+     * Successful Response
+     */
+    200: PostingLedgerMatchesOut;
+};
+
+export type LedgerMatchesResponse = LedgerMatchesResponses[keyof LedgerMatchesResponses];
 
 export type RecordExternalData = {
     body: PostingRecordExternalIn;
@@ -157091,7 +157847,7 @@ export type ListReportTemplatesData = {
         /**
          * Family
          */
-        family?: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions' | 'close_package' | null;
+        family?: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions' | 'close_package' | 'tax_form_face' | null;
     };
     url: '/v1/report-templates';
 };
@@ -161640,7 +162396,7 @@ export type ListStandardsData = {
         /**
          * Kind
          */
-        kind?: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes' | 'rmm_matrix' | 'je_risk_criteria' | 'mus_confidence_factors' | null;
+        kind?: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'deadline_overrides' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes' | 'rmm_matrix' | 'je_risk_criteria' | 'mus_confidence_factors' | null;
     };
     url: '/v1/standards';
 };
@@ -162088,6 +162844,53 @@ export type StandardsRunRerunResponses = {
 };
 
 export type StandardsRunRerunResponse = StandardsRunRerunResponses[keyof StandardsRunRerunResponses];
+
+export type DeadlineRulesSectionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/standards/deadline-rules';
+};
+
+export type DeadlineRulesSectionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DeadlineRulesSectionError = DeadlineRulesSectionErrors[keyof DeadlineRulesSectionErrors];
+
+export type DeadlineRulesSectionResponses = {
+    /**
+     * Successful Response
+     */
+    200: DeadlineRulesSectionOut;
+};
+
+export type DeadlineRulesSectionResponse = DeadlineRulesSectionResponses[keyof DeadlineRulesSectionResponses];
 
 export type ImportStandardsData = {
     body?: never;
@@ -165290,13 +166093,13 @@ export type DiagnosticsErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DiagnosticsError = DiagnosticsErrors[keyof DiagnosticsErrors];
@@ -165633,7 +166436,12 @@ export type FieldTraceData = {
          */
         field_key: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Checkpoint
+         */
+        checkpoint?: string | null;
+    };
     url: '/v1/tax-returns/{return_id}/fields/{field_key}/trace';
 };
 
@@ -165651,13 +166459,13 @@ export type FieldTraceErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FieldTraceError = FieldTraceErrors[keyof FieldTraceErrors];
@@ -166180,10 +166988,6 @@ export type FormPagesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FormPagesError = FormPagesErrors[keyof FormPagesErrors];
@@ -166219,7 +167023,12 @@ export type FormFieldsData = {
          */
         page_key: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Checkpoint
+         */
+        checkpoint?: string | null;
+    };
     url: '/v1/tax-returns/{return_id}/form-pages/{page_key}/fields';
 };
 
@@ -166237,13 +167046,13 @@ export type FormFieldsErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FormFieldsError = FormFieldsErrors[keyof FormFieldsErrors];
@@ -166256,6 +167065,68 @@ export type FormFieldsResponses = {
 };
 
 export type FormFieldsResponse = FormFieldsResponses[keyof FormFieldsResponses];
+
+export type FormPageImageData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+        /**
+         * Page Key
+         */
+        page_key: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/form-pages/{page_key}/image';
+};
+
+export type FormPageImageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type FormPageImageError = FormPageImageErrors[keyof FormPageImageErrors];
+
+export type FormPageImageResponses = {
+    /**
+     * Response Form Page Image
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type FormPageImageResponse = FormPageImageResponses[keyof FormPageImageResponses];
 
 export type DownloadDraftData = {
     body?: never;
@@ -166293,13 +167164,13 @@ export type DownloadDraftErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DownloadDraftError = DownloadDraftErrors[keyof DownloadDraftErrors];
@@ -166359,10 +167230,6 @@ export type FunctionalExpensesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FunctionalExpensesError = FunctionalExpensesErrors[keyof FunctionalExpensesErrors];
@@ -166423,10 +167290,6 @@ export type AllocationRunErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AllocationRunError = AllocationRunErrors[keyof AllocationRunErrors];
@@ -167237,13 +168100,13 @@ export type K1PreviewsErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type K1PreviewsError = K1PreviewsErrors[keyof K1PreviewsErrors];
@@ -167893,10 +168756,6 @@ export type ProvisionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ProvisionError = ProvisionErrors[keyof ProvisionErrors];
@@ -167957,10 +168816,6 @@ export type ProvisionExplainErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ProvisionExplainError = ProvisionExplainErrors[keyof ProvisionExplainErrors];
@@ -168070,10 +168925,6 @@ export type AaaErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AaaError = AaaErrors[keyof AaaErrors];
@@ -176570,9 +177421,9 @@ export type VendorErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Service unavailable
      */
-    501: ErrorOut;
+    503: ErrorOut;
 };
 
 export type VendorError = VendorErrors[keyof VendorErrors];
@@ -176689,10 +177540,6 @@ export type BackupWithholdingErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type BackupWithholdingError = BackupWithholdingErrors[keyof BackupWithholdingErrors];
@@ -176705,6 +177552,62 @@ export type BackupWithholdingResponses = {
 };
 
 export type BackupWithholdingResponse = BackupWithholdingResponses[keyof BackupWithholdingResponses];
+
+export type VendorScreenData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Vendor Id
+         */
+        vendor_id: string;
+    };
+    query?: never;
+    url: '/v1/vendors/{vendor_id}/screen';
+};
+
+export type VendorScreenErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type VendorScreenError = VendorScreenErrors[keyof VendorScreenErrors];
+
+export type VendorScreenResponses = {
+    /**
+     * Successful Response
+     */
+    201: DeliveryScreenOut;
+};
+
+export type VendorScreenResponse = VendorScreenResponses[keyof VendorScreenResponses];
 
 export type TinMatchData = {
     body: DeliveryTinMatchIn;
@@ -176749,10 +177652,6 @@ export type TinMatchErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TinMatchError = TinMatchErrors[keyof TinMatchErrors];
@@ -176802,17 +177701,13 @@ export type TinRevealErrors = {
      */
     404: ErrorOut;
     /**
-     * Conflict with the resource's state
-     */
-    409: ErrorOut;
-    /**
      * Invalid request
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Too soon or too many: retry after Retry-After
      */
-    501: ErrorOut;
+    429: ErrorOut;
 };
 
 export type TinRevealError = TinRevealErrors[keyof TinRevealErrors];
@@ -176825,6 +177720,62 @@ export type TinRevealResponses = {
 };
 
 export type TinRevealResponse = TinRevealResponses[keyof TinRevealResponses];
+
+export type VendorW9Data = {
+    body: DeliveryW9RecordInWritable;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Vendor Id
+         */
+        vendor_id: string;
+    };
+    query?: never;
+    url: '/v1/vendors/{vendor_id}/w9';
+};
+
+export type VendorW9Errors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type VendorW9Error = VendorW9Errors[keyof VendorW9Errors];
+
+export type VendorW9Responses = {
+    /**
+     * Successful Response
+     */
+    200: DeliveryVendorRowOut;
+};
+
+export type VendorW9Response = VendorW9Responses[keyof VendorW9Responses];
 
 export type ListWallsData = {
     body?: never;

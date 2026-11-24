@@ -63,6 +63,7 @@ from abacus.modules.integrations.api import (
     LogRow,
     Posted,
     PostingFacts,
+    PostingFailure,
     QboTransport,
     QuickBooksOnlineWriter,
     W1Evidence,
@@ -682,15 +683,26 @@ async def entity_label(ctx: AuthContext, work_item_id: UUID) -> str:
 _LOG = text(
     "SELECT b.id, b.batch_code, b.period, b.status, b.entry_count, b.first_external_ref, "
     "b.last_external_ref, b.failure_count, b.resolved_failure_count, b.posted_at, "
-    "b.posted_by_user_id, (SELECT count(*) FROM proposed_entries e "
+    "b.posted_by_user_id, b.total_amount, (SELECT count(*) FROM proposed_entries e "
     "WHERE e.posting_batch_id = b.id "
     "AND e.status IN ('approved', 'client_approved', 'posted')) AS approved "
     "FROM posting_batches b WHERE b.client_entity_id = :ce "
     "ORDER BY b.period DESC, b.batch_code DESC"
 )
-_PROPOSED = text(
-    "SELECT count(*) FROM proposed_entries e JOIN posting_batches b ON b.id = e.posting_batch_id "
-    "WHERE b.client_entity_id = :ce AND b.status = 'proposed'"
+_PROPOSED = text(  # batches, as the tile counts them (C-02-T35, DEC-5924)
+    "SELECT count(*) FROM posting_batches b WHERE b.client_entity_id = :ce "
+    "AND b.status = 'proposed'"
+)
+# C-02-T35: each failed attempt with its entry, and the first later attempt that posted it.
+_FAILURES = text(
+    "SELECT r.created_at, b.batch_code, e.ref, e.description, r.provider_message_redacted, "
+    "b.posted_by_user_id, (SELECT min(p.created_at) FROM posting_results p "
+    "WHERE p.posting_batch_id = r.posting_batch_id AND p.proposed_entry_id = r.proposed_entry_id "
+    "AND p.attempt_no > r.attempt_no AND p.outcome IN ('posted', 'already_posted')) AS resolved "
+    "FROM posting_results r JOIN posting_batches b ON b.id = r.posting_batch_id "
+    "JOIN proposed_entries e ON e.id = r.proposed_entry_id "
+    "WHERE b.client_entity_id = :ce AND r.outcome = 'failed' "
+    "ORDER BY r.created_at DESC, r.id DESC LIMIT 50"
 )
 _CLOSING = text(
     "SELECT closing_date, set_by_user_id, at FROM closing_date_events "
@@ -704,16 +716,23 @@ async def posting_facts_for(tenant: TenantContext, client_entity_id: UUID) -> Po
         rows = list((await session.execute(_LOG, {"ce": client_entity_id})).all())
         proposed = int(await session.scalar(_PROPOSED, {"ce": client_entity_id}) or 0)
         closing = (await session.execute(_CLOSING, {"ce": client_entity_id})).first()
+        failed = list((await session.execute(_FAILURES, {"ce": client_entity_id})).all())
     return PostingFacts(
         tuple(
             LogRow(r.id, r.batch_code, r.period, r.status, r.entry_count, int(r.approved),
                    r.first_external_ref, r.last_external_ref, r.resolved_failure_count,
-                   r.failure_count, r.posted_at, r.posted_by_user_id)
+                   r.failure_count, r.posted_at, r.posted_by_user_id, r.total_amount)
             for r in rows
         ),
         proposed,
         None if closing is None else ClosingDate(closing.closing_date, closing.set_by_user_id,
                                                  closing.at),
+        tuple(
+            PostingFailure(f.created_at, f.batch_code, f.ref, f.description,
+                           f.provider_message_redacted, f.resolved,
+                           f.posted_by_user_id if f.resolved is not None else None)
+            for f in failed
+        ),
     )  # fmt: skip
 
 

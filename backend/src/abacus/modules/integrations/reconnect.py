@@ -21,7 +21,7 @@ cooldown across feeds is a follow-up (DEC-611).
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, Literal
 from uuid import UUID
 
 from abacus.kernel._flags import CONNECTIONS_PORTAL_V2
@@ -33,6 +33,7 @@ from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.communications.api import (
     RecipientRef,
     SendScope,
+    filled_preview,
     send_templated,
     templated_outcome,
 )
@@ -40,11 +41,16 @@ from abacus.modules.connections.api import (
     ReconnectRequested,
     authorised_engagement,
     entity_of_connection,
+    provider_of,
     request_reconnect,
 )
 from abacus.modules.identity.api import AuthContext, client_owners, firm_name, names_of
 from abacus.modules.integrations.catalog import client_catalog
-from abacus.modules.integrations.contract import ConnectionPersonOut, ReconnectRequestOut
+from abacus.modules.integrations.contract import (
+    ConnectionPersonOut,
+    ReconnectPreviewOut,
+    ReconnectRequestOut,
+)
 
 TEMPLATE_KEY: Final = "reconnect_request"
 ACTION: Final = "connection.reconnect_request"
@@ -96,6 +102,18 @@ async def _send_one(
     return False
 
 
+async def _shared(ctx: AuthContext, provider: str) -> dict[str, str]:
+    return {
+        "firm_name": await firm_name(ctx.tenant_id),
+        "connection_name": await _system_name(ctx, provider),
+        "portal_link": portal_link(),
+    }
+
+
+def _first(name: str | None) -> str:
+    return (name or "").split(" ")[0] or "there"
+
+
 async def _mail_owners(ctx: AuthContext, asked: ReconnectRequested, client_id: UUID) -> int:
     """The Reconnect request email to each owner of the entity; the number queued."""
     owners = await client_owners(
@@ -107,16 +125,46 @@ async def _mail_owners(ctx: AuthContext, asked: ReconnectRequested, client_id: U
     if not owners:
         return 0
     names = await names_of(owners)
-    shared = {
-        "firm_name": await firm_name(ctx.tenant_id),
-        "connection_name": await _system_name(ctx, asked.provider),
-        "portal_link": portal_link(),
-    }
+    shared = await _shared(ctx, asked.provider)
     queued = 0
     for owner in owners:
-        first = (names.get(owner) or "").split(" ")[0] or "there"
+        first = _first(names.get(owner))
         queued += await _send_one(ctx, asked, owner, {**shared, "client_first_name": first})
     return queued
+
+
+async def reconnect_preview(
+    ctx: AuthContext, connection_id: UUID, width: Literal[600, 390] = 600
+) -> ReconnectPreviewOut:
+    """C-02-T35 (CLS-11 d; DEC-5924): the confirm dialog's preview of the Reconnect request
+    email, before anything is sent. The same authorisation as the request (walls, role, the
+    portal flag), the owners it would go to and the first owner's filled email, rendered from the
+    firm's database template exactly as the send would; `template_missing` when there is none
+    (the send would be recorded blocked). Reads only; nothing is recorded or sent."""
+    entity_id = await entity_of_connection(ctx, connection_id)
+    ref = await authorised_engagement(ctx, entity_id, ACTION)
+    if not await flag_enabled(ctx.tenant, CONNECTIONS_PORTAL_V2):
+        raise NotFound(CONNECTIONS_PORTAL_V2.name)
+    provider = await provider_of(ctx, connection_id)
+    owners = await client_owners(
+        ctx.tenant, client_id=ref.client_id, client_entity_id=entity_id, engagement_id=ref.id
+    )
+    names = await names_of(owners) if owners else {}
+    recipients = [names.get(o, "Former member") for o in owners]
+    values = {**await _shared(ctx, provider), "client_first_name": _first(
+        recipients[0] if recipients else None
+    )}  # fmt: skip
+    shown = await filled_preview(ctx.tenant, TEMPLATE_KEY, values, width)
+    if shown is None:
+        return ReconnectPreviewOut(recipients=recipients, template_missing=True)
+    return ReconnectPreviewOut(
+        recipients=recipients,
+        template_missing=False,
+        subject=shown.rendered.subject,
+        html=shown.rendered.html,
+        text=shown.rendered.text,
+        from_display=shown.from_display,
+    )
 
 
 async def reconnect_request(
