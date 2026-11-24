@@ -5,3 +5,10 @@ export { AgentsOffNote } from "./AgentsOffNote";
 export { useEntityAgentGate } from "./useEntityAgentGate";
 export * from "./entityReturn";
 export * from "./instrument";
+export {
+  HANDOFF_BANNER_COPY,
+  HandoffProvenanceBanner,
+  type HandoffProvenanceBannerProps,
+  handoffLine,
+} from "./HandoffProvenanceBanner";
+export { HANDOFF_GATE_COPY, type HandoffGate, useTaxHandoffGate } from "./handoffGate";

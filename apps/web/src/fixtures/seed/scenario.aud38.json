@@ -1,0 +1,4035 @@
+{
+  "scenario": "bh-2026.10.3",
+  "slice": "tb_handoff",
+  "snapshot": "E0",
+  "preview_ready": {
+    "source_kind": "audit_release",
+    "source_snapshot_id": "50817342-584e-5182-9316-31677f755bb9",
+    "locked_close_id": null,
+    "gate": "released",
+    "status": "ready",
+    "counts": {
+      "mapped": 121,
+      "suggested": 5,
+      "review": 2,
+      "total": 128
+    },
+    "review_accounts": [
+      {
+        "account_ref": "2255",
+        "account_name": "Accrued customer loyalty rewards",
+        "balance": "-84600.00",
+        "choice": "send_blank",
+        "source": "tb_mapper",
+        "detail": "No prior-year account. Suggested: Schedule L, other current liabilities. Deduction timing under §461(h) is a tax judgment."
+      },
+      {
+        "account_ref": "6875",
+        "account_name": "Small equipment expensed",
+        "balance": "41200.00",
+        "choice": "send_blank",
+        "source": "tb_mapper",
+        "detail": "Suggested: other deductions. Confirm the de minimis safe-harbor election (Treas. Reg. §1.263(a)-1(f)) covers each item."
+      }
+    ],
+    "book_income": {
+      "pretax": "3100000.00",
+      "income_tax_expense": "750000.00",
+      "net_income": "2350000.00"
+    },
+    "schedules": [
+      "fixed_assets",
+      "accrued_liabilities",
+      "passed_adjustments"
+    ],
+    "tax_items": [
+      {
+        "key": "passed_aje_3",
+        "label": "Passed AJE-3",
+        "amount": "68400.00",
+        "included": true,
+        "detail": "Front Range Freight Co. invoice FRF-30418, June inbound freight, 68,400, recorded by the client in July. All events occurred in FY2026, so it is deductible in FY2026 although not booked: candidate M-1 deduction (68,400). Timing.",
+        "issue_offered": true
+      },
+      {
+        "key": "income_tax_expense",
+        "label": "Income tax expense",
+        "amount": "750000.00",
+        "included": false,
+        "detail": "Book tax, added back on Schedule M-1; deferred taxes stay in the provision workpaper.",
+        "issue_offered": true
+      }
+    ],
+    "current_version_no": null,
+    "preview_hash": "0000000000000000000000000000000000000000000000000000000000000001",
+    "source": {
+      "engagement_label": "Granite Peak Outdoor Supply, Inc. · FY2026 FS audit",
+      "tb_label": "Final TB · year ended Jun 30, 2026",
+      "released_on": "2026-10-27T00:00:00-05:00",
+      "released_by": "Margaret Okonkwo",
+      "balanced": true
+    },
+    "target": {
+      "return_label": "FY2026 Form 1120 · Granite Peak Outdoor Supply, Inc.",
+      "return_detail": "2025 Form 1120 for the fiscal year Jul 1, 2025 – Jun 30, 2026",
+      "engagement_created_on": "2026-10-12T00:00:00-05:00",
+      "extension_filed_on": "2026-10-13T00:00:00-05:00",
+      "due_on": "2027-04-15T00:00:00-05:00",
+      "team": [
+        "Leo Wong (preparer)",
+        "Isaac Moreau (reviewer)",
+        "Victor Hammond (partner)"
+      ]
+    },
+    "schedule_rows": [
+      {
+        "key": "fixed_assets",
+        "label": "Fixed assets",
+        "detail": "6,050,000 + additions 1,380,000 − depreciation 1,050,000 = 6,380,000 → Form 4562 and the depreciation M-1",
+        "included": true
+      },
+      {
+        "key": "accrued_liabilities",
+        "label": "Accrued liabilities",
+        "detail": "1,630,000 at Jun 30, 2026 → §461(h) economic performance and §404(a)(5) 2½-month review",
+        "included": true
+      },
+      {
+        "key": "passed_adjustments",
+        "label": "Passed adjustments",
+        "detail": "AJE-3 68,400 (SUM; declined by the client Oct 5) → M-1 candidate",
+        "included": true
+      }
+    ],
+    "accounts": [
+      {
+        "account_ref": "1010",
+        "account_name": "Front Range Bank operating account",
+        "balance": "356666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1020",
+        "account_name": "Cash and cash equivalents 2",
+        "balance": "356666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1030",
+        "account_name": "Cash and cash equivalents 3",
+        "balance": "407618",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1040",
+        "account_name": "Cash and cash equivalents 4",
+        "balance": "305714",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1050",
+        "account_name": "Cash and cash equivalents 5",
+        "balance": "458570",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1060",
+        "account_name": "Cash and cash equivalents 6",
+        "balance": "254766",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1210",
+        "account_name": "Accounts receivable, net",
+        "balance": "976666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1220",
+        "account_name": "Accounts receivable, net 2",
+        "balance": "976666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1230",
+        "account_name": "Accounts receivable, net 3",
+        "balance": "1116189",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1240",
+        "account_name": "Accounts receivable, net 4",
+        "balance": "837143",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1250",
+        "account_name": "Accounts receivable, net 5",
+        "balance": "1255712",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1260",
+        "account_name": "Accounts receivable, net 6",
+        "balance": "697624",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1410",
+        "account_name": "Inventories",
+        "balance": "1142000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1420",
+        "account_name": "Inventories 2",
+        "balance": "1142000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1430",
+        "account_name": "Inventories 3",
+        "balance": "1245818",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1440",
+        "account_name": "Inventories 4",
+        "balance": "1038182",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1450",
+        "account_name": "Inventories 5",
+        "balance": "1349636",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1460",
+        "account_name": "Inventories 6",
+        "balance": "934364",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1470",
+        "account_name": "Inventories 7",
+        "balance": "1453454",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1480",
+        "account_name": "Inventories 8",
+        "balance": "830546",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1490",
+        "account_name": "Inventories 9",
+        "balance": "1557272",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1500",
+        "account_name": "Inventories 10",
+        "balance": "726728",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1610",
+        "account_name": "Property, plant and equipment, net",
+        "balance": "531666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1620",
+        "account_name": "Property, plant and equipment, net 2",
+        "balance": "531666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1630",
+        "account_name": "Property, plant and equipment, net 3",
+        "balance": "572563",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1640",
+        "account_name": "Property, plant and equipment, net 4",
+        "balance": "490769",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1650",
+        "account_name": "Property, plant and equipment, net 5",
+        "balance": "613460",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1660",
+        "account_name": "Property, plant and equipment, net 6",
+        "balance": "449872",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1670",
+        "account_name": "Property, plant and equipment, net 7",
+        "balance": "654357",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1680",
+        "account_name": "Property, plant and equipment, net 8",
+        "balance": "408975",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1690",
+        "account_name": "Property, plant and equipment, net 9",
+        "balance": "695254",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1700",
+        "account_name": "Property, plant and equipment, net 10",
+        "balance": "368078",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1710",
+        "account_name": "Property, plant and equipment, net 11",
+        "balance": "736151",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1720",
+        "account_name": "Property, plant and equipment, net 12",
+        "balance": "327189",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1910",
+        "account_name": "Other assets",
+        "balance": "101666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1920",
+        "account_name": "Other assets 2",
+        "balance": "101666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1930",
+        "account_name": "Other assets 3",
+        "balance": "116189",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1940",
+        "account_name": "Other assets 4",
+        "balance": "87143",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1950",
+        "account_name": "Other assets 5",
+        "balance": "130712",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1960",
+        "account_name": "Other assets 6",
+        "balance": "72624",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2010",
+        "account_name": "Accounts payable",
+        "balance": "-836000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2020",
+        "account_name": "Accounts payable 2",
+        "balance": "-836000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2030",
+        "account_name": "Accounts payable 3",
+        "balance": "-975333",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2040",
+        "account_name": "Accounts payable 4",
+        "balance": "-696667",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2050",
+        "account_name": "Accounts payable 5",
+        "balance": "-836000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2110",
+        "account_name": "Accrued liabilities",
+        "balance": "-163000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2120",
+        "account_name": "Accrued liabilities 2",
+        "balance": "-163000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2130",
+        "account_name": "Accrued liabilities 3",
+        "balance": "-177818",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2140",
+        "account_name": "Accrued liabilities 4",
+        "balance": "-148182",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2150",
+        "account_name": "Accrued liabilities 5",
+        "balance": "-192636",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2160",
+        "account_name": "Accrued liabilities 6",
+        "balance": "-133364",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2170",
+        "account_name": "Accrued liabilities 7",
+        "balance": "-207454",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2180",
+        "account_name": "Accrued liabilities 8",
+        "balance": "-118546",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2190",
+        "account_name": "Accrued liabilities 9",
+        "balance": "-222272",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2200",
+        "account_name": "Accrued liabilities 10",
+        "balance": "-103728",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2255",
+        "account_name": "Accrued customer loyalty rewards",
+        "balance": "-84600.00",
+        "tax_line": null,
+        "source": "blank"
+      },
+      {
+        "account_ref": "2310",
+        "account_name": "Revolving line of credit",
+        "balance": "-3250000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2320",
+        "account_name": "Revolving line of credit 2",
+        "balance": "-3250000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2510",
+        "account_name": "Term loan",
+        "balance": "-1600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2520",
+        "account_name": "Term loan 2",
+        "balance": "-1600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "3010",
+        "account_name": "Stockholders' equity, beginning of year",
+        "balance": "-2600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "3020",
+        "account_name": "Stockholders' equity, beginning of year 2",
+        "balance": "-2600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "3030",
+        "account_name": "Stockholders' equity, beginning of year 3",
+        "balance": "-2600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4010",
+        "account_name": "Net sales",
+        "balance": "-6075000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4020",
+        "account_name": "Net sales 2",
+        "balance": "-6075000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4030",
+        "account_name": "Net sales 3",
+        "balance": "-6750000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4040",
+        "account_name": "Net sales 4",
+        "balance": "-5400000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4050",
+        "account_name": "Net sales 5",
+        "balance": "-7425000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4060",
+        "account_name": "Net sales 6",
+        "balance": "-4725000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4070",
+        "account_name": "Net sales 7",
+        "balance": "-8100000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4080",
+        "account_name": "Net sales 8",
+        "balance": "-4050000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5010",
+        "account_name": "Cost of goods sold",
+        "balance": "2082857",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5020",
+        "account_name": "Cost of goods sold 2",
+        "balance": "2082857",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5030",
+        "account_name": "Cost of goods sold 3",
+        "balance": "2221714",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5040",
+        "account_name": "Cost of goods sold 4",
+        "balance": "1944000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5050",
+        "account_name": "Cost of goods sold 5",
+        "balance": "2360571",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5060",
+        "account_name": "Cost of goods sold 6",
+        "balance": "1805143",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5070",
+        "account_name": "Cost of goods sold 7",
+        "balance": "2499428",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5080",
+        "account_name": "Cost of goods sold 8",
+        "balance": "1666286",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5090",
+        "account_name": "Cost of goods sold 9",
+        "balance": "2638285",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5100",
+        "account_name": "Cost of goods sold 10",
+        "balance": "1527429",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5110",
+        "account_name": "Cost of goods sold 11",
+        "balance": "2777142",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5120",
+        "account_name": "Cost of goods sold 12",
+        "balance": "1388572",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5130",
+        "account_name": "Cost of goods sold 13",
+        "balance": "2915999",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5140",
+        "account_name": "Cost of goods sold 14",
+        "balance": "1249717",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6010",
+        "account_name": "Operating expenses",
+        "balance": "395500",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6020",
+        "account_name": "Operating expenses 2",
+        "balance": "395500",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6030",
+        "account_name": "Operating expenses 3",
+        "balance": "405146",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6040",
+        "account_name": "Operating expenses 4",
+        "balance": "385854",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6050",
+        "account_name": "Operating expenses 5",
+        "balance": "414792",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6060",
+        "account_name": "Operating expenses 6",
+        "balance": "376208",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6070",
+        "account_name": "Operating expenses 7",
+        "balance": "424438",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6080",
+        "account_name": "Operating expenses 8",
+        "balance": "366562",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6090",
+        "account_name": "Operating expenses 9",
+        "balance": "434084",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6100",
+        "account_name": "Operating expenses 10",
+        "balance": "356916",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6110",
+        "account_name": "Operating expenses 11",
+        "balance": "443730",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6120",
+        "account_name": "Operating expenses 12",
+        "balance": "347270",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6130",
+        "account_name": "Operating expenses 13",
+        "balance": "453376",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6140",
+        "account_name": "Operating expenses 14",
+        "balance": "337624",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6150",
+        "account_name": "Operating expenses 15",
+        "balance": "463022",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6160",
+        "account_name": "Operating expenses 16",
+        "balance": "327978",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6170",
+        "account_name": "Operating expenses 17",
+        "balance": "472668",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6180",
+        "account_name": "Operating expenses 18",
+        "balance": "318332",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6190",
+        "account_name": "Operating expenses 19",
+        "balance": "482314",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6200",
+        "account_name": "Operating expenses 20",
+        "balance": "308686",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6210",
+        "account_name": "Operating expenses 21",
+        "balance": "491960",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6220",
+        "account_name": "Operating expenses 22",
+        "balance": "299040",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6230",
+        "account_name": "Operating expenses 23",
+        "balance": "501606",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6240",
+        "account_name": "Operating expenses 24",
+        "balance": "289394",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6250",
+        "account_name": "Operating expenses 25",
+        "balance": "511252",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6260",
+        "account_name": "Operating expenses 26",
+        "balance": "279748",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6270",
+        "account_name": "Operating expenses 27",
+        "balance": "520898",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6280",
+        "account_name": "Operating expenses 28",
+        "balance": "270102",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6290",
+        "account_name": "Operating expenses 29",
+        "balance": "530544",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6300",
+        "account_name": "Operating expenses 30",
+        "balance": "260456",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6310",
+        "account_name": "Operating expenses 31",
+        "balance": "540190",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6320",
+        "account_name": "Operating expenses 32",
+        "balance": "250810",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6330",
+        "account_name": "Operating expenses 33",
+        "balance": "549836",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6340",
+        "account_name": "Operating expenses 34",
+        "balance": "241164",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6350",
+        "account_name": "Operating expenses 35",
+        "balance": "559482",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6360",
+        "account_name": "Operating expenses 36",
+        "balance": "231518",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6370",
+        "account_name": "Operating expenses 37",
+        "balance": "569128",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6380",
+        "account_name": "Operating expenses 38",
+        "balance": "221872",
+        "tax_line": null,
+        "source": "tb_mapper"
+      },
+      {
+        "account_ref": "6390",
+        "account_name": "Operating expenses 39",
+        "balance": "578774",
+        "tax_line": null,
+        "source": "tb_mapper"
+      },
+      {
+        "account_ref": "6400",
+        "account_name": "Operating expenses 40",
+        "balance": "212226",
+        "tax_line": null,
+        "source": "tb_mapper"
+      },
+      {
+        "account_ref": "6875",
+        "account_name": "Small equipment expensed",
+        "balance": "41200.00",
+        "tax_line": null,
+        "source": "blank"
+      },
+      {
+        "account_ref": "7010",
+        "account_name": "Interest expense",
+        "balance": "130000",
+        "tax_line": null,
+        "source": "tb_mapper"
+      },
+      {
+        "account_ref": "7020",
+        "account_name": "Interest expense 2",
+        "balance": "130000",
+        "tax_line": null,
+        "source": "tb_mapper"
+      }
+    ],
+    "independence": "Tax return preparation for an attest client is a permitted non-attest service, recorded in CLI-08 by Victor Hammond; Luis Ferrante acknowledged management's responsibilities in the tax engagement letter."
+  },
+  "preview_needs_review": {
+    "source_kind": "audit_release",
+    "source_snapshot_id": "50817342-584e-5182-9316-31677f755bb9",
+    "locked_close_id": null,
+    "gate": "released",
+    "status": "needs_review",
+    "counts": {
+      "mapped": 121,
+      "suggested": 5,
+      "review": 2,
+      "total": 128
+    },
+    "review_accounts": [
+      {
+        "account_ref": "2255",
+        "account_name": "Accrued customer loyalty rewards",
+        "balance": "-84600.00",
+        "choice": null,
+        "source": "tb_mapper",
+        "detail": "No prior-year account. Suggested: Schedule L, other current liabilities. Deduction timing under §461(h) is a tax judgment."
+      },
+      {
+        "account_ref": "6875",
+        "account_name": "Small equipment expensed",
+        "balance": "41200.00",
+        "choice": null,
+        "source": "tb_mapper",
+        "detail": "Suggested: other deductions. Confirm the de minimis safe-harbor election (Treas. Reg. §1.263(a)-1(f)) covers each item."
+      }
+    ],
+    "book_income": {
+      "pretax": "3100000.00",
+      "income_tax_expense": "750000.00",
+      "net_income": "2350000.00"
+    },
+    "schedules": [
+      "fixed_assets",
+      "accrued_liabilities",
+      "passed_adjustments"
+    ],
+    "tax_items": [
+      {
+        "key": "passed_aje_3",
+        "label": "Passed AJE-3",
+        "amount": "68400.00",
+        "included": true,
+        "detail": "Front Range Freight Co. invoice FRF-30418, June inbound freight, 68,400, recorded by the client in July. All events occurred in FY2026, so it is deductible in FY2026 although not booked: candidate M-1 deduction (68,400). Timing.",
+        "issue_offered": true
+      },
+      {
+        "key": "income_tax_expense",
+        "label": "Income tax expense",
+        "amount": "750000.00",
+        "included": false,
+        "detail": "Book tax, added back on Schedule M-1; deferred taxes stay in the provision workpaper.",
+        "issue_offered": true
+      }
+    ],
+    "current_version_no": null,
+    "preview_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "source": {
+      "engagement_label": "Granite Peak Outdoor Supply, Inc. · FY2026 FS audit",
+      "tb_label": "Final TB · year ended Jun 30, 2026",
+      "released_on": "2026-10-27T00:00:00-05:00",
+      "released_by": "Margaret Okonkwo",
+      "balanced": true
+    },
+    "target": {
+      "return_label": "FY2026 Form 1120 · Granite Peak Outdoor Supply, Inc.",
+      "return_detail": "2025 Form 1120 for the fiscal year Jul 1, 2025 – Jun 30, 2026",
+      "engagement_created_on": "2026-10-12T00:00:00-05:00",
+      "extension_filed_on": "2026-10-13T00:00:00-05:00",
+      "due_on": "2027-04-15T00:00:00-05:00",
+      "team": [
+        "Leo Wong (preparer)",
+        "Isaac Moreau (reviewer)",
+        "Victor Hammond (partner)"
+      ]
+    },
+    "schedule_rows": [
+      {
+        "key": "fixed_assets",
+        "label": "Fixed assets",
+        "detail": "6,050,000 + additions 1,380,000 − depreciation 1,050,000 = 6,380,000 → Form 4562 and the depreciation M-1",
+        "included": true
+      },
+      {
+        "key": "accrued_liabilities",
+        "label": "Accrued liabilities",
+        "detail": "1,630,000 at Jun 30, 2026 → §461(h) economic performance and §404(a)(5) 2½-month review",
+        "included": true
+      },
+      {
+        "key": "passed_adjustments",
+        "label": "Passed adjustments",
+        "detail": "AJE-3 68,400 (SUM; declined by the client Oct 5) → M-1 candidate",
+        "included": true
+      }
+    ],
+    "accounts": [
+      {
+        "account_ref": "1010",
+        "account_name": "Front Range Bank operating account",
+        "balance": "356666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1020",
+        "account_name": "Cash and cash equivalents 2",
+        "balance": "356666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1030",
+        "account_name": "Cash and cash equivalents 3",
+        "balance": "407618",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1040",
+        "account_name": "Cash and cash equivalents 4",
+        "balance": "305714",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1050",
+        "account_name": "Cash and cash equivalents 5",
+        "balance": "458570",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1060",
+        "account_name": "Cash and cash equivalents 6",
+        "balance": "254766",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1210",
+        "account_name": "Accounts receivable, net",
+        "balance": "976666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1220",
+        "account_name": "Accounts receivable, net 2",
+        "balance": "976666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1230",
+        "account_name": "Accounts receivable, net 3",
+        "balance": "1116189",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1240",
+        "account_name": "Accounts receivable, net 4",
+        "balance": "837143",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1250",
+        "account_name": "Accounts receivable, net 5",
+        "balance": "1255712",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1260",
+        "account_name": "Accounts receivable, net 6",
+        "balance": "697624",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1410",
+        "account_name": "Inventories",
+        "balance": "1142000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1420",
+        "account_name": "Inventories 2",
+        "balance": "1142000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1430",
+        "account_name": "Inventories 3",
+        "balance": "1245818",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1440",
+        "account_name": "Inventories 4",
+        "balance": "1038182",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1450",
+        "account_name": "Inventories 5",
+        "balance": "1349636",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1460",
+        "account_name": "Inventories 6",
+        "balance": "934364",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1470",
+        "account_name": "Inventories 7",
+        "balance": "1453454",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1480",
+        "account_name": "Inventories 8",
+        "balance": "830546",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1490",
+        "account_name": "Inventories 9",
+        "balance": "1557272",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1500",
+        "account_name": "Inventories 10",
+        "balance": "726728",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1610",
+        "account_name": "Property, plant and equipment, net",
+        "balance": "531666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1620",
+        "account_name": "Property, plant and equipment, net 2",
+        "balance": "531666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1630",
+        "account_name": "Property, plant and equipment, net 3",
+        "balance": "572563",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1640",
+        "account_name": "Property, plant and equipment, net 4",
+        "balance": "490769",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1650",
+        "account_name": "Property, plant and equipment, net 5",
+        "balance": "613460",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1660",
+        "account_name": "Property, plant and equipment, net 6",
+        "balance": "449872",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1670",
+        "account_name": "Property, plant and equipment, net 7",
+        "balance": "654357",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1680",
+        "account_name": "Property, plant and equipment, net 8",
+        "balance": "408975",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1690",
+        "account_name": "Property, plant and equipment, net 9",
+        "balance": "695254",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1700",
+        "account_name": "Property, plant and equipment, net 10",
+        "balance": "368078",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1710",
+        "account_name": "Property, plant and equipment, net 11",
+        "balance": "736151",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1720",
+        "account_name": "Property, plant and equipment, net 12",
+        "balance": "327189",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1910",
+        "account_name": "Other assets",
+        "balance": "101666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1920",
+        "account_name": "Other assets 2",
+        "balance": "101666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1930",
+        "account_name": "Other assets 3",
+        "balance": "116189",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1940",
+        "account_name": "Other assets 4",
+        "balance": "87143",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1950",
+        "account_name": "Other assets 5",
+        "balance": "130712",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1960",
+        "account_name": "Other assets 6",
+        "balance": "72624",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2010",
+        "account_name": "Accounts payable",
+        "balance": "-836000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2020",
+        "account_name": "Accounts payable 2",
+        "balance": "-836000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2030",
+        "account_name": "Accounts payable 3",
+        "balance": "-975333",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2040",
+        "account_name": "Accounts payable 4",
+        "balance": "-696667",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2050",
+        "account_name": "Accounts payable 5",
+        "balance": "-836000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2110",
+        "account_name": "Accrued liabilities",
+        "balance": "-163000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2120",
+        "account_name": "Accrued liabilities 2",
+        "balance": "-163000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2130",
+        "account_name": "Accrued liabilities 3",
+        "balance": "-177818",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2140",
+        "account_name": "Accrued liabilities 4",
+        "balance": "-148182",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2150",
+        "account_name": "Accrued liabilities 5",
+        "balance": "-192636",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2160",
+        "account_name": "Accrued liabilities 6",
+        "balance": "-133364",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2170",
+        "account_name": "Accrued liabilities 7",
+        "balance": "-207454",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2180",
+        "account_name": "Accrued liabilities 8",
+        "balance": "-118546",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2190",
+        "account_name": "Accrued liabilities 9",
+        "balance": "-222272",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2200",
+        "account_name": "Accrued liabilities 10",
+        "balance": "-103728",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2255",
+        "account_name": "Accrued customer loyalty rewards",
+        "balance": "-84600.00",
+        "tax_line": null,
+        "source": "blank"
+      },
+      {
+        "account_ref": "2310",
+        "account_name": "Revolving line of credit",
+        "balance": "-3250000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2320",
+        "account_name": "Revolving line of credit 2",
+        "balance": "-3250000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2510",
+        "account_name": "Term loan",
+        "balance": "-1600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2520",
+        "account_name": "Term loan 2",
+        "balance": "-1600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "3010",
+        "account_name": "Stockholders' equity, beginning of year",
+        "balance": "-2600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "3020",
+        "account_name": "Stockholders' equity, beginning of year 2",
+        "balance": "-2600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "3030",
+        "account_name": "Stockholders' equity, beginning of year 3",
+        "balance": "-2600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4010",
+        "account_name": "Net sales",
+        "balance": "-6075000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4020",
+        "account_name": "Net sales 2",
+        "balance": "-6075000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4030",
+        "account_name": "Net sales 3",
+        "balance": "-6750000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4040",
+        "account_name": "Net sales 4",
+        "balance": "-5400000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4050",
+        "account_name": "Net sales 5",
+        "balance": "-7425000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4060",
+        "account_name": "Net sales 6",
+        "balance": "-4725000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4070",
+        "account_name": "Net sales 7",
+        "balance": "-8100000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4080",
+        "account_name": "Net sales 8",
+        "balance": "-4050000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5010",
+        "account_name": "Cost of goods sold",
+        "balance": "2082857",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5020",
+        "account_name": "Cost of goods sold 2",
+        "balance": "2082857",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5030",
+        "account_name": "Cost of goods sold 3",
+        "balance": "2221714",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5040",
+        "account_name": "Cost of goods sold 4",
+        "balance": "1944000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5050",
+        "account_name": "Cost of goods sold 5",
+        "balance": "2360571",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5060",
+        "account_name": "Cost of goods sold 6",
+        "balance": "1805143",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5070",
+        "account_name": "Cost of goods sold 7",
+        "balance": "2499428",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5080",
+        "account_name": "Cost of goods sold 8",
+        "balance": "1666286",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5090",
+        "account_name": "Cost of goods sold 9",
+        "balance": "2638285",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5100",
+        "account_name": "Cost of goods sold 10",
+        "balance": "1527429",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5110",
+        "account_name": "Cost of goods sold 11",
+        "balance": "2777142",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5120",
+        "account_name": "Cost of goods sold 12",
+        "balance": "1388572",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5130",
+        "account_name": "Cost of goods sold 13",
+        "balance": "2915999",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5140",
+        "account_name": "Cost of goods sold 14",
+        "balance": "1249717",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6010",
+        "account_name": "Operating expenses",
+        "balance": "395500",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6020",
+        "account_name": "Operating expenses 2",
+        "balance": "395500",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6030",
+        "account_name": "Operating expenses 3",
+        "balance": "405146",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6040",
+        "account_name": "Operating expenses 4",
+        "balance": "385854",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6050",
+        "account_name": "Operating expenses 5",
+        "balance": "414792",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6060",
+        "account_name": "Operating expenses 6",
+        "balance": "376208",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6070",
+        "account_name": "Operating expenses 7",
+        "balance": "424438",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6080",
+        "account_name": "Operating expenses 8",
+        "balance": "366562",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6090",
+        "account_name": "Operating expenses 9",
+        "balance": "434084",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6100",
+        "account_name": "Operating expenses 10",
+        "balance": "356916",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6110",
+        "account_name": "Operating expenses 11",
+        "balance": "443730",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6120",
+        "account_name": "Operating expenses 12",
+        "balance": "347270",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6130",
+        "account_name": "Operating expenses 13",
+        "balance": "453376",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6140",
+        "account_name": "Operating expenses 14",
+        "balance": "337624",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6150",
+        "account_name": "Operating expenses 15",
+        "balance": "463022",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6160",
+        "account_name": "Operating expenses 16",
+        "balance": "327978",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6170",
+        "account_name": "Operating expenses 17",
+        "balance": "472668",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6180",
+        "account_name": "Operating expenses 18",
+        "balance": "318332",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6190",
+        "account_name": "Operating expenses 19",
+        "balance": "482314",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6200",
+        "account_name": "Operating expenses 20",
+        "balance": "308686",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6210",
+        "account_name": "Operating expenses 21",
+        "balance": "491960",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6220",
+        "account_name": "Operating expenses 22",
+        "balance": "299040",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6230",
+        "account_name": "Operating expenses 23",
+        "balance": "501606",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6240",
+        "account_name": "Operating expenses 24",
+        "balance": "289394",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6250",
+        "account_name": "Operating expenses 25",
+        "balance": "511252",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6260",
+        "account_name": "Operating expenses 26",
+        "balance": "279748",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6270",
+        "account_name": "Operating expenses 27",
+        "balance": "520898",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6280",
+        "account_name": "Operating expenses 28",
+        "balance": "270102",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6290",
+        "account_name": "Operating expenses 29",
+        "balance": "530544",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6300",
+        "account_name": "Operating expenses 30",
+        "balance": "260456",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6310",
+        "account_name": "Operating expenses 31",
+        "balance": "540190",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6320",
+        "account_name": "Operating expenses 32",
+        "balance": "250810",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6330",
+        "account_name": "Operating expenses 33",
+        "balance": "549836",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6340",
+        "account_name": "Operating expenses 34",
+        "balance": "241164",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6350",
+        "account_name": "Operating expenses 35",
+        "balance": "559482",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6360",
+        "account_name": "Operating expenses 36",
+        "balance": "231518",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6370",
+        "account_name": "Operating expenses 37",
+        "balance": "569128",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6380",
+        "account_name": "Operating expenses 38",
+        "balance": "221872",
+        "tax_line": null,
+        "source": "tb_mapper"
+      },
+      {
+        "account_ref": "6390",
+        "account_name": "Operating expenses 39",
+        "balance": "578774",
+        "tax_line": null,
+        "source": "tb_mapper"
+      },
+      {
+        "account_ref": "6400",
+        "account_name": "Operating expenses 40",
+        "balance": "212226",
+        "tax_line": null,
+        "source": "tb_mapper"
+      },
+      {
+        "account_ref": "6875",
+        "account_name": "Small equipment expensed",
+        "balance": "41200.00",
+        "tax_line": null,
+        "source": "blank"
+      },
+      {
+        "account_ref": "7010",
+        "account_name": "Interest expense",
+        "balance": "130000",
+        "tax_line": null,
+        "source": "tb_mapper"
+      },
+      {
+        "account_ref": "7020",
+        "account_name": "Interest expense 2",
+        "balance": "130000",
+        "tax_line": null,
+        "source": "tb_mapper"
+      }
+    ],
+    "independence": "Tax return preparation for an attest client is a permitted non-attest service, recorded in CLI-08 by Victor Hammond; Luis Ferrante acknowledged management's responsibilities in the tax engagement letter."
+  },
+  "preview_not_available": {
+    "source_kind": "audit_release",
+    "source_snapshot_id": "50817342-584e-5182-9316-31677f755bb9",
+    "locked_close_id": null,
+    "gate": "not_released",
+    "status": "not_available",
+    "counts": {
+      "mapped": 121,
+      "suggested": 5,
+      "review": 2,
+      "total": 128
+    },
+    "review_accounts": [
+      {
+        "account_ref": "2255",
+        "account_name": "Accrued customer loyalty rewards",
+        "balance": "-84600.00",
+        "choice": null,
+        "source": "tb_mapper",
+        "detail": "No prior-year account. Suggested: Schedule L, other current liabilities. Deduction timing under §461(h) is a tax judgment."
+      },
+      {
+        "account_ref": "6875",
+        "account_name": "Small equipment expensed",
+        "balance": "41200.00",
+        "choice": null,
+        "source": "tb_mapper",
+        "detail": "Suggested: other deductions. Confirm the de minimis safe-harbor election (Treas. Reg. §1.263(a)-1(f)) covers each item."
+      }
+    ],
+    "book_income": {
+      "pretax": "3100000.00",
+      "income_tax_expense": "750000.00",
+      "net_income": "2350000.00"
+    },
+    "schedules": [
+      "fixed_assets",
+      "accrued_liabilities",
+      "passed_adjustments"
+    ],
+    "tax_items": [
+      {
+        "key": "passed_aje_3",
+        "label": "Passed AJE-3",
+        "amount": "68400.00",
+        "included": true,
+        "detail": "Front Range Freight Co. invoice FRF-30418, June inbound freight, 68,400, recorded by the client in July. All events occurred in FY2026, so it is deductible in FY2026 although not booked: candidate M-1 deduction (68,400). Timing.",
+        "issue_offered": true
+      },
+      {
+        "key": "income_tax_expense",
+        "label": "Income tax expense",
+        "amount": "750000.00",
+        "included": false,
+        "detail": "Book tax, added back on Schedule M-1; deferred taxes stay in the provision workpaper.",
+        "issue_offered": true
+      }
+    ],
+    "current_version_no": null,
+    "preview_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "source": {
+      "engagement_label": "Granite Peak Outdoor Supply, Inc. · FY2026 FS audit",
+      "tb_label": "Final TB · year ended Jun 30, 2026",
+      "released_on": "2026-10-27T00:00:00-05:00",
+      "released_by": "Margaret Okonkwo",
+      "balanced": true
+    },
+    "target": {
+      "return_label": "FY2026 Form 1120 · Granite Peak Outdoor Supply, Inc.",
+      "return_detail": "2025 Form 1120 for the fiscal year Jul 1, 2025 – Jun 30, 2026",
+      "engagement_created_on": "2026-10-12T00:00:00-05:00",
+      "extension_filed_on": "2026-10-13T00:00:00-05:00",
+      "due_on": "2027-04-15T00:00:00-05:00",
+      "team": [
+        "Leo Wong (preparer)",
+        "Isaac Moreau (reviewer)",
+        "Victor Hammond (partner)"
+      ]
+    },
+    "schedule_rows": [
+      {
+        "key": "fixed_assets",
+        "label": "Fixed assets",
+        "detail": "6,050,000 + additions 1,380,000 − depreciation 1,050,000 = 6,380,000 → Form 4562 and the depreciation M-1",
+        "included": true
+      },
+      {
+        "key": "accrued_liabilities",
+        "label": "Accrued liabilities",
+        "detail": "1,630,000 at Jun 30, 2026 → §461(h) economic performance and §404(a)(5) 2½-month review",
+        "included": true
+      },
+      {
+        "key": "passed_adjustments",
+        "label": "Passed adjustments",
+        "detail": "AJE-3 68,400 (SUM; declined by the client Oct 5) → M-1 candidate",
+        "included": true
+      }
+    ],
+    "accounts": [
+      {
+        "account_ref": "1010",
+        "account_name": "Front Range Bank operating account",
+        "balance": "356666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1020",
+        "account_name": "Cash and cash equivalents 2",
+        "balance": "356666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1030",
+        "account_name": "Cash and cash equivalents 3",
+        "balance": "407618",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1040",
+        "account_name": "Cash and cash equivalents 4",
+        "balance": "305714",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1050",
+        "account_name": "Cash and cash equivalents 5",
+        "balance": "458570",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1060",
+        "account_name": "Cash and cash equivalents 6",
+        "balance": "254766",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1210",
+        "account_name": "Accounts receivable, net",
+        "balance": "976666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1220",
+        "account_name": "Accounts receivable, net 2",
+        "balance": "976666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1230",
+        "account_name": "Accounts receivable, net 3",
+        "balance": "1116189",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1240",
+        "account_name": "Accounts receivable, net 4",
+        "balance": "837143",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1250",
+        "account_name": "Accounts receivable, net 5",
+        "balance": "1255712",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1260",
+        "account_name": "Accounts receivable, net 6",
+        "balance": "697624",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1410",
+        "account_name": "Inventories",
+        "balance": "1142000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1420",
+        "account_name": "Inventories 2",
+        "balance": "1142000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1430",
+        "account_name": "Inventories 3",
+        "balance": "1245818",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1440",
+        "account_name": "Inventories 4",
+        "balance": "1038182",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1450",
+        "account_name": "Inventories 5",
+        "balance": "1349636",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1460",
+        "account_name": "Inventories 6",
+        "balance": "934364",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1470",
+        "account_name": "Inventories 7",
+        "balance": "1453454",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1480",
+        "account_name": "Inventories 8",
+        "balance": "830546",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1490",
+        "account_name": "Inventories 9",
+        "balance": "1557272",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1500",
+        "account_name": "Inventories 10",
+        "balance": "726728",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1610",
+        "account_name": "Property, plant and equipment, net",
+        "balance": "531666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1620",
+        "account_name": "Property, plant and equipment, net 2",
+        "balance": "531666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1630",
+        "account_name": "Property, plant and equipment, net 3",
+        "balance": "572563",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1640",
+        "account_name": "Property, plant and equipment, net 4",
+        "balance": "490769",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1650",
+        "account_name": "Property, plant and equipment, net 5",
+        "balance": "613460",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1660",
+        "account_name": "Property, plant and equipment, net 6",
+        "balance": "449872",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1670",
+        "account_name": "Property, plant and equipment, net 7",
+        "balance": "654357",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1680",
+        "account_name": "Property, plant and equipment, net 8",
+        "balance": "408975",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1690",
+        "account_name": "Property, plant and equipment, net 9",
+        "balance": "695254",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1700",
+        "account_name": "Property, plant and equipment, net 10",
+        "balance": "368078",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1710",
+        "account_name": "Property, plant and equipment, net 11",
+        "balance": "736151",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1720",
+        "account_name": "Property, plant and equipment, net 12",
+        "balance": "327189",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1910",
+        "account_name": "Other assets",
+        "balance": "101666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1920",
+        "account_name": "Other assets 2",
+        "balance": "101666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1930",
+        "account_name": "Other assets 3",
+        "balance": "116189",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1940",
+        "account_name": "Other assets 4",
+        "balance": "87143",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1950",
+        "account_name": "Other assets 5",
+        "balance": "130712",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1960",
+        "account_name": "Other assets 6",
+        "balance": "72624",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2010",
+        "account_name": "Accounts payable",
+        "balance": "-836000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2020",
+        "account_name": "Accounts payable 2",
+        "balance": "-836000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2030",
+        "account_name": "Accounts payable 3",
+        "balance": "-975333",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2040",
+        "account_name": "Accounts payable 4",
+        "balance": "-696667",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2050",
+        "account_name": "Accounts payable 5",
+        "balance": "-836000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2110",
+        "account_name": "Accrued liabilities",
+        "balance": "-163000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2120",
+        "account_name": "Accrued liabilities 2",
+        "balance": "-163000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2130",
+        "account_name": "Accrued liabilities 3",
+        "balance": "-177818",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2140",
+        "account_name": "Accrued liabilities 4",
+        "balance": "-148182",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2150",
+        "account_name": "Accrued liabilities 5",
+        "balance": "-192636",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2160",
+        "account_name": "Accrued liabilities 6",
+        "balance": "-133364",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2170",
+        "account_name": "Accrued liabilities 7",
+        "balance": "-207454",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2180",
+        "account_name": "Accrued liabilities 8",
+        "balance": "-118546",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2190",
+        "account_name": "Accrued liabilities 9",
+        "balance": "-222272",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2200",
+        "account_name": "Accrued liabilities 10",
+        "balance": "-103728",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2255",
+        "account_name": "Accrued customer loyalty rewards",
+        "balance": "-84600.00",
+        "tax_line": null,
+        "source": "blank"
+      },
+      {
+        "account_ref": "2310",
+        "account_name": "Revolving line of credit",
+        "balance": "-3250000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2320",
+        "account_name": "Revolving line of credit 2",
+        "balance": "-3250000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2510",
+        "account_name": "Term loan",
+        "balance": "-1600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2520",
+        "account_name": "Term loan 2",
+        "balance": "-1600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "3010",
+        "account_name": "Stockholders' equity, beginning of year",
+        "balance": "-2600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "3020",
+        "account_name": "Stockholders' equity, beginning of year 2",
+        "balance": "-2600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "3030",
+        "account_name": "Stockholders' equity, beginning of year 3",
+        "balance": "-2600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4010",
+        "account_name": "Net sales",
+        "balance": "-6075000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4020",
+        "account_name": "Net sales 2",
+        "balance": "-6075000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4030",
+        "account_name": "Net sales 3",
+        "balance": "-6750000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4040",
+        "account_name": "Net sales 4",
+        "balance": "-5400000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4050",
+        "account_name": "Net sales 5",
+        "balance": "-7425000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4060",
+        "account_name": "Net sales 6",
+        "balance": "-4725000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4070",
+        "account_name": "Net sales 7",
+        "balance": "-8100000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4080",
+        "account_name": "Net sales 8",
+        "balance": "-4050000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5010",
+        "account_name": "Cost of goods sold",
+        "balance": "2082857",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5020",
+        "account_name": "Cost of goods sold 2",
+        "balance": "2082857",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5030",
+        "account_name": "Cost of goods sold 3",
+        "balance": "2221714",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5040",
+        "account_name": "Cost of goods sold 4",
+        "balance": "1944000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5050",
+        "account_name": "Cost of goods sold 5",
+        "balance": "2360571",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5060",
+        "account_name": "Cost of goods sold 6",
+        "balance": "1805143",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5070",
+        "account_name": "Cost of goods sold 7",
+        "balance": "2499428",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5080",
+        "account_name": "Cost of goods sold 8",
+        "balance": "1666286",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5090",
+        "account_name": "Cost of goods sold 9",
+        "balance": "2638285",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5100",
+        "account_name": "Cost of goods sold 10",
+        "balance": "1527429",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5110",
+        "account_name": "Cost of goods sold 11",
+        "balance": "2777142",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5120",
+        "account_name": "Cost of goods sold 12",
+        "balance": "1388572",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5130",
+        "account_name": "Cost of goods sold 13",
+        "balance": "2915999",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5140",
+        "account_name": "Cost of goods sold 14",
+        "balance": "1249717",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6010",
+        "account_name": "Operating expenses",
+        "balance": "395500",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6020",
+        "account_name": "Operating expenses 2",
+        "balance": "395500",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6030",
+        "account_name": "Operating expenses 3",
+        "balance": "405146",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6040",
+        "account_name": "Operating expenses 4",
+        "balance": "385854",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6050",
+        "account_name": "Operating expenses 5",
+        "balance": "414792",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6060",
+        "account_name": "Operating expenses 6",
+        "balance": "376208",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6070",
+        "account_name": "Operating expenses 7",
+        "balance": "424438",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6080",
+        "account_name": "Operating expenses 8",
+        "balance": "366562",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6090",
+        "account_name": "Operating expenses 9",
+        "balance": "434084",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6100",
+        "account_name": "Operating expenses 10",
+        "balance": "356916",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6110",
+        "account_name": "Operating expenses 11",
+        "balance": "443730",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6120",
+        "account_name": "Operating expenses 12",
+        "balance": "347270",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6130",
+        "account_name": "Operating expenses 13",
+        "balance": "453376",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6140",
+        "account_name": "Operating expenses 14",
+        "balance": "337624",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6150",
+        "account_name": "Operating expenses 15",
+        "balance": "463022",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6160",
+        "account_name": "Operating expenses 16",
+        "balance": "327978",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6170",
+        "account_name": "Operating expenses 17",
+        "balance": "472668",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6180",
+        "account_name": "Operating expenses 18",
+        "balance": "318332",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6190",
+        "account_name": "Operating expenses 19",
+        "balance": "482314",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6200",
+        "account_name": "Operating expenses 20",
+        "balance": "308686",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6210",
+        "account_name": "Operating expenses 21",
+        "balance": "491960",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6220",
+        "account_name": "Operating expenses 22",
+        "balance": "299040",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6230",
+        "account_name": "Operating expenses 23",
+        "balance": "501606",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6240",
+        "account_name": "Operating expenses 24",
+        "balance": "289394",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6250",
+        "account_name": "Operating expenses 25",
+        "balance": "511252",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6260",
+        "account_name": "Operating expenses 26",
+        "balance": "279748",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6270",
+        "account_name": "Operating expenses 27",
+        "balance": "520898",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6280",
+        "account_name": "Operating expenses 28",
+        "balance": "270102",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6290",
+        "account_name": "Operating expenses 29",
+        "balance": "530544",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6300",
+        "account_name": "Operating expenses 30",
+        "balance": "260456",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6310",
+        "account_name": "Operating expenses 31",
+        "balance": "540190",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6320",
+        "account_name": "Operating expenses 32",
+        "balance": "250810",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6330",
+        "account_name": "Operating expenses 33",
+        "balance": "549836",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6340",
+        "account_name": "Operating expenses 34",
+        "balance": "241164",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6350",
+        "account_name": "Operating expenses 35",
+        "balance": "559482",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6360",
+        "account_name": "Operating expenses 36",
+        "balance": "231518",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6370",
+        "account_name": "Operating expenses 37",
+        "balance": "569128",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6380",
+        "account_name": "Operating expenses 38",
+        "balance": "221872",
+        "tax_line": null,
+        "source": "tb_mapper"
+      },
+      {
+        "account_ref": "6390",
+        "account_name": "Operating expenses 39",
+        "balance": "578774",
+        "tax_line": null,
+        "source": "tb_mapper"
+      },
+      {
+        "account_ref": "6400",
+        "account_name": "Operating expenses 40",
+        "balance": "212226",
+        "tax_line": null,
+        "source": "tb_mapper"
+      },
+      {
+        "account_ref": "6875",
+        "account_name": "Small equipment expensed",
+        "balance": "41200.00",
+        "tax_line": null,
+        "source": "blank"
+      },
+      {
+        "account_ref": "7010",
+        "account_name": "Interest expense",
+        "balance": "130000",
+        "tax_line": null,
+        "source": "tb_mapper"
+      },
+      {
+        "account_ref": "7020",
+        "account_name": "Interest expense 2",
+        "balance": "130000",
+        "tax_line": null,
+        "source": "tb_mapper"
+      }
+    ],
+    "independence": "Tax return preparation for an attest client is a permitted non-attest service, recorded in CLI-08 by Victor Hammond; Luis Ferrante acknowledged management's responsibilities in the tax engagement letter."
+  },
+  "preview_superseded": {
+    "source_kind": "audit_release",
+    "source_snapshot_id": "50817342-584e-5182-9316-31677f755bb9",
+    "locked_close_id": null,
+    "gate": "superseded",
+    "status": "superseded",
+    "counts": {
+      "mapped": 121,
+      "suggested": 5,
+      "review": 2,
+      "total": 128
+    },
+    "review_accounts": [
+      {
+        "account_ref": "2255",
+        "account_name": "Accrued customer loyalty rewards",
+        "balance": "-84600.00",
+        "choice": "send_blank",
+        "source": "tb_mapper",
+        "detail": "No prior-year account. Suggested: Schedule L, other current liabilities. Deduction timing under §461(h) is a tax judgment."
+      },
+      {
+        "account_ref": "6875",
+        "account_name": "Small equipment expensed",
+        "balance": "41200.00",
+        "choice": "send_blank",
+        "source": "tb_mapper",
+        "detail": "Suggested: other deductions. Confirm the de minimis safe-harbor election (Treas. Reg. §1.263(a)-1(f)) covers each item."
+      }
+    ],
+    "book_income": {
+      "pretax": "3100000.00",
+      "income_tax_expense": "750000.00",
+      "net_income": "2350000.00"
+    },
+    "schedules": [
+      "fixed_assets",
+      "accrued_liabilities",
+      "passed_adjustments"
+    ],
+    "tax_items": [
+      {
+        "key": "passed_aje_3",
+        "label": "Passed AJE-3",
+        "amount": "68400.00",
+        "included": true,
+        "detail": "Front Range Freight Co. invoice FRF-30418, June inbound freight, 68,400, recorded by the client in July. All events occurred in FY2026, so it is deductible in FY2026 although not booked: candidate M-1 deduction (68,400). Timing.",
+        "issue_offered": true
+      },
+      {
+        "key": "income_tax_expense",
+        "label": "Income tax expense",
+        "amount": "750000.00",
+        "included": false,
+        "detail": "Book tax, added back on Schedule M-1; deferred taxes stay in the provision workpaper.",
+        "issue_offered": true
+      }
+    ],
+    "current_version_no": 1,
+    "preview_hash": "0000000000000000000000000000000000000000000000000000000000000001",
+    "source": {
+      "engagement_label": "Granite Peak Outdoor Supply, Inc. · FY2026 FS audit",
+      "tb_label": "Final TB · year ended Jun 30, 2026",
+      "released_on": "2026-10-27T00:00:00-05:00",
+      "released_by": "Margaret Okonkwo",
+      "balanced": true
+    },
+    "target": {
+      "return_label": "FY2026 Form 1120 · Granite Peak Outdoor Supply, Inc.",
+      "return_detail": "2025 Form 1120 for the fiscal year Jul 1, 2025 – Jun 30, 2026",
+      "engagement_created_on": "2026-10-12T00:00:00-05:00",
+      "extension_filed_on": "2026-10-13T00:00:00-05:00",
+      "due_on": "2027-04-15T00:00:00-05:00",
+      "team": [
+        "Leo Wong (preparer)",
+        "Isaac Moreau (reviewer)",
+        "Victor Hammond (partner)"
+      ]
+    },
+    "schedule_rows": [
+      {
+        "key": "fixed_assets",
+        "label": "Fixed assets",
+        "detail": "6,050,000 + additions 1,380,000 − depreciation 1,050,000 = 6,380,000 → Form 4562 and the depreciation M-1",
+        "included": true
+      },
+      {
+        "key": "accrued_liabilities",
+        "label": "Accrued liabilities",
+        "detail": "1,630,000 at Jun 30, 2026 → §461(h) economic performance and §404(a)(5) 2½-month review",
+        "included": true
+      },
+      {
+        "key": "passed_adjustments",
+        "label": "Passed adjustments",
+        "detail": "AJE-3 68,400 (SUM; declined by the client Oct 5) → M-1 candidate",
+        "included": true
+      }
+    ],
+    "accounts": [
+      {
+        "account_ref": "1010",
+        "account_name": "Front Range Bank operating account",
+        "balance": "356666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1020",
+        "account_name": "Cash and cash equivalents 2",
+        "balance": "356666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1030",
+        "account_name": "Cash and cash equivalents 3",
+        "balance": "407618",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1040",
+        "account_name": "Cash and cash equivalents 4",
+        "balance": "305714",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1050",
+        "account_name": "Cash and cash equivalents 5",
+        "balance": "458570",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1060",
+        "account_name": "Cash and cash equivalents 6",
+        "balance": "254766",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1210",
+        "account_name": "Accounts receivable, net",
+        "balance": "976666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1220",
+        "account_name": "Accounts receivable, net 2",
+        "balance": "976666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1230",
+        "account_name": "Accounts receivable, net 3",
+        "balance": "1116189",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1240",
+        "account_name": "Accounts receivable, net 4",
+        "balance": "837143",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1250",
+        "account_name": "Accounts receivable, net 5",
+        "balance": "1255712",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1260",
+        "account_name": "Accounts receivable, net 6",
+        "balance": "697624",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1410",
+        "account_name": "Inventories",
+        "balance": "1142000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1420",
+        "account_name": "Inventories 2",
+        "balance": "1142000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1430",
+        "account_name": "Inventories 3",
+        "balance": "1245818",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1440",
+        "account_name": "Inventories 4",
+        "balance": "1038182",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1450",
+        "account_name": "Inventories 5",
+        "balance": "1349636",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1460",
+        "account_name": "Inventories 6",
+        "balance": "934364",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1470",
+        "account_name": "Inventories 7",
+        "balance": "1453454",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1480",
+        "account_name": "Inventories 8",
+        "balance": "830546",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1490",
+        "account_name": "Inventories 9",
+        "balance": "1557272",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1500",
+        "account_name": "Inventories 10",
+        "balance": "726728",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1610",
+        "account_name": "Property, plant and equipment, net",
+        "balance": "531666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1620",
+        "account_name": "Property, plant and equipment, net 2",
+        "balance": "531666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1630",
+        "account_name": "Property, plant and equipment, net 3",
+        "balance": "572563",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1640",
+        "account_name": "Property, plant and equipment, net 4",
+        "balance": "490769",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1650",
+        "account_name": "Property, plant and equipment, net 5",
+        "balance": "613460",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1660",
+        "account_name": "Property, plant and equipment, net 6",
+        "balance": "449872",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1670",
+        "account_name": "Property, plant and equipment, net 7",
+        "balance": "654357",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1680",
+        "account_name": "Property, plant and equipment, net 8",
+        "balance": "408975",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1690",
+        "account_name": "Property, plant and equipment, net 9",
+        "balance": "695254",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1700",
+        "account_name": "Property, plant and equipment, net 10",
+        "balance": "368078",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1710",
+        "account_name": "Property, plant and equipment, net 11",
+        "balance": "736151",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1720",
+        "account_name": "Property, plant and equipment, net 12",
+        "balance": "327189",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1910",
+        "account_name": "Other assets",
+        "balance": "101666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1920",
+        "account_name": "Other assets 2",
+        "balance": "101666",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1930",
+        "account_name": "Other assets 3",
+        "balance": "116189",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1940",
+        "account_name": "Other assets 4",
+        "balance": "87143",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1950",
+        "account_name": "Other assets 5",
+        "balance": "130712",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "1960",
+        "account_name": "Other assets 6",
+        "balance": "72624",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2010",
+        "account_name": "Accounts payable",
+        "balance": "-836000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2020",
+        "account_name": "Accounts payable 2",
+        "balance": "-836000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2030",
+        "account_name": "Accounts payable 3",
+        "balance": "-975333",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2040",
+        "account_name": "Accounts payable 4",
+        "balance": "-696667",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2050",
+        "account_name": "Accounts payable 5",
+        "balance": "-836000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2110",
+        "account_name": "Accrued liabilities",
+        "balance": "-163000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2120",
+        "account_name": "Accrued liabilities 2",
+        "balance": "-163000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2130",
+        "account_name": "Accrued liabilities 3",
+        "balance": "-177818",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2140",
+        "account_name": "Accrued liabilities 4",
+        "balance": "-148182",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2150",
+        "account_name": "Accrued liabilities 5",
+        "balance": "-192636",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2160",
+        "account_name": "Accrued liabilities 6",
+        "balance": "-133364",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2170",
+        "account_name": "Accrued liabilities 7",
+        "balance": "-207454",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2180",
+        "account_name": "Accrued liabilities 8",
+        "balance": "-118546",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2190",
+        "account_name": "Accrued liabilities 9",
+        "balance": "-222272",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2200",
+        "account_name": "Accrued liabilities 10",
+        "balance": "-103728",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2255",
+        "account_name": "Accrued customer loyalty rewards",
+        "balance": "-84600.00",
+        "tax_line": null,
+        "source": "blank"
+      },
+      {
+        "account_ref": "2310",
+        "account_name": "Revolving line of credit",
+        "balance": "-3250000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2320",
+        "account_name": "Revolving line of credit 2",
+        "balance": "-3250000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2510",
+        "account_name": "Term loan",
+        "balance": "-1600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "2520",
+        "account_name": "Term loan 2",
+        "balance": "-1600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "3010",
+        "account_name": "Stockholders' equity, beginning of year",
+        "balance": "-2600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "3020",
+        "account_name": "Stockholders' equity, beginning of year 2",
+        "balance": "-2600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "3030",
+        "account_name": "Stockholders' equity, beginning of year 3",
+        "balance": "-2600000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4010",
+        "account_name": "Net sales",
+        "balance": "-6075000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4020",
+        "account_name": "Net sales 2",
+        "balance": "-6075000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4030",
+        "account_name": "Net sales 3",
+        "balance": "-6750000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4040",
+        "account_name": "Net sales 4",
+        "balance": "-5400000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4050",
+        "account_name": "Net sales 5",
+        "balance": "-7425000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4060",
+        "account_name": "Net sales 6",
+        "balance": "-4725000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4070",
+        "account_name": "Net sales 7",
+        "balance": "-8100000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "4080",
+        "account_name": "Net sales 8",
+        "balance": "-4050000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5010",
+        "account_name": "Cost of goods sold",
+        "balance": "2082857",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5020",
+        "account_name": "Cost of goods sold 2",
+        "balance": "2082857",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5030",
+        "account_name": "Cost of goods sold 3",
+        "balance": "2221714",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5040",
+        "account_name": "Cost of goods sold 4",
+        "balance": "1944000",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5050",
+        "account_name": "Cost of goods sold 5",
+        "balance": "2360571",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5060",
+        "account_name": "Cost of goods sold 6",
+        "balance": "1805143",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5070",
+        "account_name": "Cost of goods sold 7",
+        "balance": "2499428",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5080",
+        "account_name": "Cost of goods sold 8",
+        "balance": "1666286",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5090",
+        "account_name": "Cost of goods sold 9",
+        "balance": "2638285",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5100",
+        "account_name": "Cost of goods sold 10",
+        "balance": "1527429",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5110",
+        "account_name": "Cost of goods sold 11",
+        "balance": "2777142",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5120",
+        "account_name": "Cost of goods sold 12",
+        "balance": "1388572",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5130",
+        "account_name": "Cost of goods sold 13",
+        "balance": "2915999",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "5140",
+        "account_name": "Cost of goods sold 14",
+        "balance": "1249717",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6010",
+        "account_name": "Operating expenses",
+        "balance": "395500",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6020",
+        "account_name": "Operating expenses 2",
+        "balance": "395500",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6030",
+        "account_name": "Operating expenses 3",
+        "balance": "405146",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6040",
+        "account_name": "Operating expenses 4",
+        "balance": "385854",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6050",
+        "account_name": "Operating expenses 5",
+        "balance": "414792",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6060",
+        "account_name": "Operating expenses 6",
+        "balance": "376208",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6070",
+        "account_name": "Operating expenses 7",
+        "balance": "424438",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6080",
+        "account_name": "Operating expenses 8",
+        "balance": "366562",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6090",
+        "account_name": "Operating expenses 9",
+        "balance": "434084",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6100",
+        "account_name": "Operating expenses 10",
+        "balance": "356916",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6110",
+        "account_name": "Operating expenses 11",
+        "balance": "443730",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6120",
+        "account_name": "Operating expenses 12",
+        "balance": "347270",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6130",
+        "account_name": "Operating expenses 13",
+        "balance": "453376",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6140",
+        "account_name": "Operating expenses 14",
+        "balance": "337624",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6150",
+        "account_name": "Operating expenses 15",
+        "balance": "463022",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6160",
+        "account_name": "Operating expenses 16",
+        "balance": "327978",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6170",
+        "account_name": "Operating expenses 17",
+        "balance": "472668",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6180",
+        "account_name": "Operating expenses 18",
+        "balance": "318332",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6190",
+        "account_name": "Operating expenses 19",
+        "balance": "482314",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6200",
+        "account_name": "Operating expenses 20",
+        "balance": "308686",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6210",
+        "account_name": "Operating expenses 21",
+        "balance": "491960",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6220",
+        "account_name": "Operating expenses 22",
+        "balance": "299040",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6230",
+        "account_name": "Operating expenses 23",
+        "balance": "501606",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6240",
+        "account_name": "Operating expenses 24",
+        "balance": "289394",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6250",
+        "account_name": "Operating expenses 25",
+        "balance": "511252",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6260",
+        "account_name": "Operating expenses 26",
+        "balance": "279748",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6270",
+        "account_name": "Operating expenses 27",
+        "balance": "520898",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6280",
+        "account_name": "Operating expenses 28",
+        "balance": "270102",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6290",
+        "account_name": "Operating expenses 29",
+        "balance": "530544",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6300",
+        "account_name": "Operating expenses 30",
+        "balance": "260456",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6310",
+        "account_name": "Operating expenses 31",
+        "balance": "540190",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6320",
+        "account_name": "Operating expenses 32",
+        "balance": "250810",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6330",
+        "account_name": "Operating expenses 33",
+        "balance": "549836",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6340",
+        "account_name": "Operating expenses 34",
+        "balance": "241164",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6350",
+        "account_name": "Operating expenses 35",
+        "balance": "559482",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6360",
+        "account_name": "Operating expenses 36",
+        "balance": "231518",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6370",
+        "account_name": "Operating expenses 37",
+        "balance": "569128",
+        "tax_line": null,
+        "source": "firm_mapping"
+      },
+      {
+        "account_ref": "6380",
+        "account_name": "Operating expenses 38",
+        "balance": "221872",
+        "tax_line": null,
+        "source": "tb_mapper"
+      },
+      {
+        "account_ref": "6390",
+        "account_name": "Operating expenses 39",
+        "balance": "578774",
+        "tax_line": null,
+        "source": "tb_mapper"
+      },
+      {
+        "account_ref": "6400",
+        "account_name": "Operating expenses 40",
+        "balance": "212226",
+        "tax_line": null,
+        "source": "tb_mapper"
+      },
+      {
+        "account_ref": "6875",
+        "account_name": "Small equipment expensed",
+        "balance": "41200.00",
+        "tax_line": null,
+        "source": "blank"
+      },
+      {
+        "account_ref": "7010",
+        "account_name": "Interest expense",
+        "balance": "130000",
+        "tax_line": null,
+        "source": "tb_mapper"
+      },
+      {
+        "account_ref": "7020",
+        "account_name": "Interest expense 2",
+        "balance": "130000",
+        "tax_line": null,
+        "source": "tb_mapper"
+      }
+    ],
+    "independence": "Tax return preparation for an attest client is a permitted non-attest service, recorded in CLI-08 by Victor Hammond; Luis Ferrante acknowledged management's responsibilities in the tax engagement letter."
+  },
+  "landing": {
+    "handoff_id": "e01012b9-d14f-5554-bd81-70c84ad71f6b",
+    "source_kind": "audit_release",
+    "locked_close_id": null,
+    "source_label": "FY2026 audit",
+    "handed_off_at": "2026-11-09T10:30:00-06:00",
+    "handed_off_by": "Hannah Leclerc",
+    "source_link_allowed": true,
+    "superseded": false,
+    "book_income": {
+      "pretax": "3100000.00",
+      "income_tax_expense": "750000.00",
+      "net_income": "2350000.00"
+    },
+    "counts": {
+      "mapped": 121,
+      "suggested": 5,
+      "review": 2,
+      "total": 128
+    },
+    "candidates": [
+      {
+        "ref": "AJE-3",
+        "amount": "-68400.00"
+      }
+    ],
+    "source_work_item_id": "f85ced62-4eee-5b5b-a087-7ffa9207fbfa"
+  },
+  "target": {
+    "target_work_item_id": "3a3748c9-5382-59e3-90b7-9aa3015bfb1d",
+    "return_label": "FY2026 Form 1120",
+    "tax_year": 2025
+  },
+  "handed_off_at": "2026-11-09T10:30:00-06:00"
+}

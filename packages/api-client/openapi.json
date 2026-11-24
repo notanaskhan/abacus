@@ -142715,6 +142715,30 @@
         "title": "TbHandoffBookIncomeOut",
         "type": "object"
       },
+      "TbHandoffCandidateOut": {
+        "additionalProperties": false,
+        "description": "T-06-T45 (TXP-13 d): a passed audit adjustment carried as an M-1 candidate, not booked.",
+        "properties": {
+          "amount": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Amount",
+            "type": "string"
+          },
+          "ref": {
+            "cls": "internal",
+            "maxLength": 40,
+            "title": "Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ref",
+          "amount"
+        ],
+        "title": "TbHandoffCandidateOut",
+        "type": "object"
+      },
       "TbHandoffCountsOut": {
         "additionalProperties": false,
         "description": "121 mapped + 5 suggested + 2 review = 128 accounts (AUD-38 b).",
@@ -142821,6 +142845,26 @@
             ],
             "cls": "internal"
           },
+          "candidates": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TbHandoffCandidateOut"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "counts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TbHandoffCountsOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
           "handed_off_at": {
             "anyOf": [
               {
@@ -142908,6 +142952,19 @@
             "default": false,
             "title": "Source Link Allowed",
             "type": "boolean"
+          },
+          "source_work_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Source Work Item Id"
           },
           "superseded": {
             "cls": "internal",
@@ -143076,6 +143133,15 @@
       "TbHandoffPreviewOut": {
         "additionalProperties": false,
         "properties": {
+          "accounts": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TbHandoffMappingRowOut"
+            },
+            "title": "Accounts",
+            "type": "array"
+          },
           "book_income": {
             "$ref": "#/components/schemas/TbHandoffBookIncomeOut",
             "cls": "internal"
@@ -143107,6 +143173,19 @@
             "title": "Gate",
             "type": "string"
           },
+          "independence": {
+            "anyOf": [
+              {
+                "maxLength": 600,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Independence"
+          },
           "locked_close_id": {
             "anyOf": [
               {
@@ -143134,6 +143213,15 @@
             "title": "Review Accounts",
             "type": "array"
           },
+          "schedule_rows": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TbHandoffScheduleOut"
+            },
+            "title": "Schedule Rows",
+            "type": "array"
+          },
           "schedules": {
             "cls": "internal",
             "default": [],
@@ -143142,6 +143230,17 @@
             },
             "title": "Schedules",
             "type": "array"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TbHandoffSourceOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
           },
           "source_kind": {
             "cls": "internal",
@@ -143170,6 +143269,17 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TbHandoffTargetDetailOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
           },
           "tax_items": {
             "cls": "internal",
@@ -143233,6 +143343,19 @@
             "cls": "internal",
             "title": "Choice"
           },
+          "detail": {
+            "anyOf": [
+              {
+                "maxLength": 400,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Detail"
+          },
           "source": {
             "cls": "internal",
             "enum": [
@@ -143253,6 +143376,99 @@
         "title": "TbHandoffReviewAccountOut",
         "type": "object"
       },
+      "TbHandoffScheduleOut": {
+        "additionalProperties": false,
+        "description": "T-06-T45 (AUD-38 Schedules carried): one schedule, its code-built line, carried or not.",
+        "properties": {
+          "detail": {
+            "cls": "confidential",
+            "maxLength": 300,
+            "title": "Detail",
+            "type": "string"
+          },
+          "included": {
+            "cls": "internal",
+            "default": true,
+            "title": "Included",
+            "type": "boolean"
+          },
+          "key": {
+            "cls": "internal",
+            "maxLength": 40,
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "maxLength": 80,
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "detail"
+        ],
+        "title": "TbHandoffScheduleOut",
+        "type": "object"
+      },
+      "TbHandoffSourceOut": {
+        "additionalProperties": false,
+        "description": "T-06-T45 (AUD-38 Source fieldset): what is handed off, as the release recorded it.",
+        "properties": {
+          "balanced": {
+            "cls": "internal",
+            "default": false,
+            "title": "Balanced",
+            "type": "boolean"
+          },
+          "engagement_label": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "title": "Engagement Label",
+            "type": "string"
+          },
+          "released_by": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Released By"
+          },
+          "released_on": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Released On"
+          },
+          "tb_label": {
+            "cls": "internal",
+            "maxLength": 120,
+            "title": "Tb Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "engagement_label",
+          "tb_label"
+        ],
+        "title": "TbHandoffSourceOut",
+        "type": "object"
+      },
       "TbHandoffStatus": {
         "enum": [
           "handed_off",
@@ -143260,6 +143476,85 @@
         ],
         "title": "TbHandoffStatus",
         "type": "string"
+      },
+      "TbHandoffTargetDetailOut": {
+        "additionalProperties": false,
+        "description": "T-06-T45 (AUD-38 Target fieldset): the return, its engagement and its tax team.",
+        "properties": {
+          "due_on": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Due On"
+          },
+          "engagement_created_on": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Created On"
+          },
+          "extension_filed_on": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Extension Filed On"
+          },
+          "return_detail": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Return Detail"
+          },
+          "return_label": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "title": "Return Label",
+            "type": "string"
+          },
+          "team": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 6,
+            "title": "Team",
+            "type": "array"
+          }
+        },
+        "required": [
+          "return_label"
+        ],
+        "title": "TbHandoffTargetDetailOut",
+        "type": "object"
       },
       "TbHandoffTargetOut": {
         "additionalProperties": false,
@@ -143328,9 +143623,28 @@
             "title": "Amount",
             "type": "string"
           },
+          "detail": {
+            "anyOf": [
+              {
+                "maxLength": 600,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Detail"
+          },
           "included": {
             "cls": "internal",
             "title": "Included",
+            "type": "boolean"
+          },
+          "issue_offered": {
+            "cls": "internal",
+            "default": true,
+            "title": "Issue Offered",
             "type": "boolean"
           },
           "key": {

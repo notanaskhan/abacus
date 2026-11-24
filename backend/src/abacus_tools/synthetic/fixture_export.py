@@ -675,6 +675,7 @@ def scenario_files() -> dict[str, str]:
     )
     from abacus_tools.synthetic.scenarios.brightwater_hale.quality_slice import aud30_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import hub_rows
+    from abacus_tools.synthetic.scenarios.brightwater_hale.tb_handoff_slice import aud38_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.usage_slice import adm14_rows
 
     body = {"scenario": SCENARIO_VERSION, "slice": "signatures", "snapshot": "E0", **hub_rows()}
@@ -714,6 +715,18 @@ def scenario_files() -> dict[str, str]:
                 "slice": "cas_delivery",
                 "snapshot": "E0",
                 **cls11_console(),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        # T-06-T45 (DEC-5937): AUD-38's previews a-e and TXP-13 d's landing.
+        "scenario.aud38.json": json.dumps(
+            {
+                "scenario": SCENARIO_VERSION,
+                "slice": "tb_handoff",
+                "snapshot": "E0",
+                **aud38_rows(),
             },
             indent=2,
             ensure_ascii=False,

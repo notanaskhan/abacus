@@ -26,7 +26,7 @@ import {
   TallyStrip,
   amount,
 } from "@abacus/ui";
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 import { AgentsOffNote, ENTITY_CAPABILITIES } from "../../domain/tax";
 import { COPY } from "./copy";
 
@@ -262,6 +262,8 @@ export interface TXP02Props {
   onOpenEntry?: (entry: WorkbookJournalEntryOut) => void;
   /** T-05-T66 (AC-13.1): why the account mapper is not offered; "Map…" stays the person's pick. */
   agentReason?: string | null;
+  /** T-06-T45 (DF-08, DV-11): the hand-off provenance banner under the control bar. */
+  banner?: ReactNode;
 }
 
 export function TXP02({
@@ -280,6 +282,7 @@ export function TXP02({
   entries = [],
   onOpenEntry,
   agentReason = null,
+  banner = null,
 }: TXP02Props): JSX.Element {
   const rows = tb === undefined ? [] : tableRows(tb);
   const hasPriorYear = tb?.rows.some((r) => r.prior_year !== null && r.prior_year !== undefined);
@@ -329,6 +332,7 @@ export function TXP02({
           {COPY.journalEntry}
         </Button>
       </div>
+      {banner}
       <TallyStrip
         label={COPY.tally}
         items={tallyItems(tallies, building, onUnmapped)}

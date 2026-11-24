@@ -267,6 +267,24 @@ describe("Segmented", () => {
   });
 });
 
+describe("Segmented with nothing chosen (T-06-T45)", () => {
+  it("active={null} draws no option selected; the first pick fires onChange", () => {
+    const onChange = vi.fn();
+    render(
+      <Segmented
+        label="How 2255 travels"
+        options={["Send blank", "Use suggestion"]}
+        active={null}
+        onChange={onChange}
+      />,
+    );
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs.every((t) => t.getAttribute("aria-selected") !== "true")).toBe(true);
+    fireEvent.click(screen.getByRole("tab", { name: "Send blank" }));
+    expect(onChange).toHaveBeenCalledWith("Send blank");
+  });
+});
+
 describe("SegmentedGroup", () => {
   const SUB = {
     Workpaper: {

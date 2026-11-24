@@ -66972,6 +66972,22 @@ export type TbHandoffBookIncomeOut = {
 };
 
 /**
+ * TbHandoffCandidateOut
+ *
+ * T-06-T45 (TXP-13 d): a passed audit adjustment carried as an M-1 candidate, not booked.
+ */
+export type TbHandoffCandidateOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Ref
+     */
+    ref: string;
+};
+
+/**
  * TbHandoffCountsOut
  *
  * 121 mapped + 5 suggested + 2 review = 128 accounts (AUD-38 b).
@@ -67029,6 +67045,11 @@ export type TbHandoffIn = {
 export type TbHandoffLandingOut = {
     book_income?: TbHandoffBookIncomeOut | null;
     /**
+     * Candidates
+     */
+    candidates?: Array<TbHandoffCandidateOut>;
+    counts?: TbHandoffCountsOut | null;
+    /**
      * Handed Off At
      */
     handed_off_at?: string | null;
@@ -67056,6 +67077,10 @@ export type TbHandoffLandingOut = {
      * Source Link Allowed
      */
     source_link_allowed?: boolean;
+    /**
+     * Source Work Item Id
+     */
+    source_work_item_id?: string | null;
     /**
      * Superseded
      */
@@ -67144,6 +67169,10 @@ export type TbHandoffOut = {
  * TbHandoffPreviewOut
  */
 export type TbHandoffPreviewOut = {
+    /**
+     * Accounts
+     */
+    accounts?: Array<TbHandoffMappingRowOut>;
     book_income: TbHandoffBookIncomeOut;
     counts: TbHandoffCountsOut;
     /**
@@ -67154,6 +67183,10 @@ export type TbHandoffPreviewOut = {
      * Gate
      */
     gate: 'released' | 'not_released' | 'superseded';
+    /**
+     * Independence
+     */
+    independence?: string | null;
     /**
      * Locked Close Id
      */
@@ -67167,9 +67200,14 @@ export type TbHandoffPreviewOut = {
      */
     review_accounts: Array<TbHandoffReviewAccountOut>;
     /**
+     * Schedule Rows
+     */
+    schedule_rows?: Array<TbHandoffScheduleOut>;
+    /**
      * Schedules
      */
     schedules?: Array<string>;
+    source?: TbHandoffSourceOut | null;
     /**
      * Source Kind
      */
@@ -67182,6 +67220,7 @@ export type TbHandoffPreviewOut = {
      * Status
      */
     status: 'not_available' | 'needs_review' | 'ready' | 'handed_off' | 'superseded';
+    target?: TbHandoffTargetDetailOut | null;
     /**
      * Tax Items
      */
@@ -67211,15 +67250,103 @@ export type TbHandoffReviewAccountOut = {
      */
     choice?: 'map_suggested' | 'send_blank' | 'send_as_is' | null;
     /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
      * Source
      */
     source: 'tb_mapper' | 'firm_mapping' | 'person';
 };
 
 /**
+ * TbHandoffScheduleOut
+ *
+ * T-06-T45 (AUD-38 Schedules carried): one schedule, its code-built line, carried or not.
+ */
+export type TbHandoffScheduleOut = {
+    /**
+     * Detail
+     */
+    detail: string;
+    /**
+     * Included
+     */
+    included?: boolean;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
+ * TbHandoffSourceOut
+ *
+ * T-06-T45 (AUD-38 Source fieldset): what is handed off, as the release recorded it.
+ */
+export type TbHandoffSourceOut = {
+    /**
+     * Balanced
+     */
+    balanced?: boolean;
+    /**
+     * Engagement Label
+     */
+    engagement_label: string;
+    /**
+     * Released By
+     */
+    released_by?: string | null;
+    /**
+     * Released On
+     */
+    released_on?: string | null;
+    /**
+     * Tb Label
+     */
+    tb_label: string;
+};
+
+/**
  * TbHandoffStatus
  */
 export type TbHandoffStatus = 'handed_off' | 'superseded';
+
+/**
+ * TbHandoffTargetDetailOut
+ *
+ * T-06-T45 (AUD-38 Target fieldset): the return, its engagement and its tax team.
+ */
+export type TbHandoffTargetDetailOut = {
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Engagement Created On
+     */
+    engagement_created_on?: string | null;
+    /**
+     * Extension Filed On
+     */
+    extension_filed_on?: string | null;
+    /**
+     * Return Detail
+     */
+    return_detail?: string | null;
+    /**
+     * Return Label
+     */
+    return_label: string;
+    /**
+     * Team
+     */
+    team?: Array<string>;
+};
 
 /**
  * TbHandoffTargetOut
@@ -67266,9 +67393,17 @@ export type TbHandoffTaxItemOut = {
      */
     amount: string;
     /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
      * Included
      */
     included: boolean;
+    /**
+     * Issue Offered
+     */
+    issue_offered?: boolean;
     /**
      * Key
      */
