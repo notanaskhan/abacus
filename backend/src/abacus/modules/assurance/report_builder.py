@@ -270,11 +270,17 @@ class ReportState:
     row_version: int
     created_at: datetime | None = None
     versions: tuple[tuple[int, str, datetime], ...] = field(default_factory=tuple)
+    # Q-05-T24: the current version's dates; a reissue draft carries its dual date and the
+    # release it reissues (Q-05-T17), which AUD-23 g reads.
+    report_date: date | None = None
+    dual_date: date | None = None
+    reissue_of_release_id: UUID | None = None
 
 
 _REPORT = text(
     "SELECT r.id, r.report_kind, r.status, r.version, r.template_id, v.version_no, "
-    "v.content_hash, v.choices, v.paragraphs, v.created_at FROM audit_reports r "
+    "v.content_hash, v.choices, v.paragraphs, v.created_at, v.report_date, v.dual_date, "
+    "v.reissue_of_release_id FROM audit_reports r "
     "LEFT JOIN audit_report_versions v ON v.id = r.current_version_id WHERE r.work_item_id = :wi"
 )
 _VERSIONS = text(
@@ -311,6 +317,9 @@ async def state(tenant: TenantContext, work_item_id: UUID) -> ReportState:
         int(row.version),
         row.created_at,
         tuple((int(v.version_no), str(v.content_hash), v.created_at) for v in versions),
+        row.report_date,
+        row.dual_date,
+        row.reissue_of_release_id,
     )
 
 

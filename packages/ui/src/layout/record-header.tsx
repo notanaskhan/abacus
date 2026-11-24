@@ -74,6 +74,9 @@ export interface AuditRecordHeaderProps extends Common {
   autoMode?: boolean;
   onAutoMode?: (on: boolean) => void;
   onLayout?: () => void;
+  /** The state pill's variant once the audit leaves the amber work state (AUD-30: "Archived"
+   * reads soon; Q-05-T24). Default amber. */
+  stateTone?: PillVariant;
 }
 
 export interface CloseRecordHeaderProps extends Common {
@@ -329,6 +332,7 @@ function AuditHeader({
   autoMode = true,
   onAutoMode,
   onLayout,
+  stateTone: auditTone,
 }: AuditRecordHeaderProps): JSX.Element {
   const [on, setOn] = useState(autoMode);
   const [seen, setSeen] = useState(autoMode);
@@ -347,7 +351,14 @@ function AuditHeader({
           {backLabel}
         </Chip>
       )}
-      <Centre title={title} context={context} state={state} chip={chip} onChip={onChip} />
+      <Centre
+        title={title}
+        context={context}
+        state={state}
+        chip={chip}
+        onChip={onChip}
+        tone={auditTone}
+      />
       {right ?? (
         <div className="ml-auto flex items-center gap-[8px]">
           {meta !== undefined && <span className="mr-[8px] text-body text-ink-3">{meta}</span>}

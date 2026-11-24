@@ -6,9 +6,10 @@ import {
   auditReportRequestDecisionMutation,
   eqrRequestMutation,
 } from "@abacus/api-client/query";
-import { Button, Icon, Picker, Pill, Skeleton, Toggle, toast } from "@abacus/ui";
+import { Button, Icon, Picker, Pill, Skeleton, Toggle, date, toast } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { JSX } from "react";
+import { useNow } from "../../app-core/clock";
 import { MODS, type Mod } from "./copy";
 
 // AUD-23 · Report builder on live data (S33 partials round, A-07-T34; DEC-3137): the report's
@@ -93,6 +94,7 @@ function Paragraph({ p }: { p: ReportParagraphOut }): JSX.Element {
 }
 
 export function LiveReport(props: LiveReportProps): JSX.Element {
+  const now = useNow();
   const queryClient = useQueryClient();
   const options = auditReportOptions({ path: { work_item_id: props.workItemId } });
   const report = useQuery({ ...options, retry: false });
@@ -163,6 +165,10 @@ export function LiveReport(props: LiveReportProps): JSX.Element {
     });
   };
   const current = data.current_version;
+  // Q-05-T24 (AUD-23 g live; DEC-5936): a reissue draft opened from AUD-30 is dual-dated; the
+  // released report stays in the file.
+  const reissue = current?.reissue_of_release_id != null;
+  const dual = current?.dual_date ?? null;
   const docx = data.documents.find((d) => d.format === "docx");
 
   return (
@@ -177,8 +183,13 @@ export function LiveReport(props: LiveReportProps): JSX.Element {
           aria-label="Structure"
           className="w-[470px] shrink-0 overflow-y-auto rounded-pane bg-card shadow-e1"
         >
-          <h2 className="flex h-[32px] items-center px-[14px] text-[12.5px] font-medium text-ink-2">
+          <h2 className="flex h-[32px] items-center gap-[8px] px-[14px] text-[12.5px] font-medium text-ink-2">
             Report › {TITLE[data.report_kind]}
+            {reissue && (
+              <Pill variant="red-tint" size="sm">
+                Reissued report
+              </Pill>
+            )}
           </h2>
           <h3 className="flex h-[31px] items-center bg-band-hd px-[14px] text-dense font-medium">
             Engagement
@@ -187,6 +198,17 @@ export function LiveReport(props: LiveReportProps): JSX.Element {
             <span className="text-ink-2">Framework</span>
             <span className="font-medium">{data.framework}</span>
           </div>
+          {reissue && (
+            <div
+              data-report="dual-date"
+              className="flex min-h-[34px] items-center justify-between px-[14px] text-[13px]"
+            >
+              <span className="text-ink-2">Dual dating</span>
+              <span className="font-medium">
+                {dual === null ? "None" : date(dual, { now, withYear: true })}
+              </span>
+            </div>
+          )}
           <h3 className="flex h-[31px] items-center bg-band-hd px-[14px] text-dense font-medium">
             {data.report_kind === "audit" ? "Opinion" : "Conclusion"}
           </h3>
@@ -360,7 +382,14 @@ export function LiveReport(props: LiveReportProps): JSX.Element {
                   <p className="text-[11px] text-ink-3">Firm signature applied at release</p>
                 </div>
                 {current?.city != null && <p>{current.city}</p>}
-                {current?.report_date != null && <p>{current.report_date}</p>}
+                {current?.report_date != null && (
+                  <p>{date(current.report_date, { now, withYear: true })}</p>
+                )}
+                {reissue && dual !== null && (
+                  <p data-report="dual-line">
+                    Dual dating · {date(dual, { now, withYear: true })}
+                  </p>
+                )}
               </div>
             </article>
           </div>

@@ -673,6 +673,7 @@ def scenario_files() -> dict[str, str]:
         cls08_package,
         cls11_console,
     )
+    from abacus_tools.synthetic.scenarios.brightwater_hale.quality_slice import aud30_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import hub_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.usage_slice import adm14_rows
 
@@ -714,6 +715,13 @@ def scenario_files() -> dict[str, str]:
                 "snapshot": "E0",
                 **cls11_console(),
             },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        # Q-05-T24 (DEC-5936): AUD-30's cases, additions and PI-01's analysis.
+        "scenario.aud30.json": json.dumps(
+            {"scenario": SCENARIO_VERSION, "slice": "quality", "snapshot": "E0", **aud30_rows()},
             indent=2,
             ensure_ascii=False,
         )

@@ -47,7 +47,7 @@ with workflow.unsafe.imports_passed_through():
     from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
     from abacus.kernel.logging import get_logger
     from abacus.kernel.metrics import meter
-    from abacus.kernel.uow import Ref, Scope, Target, uow
+    from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
     from abacus.modules.identity.api import AuthContext, Forbidden, names_of
 
 AdditionReason = Literal[
@@ -178,18 +178,31 @@ async def store_addition_evidence(
     return version.id
 
 
-async def create_addition(
+@dataclass(frozen=True)
+class PreparedAddition:
+    """An addition ready to insert: its manifest hash fixed and its description sealed."""
+
+    id: UUID
+    archive: LockedArchive
+    description_sealed: bytes
+    reason_code: AdditionReason
+    evidence_version_id: UUID
+    content_sha256: str
+    added_by: UUID
+    post_issuance_event_id: UUID | None = None
+
+
+async def prepare_addition(
     ctx: AuthContext,
     work_item_id: UUID,
     *,
     description: str,
     reason_code: AdditionReason,
     evidence_version_id: UUID,
-) -> UUID:
-    """ "Add after lock…": pending until the EP decides. The route authorised
-    `archive_addition.create` (manager or senior)."""
-    from abacus.modules.evidence.api import record_key
-
+    post_issuance_event_id: UUID | None = None,
+) -> PreparedAddition:
+    """Everything an addition needs before its transaction: the locked archive, the evidence
+    fingerprint, the manifest's hash and the sealed description (a person's act only)."""
     _person(ctx, "archive_addition.create")
     archive = await locked_archive(ctx.tenant, work_item_id)
     evidence_sha = await _evidence_sha(ctx.tenant, evidence_version_id)
@@ -203,38 +216,74 @@ async def create_addition(
         description=description,
         added_by=ctx.user_id,
     )
-    digest = hashlib.sha256(body).hexdigest()
     sealed = await seal(ctx.tenant_id, description.encode(), _context(addition_id, "description"))
+    return PreparedAddition(
+        addition_id, archive, sealed, reason_code, evidence_version_id,
+        hashlib.sha256(body).hexdigest(), ctx.user_id, post_issuance_event_id,
+    )  # fmt: skip
+
+
+async def insert_addition(tx: UnitOfWork, tenant_id: UUID, prepared: PreparedAddition) -> None:
+    """The pending row and `archive_addition.created`, in the caller's transaction under the
+    `archive_addition` kind (Q-05-T24: a post-issuance decision logs its addition atomically)."""
+    from abacus.modules.evidence.api import record_key
+
+    archive = prepared.archive
+    await tx.allow_archived_write("archive_addition")
+    await tx.session.execute(
+        text(
+            "INSERT INTO archive_additions (id, tenant_id, engagement_id, work_item_id, "
+            "archive_id, description_sealed, reason_code, evidence_version_id, "
+            "content_sha256, added_by, addition_manifest_key, post_issuance_event_id) VALUES "
+            "(:id, :t, :e, :wi, :a, :d, :reason, :ev, :sha, :by, :key, :case)"
+        ),
+        {
+            "id": prepared.id,
+            "t": tenant_id,
+            "e": archive.engagement_id,
+            "wi": archive.work_item_id,
+            "a": archive.id,
+            "d": prepared.description_sealed,
+            "reason": prepared.reason_code,
+            "ev": prepared.evidence_version_id,
+            "sha": prepared.content_sha256,
+            "by": prepared.added_by,
+            "key": record_key(tenant_id, RECORD_CLASS, prepared.content_sha256),
+            "case": prepared.post_issuance_event_id,
+        },
+    )
+    tx.record(
+        "archive_addition.created",
+        target=Target("archive", archive.id),
+        after=Ref(
+            addition=prepared.id,
+            content=prepared.content_sha256,
+            evidence=prepared.evidence_version_id,
+        ),
+        scope=Scope(engagement_id=archive.engagement_id, work_item_id=archive.work_item_id),
+    )
+
+
+async def create_addition(
+    ctx: AuthContext,
+    work_item_id: UUID,
+    *,
+    description: str,
+    reason_code: AdditionReason,
+    evidence_version_id: UUID,
+) -> UUID:
+    """ "Add after lock…": pending until the EP decides. The route authorised
+    `archive_addition.create` (manager or senior)."""
+    prepared = await prepare_addition(
+        ctx,
+        work_item_id,
+        description=description,
+        reason_code=reason_code,
+        evidence_version_id=evidence_version_id,
+    )
     async with uow(ctx.tenant) as tx:
-        await tx.allow_archived_write("archive_addition")
-        await tx.session.execute(
-            text(
-                "INSERT INTO archive_additions (id, tenant_id, engagement_id, work_item_id, "
-                "archive_id, description_sealed, reason_code, evidence_version_id, "
-                "content_sha256, added_by, addition_manifest_key) VALUES (:id, :t, :e, :wi, :a, "
-                ":d, :reason, :ev, :sha, :by, :key)"
-            ),
-            {
-                "id": addition_id,
-                "t": ctx.tenant_id,
-                "e": archive.engagement_id,
-                "wi": work_item_id,
-                "a": archive.id,
-                "d": sealed,
-                "reason": reason_code,
-                "ev": evidence_version_id,
-                "sha": digest,
-                "by": ctx.user_id,
-                "key": record_key(ctx.tenant_id, RECORD_CLASS, digest),
-            },
-        )
-        tx.record(
-            "archive_addition.created",
-            target=Target("archive", archive.id),
-            after=Ref(addition=addition_id, content=digest, evidence=evidence_version_id),
-            scope=Scope(engagement_id=archive.engagement_id, work_item_id=work_item_id),
-        )
-    return addition_id
+        await insert_addition(tx, ctx.tenant_id, prepared)
+    return prepared.id
 
 
 @dataclass(frozen=True)
@@ -252,12 +301,14 @@ class AdditionRow:
     decision: str | None
     decided_by: UUID | None
     decided_at: object
+    post_issuance_event_id: UUID | None = None
 
 
 _ADDITIONS: Final = text(
     "SELECT a.id, a.archive_id, a.engagement_id, a.work_item_id, a.description_sealed, "
     "a.reason_code, a.evidence_version_id, a.content_sha256, a.added_by, a.created_at, "
-    "d.decision, d.decided_by, d.created_at AS decided_at FROM archive_additions a "
+    "d.decision, d.decided_by, d.created_at AS decided_at, a.post_issuance_event_id "
+    "FROM archive_additions a "
     "LEFT JOIN archive_addition_decisions d ON d.addition_id = a.id "
     "WHERE a.work_item_id = :wi ORDER BY a.created_at, a.id"
 )
@@ -288,6 +339,7 @@ async def additions_of(tenant: TenantContext, work_item_id: UUID) -> list[Additi
                 r.decision,
                 r.decided_by,
                 r.decided_at,
+                r.post_issuance_event_id,
             )
         )
     return out

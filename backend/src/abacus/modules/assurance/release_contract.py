@@ -343,6 +343,9 @@ class ReportVersionOut(BaseModel):
     created_at: Annotated[datetime, classified("internal")]
     approved_by_name: Annotated[str | None, classified("internal")]  # the EP's L4 sign-off
     approved_at: Annotated[datetime | None, classified("internal")]
+    # Q-05-T24 (AUD-23 g live): a reissue draft's dual date and the release it reissues.
+    dual_date: Annotated[date | None, classified("internal")] = None
+    reissue_of_release_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class GeneratedReportDocumentOut(BaseModel):
@@ -540,6 +543,8 @@ class ArchiveAdditionOut(BaseModel):
     decision: Annotated[Literal["pending", "approved", "rejected"], classified("internal")]
     decided_by_name: Annotated[str | None, classified("internal")]
     decided_at: Annotated[datetime | None, classified("internal")]
+    # Q-05-T24 (AUD-30 d, e): the post-issuance case the addition documents, when one did.
+    post_issuance_case_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class AuditArchiveStateOut(BaseModel):
@@ -720,12 +725,14 @@ def _report_out(found: rb.ReportState, actions: list[ReportAction]) -> AuditRepo
         current = ReportVersionOut(
             version_no=found.version_no,
             content_hash=found.content_hash,
-            report_date=None,
+            report_date=found.report_date,
             city=None,
             created_by_name="",
             created_at=found.created_at or datetime.min,
             approved_by_name=None,
             approved_at=None,
+            dual_date=found.dual_date,
+            reissue_of_release_id=found.reissue_of_release_id,
         )
     return AuditReportOut(
         report_kind=found.kind,
@@ -1555,6 +1562,7 @@ def _addition_out(row: object, names: dict[UUID, str]) -> ArchiveAdditionOut:
         decision=cast(Literal["pending", "approved", "rejected"], r.decision or "pending"),
         decided_by_name=names.get(r.decided_by) if r.decided_by else None,
         decided_at=cast(datetime | None, r.decided_at),
+        post_issuance_case_id=r.post_issuance_event_id,
     )
 
 

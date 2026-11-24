@@ -54,6 +54,21 @@ _ACTIVE = text(
 )
 
 
+_NUMBERS = text(
+    "SELECT id, run_number FROM agent_runs WHERE id = ANY(CAST(:ids AS uuid[])) "
+    "AND run_number IS NOT NULL"
+)
+
+
+async def run_numbers(tenant: TenantContext, run_ids: Sequence[UUID]) -> dict[UUID, int]:
+    """Q-05-T24 (AUD-30's "run #4511"): each run's firm-wide number, for runs that have one."""
+    if not run_ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = (await session.execute(_NUMBERS, {"ids": [str(r) for r in run_ids]})).all()
+    return {cast(UUID, r[0]): int(r[1]) for r in rows}
+
+
 BlockedOn = Literal["partner", "manager"]  # the C6 run summary's codes
 _BLOCKED_ON: Final[dict[str, BlockedOn]] = {"partner": "partner", "manager": "manager"}
 

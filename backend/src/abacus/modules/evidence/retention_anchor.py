@@ -57,6 +57,20 @@ async def version_fingerprint(tenant: TenantContext, version_id: UUID) -> str | 
     return str(found) if found is not None else None
 
 
+async def version_display_name(tenant: TenantContext, version_id: UUID) -> str | None:
+    """Q-05-T24: one evidence version's display name (its own, else its item's title), as
+    AUD-30's source chip shows it. The caller has authorised the record that names it."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT coalesce(v.display_name, i.title) FROM evidence_versions v "
+                "JOIN evidence_items i ON i.id = v.evidence_item_id WHERE v.id = :v"
+            ),
+            {"v": version_id},
+        )
+    return str(found) if found is not None else None
+
+
 async def extend_versions_until(
     tenant: TenantContext, objects: list[tuple[str, str]], until: datetime
 ) -> int:

@@ -110,6 +110,7 @@ import { scenarios as txp07 } from "./scenarios/TXP-07";
 import { scenarios as txp10 } from "./scenarios/TXP-10";
 import { TXP03_OPENS, scenarios as t06txp03 } from "./scenarios/TXP-03";
 import { scenarios as adm12 } from "./scenarios/ADM-12";
+import { scenarios as aud30 } from "./scenarios/AUD-30";
 import { scenarios as adm14 } from "./scenarios/ADM-14";
 import { scenarios as fil02 } from "./scenarios/FIL-02";
 import { scenarios as aud28 } from "./scenarios/AUD-28";
@@ -470,6 +471,13 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
     scenarios: tax09,
     opens: {},
     ids: Object.fromEntries(Object.keys(tax09).map((s) => [s, { returnId: FELD_RETURN_ID }])),
+  },
+  // Q-05-T24 (TASK-8934): AUD-30 a–f on the archived Northwind audit
+  // (`/audits/_auditId_/post-issuance`); the case, the tab and the sheet in the URL.
+  "AUD-30": {
+    scenarios: aud30,
+    opens: { d: "?case=PI-02", e: "?view=additions", f: "?sheet=new" },
+    ids: northwind(aud30),
   },
   // Q-05-T23 (TASK-8933): ADM-12 a–g at `/settings/monitoring`; the sheet, cycle and finding in
   // the URL.

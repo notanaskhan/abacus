@@ -133,6 +133,11 @@ export const auditRoute = createRoute({
         auditId={auditId}
         {...(search.section === undefined ? {} : { section: search.section })}
         onSection={(section) => {
+          // Q-05-T24: the Post-issuance row is AUD-30's own route.
+          if (section === "post_issuance") {
+            void navigate({ to: "/audits/$auditId/post-issuance", params: { auditId } });
+            return;
+          }
           go({ ...search, section });
         }}
         {...(search.dock === undefined ? {} : { dock: search.dock })}
@@ -515,7 +520,68 @@ export const auditSheetRoute = createRoute({
   },
 });
 
+// Q-05-T24 (DEC-5936): AUD-30 `/audits/$auditId/post-issuance?view=additions&case=PI-02&sheet=new`
+// behind `audit.post_issuance` (the server's 404 flag), inside the cockpit gate. Another rail row
+// returns to the cockpit's section; Reopen for reissue lands on AUD-23 (`auditors_report`).
+const PostIssuance = lazyScreen(async () => (await import("../../screens/AUD-30")).AUD30);
+
+interface PostIssuanceSearch {
+  view?: "cases" | "additions";
+  case?: string;
+  sheet?: "new";
+}
+
+export const postIssuanceRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/audits/$auditId/post-issuance",
+  validateSearch: (search: Record<string, unknown>): PostIssuanceSearch => ({
+    ...(search.view === "cases" || search.view === "additions" ? { view: search.view } : {}),
+    ...(typeof search.case === "string" ? { case: search.case } : {}),
+    ...(search.sheet === "new" ? { sheet: "new" as const } : {}),
+  }),
+  component: function PostIssuancePage(): JSX.Element {
+    const auditId = useParam("auditId");
+    const navigate = useNavigate();
+    const search: PostIssuanceSearch = useSearch({ strict: false });
+    const go = (next: PostIssuanceSearch): void => {
+      void navigate({ to: ".", search: next, replace: true });
+    };
+    const cockpit = (section: string): void => {
+      void navigate({ to: "/audits/$auditId", params: { auditId }, search: { section } });
+    };
+    return gated(
+      <FeatureGate
+        flag="audit.post_issuance"
+        fallback={<FlagOffState flag="audit.post_issuance" label="Post-issuance" />}
+      >
+        <PostIssuance
+          auditId={auditId}
+          {...(search.view === undefined ? {} : { view: search.view })}
+          onView={(view) => {
+            go({ ...search, view });
+          }}
+          {...(search.case === undefined ? {} : { caseRef: search.case })}
+          onCase={(ref) => {
+            go({ ...search, case: ref });
+          }}
+          newCase={search.sheet === "new"}
+          onSection={(row) => {
+            cockpit(row.key);
+          }}
+          onReissued={() => {
+            cockpit("auditors_report");
+          }}
+          onBack={() => {
+            void navigate({ to: "/audits" });
+          }}
+        />
+      </FeatureGate>,
+    );
+  },
+});
+
 export const auditRoutes = [
+  postIssuanceRoute,
   auditSheetRoute,
   eqrRoute,
   auditsRoute,

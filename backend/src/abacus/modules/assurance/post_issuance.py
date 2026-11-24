@@ -32,6 +32,7 @@ from abacus.kernel.crypto import open_sealed, seal
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, uow
+from abacus.modules.assurance import archive_additions as aa
 from abacus.modules.assurance.compute import post_issuance as calc
 from abacus.modules.assurance.events import PostIssuanceCaseOpened
 from abacus.modules.engagements.api import get_ref, work_item_engagement
@@ -46,6 +47,10 @@ STANDARD: Final[Mapping[str, str | None]] = {
     "omitted_procedure": "au_c_585",
     "reissuance_request": None,
 }
+
+
+# Q-05-T24: an omitted procedure's two code options (AUD-30 d), in the order the card shows them.
+OMITTED_OPTIONS: Final[tuple[str, ...]] = ("no_action", "revise_and_reissue")
 
 
 class NotArchived(DomainConflict):
@@ -99,6 +104,11 @@ class Case:
     evaluation: CaseEvaluation | None
     options: tuple[str, ...]
     recommended: str | None
+    # Q-05-T24 (AUD-30): who opened the case and when, and the decider's rationale once decided
+    # (PI-02's "Alternative procedure: …").
+    created_by: UUID | None = None
+    created_at: datetime | None = None
+    rationale: str | None = None
 
 
 async def _resource_for(ctx: AuthContext, action: str, work_item_id: UUID) -> UUID:
@@ -112,8 +122,8 @@ async def _resource_for(ctx: AuthContext, action: str, work_item_id: UUID) -> UU
 
 _CASES = text(
     "SELECT id, work_item_id, ref, type, standard, source_kind, source_evidence_version_id, "
-    "received_at, description_sealed, status, decision, decided_by, decided_at "
-    "FROM post_issuance_events WHERE work_item_id = :w "
+    "received_at, description_sealed, status, decision, decided_by, decided_at, "
+    "created_by, created_at, rationale_sealed FROM post_issuance_events WHERE work_item_id = :w "
     "AND (CAST(:id AS uuid) IS NULL OR id = :id) ORDER BY ref"
 )
 _COMPARED = text(
@@ -172,14 +182,24 @@ async def _read(ctx: AuthContext, work_item_id: UUID, case_id: UUID | None) -> l
                 disclosure_affected=evaluation.disclosure_affected,
             )
             offered, recommended = computed.options, computed.recommended
+        elif str(r[3]) == "omitted_procedure":
+            # AU-C 585 (AUD-30 d): no figures to compare. Either the report stays supported
+            # (an alternative procedure and its memo) or it is reopened; no recommendation.
+            offered = OMITTED_OPTIONS
         description = (await open_sealed(ctx.tenant_id, cast(bytes, r[8]), _FINGERPRINT)).decode()
+        rationale = (
+            None
+            if r[15] is None
+            else (await open_sealed(ctx.tenant_id, cast(bytes, r[15]), _FINGERPRINT)).decode()
+        )
         out.append(
             Case(
                 cid, cast(UUID, r[1]), str(r[2]), cast(CaseType, r[3]),
                 cast(str | None, r[4]), str(r[5]), cast(UUID | None, r[6]),
                 cast(datetime, r[7]), description, str(r[9]), cast(str | None, r[10]),
                 cast(UUID | None, r[11]), cast(datetime | None, r[12]), lines, evaluation,
-                offered, recommended,
+                offered, recommended, cast(UUID | None, r[13]), cast(datetime | None, r[14]),
+                rationale,
             )
         )  # fmt: skip
     return out
@@ -198,12 +218,25 @@ async def case(ctx: AuthContext, work_item_id: UUID, case_id: UUID) -> Case:
     return found[0]
 
 
-_LOCKED = text("SELECT created_at FROM archives WHERE engagement_id = :e")
+# Q-05-T24: the lock's own time, and only a locked archive (an assembling one is not archived).
+_LOCKED = text(
+    "SELECT locked_at FROM archives WHERE engagement_id = :e AND status = 'locked' "
+    "AND locked_at IS NOT NULL"
+)
 
 
 async def archive_locked_at(tenant: TenantContext, engagement_id: UUID) -> datetime | None:
     async with tenant_session(tenant) as session:
         return cast(datetime | None, await session.scalar(_LOCKED, {"e": engagement_id}))
+
+
+_RELEASED = text("SELECT min(released_at) FROM report_releases WHERE work_item_id = :w")
+
+
+async def report_released_at(tenant: TenantContext, work_item_id: UUID) -> datetime | None:
+    """AUD-30 a's "Report released": the first release of the audit's report."""
+    async with tenant_session(tenant) as session:
+        return cast(datetime | None, await session.scalar(_RELEASED, {"w": work_item_id}))
 
 
 _NEXT_REF = text("SELECT count(*) + 1 FROM post_issuance_events")
@@ -373,18 +406,41 @@ _DECIDE = text(
     "UPDATE post_issuance_events SET status = 'decided', decision = :d, decided_by = :u, "
     "decided_at = clock_timestamp(), rationale_sealed = :r, "
     "decided_actor_kind = :kind "
-    "WHERE id = :c AND status = 'awaiting_decision' AND decision IS NULL RETURNING id"
+    "WHERE id = :c AND status <> 'decided' AND decision IS NULL RETURNING id"
 )
 
 
+_REASON: Final[Mapping[str, aa.AdditionReason]] = {
+    "subsequent_fact": "au_c_560_subsequently_discovered_fact",
+    "omitted_procedure": "au_c_585_omitted_procedure",
+}
+_ADDITION_MAX: Final = 2000
+
+
+def addition_description(found: Case, given: str | None) -> str:
+    """What the decision's archive addition says: the person's words, else the case's own."""
+    text_ = (given or "").strip() or f"{found.description} ({found.ref})"
+    return text_[:_ADDITION_MAX]
+
+
 async def record_case_decision(
-    ctx: AuthContext, work_item_id: UUID, case_id: UUID, *, decision: str, rationale: str
+    ctx: AuthContext,
+    work_item_id: UUID,
+    case_id: UUID,
+    *,
+    decision: str,
+    rationale: str,
+    addition: str | None = None,
 ) -> Case:
     """The engagement partner decides among the code's options, with a rationale (fresh MFA by
     the matrix; human-only by the CHECK). 409 `comparison_unavailable` before the comparison,
-    `post_issuance_case_decided` once decided."""
+    `post_issuance_case_decided` once decided. A case with a source document logs it as a
+    pending archive addition in the same transaction (AUD-30 b: "Addition logged"; the EP
+    approves it on AUD-25): the locked archive only ever gains logged additions."""
     engagement_id = await _resource_for(ctx, "post_issuance.decide", work_item_id)
-    found = await require_comparison(ctx, work_item_id, case_id)
+    found = await case(ctx, work_item_id, case_id)
+    if found.type != "omitted_procedure" and (not found.comparison or found.evaluation is None):
+        raise ComparisonUnavailable(facts={"case_id": str(case_id)})  # AU-C 560 compares first
     if found.decision is not None:
         raise CaseDecided(facts={"case_id": str(case_id)})
     if decision not in found.options:
@@ -392,6 +448,18 @@ async def record_case_decision(
     if not rationale.strip():
         raise DomainInvalid(facts={"field": "rationale"})
     sealed = await seal(ctx.tenant_id, rationale.strip().encode(), _FINGERPRINT)
+    prepared = (
+        None
+        if found.source_evidence_version_id is None
+        else await aa.prepare_addition(
+            ctx,
+            work_item_id,
+            description=addition_description(found, addition),
+            reason_code=_REASON.get(found.type, "other"),
+            evidence_version_id=found.source_evidence_version_id,
+            post_issuance_event_id=case_id,
+        )
+    )
     async with uow(ctx.tenant) as tx:
         await tx.allow_archived_write("post_issuance")
         moved = await tx.session.scalar(
@@ -407,6 +475,8 @@ async def record_case_decision(
             after=Ref(option=found.options.index(decision)),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
         )
+        if prepared is not None:
+            await aa.insert_addition(tx, ctx.tenant_id, prepared)
     return await case(ctx, work_item_id, case_id)
 
 
@@ -417,11 +487,13 @@ __all__ = [
     "ComparedLine",
     "ComparisonUnavailable",
     "NotArchived",
+    "addition_description",
     "archive_locked_at",
     "case",
     "cases",
     "compare_case",
     "open_case",
     "record_case_decision",
+    "report_released_at",
     "require_comparison",
 ]

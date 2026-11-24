@@ -85,7 +85,12 @@ def test_ac22_the_methodology_row_requires_methodology_read_on_the_firm() -> Non
         (found[k].required_action, found[k].action_scope) == ("group_scoping.read", "engagement")
         for k in group
     )
-    guarded = {"methodology", "sample_selection"} | designed | group
+    # Q-05-T24: the post-issuance row counts cases, so only a reader of them sees it.
+    assert (found["post_issuance"].required_action, found["post_issuance"].action_scope) == (
+        "post_issuance.read",
+        "engagement",
+    )
+    guarded = {"methodology", "sample_selection", "post_issuance"} | designed | group
     assert all(s.required_action is None for k, s in found.items() if k not in guarded)
 
 
