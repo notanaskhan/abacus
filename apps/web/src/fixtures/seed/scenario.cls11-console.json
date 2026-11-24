@@ -1,0 +1,192 @@
+{
+  "scenario": "bh-2026.10.3",
+  "slice": "cas_delivery",
+  "snapshot": "E0",
+  "client": "Copperleaf Coffee Roasters, Inc.",
+  "tiles": {
+    "posted": 7,
+    "proposed": 1,
+    "failed_post": 0,
+    "resolved_failures": 1,
+    "closing_date": "2026-07-31"
+  },
+  "connection": {
+    "health": "connected",
+    "company_name": "Copperleaf Coffee Roasters",
+    "authorized_by": "Tess Moreno",
+    "authorized_at": "2026-03-09T00:00:00-05:00",
+    "write_granted": true,
+    "last_sync_at": "2026-09-14T09:02:00-05:00",
+    "last_sync_transactions": 1214,
+    "last_sync_errors": 0,
+    "next_sync_at": "2026-09-14T10:02:00-05:00",
+    "closing_date": "2026-07-31",
+    "closing_date_set_by": "Raj Malhotra",
+    "closing_date_set_at": "2026-08-11T14:42:00-05:00",
+    "dependents": [
+      "Close agent",
+      "Close Planner",
+      "1099 vendor screen"
+    ]
+  },
+  "batches": [
+    {
+      "batch_code": "2026-08-A",
+      "period": "2026-08",
+      "status": "proposed",
+      "entry_count": 5,
+      "approved_count": 0,
+      "first_external_ref": null,
+      "last_external_ref": null,
+      "resolved_failures": 0,
+      "amount": "34920.00",
+      "posted_at": null,
+      "posted_by": null
+    },
+    {
+      "batch_code": "2026-07-A",
+      "period": "2026-07",
+      "status": "posted",
+      "entry_count": 6,
+      "approved_count": 6,
+      "first_external_ref": "47602",
+      "last_external_ref": "47607",
+      "resolved_failures": 1,
+      "amount": "31480.00",
+      "posted_at": "2026-08-11T14:41:00-05:00",
+      "posted_by": "Raj Malhotra"
+    },
+    {
+      "batch_code": "2026-06-A",
+      "period": "2026-06",
+      "status": "posted",
+      "entry_count": 5,
+      "approved_count": 5,
+      "first_external_ref": "46955",
+      "last_external_ref": "46959",
+      "resolved_failures": 0,
+      "amount": "27915.00",
+      "posted_at": "2026-07-10T11:05:00-05:00",
+      "posted_by": "Raj Malhotra"
+    },
+    {
+      "batch_code": "2026-05-A",
+      "period": "2026-05",
+      "status": "posted",
+      "entry_count": 5,
+      "approved_count": 5,
+      "first_external_ref": "46310",
+      "last_external_ref": "46314",
+      "resolved_failures": 0,
+      "amount": "26340.00",
+      "posted_at": "2026-06-10T15:18:00-05:00",
+      "posted_by": "Raj Malhotra"
+    },
+    {
+      "batch_code": "2026-04-A",
+      "period": "2026-04",
+      "status": "posted",
+      "entry_count": 5,
+      "approved_count": 5,
+      "first_external_ref": "45663",
+      "last_external_ref": "45667",
+      "resolved_failures": 0,
+      "amount": "25075.00",
+      "posted_at": "2026-05-11T13:36:00-05:00",
+      "posted_by": "Raj Malhotra"
+    },
+    {
+      "batch_code": "2026-03-A",
+      "period": "2026-03",
+      "status": "posted",
+      "entry_count": 5,
+      "approved_count": 5,
+      "first_external_ref": "45024",
+      "last_external_ref": "45028",
+      "resolved_failures": 0,
+      "amount": "24410.00",
+      "posted_at": "2026-04-10T10:48:00-05:00",
+      "posted_by": "Raj Malhotra"
+    },
+    {
+      "batch_code": "2026-02-A",
+      "period": "2026-02",
+      "status": "posted",
+      "entry_count": 5,
+      "approved_count": 5,
+      "first_external_ref": "44719",
+      "last_external_ref": "44723",
+      "resolved_failures": 0,
+      "amount": "21935.00",
+      "posted_at": "2026-03-27T14:55:00-05:00",
+      "posted_by": "Raj Malhotra"
+    },
+    {
+      "batch_code": "2026-01-A",
+      "period": "2026-01",
+      "status": "posted",
+      "entry_count": 5,
+      "approved_count": 5,
+      "first_external_ref": "44568",
+      "last_external_ref": "44572",
+      "resolved_failures": 0,
+      "amount": "22860.00",
+      "posted_at": "2026-03-20T16:12:00-05:00",
+      "posted_by": "Raj Malhotra"
+    }
+  ],
+  "august_posted": {
+    "batch_code": "2026-08-A",
+    "period": "2026-08",
+    "status": "posted",
+    "entry_count": 6,
+    "approved_count": 6,
+    "first_external_ref": "48213",
+    "last_external_ref": "48218",
+    "resolved_failures": 0,
+    "amount": "35300.00",
+    "posted_at": "2026-09-14T10:22:00-05:00",
+    "posted_by": "Raj Malhotra"
+  },
+  "failures": [
+    {
+      "at": "2026-08-11T14:38:00-05:00",
+      "batch_code": "2026-07-A",
+      "entry_ref": "AJE-03",
+      "entry_description": "Depreciation",
+      "provider_message": "QuickBooks Online: account 'Accumulated Depreciation' is inactive",
+      "resolved_at": "2026-08-11T14:41:00-05:00",
+      "resolved_by": "Raj Malhotra"
+    }
+  ],
+  "activity": [
+    {
+      "at": "2026-09-14T09:02:00-05:00",
+      "kind": "sync",
+      "count": 1214
+    },
+    {
+      "at": "2026-09-14T08:02:00-05:00",
+      "kind": "sync",
+      "count": 1209
+    },
+    {
+      "at": "2026-08-11T14:42:00-05:00",
+      "kind": "closing_date",
+      "actor_name": "Raj Malhotra"
+    },
+    {
+      "at": "2026-08-11T14:41:00-05:00",
+      "kind": "post",
+      "batch_code": "2026-07-A",
+      "count": 6,
+      "actor_name": "Raj Malhotra"
+    },
+    {
+      "at": "2026-08-11T14:38:00-05:00",
+      "kind": "sync_failed",
+      "batch_code": "2026-07-A",
+      "entry_ref": "AJE-03"
+    }
+  ]
+}

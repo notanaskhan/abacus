@@ -411,3 +411,34 @@ async def template_draft(
         return None
     rendered = _render(registration, found.content, values, 600)
     return TemplateDraft(found.version_id, rendered.subject, rendered.text)
+
+
+@dataclass(frozen=True)
+class FilledPreview:
+    """The email a templated send would queue now, for a confirm dialog (C-02-T35)."""
+
+    version_id: UUID
+    rendered: RenderedEmail
+    from_display: str
+    from_address: str
+
+
+async def filled_preview(
+    tenant: TenantContext, key: str, values: Mapping[str, str], width: Width = 600
+) -> FilledPreview | None:
+    """C-02-T35 (CLS-11 d: "Request reconnect…" shows the POR-20 email before it goes; DEC-5924):
+    the version `send_templated` would use now (the firm's published one, else the platform
+    default) rendered with the send's own values at 600 or 390; None when the key has no version
+    (the send is then recorded `blocked`). The caller authorised the act it previews; nothing is
+    sent or recorded here, and the send still runs the value lint, scope and suppression."""
+    registration = editable(key)
+    async with tenant_session(tenant) as session:
+        found = await template_store.resolve(session, tenant.tenant_id, key)
+    if found is None or found.content is None:
+        return None
+    return FilledPreview(
+        found.version_id,
+        _render(registration, found.content, values, width),
+        await firm_name(tenant.tenant_id),
+        settings().ses_from_address or "",
+    )

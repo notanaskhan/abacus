@@ -30,8 +30,11 @@ def test_ac_a_forced_401_reads_needs_reauth() -> None:
 
 
 def test_ac_tiles_read_7_posted_1_proposed_and_jul_31() -> None:
+    # January to July, one batch each (C-02-T35, DEC-5924: the tiles count batches, so the
+    # entries of a batch never inflate "7 Posted").
+    months = [_row(f"2026-0{m}-A", "posted", 5) for m in range(1, 7)]
     facts = lc.PostingFacts(
-        (_row("2026-07-A", "posted", 7, failures=1, resolved=1),),
+        (_row("2026-07-A", "posted", 6, failures=1, resolved=1), *months),
         1,
         lc.ClosingDate(date(2026, 7, 31), None, CT),
     )

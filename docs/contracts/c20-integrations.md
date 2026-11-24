@@ -231,3 +231,12 @@ tags 65; E2 55 = 9 + 40 + 6, tags 67; CCH detail with 224 linked returns, five e
 | `POST /v1/portal/connections/{cid}/write-grants` · `DELETE …/write-grants/current` | `connection.grant_write` / `revoke_write` | client owner, `scope_only`, fresh MFA; consent copy `por16.qbo.post_entries.v2`; attest refused (trigger) |
 
 The connection stays read-only (CONN-001): a grant is a consent record. **Write scope** on CLS-11 reads "Journal entries · closing date" (SPEC-700 Q2). Seed: connection Mar 4, 2026; write grant Mar 9, 2026 (Q16).
+
+## C-02-T35 additive fields (DEC-5924)
+
+- `W1PostingLogRowOut`: `amount` (confidential decimal), `posted_at`, `posted_by` (the runner's name, read now).
+- `W1ConnectionPaneOut`: `authorized_at` (the write grant's time), `status_reason` (only while needs attention), `last_failed_at`, `reconnect_requested_at`, `company_name` (the connection's display label).
+- `W1LedgerConsoleOut.failures`: `W1PostingFailureOut` rows (`at`, `batch_code`, `entry_ref`, `entry_description`, `provider_message` — client-system text, render as text only — `resolved_at`, `resolved_by`).
+- `W1ActivityOut.entry_ref`; `provider_code` now carries a failed run's code. Sync events read the connection's finished runs on the person's readable engagements.
+- The tiles count batches, not entries.
+- `GET /v1/connections/{connection_id}/reconnect-requests/preview` → `ReconnectPreviewOut` (`recipients`, `template_missing`, `subject`, `html`, `text`, `from_display`): `connection.reconnect_request`, the request's own authorisation, reads only.

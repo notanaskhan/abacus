@@ -15,7 +15,9 @@ dates are `internal`. Seed examples are Copperleaf's console at 9:24 AM, Sep 14,
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Annotated, Literal, cast
 from uuid import UUID
 
@@ -27,7 +29,13 @@ from abacus.kernel._flags import CLOSES_GL_CONSOLE
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
-from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    Forbidden,
+    current_context,
+    names_of,
+)
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 Internal = classified("internal")
@@ -84,6 +92,31 @@ class W1ConnectionPaneOut(BaseModel):
     closing_date_set_at: Annotated[datetime | None, Internal] = None
     retry_at: Annotated[datetime | None, Internal] = None
     dependents: Annotated[list[str], Internal] = []
+    # C-02-T35 (additive, DEC-5924): the grant's date ("Tess Moreno (client portal) · Mar 9,
+    # 2026"), the needs-attention reason code ("rate_limited"), the failed sync's time (CLS-11c)
+    # and the open reconnect request's time (CLS-11d2).
+    authorized_at: Annotated[datetime | None, Internal] = None
+    status_reason: Annotated[str | None, Field(max_length=64), Internal] = None
+    last_failed_at: Annotated[datetime | None, Internal] = None
+    reconnect_requested_at: Annotated[datetime | None, Internal] = None
+    # The company name QuickBooks Online reports (CLS-11 "Company — Copperleaf Coffee Roasters").
+    company_name: Annotated[str | None, Field(max_length=200), Confidential] = None
+
+
+class W1PostingFailureOut(BaseModel):
+    """CLS-11's Failures band: "Aug 11, 2:38 PM · 2026-07-A · AJE-03 Depreciation" over the
+    provider's redacted message (client-system text, ADR-052: shown as text only), and when a
+    later attempt posted the entry, its time and the person who ran it (C-02-T35, DEC-5924)."""
+
+    model_config = _cfg()
+
+    at: Annotated[datetime, Internal]
+    batch_code: Annotated[str, Field(pattern=r"^[0-9]{4}-[0-9]{2}-[A-Z]$"), Internal]
+    entry_ref: Annotated[str, Field(max_length=12), Internal]
+    entry_description: Annotated[str | None, Field(max_length=500), Confidential] = None
+    provider_message: Annotated[str | None, Field(max_length=500), Confidential] = None
+    resolved_at: Annotated[datetime | None, Internal] = None
+    resolved_by: Annotated[str | None, Field(max_length=200), Confidential] = None
 
 
 class W1LedgerConsoleOut(BaseModel):
@@ -95,6 +128,7 @@ class W1LedgerConsoleOut(BaseModel):
     tiles: Annotated[W1ConsoleTilesOut, Internal]
     connection: Annotated[W1ConnectionPaneOut | None, Internal] = None
     posting_paused_by: Annotated[str | None, Field(max_length=200), Confidential] = None
+    failures: Annotated[list[W1PostingFailureOut], Internal] = []
 
 
 class W1PostingLogRowOut(BaseModel):
@@ -115,6 +149,10 @@ class W1PostingLogRowOut(BaseModel):
     first_external_ref: Annotated[str | None, Internal] = None
     last_external_ref: Annotated[str | None, Internal] = None
     resolved_failures: Annotated[int, Field(ge=0), Internal] = 0
+    # C-02-T35 (additive, DEC-5924): the batch total ("$31,480.00"), when it posted and who ran it.
+    amount: Annotated[Decimal | None, Confidential] = None
+    posted_at: Annotated[datetime | None, Internal] = None
+    posted_by: Annotated[str | None, Field(max_length=200), Confidential] = None
 
 
 class W1PostingLogOut(BaseModel):
@@ -135,6 +173,8 @@ class W1ActivityOut(BaseModel):
     count: Annotated[int | None, Field(ge=0), Internal] = None
     actor_name: Annotated[str | None, Field(max_length=200), Confidential] = None
     provider_code: Annotated[str | None, Field(max_length=64), Internal] = None
+    # C-02-T35 (additive, DEC-5924): the failed attempt's entry ("Failed post AJE-03").
+    entry_ref: Annotated[str | None, Field(max_length=12), Internal] = None
 
 
 class W1ActivityListOut(BaseModel):
@@ -238,10 +278,11 @@ w1_portal_router = AbacusRouter(prefix="/v1/portal", tags=["connections"])
 _E = "/client-entities/{client_entity_id}"
 
 
-def _log_row(r: object) -> W1PostingLogRowOut:
+def _log_row(r: object, names: Mapping[UUID, str] | None = None) -> W1PostingLogRowOut:
     from abacus.modules.integrations.ledger_console import LogRow
 
     row = cast(LogRow, r)
+    by = None if row.posted_by is None or names is None else names.get(row.posted_by)
     return W1PostingLogRowOut(
         batch_id=row.batch_id,
         batch_code=row.batch_code,
@@ -252,7 +293,17 @@ def _log_row(r: object) -> W1PostingLogRowOut:
         first_external_ref=row.first_external_ref,
         last_external_ref=row.last_external_ref,
         resolved_failures=row.resolved_failures,
+        amount=row.amount,
+        posted_at=row.posted_at,
+        posted_by=by,
     )
+
+
+async def _log_names(rows: Sequence[object]) -> dict[UUID, str]:
+    from abacus.modules.integrations.ledger_console import LogRow
+
+    people = sorted({cast(LogRow, r).posted_by for r in rows} - {None}, key=str)
+    return dict(await names_of([p for p in people if p is not None])) if people else {}
 
 
 async def _console_on(ctx: AuthContext) -> None:
@@ -294,6 +345,7 @@ async def ledger_console_route(client_entity_id: UUID, ctx: Ctx) -> W1LedgerCons
         connection=None
         if found.connection is None
         else W1ConnectionPaneOut.model_validate(found.connection),
+        failures=[W1PostingFailureOut.model_validate(f) for f in found.failures],
     )
 
 
@@ -314,7 +366,8 @@ async def posting_log_route(
 
     await _console_on(ctx)
     rows = await lc.posting_log(ctx, client_entity_id, period=period, status=status)
-    return W1PostingLogOut(items=[_log_row(r) for r in rows], total=len(rows))
+    names = await _log_names(rows)
+    return W1PostingLogOut(items=[_log_row(r, names) for r in rows], total=len(rows))
 
 
 @w1_router.get(
@@ -357,6 +410,8 @@ async def ledger_activity_route(
                 batch_code=a.batch_code,
                 count=a.count,
                 actor_name=name,
+                provider_code=a.provider_code,
+                entry_ref=a.entry_ref,
             )
             for a, name in found
         ],
@@ -376,7 +431,8 @@ async def posting_batch_route(batch_id: UUID, ctx: Ctx) -> W1PostingLogRowOut:
     from abacus.modules.integrations import ledger_console as lc
 
     await _console_on(ctx)
-    return _log_row(await lc.posting_batch(ctx, batch_id))
+    row = await lc.posting_batch(ctx, batch_id)
+    return _log_row(row, await _log_names([row]))
 
 
 @w1_router.post(

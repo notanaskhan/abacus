@@ -37,12 +37,26 @@ function AdjustmentsBody({
   onFlux: () => void;
 }): JSX.Element {
   const summary = useQuery(closeSummaryOptions({ path: { close_id: closeId } }));
+  const navigate = useNavigate();
+  const data = summary.data;
   return (
     <Adjustments
       workItemId={closeId}
-      periodLabel={summary.data ? monthYear(summary.data.period) : ""}
+      periodLabel={data ? monthYear(data.period) : ""}
       onIssues={onIssues}
       onFlux={onFlux}
+      // C-02-T35: CLS-07d "View in ledger sync ›" opens CLS-11 for the close's entity.
+      onLedgerSync={
+        data?.client_entity_id
+          ? () => {
+              void navigate({
+                to: "/clients/$clientId/entities/$entityId/ledger",
+                params: { clientId: data.client_id, entityId: data.client_entity_id ?? "" },
+                search: { close: closeId },
+              });
+            }
+          : undefined
+      }
     />
   );
 }
@@ -328,6 +342,68 @@ export const closePlanRoute = createRoute({
   },
 });
 
+// C-02-T35: CLS-11, a client entity's ledger sync console, in the Closes area behind
+// `closes.gl_console`. `?close=` names the close it was opened from (the back chip), `?log=events`
+// opens the Sync events segment (a2) and `?reconnect=1` the reconnect confirm (d2).
+const LedgerConsole = lazyScreen(async () => (await import("../../screens/CLS-11")).CLS11);
+
+interface LedgerSearch {
+  close?: string;
+  log?: "events";
+  reconnect?: true;
+}
+
+function validateLedgerSearch(search: Record<string, unknown>): LedgerSearch {
+  const out: LedgerSearch = {};
+  if (typeof search.close === "string" && search.close !== "") out.close = search.close;
+  if (search.log === "events") out.log = "events";
+  if (search.reconnect === true || search.reconnect === "1" || search.reconnect === 1) {
+    out.reconnect = true;
+  }
+  return out;
+}
+
+export const ledgerConsoleRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/clients/$clientId/entities/$entityId/ledger",
+  validateSearch: validateLedgerSearch,
+  component: function LedgerConsolePage(): JSX.Element {
+    const enabled = useFlag("closes.gl_console") === true;
+    const { clientId, entityId } = ledgerConsoleRoute.useParams();
+    const search = ledgerConsoleRoute.useSearch();
+    const navigate = useNavigate();
+    if (!enabled) {
+      return (
+        <div data-screen="CLS-11" className="flex min-h-0 flex-1 flex-col">
+          <FlagOffState flag="closes.gl_console" label="Ledger sync" />
+        </div>
+      );
+    }
+    const close = search.close;
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <LedgerConsole
+          clientEntityId={entityId}
+          closeId={close}
+          log={search.log === "events" ? "events" : "batches"}
+          reconnectOpen={search.reconnect === true}
+          onLog={(log) => {
+            void navigate({
+              to: "/clients/$clientId/entities/$entityId/ledger",
+              params: { clientId, entityId },
+              search: {
+                ...(close === undefined ? {} : { close }),
+                ...(log === "events" ? { log } : {}),
+              },
+              replace: true,
+            });
+          }}
+        />
+      </div>
+    );
+  },
+});
+
 export const closeRoutes = [
   closesIndexRoute,
   closeOverviewRoute,
@@ -340,4 +416,5 @@ export const closeRoutes = [
   closeDeliverablesRoute,
   closeUnknownTabRoute,
   closePlanRoute,
+  ledgerConsoleRoute,
 ] as const;

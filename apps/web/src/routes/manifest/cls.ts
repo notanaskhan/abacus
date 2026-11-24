@@ -55,8 +55,8 @@ export const clsScreens = {
   },
   "CLS-11": {
     name: "GL sync console · Copperleaf · QuickBooks Online",
-    status: "planned",
-    path: null,
+    status: "live", // C-02-T35: a, a2, c, d, d2 on the C20 W1 reads (b, b2, e with C-02's later rows)
+    path: "/clients/$clientId/entities/$entityId/ledger",
   },
   "CLS-12": {
     name: "Handoff to tax · Copperleaf December 2026 close → 2026 Form 1120-S",

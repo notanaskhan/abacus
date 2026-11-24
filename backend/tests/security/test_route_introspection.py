@@ -247,6 +247,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/confirmations/{confirmation_id}", "confirmation.read"),
     ("GET", "/v1/confirmations/{confirmation_id}/respondent-preview", "confirmation.read"),
     ("GET", "/v1/conflict-checks/{check_id}", "conflict.run"),
+    (
+        "GET",
+        "/v1/connections/{connection_id}/reconnect-requests/preview",
+        "connection.reconnect_request",
+    ),
     ("GET", "/v1/consents", "consent.read"),
     ("GET", "/v1/consents/summary", "consent.read"),
     ("GET", "/v1/consents/{consent_id}", "consent.read"),

@@ -159,7 +159,12 @@ from abacus.modules.communications.sink import (
 )
 from abacus.modules.communications.template_import import BundleEntry as EmailTemplateBundleEntry
 from abacus.modules.communications.template_import import import_bundle as import_email_templates
-from abacus.modules.communications.template_preview import TemplateDraft, template_draft
+from abacus.modules.communications.template_preview import (
+    FilledPreview,
+    TemplateDraft,
+    filled_preview,
+    template_draft,
+)
 from abacus.modules.communications.template_registry import (
     VARIABLES as TEMPLATE_VARIABLES,
 )
@@ -319,6 +324,7 @@ __all__ = [
     "EmailTemplateRegistration",
     "FakeSesEventQueue",
     "FakeSesTransport",
+    "FilledPreview",
     "FlagView",
     "FolderDestination",
     "FollowUpPolicy",
@@ -394,6 +400,7 @@ __all__ = [
     "drain_ses_events",
     "email_template_state",
     "engagement_display_name",
+    "filled_preview",
     "first_tick_on_or_after",
     "follow_up_policy",
     "import_email_templates",

@@ -393,6 +393,44 @@ async def _activity(ctx: AuthContext, connection_id: UUID) -> list[ActivityLine]
     return lines
 
 
+@dataclass(frozen=True)
+class FinishedRun:
+    finished_at: datetime
+    status: str  # succeeded | failed | failed_validation
+    failure_code: str | None
+
+
+async def finished_runs(
+    ctx: AuthContext, entity_id: UUID, connection_id: UUID, limit: int = 24
+) -> list[FinishedRun]:
+    """CLS-11 a2's sync events (C-02-T35, DEC-5924): the connection's finished runs, newest
+    first, only on engagements the person may read (walls hold across an entity, review L7)."""
+    from sqlalchemy import select
+
+    readable = await readable_engagements(ctx, entity_id)
+    if not readable:
+        return []
+    async with tenant_session(ctx.tenant) as session:
+        rows = await session.execute(
+            select(SyncRun.finished_at, SyncRun.status, SyncRun.failure_code)
+            .where(
+                SyncRun.connection_id == connection_id,
+                SyncRun.client_entity_id == entity_id,
+                SyncRun.engagement_id.in_(readable),
+                SyncRun.finished_at.is_not(None),
+            )
+            .order_by(SyncRun.finished_at.desc(), SyncRun.id.desc())
+            .limit(limit)
+        )
+    return [FinishedRun(at, status, code) for at, status, code in rows.all() if at is not None]
+
+
+async def provider_of(ctx: AuthContext, connection_id: UUID) -> str:
+    """The connection's provider (C-02-T35's reconnect preview), for a caller that already
+    authorised on its entity; `NotFound` otherwise."""
+    return (await _connection(ctx, connection_id)).provider
+
+
 async def entity_of_connection(ctx: AuthContext, connection_id: UUID) -> UUID:
     """The connection's client entity, for a caller about to authorise on it (`NotFound`
     otherwise); never shown to the caller before that."""
