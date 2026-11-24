@@ -242,3 +242,120 @@ INSERT_COLUMNS["tax_handoffs"] = frozenset(
 # The tables this module owns and its insert-only tables, after S50 (one definition each).
 TABLES: frozenset[str] = _TABLES_PRE_S50 | C02T16_TABLES
 INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1
+
+# C-02-T38 (1013, TASK-8904): information returns; TINs sealed (ADR-167)
+TABLES = TABLES | frozenset(
+    {
+        "backup_withholding_events",
+        "information_return_batches",
+        "information_returns",
+        "tin_match_results",
+        "vendor_payment_rollups",
+        "vendors_1099",
+        "w9_requests",
+    }
+)
+INSERT_ONLY = INSERT_ONLY | frozenset(
+    {"backup_withholding_events", "information_returns", "tin_match_results", "w9_requests"}
+)
+INSERT_COLUMNS["backup_withholding_events"] = frozenset(
+    {
+        "event",
+        "evidence_version_id",
+        "notice_received_on",
+        "rate_percent",
+        "reason",
+        "recorded_by",
+        "tenant_id",
+        "vendor_id",
+    }
+)
+INSERT_COLUMNS["information_return_batches"] = frozenset(
+    {"client_entity_id", "due_on", "id", "tax_year", "tenant_id"}
+)
+UPDATE_COLUMNS["information_return_batches"] = frozenset(
+    {
+        "ack_at",
+        "ack_evidence_version_id",
+        "ack_recorded_by",
+        "approved_at",
+        "approved_by",
+        "due_on",
+        "exported_at",
+        "exported_by",
+        "filed_at",
+        "filed_evidence_version_id",
+        "filed_on",
+        "filed_recorded_by",
+        "iris_file_document_id",
+        "iris_file_sha256",
+        "iris_receipt_id",
+        "status",
+        "version",
+    }
+)
+INSERT_COLUMNS["information_returns"] = frozenset(
+    {"amount", "batch_id", "box", "form", "tenant_id", "threshold_ref", "vendor_id"}
+)
+INSERT_COLUMNS["tin_match_results"] = frozenset(
+    {"checked_on", "evidence_version_id", "recorded_by", "result", "tenant_id", "vendor_id"}
+)
+INSERT_COLUMNS["vendor_payment_rollups"] = frozenset(
+    {
+        "amount",
+        "client_entity_id",
+        "method",
+        "source_snapshot_id",
+        "tax_year",
+        "tenant_id",
+        "txn_count",
+        "vendor_id",
+    }
+)
+UPDATE_COLUMNS["vendor_payment_rollups"] = frozenset(
+    {"amount", "computed_at", "source_snapshot_id", "txn_count"}
+)
+INSERT_COLUMNS["vendors_1099"] = frozenset(
+    {
+        "client_entity_id",
+        "display_name",
+        "entity_type",
+        "entity_type_source",
+        "external_vendor_id",
+        "id",
+        "is_attorney",
+        "tenant_id",
+    }
+)
+UPDATE_COLUMNS["vendors_1099"] = frozenset(
+    {
+        "backup_withholding",
+        "display_name",
+        "entity_type",
+        "entity_type_source",
+        "exempt_reason",
+        "is_attorney",
+        "tin_fingerprint",
+        "tin_kind",
+        "tin_last4",
+        "tin_sealed",
+        "updated_at",
+        "updated_by",
+        "version",
+        "w9_evidence_version_id",
+        "w9_signed_on",
+        "w9_status",
+    }
+)
+INSERT_COLUMNS["w9_requests"] = frozenset(
+    {
+        "channel",
+        "client_entity_id",
+        "id",
+        "request_item_ids",
+        "sent_by",
+        "tenant_id",
+        "vendor_ids",
+        "wording_template_version_id",
+    }
+)
