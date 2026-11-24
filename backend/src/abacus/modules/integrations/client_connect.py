@@ -196,9 +196,6 @@ def _card(
     )
 
 
-_CONSENT_FIELDS = ("version", "title", "will", "wont", "authorization", "continue_label")
-
-
 async def _write_scope(
     ctx: AuthContext,
     entry: CatalogEntry,
@@ -234,7 +231,10 @@ async def _write_scope(
     may = await allowed_actions(
         ctx, ref.resource(), ["connection.grant_write", "connection.revoke_write"]
     )
-    consent = PortalWriteConsentOut.model_validate({k: copy[k] for k in _CONSENT_FIELDS})
+    # The consent sheet's fields are the out-model's own (the catalogue copy carries `write` too).
+    consent = PortalWriteConsentOut.model_validate(
+        {k: copy[k] for k in PortalWriteConsentOut.model_fields}
+    )
     latest = await w1.latest_grant(ctx.tenant, c.id)
     if latest is None or latest.event != "granted":
         return PortalWriteScopeOut(

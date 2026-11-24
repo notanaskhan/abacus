@@ -141,7 +141,7 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // standards_run_item 5, check_result 4, variance_explanation 4, planning_opportunity 6,
     // amendment 3) and Q-05 19 (post_issuance_case 4, inspection 3, qm_finding 3,
     // annual_evaluation 2, destruction_batch 5, quality_import 2).
-    expect(ROWS).toHaveLength(1076); // S52: F-08-T04 and K-03-T07 codes (34); DEC-2264: ebp_test_result.agent_tested; A-05-T42: four loan rows; S45: A-08, A-09, W-01 rows (50)
+    expect(ROWS).toHaveLength(1078); // S53: C-02-T41 close_deliverable.declined_by_client, client_approval_item.posted (DEC-5927); S52: F-08-T04 and K-03-T07 codes (34); DEC-2264: ebp_test_result.agent_tested; A-05-T42: four loan rows; S45: A-08, A-09, W-01 rows (50)
   });
 
   it("resolves each code to a word, a kit variant or a line, and never to match", () => {

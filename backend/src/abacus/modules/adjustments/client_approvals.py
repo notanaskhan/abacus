@@ -68,17 +68,21 @@ _ONE = text(_ONE_SQL)
 # C-02-T41 (DEC-5927): entries the firm posted for a non-attest client (C8 v2's posted state),
 # shown read-only on POR-08's "Entries posted for August" card: never an attest client's, whose
 # entries are the client's own to record (DF-19). Released is the batch's post.
-_POSTED = (
+_POSTED_ON_SCOPE = text(
     "SELECT e.id, e.engagement_id, e.work_item_id, e.ref, e.description, e.amount, e.status, "
     "e.version, e.is_attest_client, e.misstatement_id, b.posted_by_user_id::text AS released_by, "
     "b.posted_at AS released_at FROM proposed_entries e "
     "JOIN posting_batches b ON b.id = e.posting_batch_id "
-    "WHERE e.status = 'posted' AND NOT e.is_attest_client"
+    "WHERE e.status = 'posted' AND NOT e.is_attest_client "
+    "AND (e.work_item_id = :scope OR e.engagement_id = :scope) ORDER BY e.ref"
 )
-_POSTED_ON_SCOPE = text(
-    _POSTED + " AND (e.work_item_id = :scope OR e.engagement_id = :scope) ORDER BY e.ref"
+_POSTED_ONE = text(
+    "SELECT e.id, e.engagement_id, e.work_item_id, e.ref, e.description, e.amount, e.status, "
+    "e.version, e.is_attest_client, e.misstatement_id, b.posted_by_user_id::text AS released_by, "
+    "b.posted_at AS released_at FROM proposed_entries e "
+    "JOIN posting_batches b ON b.id = e.posting_batch_id "
+    "WHERE e.status = 'posted' AND NOT e.is_attest_client AND e.id = :id"
 )
-_POSTED_ONE = text(_POSTED + " AND e.id = :id")
 _LINES = text(
     "SELECT entry_id, line_no, account_code, account_name, debit, credit "
     "FROM proposed_entry_lines WHERE entry_id = ANY(:ids) ORDER BY entry_id, line_no"

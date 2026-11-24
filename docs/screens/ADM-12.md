@@ -23,6 +23,7 @@ Parity tier target: C (Q-05 §5.5). Copy keys live in `apps/web/src/screens/ADM-
 | g | Finding detail · actions | `qm_e0` | Margaret Okonkwo | Mon 14 Sep 2026, 9:24 AM | planned | AY |
 
 ## Deviations
+- S53 end pass: the handoff's "Add remediation task…" reads "Add remediation to-do…" (the copy lint bans "task" for a to-do; glossary).
 - Q-05-T23 (DEC-5935): built a–g at `/settings/monitoring` behind `quality.management`; copy in `screens/ADM-12/copy.ts`, scenarios in `fixtures/scenarios/ADM-12.ts` over the seed `fixtures/seed/adm12.ts` (footings in `adm12.foot.test.ts`). The plan's nine columns are 84/230/150/70/76/220/70/140/64 = 1,104 px. d's clock reads Dec 14, 2026 (the artboard's label) and its evaluation has no open inspection, so Conclude is enabled there; a, b, c, e and g keep it disabled with "Available once all planned inspections conclude."
 - Q-05-T23: tax rows open TAX-02 on the inspection's work item; audit rows wait for AUD-25's route (DV-8). FIL-01 → ADM-12 is unwired (the files drawer has no QM-finding link kind), so the manifest stays planned.
 - DV-8: inspection rows open AUD-25 or TAX-02 in read-only inspector mode (banner undesigned, inferred).

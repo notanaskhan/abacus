@@ -138,6 +138,33 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "an also-required row's `key` names the release check (governance_260), never a"
         " credential (S35 follow-up, TASK-6741)",
     ),
+    # S53 end pass (TASK-8952): `key` and `line_key` fields name lines, checks and rules.
+    (
+        "apps/web/src/fixtures/seed/scenario.aud38.json",
+        "SECRET-003",
+        "a tax item's `key` names it (passed_aje_3), never a credential (T-06-T45, DEC-5937)",
+    ),
+    (
+        "apps/web/src/fixtures/seed/scenario.tax10.json",
+        "SECRET-003",
+        "a two-year line's `line_key` names the form line (1040.25d), never a credential"
+        " (T-08-T22, DEC-5938)",
+    ),
+    (
+        "apps/web/src/fixtures/seed/templates-v2.ts",
+        "SECRET-003",
+        "a skill's `key` names it (BH-SK-430), never a credential (K-03-T15, DEC-5933)",
+    ),
+    (
+        "backend/tests/unit/tax/test_t06t44_form_pages.py",
+        "SECRET-003",
+        "a field's `line_key` names the form line (1065.item_e), never a credential (T-06-T44)",
+    ),
+    (
+        "backend/tests/unit/tax/test_t08t19_planning.py",
+        "SECRET-003",
+        "a planning rule's `key` names the rule and its hash, never a credential (T-08-T19)",
+    ),
     (
         "apps/web/src/fixtures/seed/scenario.cls08-package.json",
         "SECRET-003",

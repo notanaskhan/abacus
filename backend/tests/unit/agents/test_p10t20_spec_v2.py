@@ -182,5 +182,6 @@ def test_v1_specs_load_unchanged_and_v2_holds_only_the_drafter_until_t40() -> No
         "tax.instrument_reader",  # T-07-T13 (DEC-5027)
         "ledger.tb_mapper",  # A-09-T29 (TASK-8412)
         "consolidation.elimination_proposer",  # A-09-T34 (TASK-8522, DEC-5522)
+        "assurance.post_issuance_analysis",  # Q-05-T22 (DEC-5911)
     }
     assert agent_specs_v2.main(["--check"]) == 0

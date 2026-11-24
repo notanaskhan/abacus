@@ -33,8 +33,10 @@ pytestmark = pytest.mark.asyncio
 
 TESS = uuid4()
 SEP14_1022 = datetime(2026, 9, 14, 15, 22, tzinfo=UTC)
-write_scope = cast(Callable[..., Awaitable[Any]], cc._write_scope)  # pyright: ignore[reportPrivateUsage]
-writes = cast(Callable[..., Awaitable[Any]], cc._writes)  # pyright: ignore[reportPrivateUsage]
+_write_scope_impl = cc._write_scope  # pyright: ignore[reportPrivateUsage]  -- the unit under test
+write_scope = cast(Callable[..., Awaitable[Any]], _write_scope_impl)  # Any: its loose test shape
+_writes_impl = cc._writes  # pyright: ignore[reportPrivateUsage]  -- the unit under test
+writes = cast(Callable[..., Awaitable[Any]], _writes_impl)  # Any: its loose test shape
 
 
 CATALOGUE = Path(connect_catalog.__file__).parents[2].parent / "abacus_tools" / "catalogue"

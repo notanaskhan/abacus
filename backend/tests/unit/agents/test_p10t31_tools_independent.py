@@ -187,6 +187,10 @@ INDIRECT: dict[str, str] = {
     "assurance.suggest_account_mappings": (
         "the mapping set's engagement must be the run's, else 404"
     ),
+    # C-02-T34 (DEC-5908): the vendor's client entity must sit on the run's engagement (_on_run).
+    "close.read_vendor_facts": "the vendor's engagement must be the run's, else 404",
+    "close.read_vendor_document": "the vendor's engagement must be the run's, else 404",
+    "close.propose_vendor_classification": "the vendor's engagement must be the run's, else 404",
 }
 
 

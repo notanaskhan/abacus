@@ -5,6 +5,7 @@ told; after the close is reopened and locked again, TB v2 supersedes v1."""
 
 from __future__ import annotations
 
+import json
 import uuid
 from collections.abc import AsyncIterator
 from typing import cast
@@ -79,22 +80,20 @@ async def _return(
 
 
 async def _ledger(firm: _Firm, entity: uuid.UUID) -> None:
-    snapshot = await firm.seed.value(
-        "INSERT INTO ledger_snapshots (tenant_id, client_entity_id, period_start, period_end, "
-        "pulled_at, source, raw_fingerprint, line_count, total_debit, total_credit) VALUES ($1, "
-        "$2, '2026-01-01', '2026-12-31', now(), 'import', md5(random()::text) || "
-        "md5(random()::text), 3, 300000, 300000) RETURNING id",
+    # Lines join a snapshot only in the transaction that wrote it (ADR-004's trigger): one
+    # statement writes the header and its three lines.
+    await firm.seed.run(
+        "WITH s AS (INSERT INTO ledger_snapshots (tenant_id, client_entity_id, period_start, "
+        "period_end, pulled_at, source, raw_fingerprint, line_count, total_debit, total_credit) "
+        "VALUES ($1, $2, '2026-01-01', '2026-12-31', now(), 'import', md5(random()::text) || "
+        "md5(random()::text), 3, 300000, 300000) RETURNING id) "
+        "INSERT INTO trial_balance_lines (tenant_id, snapshot_id, account_code, account_name, "
+        "debit, credit, source_ref) SELECT $1, s.id, l.code, l.name, l.debit, l.credit, "
+        "'{}'::jsonb FROM s, (VALUES ('1000', 'Cash', 156000, 0), "
+        "('3100', 'Shareholder distributions', 144000, 0), ('4000', 'Sales', 0, 300000)) "
+        "AS l (code, name, debit, credit)",
         firm.tenant, entity,
     )  # fmt: skip
-    for code, name, debit, credit in (
-        ("1000", "Cash", 156000, 0), ("3100", "Shareholder distributions", 144000, 0),
-        ("4000", "Sales", 0, 300000),
-    ):  # fmt: skip
-        await firm.seed.run(
-            "INSERT INTO trial_balance_lines (tenant_id, snapshot_id, account_code, account_name, "
-            "debit, credit, source_ref) VALUES ($1, $2, $3, $4, $5, $6, '{}'::jsonb)",
-            firm.tenant, snapshot, code, name, debit, credit,
-        )  # fmt: skip
 
 
 async def _lock(firm: _Firm, close_id: uuid.UUID) -> None:
@@ -163,5 +162,5 @@ async def test_cls12_hands_off_tb_v1_and_supersedes_after_a_reopen(firm: _Firm) 
         firm.tenant,
     )
     assert len(told) == 1 and set(str(u) for u in team) <= set(
-        str(u) for u in told[0]["payload"].get("recipient_user_ids", [])
+        str(u) for u in json.loads(told[0]["payload"]).get("recipient_user_ids", [])
     )

@@ -146,7 +146,7 @@ def test_the_only_writes_are_suggestions_on_registered_targets() -> None:
 
     assert composition_root
     from abacus.modules.agents.proposal_slots import (
-        _APPLIERS,  # pyright: ignore[reportPrivateUsage]
+        _APPLIERS,  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
     )
 
     assert {pm.EXPLANATION_TARGET, pm.RATIONALE_TARGET} <= set(_APPLIERS)

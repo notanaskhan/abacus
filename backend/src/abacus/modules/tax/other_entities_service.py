@@ -251,7 +251,7 @@ _SUPPORT: Final = text(
 )
 
 
-def _line(r: Row[Any]) -> e12.ExpenseLine:
+def _line(r: Row[Any]) -> e12.ExpenseLine:  # Any: a SQL row of mixed column types
     basis: Literal["direct", "time_study"] = (
         "time_study" if r.allocation_basis == "time_study" else "direct"
     )

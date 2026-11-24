@@ -259,9 +259,10 @@ _ACCEPT = text(
 async def accept(
     ctx: AuthContext, return_id: UUID, line_key: str, version_id: UUID, values_hash: str
 ) -> Comparison:
-    """AC-24, AC-25: the newest version over the values the reviewer saw."""
-    found = await comparison(ctx, return_id)
+    """AC-24, AC-25: the newest version over the values the reviewer saw. The acceptance is
+    checked first, so a preparer is refused before the comparison is computed."""
     await _resource(ctx, return_id, "variance_explanation.accept")
+    found = await comparison(ctx, return_id)
     line = _line(found, line_key)
     if line.explanation is None or line.explanation.version_id != version_id:
         raise ExplanationStale(facts={"line_key": line_key})

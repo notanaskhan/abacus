@@ -49,7 +49,7 @@ async def _pinned(seed: Seeder) -> tuple[uuid.UUID, Person, uuid.UUID, uuid.UUID
     template, version = uuid.uuid4(), uuid.uuid4()
     await seed.run(
         "INSERT INTO methodology_templates (id, tenant_id, name, created_by, engagement_types) "
-        "VALUES ($1, $2, 'BH Audit Methodology · FS', $3, '{audit}')",
+        "VALUES ($1, $2, 'BH Audit Methodology · FS', $3, '{fs_audit}')",
         template,
         tenant,
         person.user_id,

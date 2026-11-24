@@ -85,7 +85,7 @@ def test_total_assets_and_line_21_by_code() -> None:
     from abacus.modules.tax.form_preview_blockers import schedule_l_line_21
 
     assert sc.total_assets(RIDGELINE.values) == D("17914500")
-    assert schedule_l_line_21(RIDGELINE.values) == D("6860000")  # type: ignore[arg-type]
+    assert schedule_l_line_21(RIDGELINE.values) == D("6860000")  # type: ignore[arg-type]  -- a test double stands in
 
 
 # --- the golden cases: (facts, outcome, reference) per named check -------------------------------
@@ -200,5 +200,5 @@ def test_every_bound_check_is_pure_and_golden_covered() -> None:
     assert composition_root
     from abacus.modules.tax import standards_runs
 
-    registered = set(standards_runs._CHECKS)  # pyright: ignore[reportPrivateUsage]
+    registered = set(standards_runs._CHECKS)  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
     assert set(sc.NAMED) | {c for c, *_ in sc.PRESENCE} <= registered

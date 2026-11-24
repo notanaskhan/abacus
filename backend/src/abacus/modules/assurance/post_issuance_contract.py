@@ -428,7 +428,7 @@ async def post_issuance_analysis_read_route(
         case_id=case_id,
         run_id=run_id,
         blocks=cast("dict[str, object]", kept["blocks"]),
-        recommendation=cast(Any, kept["recommendation"]),
+        recommendation=cast(Any, kept["recommendation"]),  # Any: a stored option literal
         citation_ids=cast("list[UUID]", kept["citation_ids"]),
     )
 

@@ -11,4 +11,4 @@ export {
   type HandoffProvenanceBannerProps,
   handoffLine,
 } from "./HandoffProvenanceBanner";
-export { HANDOFF_GATE_COPY, type HandoffGate, useTaxHandoffGate } from "./handoffGate";
+export { HANDOFF_GATE_COPY, type HandoffGate, useTaxHandoffGate } from "../tax-handoff";

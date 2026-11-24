@@ -29,7 +29,7 @@ AUG11_1441 = datetime(2026, 8, 11, 19, 41, tzinfo=UTC)
 
 
 async def _names(ids: object) -> dict[UUID, str]:
-    return {RAJ: "Raj Malhotra"} if RAJ in list(ids) else {}  # type: ignore[call-overload]
+    return {RAJ: "Raj Malhotra"} if RAJ in list(ids) else {}  # type: ignore[call-overload]  -- a test double stands in
 
 
 async def test_ac_the_log_row_carries_amount_posted_time_and_runner(
@@ -38,13 +38,13 @@ async def test_ac_the_log_row_carries_amount_posted_time_and_runner(
     row = lc.LogRow(uuid4(), "2026-07-A", "2026-07", "posted", 6, 6, "47602", "47607", 1, 1,
                     AUG11_1441, RAJ, Decimal("31480.00"))  # fmt: skip
     monkeypatch.setattr(w1, "names_of", _names)
-    out = w1._log_row(row, await w1._log_names([row]))  # pyright: ignore[reportPrivateUsage]
+    out = w1._log_row(row, await w1._log_names([row]))  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
     assert (out.amount, out.posted_at, out.posted_by) == (
         Decimal("31480.00"), AUG11_1441, "Raj Malhotra",
     )  # fmt: skip
     proposed = lc.LogRow(uuid4(), "2026-08-A", "2026-08", "proposed", 5, 0, None, None, 0, 0,
                          None, None, Decimal("34920.00"))  # fmt: skip
-    assert w1._log_row(proposed, {}).posted_by is None  # pyright: ignore[reportPrivateUsage]
+    assert w1._log_row(proposed, {}).posted_by is None  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
 
 
 async def test_ac_failures_read_newest_first_with_the_resolver(
@@ -57,7 +57,7 @@ async def test_ac_failures_read_newest_first_with_the_resolver(
                                  "inactive", AUG11_1441, RAJ)  # fmt: skip
     monkeypatch.setattr(lc, "names_of", _names)
     facts = lc.PostingFacts((), 0, None, (older, resolved))
-    band = await lc._failures(facts)  # pyright: ignore[reportPrivateUsage]
+    band = await lc._failures(facts)  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
     assert [f["entry_ref"] for f in band] == ["AJE-03", "AJE-01"]
     assert (band[0]["resolved_at"], band[0]["resolved_by"]) == (AUG11_1441, "Raj Malhotra")
     assert band[1]["resolved_by"] is None

@@ -529,6 +529,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "upload_review.request",  # SPEC-030 (TASK-058)
         "variance_explanation.accept",  # S50 (T-08, Q-05 bundles)
         "variance_explanation.edit",  # S50 (T-08, Q-05 bundles)
+        "vendor_1099.screen",  # C-02-T34 (DEC-5908)
         "vendor_1099.update",  # S49 (C-02, T-06, A-09 bundles)
         "w9.request",  # S49 (C-02, T-06, A-09 bundles)
         "workpaper.draft",

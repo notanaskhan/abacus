@@ -3694,6 +3694,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         | {"title", "category_id", "firm_owner_user_id", "period_start", "period_end", "wave"}
         | {"kind", "source_tag", "supports_ref", "linked_ref", "drafted_by_run_id"}
         | {"drafted_wording_source", "drafted_wording_fingerprint"}
+        | {"shown_by_rule_id"}  # K-03-T12 (1011, TASK-8902): the scoping rule that showed it
     )
     assert sc.APP_INSERT_COLUMNS["engagement_members"] == frozenset(
         {"tenant_id", "engagement_id", "user_id", "role"}

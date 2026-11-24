@@ -20,8 +20,9 @@ pytestmark = pytest.mark.asyncio
 
 PRIYA, TESS, BEN, OTHER = uuid4(), uuid4(), uuid4(), uuid4()
 # The rule under test, private to the service; called with stand-ins for the context and row.
-people = cast(Callable[..., Awaitable[Any]], ps._people)  # pyright: ignore[reportPrivateUsage]
-EMPTY = ps._People()  # pyright: ignore[reportPrivateUsage]
+_people_impl = ps._people  # pyright: ignore[reportPrivateUsage]  -- the unit under test
+people = cast(Callable[..., Awaitable[Any]], _people_impl)  # Any: its loose test shape
+EMPTY = ps._People()  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
 
 
 def _row(

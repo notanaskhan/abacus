@@ -37,8 +37,8 @@ SRC = Path(vendor_tins.__file__)
 TIN = "981234471"
 
 
-def _vendor(**over: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]
-    base = vendor_tins._Vendor(  # pyright: ignore[reportPrivateUsage]
+def _vendor(**over: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
+    base = vendor_tins._Vendor(  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
         id=uuid4(),
         client_entity_id=uuid4(),
         display_name="Hartwell & Lowe LLP",
@@ -51,7 +51,7 @@ def _vendor(**over: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPri
         w9_signed_on=date(2026, 2, 3),
         backup_withholding="none",
         version=3,
-        engagement=SimpleNamespace(id=uuid4()),  # pyright: ignore[reportArgumentType]
+        engagement=SimpleNamespace(id=uuid4()),  # pyright: ignore[reportArgumentType]  -- a test double stands in
     )
     return replace(base, **over)
 
@@ -117,7 +117,7 @@ def test_a_recorded_exemption_exempts() -> None:
     ],
 )
 def test_tin_matching_moves_the_w9_status(current: str, result: str, after: str) -> None:
-    assert irc.w9_status_after_match(current, result) == after  # type: ignore[arg-type]
+    assert irc.w9_status_after_match(current, result) == after  # type: ignore[arg-type]  -- a test double stands in
 
 
 def test_backup_withholding_transitions() -> None:
@@ -137,7 +137,7 @@ async def test_the_reveal_is_p03s_field_reveal_named_for_the_vendor(
     vendor = _vendor()
     seen: dict[str, object] = {}
 
-    async def scoped(*_: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]
+    async def scoped(*_: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
         return vendor
 
     async def reveal_field(ctx: object, engagement_id: UUID, field_ref: str, kind: str, *_: object,
@@ -147,7 +147,7 @@ async def test_the_reveal_is_p03s_field_reveal_named_for_the_vendor(
 
     monkeypatch.setattr(vendor_tins, "_vendor", scoped)
     monkeypatch.setattr(vendor_tins, "reveal_field", reveal_field)
-    kind, revealed = await vendor_tins.reveal_vendor_tin(_ctx(), vendor.id)  # type: ignore[arg-type]
+    kind, revealed = await vendor_tins.reveal_vendor_tin(_ctx(), vendor.id)  # type: ignore[arg-type]  -- a test double stands in
     assert (kind, revealed.value) == ("ein", "98-1234471")
     assert seen == {
         "engagement": vendor.engagement.id,
@@ -163,20 +163,20 @@ async def test_the_reveal_is_p03s_field_reveal_named_for_the_vendor(
 async def test_an_offshore_or_roleless_reveal_is_refused(
     monkeypatch: pytest.MonkeyPatch, layer: str
 ) -> None:
-    async def scoped(*_: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]
+    async def scoped(*_: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
         return _vendor()
 
     async def refused(*_: object, **__: object) -> object:
-        raise Forbidden("pii.reveal", layer)  # type: ignore[arg-type]
+        raise Forbidden("pii.reveal", layer)  # type: ignore[arg-type]  -- a test double stands in
 
     monkeypatch.setattr(vendor_tins, "_vendor", scoped)
     monkeypatch.setattr(vendor_tins, "reveal_field", refused)
     with pytest.raises(TinRevealRefused):
-        await vendor_tins.reveal_vendor_tin(_ctx(), uuid4())  # type: ignore[arg-type]
+        await vendor_tins.reveal_vendor_tin(_ctx(), uuid4())  # type: ignore[arg-type]  -- a test double stands in
 
 
 async def test_a_stale_mfa_is_not_masked_as_a_refusal(monkeypatch: pytest.MonkeyPatch) -> None:
-    async def scoped(*_: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]
+    async def scoped(*_: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
         return _vendor()
 
     async def stale(*_: object, **__: object) -> object:
@@ -185,19 +185,19 @@ async def test_a_stale_mfa_is_not_masked_as_a_refusal(monkeypatch: pytest.Monkey
     monkeypatch.setattr(vendor_tins, "_vendor", scoped)
     monkeypatch.setattr(vendor_tins, "reveal_field", stale)
     with pytest.raises(Forbidden) as caught:
-        await vendor_tins.reveal_vendor_tin(_ctx(), uuid4())  # type: ignore[arg-type]
+        await vendor_tins.reveal_vendor_tin(_ctx(), uuid4())  # type: ignore[arg-type]  -- a test double stands in
     assert not isinstance(caught.value, TinRevealRefused)
 
 
 async def test_no_tin_on_file_is_404(monkeypatch: pytest.MonkeyPatch) -> None:
-    async def scoped(*_: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]
+    async def scoped(*_: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
         return _vendor(tin_kind=None, tin_last4=None)
 
     monkeypatch.setattr(vendor_tins, "_vendor", scoped)
     from abacus.kernel.errors import NotFound
 
     with pytest.raises(NotFound):
-        await vendor_tins.reveal_vendor_tin(_ctx(), uuid4())  # type: ignore[arg-type]
+        await vendor_tins.reveal_vendor_tin(_ctx(), uuid4())  # type: ignore[arg-type]  -- a test double stands in
 
 
 # --- the W-9's TIN never leaves the sealed store ----------------------------------------------
@@ -233,7 +233,7 @@ async def test_record_w9_seals_the_digits_and_audits_none_of_them(
     tx = _Tx()
     sealed_with: list[tuple[bytes, str]] = []
 
-    async def scoped(*_: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]
+    async def scoped(*_: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
         return vendor
 
     async def on_engagement(*_: object) -> UUID:
@@ -253,14 +253,14 @@ async def test_record_w9_seals_the_digits_and_audits_none_of_them(
     monkeypatch.setattr(vendor_tins, "_vendor", scoped)
     monkeypatch.setattr(vendor_tins, "engagement_of_version", on_engagement)
     monkeypatch.setattr(vendor_tins, "seal", seal)
-    monkeypatch.setattr(vendor_tins, "uow", lambda _tenant: tx)  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]
+    monkeypatch.setattr(vendor_tins, "uow", lambda _tenant: tx)  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]  -- a test double stands in
     monkeypatch.setattr(vendor_tins, "get_vendor", read_back)
-    monkeypatch.setattr(vendor_tins, "fingerprint_tin", lambda *_: b"f" * 32)  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]
+    monkeypatch.setattr(vendor_tins, "fingerprint_tin", lambda *_: b"f" * 32)  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]  -- a test double stands in
     body = DeliveryW9RecordIn(
         tin=SecretStr("98-1234471"), tin_kind="ein", evidence_version_id=uuid4(),
         signed_on=date(2026, 2, 3), expected_version=3,
     )  # fmt: skip
-    out = await vendor_tins.record_w9(_ctx(), vendor.id, body)  # type: ignore[arg-type]
+    out = await vendor_tins.record_w9(_ctx(), vendor.id, body)  # type: ignore[arg-type]  -- a test double stands in
     assert sealed_with == [(TIN.encode(), f"vendor_1099_tin:{vendor.id}")]
     written = tx.params[0]
     assert written["sealed"] == b"envelope" and written["last4"] == "4471"
@@ -280,7 +280,7 @@ async def test_an_ssn_waits_for_the_consent_gate_on_a_real_firm(
 
     vendor = _vendor()
 
-    async def same(*_: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]
+    async def same(*_: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
         return vendor
 
     async def mine(*_: object) -> UUID:
@@ -288,14 +288,14 @@ async def test_an_ssn_waits_for_the_consent_gate_on_a_real_firm(
 
     monkeypatch.setattr(vendor_tins, "_vendor", same)
     monkeypatch.setattr(vendor_tins, "engagement_of_version", mine)
-    monkeypatch.setattr(vendor_tins, "consent_registered", lambda _p: False)  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]
+    monkeypatch.setattr(vendor_tins, "consent_registered", lambda _p: False)  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]  -- a test double stands in
     monkeypatch.setattr(vendor_tins, "is_synthetic_firm", real)
     body = DeliveryW9RecordIn(
-        tin=SecretStr("123-45-6789"), tin_kind="ssn", evidence_version_id=uuid4(),
+        tin=SecretStr("900-45-6789"), tin_kind="ssn", evidence_version_id=uuid4(),
         signed_on=date(2026, 2, 3), expected_version=3,
     )  # fmt: skip
     with pytest.raises(TinKindNotAllowed):
-        await vendor_tins.record_w9(_ctx(), vendor.id, body)  # type: ignore[arg-type]
+        await vendor_tins.record_w9(_ctx(), vendor.id, body)  # type: ignore[arg-type]  -- a test double stands in
 
 
 async def test_evidence_off_the_close_engagement_is_404(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -308,14 +308,14 @@ async def test_evidence_off_the_close_engagement_is_404(monkeypatch: pytest.Monk
 
     monkeypatch.setattr(vendor_tins, "engagement_of_version", elsewhere)
     with pytest.raises(NotFound):
-        await vendor_tins._evidence_on(_ctx(), vendor, uuid4())  # type: ignore[arg-type]
+        await vendor_tins._evidence_on(_ctx(), vendor, uuid4())  # type: ignore[arg-type]  -- a test double stands in
 
 
 # --- TIN Matching and backup withholding ------------------------------------------------------
 
 
 async def test_tin_matching_needs_a_tin_on_file(monkeypatch: pytest.MonkeyPatch) -> None:
-    async def scoped(*_: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]
+    async def scoped(*_: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
         return _vendor(tin_kind=None, tin_last4=None)
 
     monkeypatch.setattr(vendor_tins, "_vendor", scoped)
@@ -323,7 +323,7 @@ async def test_tin_matching_needs_a_tin_on_file(monkeypatch: pytest.MonkeyPatch)
         checked_on=date(2026, 11, 2), result="match", evidence_version_id=uuid4()
     )
     with pytest.raises(vendor_tins.TinNotOnFile):
-        await vendor_tins.record_tin_match(_ctx(), uuid4(), body)  # type: ignore[arg-type]
+        await vendor_tins.record_tin_match(_ctx(), uuid4(), body)  # type: ignore[arg-type]  -- a test double stands in
 
 
 @pytest.mark.parametrize(
@@ -357,23 +357,23 @@ async def test_backup_withholding_waits_thirty_business_days(
             1 for d in range((end - start).days) if (start.toordinal() + d + 1) % 7 not in (6, 0)
         )
 
-    monkeypatch.setattr(vendor_tins, "tenant_session", lambda _t: _Session())  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]
+    monkeypatch.setattr(vendor_tins, "tenant_session", lambda _t: _Session())  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]  -- a test double stands in
     monkeypatch.setattr(vendor_tins, "today", now)
     monkeypatch.setattr(vendor_tins, "business_days_between", days)
     with pytest.raises(vendor_tins.BackupWithholdingNotDue) as caught:
-        await vendor_tins._withholding_due(_ctx(), vendor)  # type: ignore[arg-type]
+        await vendor_tins._withholding_due(_ctx(), vendor)  # type: ignore[arg-type]  -- a test double stands in
     assert caught.value.facts["reason"] == reason
 
 
 async def test_a_missing_tin_makes_withholding_due_now() -> None:
     vendor = _vendor(w9_status="missing", tin_kind=None, tin_last4=None)
-    await vendor_tins._withholding_due(_ctx(), vendor)  # type: ignore[arg-type]
+    await vendor_tins._withholding_due(_ctx(), vendor)  # type: ignore[arg-type]  -- a test double stands in
 
 
 async def test_a_b_notice_needs_its_received_date(monkeypatch: pytest.MonkeyPatch) -> None:
     vendor = _vendor()
 
-    async def scoped(*_: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]
+    async def scoped(*_: object) -> vendor_tins._Vendor:  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
         return vendor
 
     async def mine(*_: object) -> UUID:
@@ -385,7 +385,7 @@ async def test_a_b_notice_needs_its_received_date(monkeypatch: pytest.MonkeyPatc
         event="b_notice_received", reason="CP2100 received", evidence_version_id=uuid4()
     )
     with pytest.raises(vendor_tins.EvidenceRequired):
-        await vendor_tins.record_backup_withholding(_ctx(), vendor.id, body)  # type: ignore[arg-type]
+        await vendor_tins.record_backup_withholding(_ctx(), vendor.id, body)  # type: ignore[arg-type]  -- a test double stands in
 
 
 # --- static: nothing logs, emits or prints a TIN ----------------------------------------------

@@ -67,6 +67,11 @@ def test_only_the_reveal_schema_carries_a_plain_tin() -> None:
         prop = schemas[name]["properties"][field]
         if carrier == f"{TinRevealOut.__name__}.value":
             continue
+        # C-02-T33 (DEC-5907): the TIN a person types off a W-9 travels in once, write-only and
+        # restricted (sealed on arrival, never echoed); no response schema carries it.
+        if prop.get("writeOnly") is True and prop.get("cls") == "restricted":
+            assert name.endswith("In"), carrier
+            continue
         refs = [p.get("$ref", "") for p in prop.get("anyOf", [prop])]
         assert any(r.endswith(f"/{MaskedTinOut.__name__}") for r in refs), carrier
 

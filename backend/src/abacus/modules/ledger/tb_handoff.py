@@ -205,11 +205,17 @@ async def create(tenant: TenantContext, actor_user_id: UUID, draft: Draft, seen_
         raise PreviewChanged(facts={"preview_hash": draft.preview.preview_hash})
     scope = Scope(engagement_id=draft.source_engagement_id, work_item_id=draft.source_work_item_id)
     async with uow(tenant) as tx:
+        # The table is insert-only (no row locks): two hand-offs to one return serialise on a
+        # transaction lock on the target, so the version numbers never race.
+        await tx.session.execute(
+            text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
+            {"key": f"tb_handoff:{draft.target_work_item_id}"},
+        )
         prior = (
             await tx.session.execute(
                 text(
                     "SELECT id, version_no FROM tb_handoffs WHERE target_work_item_id = :t "
-                    "ORDER BY version_no DESC LIMIT 1 FOR UPDATE"
+                    "ORDER BY version_no DESC LIMIT 1"
                 ),
                 {"t": draft.target_work_item_id},
             )

@@ -703,7 +703,9 @@ async def vendor_screen_route(vendor_id: UUID, ctx: Ctx) -> DeliveryScreenOut:
 
     outcome = await vendor_screen.screen_vendor(ctx, vendor_id)
     return DeliveryScreenOut(
-        run_id=outcome.run_id, status=cast(Any, outcome.status), reason=outcome.reason
+        run_id=outcome.run_id,
+        status=cast(Any, outcome.status),  # Any: the screen's status, one of the out literals
+        reason=outcome.reason,
     )
 
 
@@ -723,7 +725,8 @@ async def tin_reveal_route(
     kind, revealed = await vendor_tins.reveal_vendor_tin(ctx, vendor_id)
     response.headers["Cache-Control"] = "no-store"
     response.headers["Pragma"] = "no-cache"
-    return TinRevealOut(entity_id=vendor_id, kind=cast(Any, kind), value=revealed.value)
+    kind_out = cast(Any, kind)  # Any: the vendor TIN kind, one of TinRevealOut's literals
+    return TinRevealOut(entity_id=vendor_id, kind=kind_out, value=revealed.value)
 
 
 @delivery_router.post(

@@ -57,8 +57,8 @@ def test_a_split_entry_needs_each_line_matched_once() -> None:
 def test_the_next_month_is_looked_at_too() -> None:
     from datetime import date
 
-    assert attest_path._periods(date(2026, 12, 31)) == ("2026-12", "2027-01")  # pyright: ignore[reportPrivateUsage]
-    assert attest_path._periods(date(2026, 8, 31)) == ("2026-08", "2026-09")  # pyright: ignore[reportPrivateUsage]
+    assert attest_path._periods(date(2026, 12, 31)) == ("2026-12", "2027-01")  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
+    assert attest_path._periods(date(2026, 8, 31)) == ("2026-08", "2026-09")  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
 
 
 # --- the send goes to the approver of record -------------------------------------------------
@@ -89,33 +89,33 @@ def attest(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
 
 
 async def test_an_attest_send_goes_to_the_approver_of_record(attest: SimpleNamespace) -> None:
-    recipient, is_attest = await attest_path.recipient_for(_ctx(), uuid4(), None)  # type: ignore[arg-type]
+    recipient, is_attest = await attest_path.recipient_for(_ctx(), uuid4(), None)  # type: ignore[arg-type]  -- a test double stands in
     assert (recipient, is_attest) == (attest.approver, True)
-    same, _ = await attest_path.recipient_for(_ctx(), uuid4(), attest.approver)  # type: ignore[arg-type]
+    same, _ = await attest_path.recipient_for(_ctx(), uuid4(), attest.approver)  # type: ignore[arg-type]  -- a test double stands in
     assert same == attest.approver
 
 
 async def test_an_attest_send_to_anyone_else_is_refused(attest: SimpleNamespace) -> None:
     with pytest.raises(attest_path.NotApproverOfRecord):
-        await attest_path.recipient_for(_ctx(), uuid4(), uuid4())  # type: ignore[arg-type]
+        await attest_path.recipient_for(_ctx(), uuid4(), uuid4())  # type: ignore[arg-type]  -- a test double stands in
 
 
 async def test_no_approver_of_record_refuses(attest: SimpleNamespace) -> None:
     attest.approver = None
     with pytest.raises(attest_path.ApproverOfRecordMissing):
-        await attest_path.recipient_for(_ctx(), uuid4(), None)  # type: ignore[arg-type]
+        await attest_path.recipient_for(_ctx(), uuid4(), None)  # type: ignore[arg-type]  -- a test double stands in
 
 
 async def test_unknown_attest_reads_attest(attest: SimpleNamespace) -> None:
     attest.attest = None  # fail closed
-    recipient, is_attest = await attest_path.recipient_for(_ctx(), uuid4(), None)  # type: ignore[arg-type]
+    recipient, is_attest = await attest_path.recipient_for(_ctx(), uuid4(), None)  # type: ignore[arg-type]  -- a test double stands in
     assert is_attest and recipient == attest.approver
 
 
 async def test_a_non_attest_send_keeps_its_named_contact(attest: SimpleNamespace) -> None:
     attest.attest = False
     named = uuid4()
-    assert await attest_path.recipient_for(_ctx(), uuid4(), named) == (named, False)  # type: ignore[arg-type]
+    assert await attest_path.recipient_for(_ctx(), uuid4(), named) == (named, False)  # type: ignore[arg-type]  -- a test double stands in
 
 
 # --- recorded by the client only after the client approved ------------------------------------
@@ -139,9 +139,9 @@ async def test_an_attest_entry_is_recorded_only_once_client_approved(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     row = SimpleNamespace(status="approved", is_attest_client=True)
-    monkeypatch.setattr(attest_path, "tenant_session", lambda _t: _session(row))  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]
+    monkeypatch.setattr(attest_path, "tenant_session", lambda _t: _session(row))  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]  -- a test double stands in
     with pytest.raises(attest_path.ClientApprovalRequired):
-        await attest_path.check_record(_ctx(), uuid4(), match_ref=None)  # type: ignore[arg-type]
+        await attest_path.check_record(_ctx(), uuid4(), match_ref=None)  # type: ignore[arg-type]  -- a test double stands in
 
 
 async def test_a_match_code_cannot_find_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -150,11 +150,11 @@ async def test_a_match_code_cannot_find_is_refused(monkeypatch: pytest.MonkeyPat
     async def matches(*_: object) -> list[str]:
         return ["qbo:148"]
 
-    monkeypatch.setattr(attest_path, "tenant_session", lambda _t: _session(row))  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]
+    monkeypatch.setattr(attest_path, "tenant_session", lambda _t: _session(row))  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]  -- a test double stands in
     monkeypatch.setattr(attest_path, "ledger_matches", matches)
     with pytest.raises(attest_path.LedgerMatchNotFound):
-        await attest_path.check_record(_ctx(), uuid4(), match_ref="qbo:999")  # type: ignore[arg-type]
-    await attest_path.check_record(_ctx(), uuid4(), match_ref="qbo:148")  # type: ignore[arg-type]
+        await attest_path.check_record(_ctx(), uuid4(), match_ref="qbo:999")  # type: ignore[arg-type]  -- a test double stands in
+    await attest_path.check_record(_ctx(), uuid4(), match_ref="qbo:148")  # type: ignore[arg-type]  -- a test double stands in
     await attest_path.check_record(_ctx(), uuid4(), match_ref=None)  # type: ignore[arg-type]  # evidence path
 
 
@@ -173,7 +173,7 @@ def test_posting_refuses_an_attest_client_at_the_registry() -> None:
     shape = sorted(ATTEST_REFUSED_SHAPES)[0]
     fields = WriteCapabilityEntry.model_fields
     entry = SimpleNamespace(shape=shape, **{k: None for k in fields if k != "shape"})
-    assert policy_refusal(entry, attest_client=True) == "attest_client"  # type: ignore[arg-type]
+    assert policy_refusal(entry, attest_client=True) == "attest_client"  # type: ignore[arg-type]  -- a test double stands in
 
 
 def test_the_batch_refuses_attest_entries_before_anything_is_written() -> None:

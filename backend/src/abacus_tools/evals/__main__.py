@@ -169,8 +169,8 @@ def main(argv: list[str]) -> int:
 
         from abacus_tools.evals import tax_entity_depth as depth
 
-        failures = depth.gate(cast(depth.Agent, args.agent))
-        _results, rates = depth.run(cast(depth.Agent, args.agent))
+        failures = depth.gate(args.agent)
+        _results, rates = depth.run(args.agent)
         print(
             _json.dumps(
                 {"agent": args.agent, "status": "failed" if failures else "passed",

@@ -1,5 +1,10 @@
 import type { Tone } from "./components/surfaces";
+import type { DiscSize, DiscState } from "./disc";
 import { HANDOFF_WORDS, RETIRED_CODES, STATUS_REGISTRY } from "./status.gen";
+
+// The disc vocabulary lives in `disc.ts`, which imports no registry, so a kit that draws only a
+// disc (the States kit) never pulls the registry into the firm initial load (S53 end pass).
+export { DISC_LABEL, DISC_STATES, type DiscSize, type DiscState } from "./disc";
 
 // The status vocabulary at run time (F-05-T12; C2, DEC-08, ADR-138). Every word, tone, disc and
 // context label comes from docs/product/status-vocabulary.yaml through status.gen.ts. This file
@@ -132,40 +137,10 @@ export type PillSize =
   | "done"
   | "check"
   | "chip";
-export type DiscState =
-  "done" | "prepared" | "todo" | "half" | "run" | "warn" | "fail" | "off" | "wait";
-/** The disc sizes: 13 in issue rows, 15 in rows and rails, 17 in task rows (C-06), and 16 for the
- * inbox's "new" and "waiting" rows, which the blueprint draws at 16. */
-export type DiscSize = 13 | 15 | 16 | 17;
 /** The sync chip's leading glyph. */
 export type SyncGlyph = "refresh" | "spin" | "synced" | "out" | "pending" | "failed";
 /** A sub-line beside a disc: ink-3, or amber ink. */
 export type LineTone = "text" | "text-amber";
-
-export const DISC_STATES: readonly DiscState[] = [
-  "done",
-  "prepared",
-  "todo",
-  "half",
-  "run",
-  "warn",
-  "fail",
-  "off",
-  "wait",
-];
-
-/** The accessible name of each disc (C-06). */
-export const DISC_LABEL: Record<DiscState, string> = {
-  done: "Done",
-  prepared: "Prepared",
-  todo: "To do",
-  half: "In progress",
-  run: "Running",
-  warn: "Warning",
-  fail: "Failed",
-  off: "Skipped",
-  wait: "Waiting",
-};
 
 // A registry variant to a kit pill variant. `state` is the blueprint's name for the in-flight
 // record state, which the kit draws as the amber tint. The `satisfies` is the exhaustiveness check.

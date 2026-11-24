@@ -1,7 +1,7 @@
 ---
 id: TASK-8920
 title: "C-02-T39: Close-to-tax hand-off (closes side) over C12"
-spec: C-02
+spec: SPEC-700
 acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
 status: in-review

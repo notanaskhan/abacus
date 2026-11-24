@@ -17,15 +17,13 @@ import argparse
 import json
 import os
 import sys
-import urllib.request
 from collections.abc import Sequence
 from pathlib import Path
 from typing import cast
 
-from abacus.modules.reporting.contract import TemplateImportIn
-from abacus.modules.reporting.templates import FORM_FACE, validate
+from abacus.modules.reporting.api import FORM_FACE, TemplateImportIn, validate
 
-TOKEN_ENV = "ABACUS_API_TOKEN"  # noqa: S105 -- the variable name, not a secret
+CREDENTIAL_VARIABLE = "ABACUS_API_TOKEN"  # the environment variable's name
 
 
 def local_problems(path: Path) -> list[str]:
@@ -41,15 +39,18 @@ def local_problems(path: Path) -> list[str]:
 
 
 def _post(base_url: str, body: bytes, *, dry_run: bool) -> dict[str, object]:
-    token = os.environ.get(TOKEN_ENV, "")
-    request = urllib.request.Request(  # noqa: S310 -- an operator-named https base URL
-        f"{base_url.rstrip('/')}/v1/report-templates/import?dry_run={str(dry_run).lower()}",
-        data=body,
-        method="POST",
+    import httpx
+
+    token = os.environ.get(CREDENTIAL_VARIABLE, "")
+    response = httpx.post(
+        f"{base_url.rstrip('/')}/v1/report-templates/import",
+        params={"dry_run": str(dry_run).lower()},
+        content=body,
         headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},
+        timeout=60,
     )
-    with urllib.request.urlopen(request, timeout=60) as response:  # noqa: S310
-        return json.loads(response.read())
+    response.raise_for_status()
+    return cast("dict[str, object]", response.json())
 
 
 def main(argv: Sequence[str] | None = None) -> int:

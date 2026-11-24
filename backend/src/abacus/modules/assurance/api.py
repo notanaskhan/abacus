@@ -1004,8 +1004,8 @@ _handoff_gate.register()
 # Q-05-T22 (DEC-5911): the post-issuance analysis capability (its errors and run).
 # T-08-T20 (DEC-5917): this module's due dates on HOME-03 through platform's filing-deadline slot.
 from abacus.modules.assurance import deadline_sources as _filing_deadline_sources  # noqa: E402
-from abacus.modules.assurance import (  # noqa: E402
-    post_issuance_analysis as _post_issuance_analysis,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- imported for its errors
-)
+
+# End pass (BOUND-001): exported, so its eval runner reaches it through this api.
+from abacus.modules.assurance import post_issuance_analysis as post_issuance_analysis  # noqa: E402
 
 _filing_deadline_sources.register()

@@ -1016,3 +1016,8 @@ async def released_for_audience(
         )
         for r in rows
     ]
+
+
+# End pass (BOUND-001): the form-face import tool validates through this api.
+from abacus.modules.reporting.templates import FORM_FACE as FORM_FACE  # noqa: E402
+from abacus.modules.reporting.templates import validate as validate  # noqa: E402

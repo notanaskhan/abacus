@@ -45,6 +45,8 @@ async def test_ac_a_tin_reveal_is_refused_off_the_team(net: Net, seed: Seeder) -
     outsider = await seed.person(tenant)
     stranger = await seed.person(await seed.firm())
     for who in (outsider, stranger):
-        refused = await net.call("POST", path, who, body={"reason": "Vendor 1099 check"})
+        refused = await net.call(
+            "POST", path, who, body={"reason": "prepare_return"}, headers=net.keyed()
+        )
         assert refused.status_code in (403, 404), refused.text
         assert not TIN.search(refused.text)

@@ -32,7 +32,7 @@ async def test_ac_only_the_qm_owner_concludes_the_evaluation(net: Net, seed: See
     manager = await seed.person(tenant)
     path = "/v1/quality/evaluations/2026/request-conclusion"
     for who in (admin, manager):
-        refused = await net.call("POST", path, who, body={})
+        refused = await net.call("POST", path, who, body={}, headers=net.keyed())
         assert refused.status_code in (403, 404), refused.text
         assert refused.status_code != 200
 
@@ -48,6 +48,7 @@ async def test_ac_only_the_quality_partner_resolves_a_difference(net: Net, seed:
         f"/v1/consultations/{uuid.uuid4()}/resolve-difference",
         manager,
         body={"resolution": "Use the consultee's position.", "rationale": "Per policy."},
+        headers=net.keyed(),
     )
     assert refused.status_code in (403, 404, 422), refused.text
     assert refused.status_code != 200

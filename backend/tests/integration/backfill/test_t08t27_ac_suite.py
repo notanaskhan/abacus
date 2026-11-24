@@ -36,8 +36,12 @@ async def _flag(seed: Seeder, tenant: uuid.UUID, flag: str, value: str = "true")
     )
 
 
+# The deadline reads take a window (and the export a format).
+_WINDOW = {"from": "2026-01-01", "to": "2026-12-31", "format": "xlsx"}
+
+
 async def _return(seed: Seeder, site: Site, by: Person) -> uuid.UUID:
-    return cast(
+    item = cast(
         uuid.UUID,
         await seed.value(
             "INSERT INTO work_items (tenant_id, engagement_id, client_id, kind, name, created_by) "
@@ -49,6 +53,15 @@ async def _return(seed: Seeder, site: Site, by: Person) -> uuid.UUID:
             by.user_id,
         ),
     )
+    await seed.run(
+        "INSERT INTO tax_returns (tenant_id, work_item_id, engagement_id, client_entity_id, form, "
+        "tax_year, filing_status) VALUES ($1, $2, $3, $4, '1040', 2025, 'mfj')",
+        site.tenant_id,
+        item,
+        site.engagement_id,
+        site.entity_id,
+    )
+    return item
 
 
 async def test_ac18_every_portal_principal_gets_403_on_filing_deadlines(
@@ -66,7 +79,7 @@ async def test_ac18_every_portal_principal_gets_403_on_filing_deadlines(
             "/v1/filing-deadlines/export",
             f"/v1/filing-deadlines/{uuid.uuid4()}",
         ):
-            refused = await net.call("GET", path, client)
+            refused = await net.call("GET", path, client, params=_WINDOW)
             assert refused.status_code == 403, (role, path, refused.text)
             assert site.marker not in refused.text
 
@@ -83,7 +96,7 @@ async def test_ac24_a_preparer_cannot_accept_an_explanation(net: Net, seed: Seed
     path = f"/v1/tax-returns/{return_id}/two-year/lines/scha.11/explanation:accept"
     body = {"explanation_version_id": str(uuid.uuid4()), "values_hash": "0" * 64}
     before = await seed.value("SELECT count(*) FROM audit_events WHERE tenant_id = $1", tenant)
-    refused = await net.call("POST", path, preparer, body=body)
+    refused = await net.call("POST", path, preparer, body=body, headers=net.keyed())
     assert refused.status_code == 403, refused.text
     after = await seed.value("SELECT count(*) FROM audit_events WHERE tenant_id = $1", tenant)
     assert after == before  # nothing was written for a refused acceptance
@@ -114,5 +127,5 @@ async def test_ac36_a_t08_route_answers_404_with_its_flag_off(net: Net, seed: Se
     read = await net.call("GET", f"/v1/tax-returns/{return_id}/two-year", partner)
     assert read.status_code == 404, read.text
     await _flag(seed, tenant, "practice.filing_deadlines", "false")
-    deadlines = await net.call("GET", "/v1/filing-deadlines", partner)
+    deadlines = await net.call("GET", "/v1/filing-deadlines", partner, params=_WINDOW)
     assert deadlines.status_code == 404, deadlines.text

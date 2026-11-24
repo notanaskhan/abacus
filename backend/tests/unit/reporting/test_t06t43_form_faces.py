@@ -20,7 +20,7 @@ from abacus.modules.reporting.contract import TemplateImportIn
 
 
 def _face(**manifest: Any) -> TemplateImportIn:  # noqa: ANN401 -- test overrides
-    base: dict[str, Any] = {
+    base: dict[str, Any] = {  # Any: a test double's loose shape
         "form": "1065", "tax_year": 2025,
         "pages": [{"page_key": "p1", "page_no": 1, "title": "Form 1065 page 1"}],
         "fields": [
@@ -122,15 +122,15 @@ async def test_a_second_load_reports_no_change(monkeypatch: pytest.MonkeyPatch) 
         return None if stored["sha"] is None else (stored["sha"], stored["manifest"])
 
     monkeypatch.setattr(methodology, "latest_report_template_content", latest)
-    assert await t._changes(object(), face) == ["new_template"]  # type: ignore[arg-type]
+    assert await t._changes(object(), face) == ["new_template"]  # type: ignore[arg-type]  -- a test double stands in
     stored.update(
         sha=t.content_sha256(face), manifest=face.model_dump(mode="json")["field_manifest"]
     )
-    assert await t._changes(object(), face) == []  # type: ignore[arg-type]
+    assert await t._changes(object(), face) == []  # type: ignore[arg-type]  -- a test double stands in
     assert face.field_manifest is not None
     moved = [f.model_dump(mode="json") for f in face.field_manifest.fields]
     moved[1] = {**moved[1], "label": "F Total assets (see instructions)"}
-    assert await t._changes(object(), _face(fields=moved)) == ["content_changed", "changed:f"]  # type: ignore[arg-type]
+    assert await t._changes(object(), _face(fields=moved)) == ["content_changed", "changed:f"]  # type: ignore[arg-type]  -- a test double stands in
 
 
 def test_the_manifest_diff() -> None:
