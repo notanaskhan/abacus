@@ -43825,6 +43825,7 @@ export type PortalConnectionCardOut = {
      * Version
      */
     version?: number;
+    write?: PortalWriteScopeOut | null;
 };
 
 /**
@@ -43842,6 +43843,10 @@ export type PortalConnectionDetailOut = {
      * Recent Syncs
      */
     recent_syncs?: Array<SyncRunSummaryOut>;
+    /**
+     * Writes
+     */
+    writes?: Array<PortalWriteRowOut>;
 };
 
 /**
@@ -45308,6 +45313,96 @@ export type PortalVisibilityOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * PortalWriteConsentOut
+ *
+ * C-02-T40 (DEC-5926): the posting consent sheet's copy (catalogue content, consent copy v2):
+ * what the firm will and won't do, the authorization sentence and the button.
+ */
+export type PortalWriteConsentOut = {
+    /**
+     * Authorization
+     */
+    authorization: string;
+    /**
+     * Continue Label
+     */
+    continue_label: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Version
+     */
+    version: string;
+    /**
+     * Will
+     */
+    will: Array<string>;
+    /**
+     * Wont
+     */
+    wont: Array<string>;
+};
+
+/**
+ * PortalWriteRowOut
+ *
+ * C-02-T40: one write the firm made to the client's books, client-visible (ADR-040):
+ * "Posted 6 journal entries · batch 2026-08-A" or "Closing date set to Aug 31, 2026".
+ */
+export type PortalWriteRowOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Batch Code
+     */
+    batch_code?: string | null;
+    /**
+     * Closing Date
+     */
+    closing_date?: string | null;
+    /**
+     * Count
+     */
+    count?: number | null;
+    /**
+     * Kind
+     */
+    kind: 'posted_entries' | 'closing_date';
+};
+
+/**
+ * PortalWriteScopeOut
+ *
+ * C-02-T40 (DF-19, ADR-344 §6): the posting scope on a ledger card. Present only when the firm
+ * holds W1 and the connection is live: `read_only` for an attest client (no consent, no grant
+ * control, read-only copy), `offered` with the consent v2 sheet, `granted` with who granted it
+ * and when. `can_change`: this person may grant or revoke (the entity's owner).
+ */
+export type PortalWriteScopeOut = {
+    /**
+     * Can Change
+     */
+    can_change?: boolean;
+    consent?: PortalWriteConsentOut | null;
+    /**
+     * Granted At
+     */
+    granted_at?: string | null;
+    /**
+     * Granted By
+     */
+    granted_by?: string | null;
+    /**
+     * State
+     */
+    state: 'offered' | 'granted' | 'read_only';
 };
 
 /**

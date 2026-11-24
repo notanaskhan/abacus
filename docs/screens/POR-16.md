@@ -65,3 +65,7 @@ When W1 is live for a non-attest client (ADR-344), the consent sheet uses consen
 | `screenshots/POR-16e.png` will / won't lists | "Post approved entries" | will: "post journal entries your accountant approves, and set the closing date after posting"; won't: "change or delete existing transactions" | ADR-344 §1; SPEC-700 AC-23 |
 | `POR-16e.png` beside Connect | — | "Export instead" stays beside Connect | ADR-108 |
 | Attest client | — | no write-grant control (the grant is refused by trigger) | ADR-164; SPEC-700 AC-21 |
+
+## Posting scope (C-02-T40, DEC-5926)
+
+Not an artboard: a data condition once the firm holds W1 for a non-attest client (C-02). The QuickBooks Online card shows "Allow posting…" (the owner) opening the consent v2 sheet from the catalogue; once granted, the "Post entries you approve" tag, "Posting allowed by Tess Moreno · Mar 9, 2026", the design's caption and "Turn off posting…". The details drawer lists "Changes in your books" (posted batches and the closing date the firm set). An attest client sees the read-only copy only. Artboards a–g are unchanged (no W1 held; DF-19's masks), tested in `POR16.test.tsx`; the posting scope in `POR16.w1.test.tsx`.

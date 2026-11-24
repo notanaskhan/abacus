@@ -61,6 +61,26 @@ class DetailWriteIn(BaseModel):
     gate_label: Annotated[str | None, Field(max_length=200), Public] = None
 
 
+Line = Annotated[str, Field(min_length=1, max_length=200)]
+
+
+class WriteConsentIn(BaseModel):
+    """C-02-T40 (POR-16 write-grant consent v2; DEC-5926): the sheet a client owner reads before
+    granting a declared write (`por16.qbo.post_entries.v2`): counsel-reviewed catalogue content,
+    loaded by the reviewed import, never typed in code. `write` is one of the row's declared
+    writes; `version` is the consent copy version a grant records."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    write: Annotated[Key, Public]
+    version: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9_.]{2,60}$"), Public]
+    title: Annotated[Line, Public]
+    will: Annotated[list[Line], Field(min_length=1, max_length=8), Public]
+    wont: Annotated[list[Line], Field(min_length=1, max_length=8), Public]
+    authorization: Annotated[str, Field(min_length=1, max_length=300), Public]
+    continue_label: Annotated[Line, Public]
+
+
 class DetailCopyIn(BaseModel):
     """WB-11's detail copy (0933; DEC-5337): catalogue content, never typed in code."""
 
@@ -72,6 +92,7 @@ class DetailCopyIn(BaseModel):
     ] = []
     who_can_use: Annotated[str | None, Field(max_length=200), Public] = None
     who_can_use_note: Annotated[str | None, Field(max_length=300), Public] = None
+    write_consent: Annotated[WriteConsentIn | None, Public] = None  # C-02-T40
 
 
 class CatalogRowV2In(BaseModel):
@@ -109,6 +130,9 @@ class CatalogRowV2In(BaseModel):
             raise ValueError("consent copy and its version come together")
         if any(w.key not in self.writes for w in self.detail_copy.writes):
             raise ValueError("a detail write names one of the row's declared writes")
+        consent = self.detail_copy.write_consent
+        if consent is not None and consent.write not in self.writes:
+            raise ValueError("a write consent names one of the row's declared writes")
         if self.ownership_mode == "client_authorised" and self.connector_provider is None:
             raise ValueError("a client-authorised app names its connection provider")
         if "portal" in self.surfaces and self.category is None:

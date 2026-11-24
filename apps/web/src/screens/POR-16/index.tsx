@@ -9,6 +9,8 @@ import {
   listEntityConnectionsOptions,
   listEntityConnectionsQueryKey,
   retryConnectionMutation,
+  grantWriteMutation,
+  revokeWriteMutation,
   startConnectionMutation,
 } from "@abacus/api-client/query";
 import {
@@ -145,7 +147,16 @@ function GlyphTile({
 }
 
 /** The bento relationship header: the firm's tile and the books' tile joined by the sync glyph. */
-function Relationship({ firm, mobile }: { firm: string; mobile: boolean }): JSX.Element {
+function Relationship({
+  firm,
+  mobile,
+  posting = false,
+}: {
+  firm: string;
+  mobile: boolean;
+  /** C-02-T40: an owner granted posting on a ledger here; the design's caption returns. */
+  posting?: boolean;
+}): JSX.Element {
   const tile = mobile ? "size-[64px]" : "size-[88px]";
   const initials = firm
     .split(/\s+/)
@@ -181,7 +192,9 @@ function Relationship({ firm, mobile }: { firm: string; mobile: boolean }): JSX.
           <Icon name="book-open" size={22} />
         </span>
       </div>
-      <p className="mt-[12px] text-para text-ink-2">{COPY.relationship(firm)}</p>
+      <p className="mt-[12px] text-para text-ink-2">
+        {posting ? COPY.relationshipPosting(firm) : COPY.relationship(firm)}
+      </p>
     </div>
   );
 }
@@ -263,6 +276,8 @@ interface CardProps extends CardLineProps {
   onDetails: () => void;
   onDisconnect: () => void;
   onExport: () => void;
+  onAllowPosting: () => void;
+  onTurnOffPosting: () => void;
 }
 
 function ConnectionCard(props: CardProps): JSX.Element {
@@ -291,14 +306,25 @@ function ConnectionCard(props: CardProps): JSX.Element {
             <div className="mt-[2px]">
               <DetailLine {...props} />
             </div>
-            {(card.scopes ?? []).length > 0 && (
+            {((card.scopes ?? []).length > 0 || card.write?.state === "granted") && (
               <div className="mt-[6px] flex flex-wrap gap-[6px]">
                 {(card.scopes ?? []).map((s) => (
                   <Tag key={s.code} data-scope={s.code}>
                     {s.label}
                   </Tag>
                 ))}
+                {card.write?.state === "granted" && (
+                  <Tag data-scope="ledger.post">{COPY.postTag}</Tag>
+                )}
               </div>
+            )}
+            {card.write?.state === "granted" && card.write.granted_by && card.write.granted_at && (
+              <p className="mt-[4px] text-cell text-ink-3" data-write="granted">
+                {COPY.postingAllowedBy(
+                  card.write.granted_by,
+                  date(card.write.granted_at, { now: props.now, tz: DEFAULT_TZ, withYear: true }),
+                )}
+              </p>
             )}
           </div>
         </div>
@@ -311,6 +337,28 @@ function ConnectionCard(props: CardProps): JSX.Element {
           {actions.includes("connect") && (
             <Button variant="secondary" size="sm" className={full} onClick={props.onConnect}>
               {card.category === "payroll" ? COPY.connectMore : COPY.connect}
+            </Button>
+          )}
+          {card.write?.state === "offered" && card.write.can_change && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className={full}
+              aria-haspopup="dialog"
+              onClick={props.onAllowPosting}
+            >
+              {COPY.allowPosting}
+            </Button>
+          )}
+          {card.write?.state === "granted" && card.write.can_change && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={full}
+              aria-haspopup="dialog"
+              onClick={props.onTurnOffPosting}
+            >
+              {COPY.turnOff}
             </Button>
           )}
           {actions.includes("export_instead") && (
@@ -359,7 +407,10 @@ function ConsentSheet({
   onClose,
   onContinue,
 }: {
-  consent: ConsentCopyOut;
+  /** The connect consent (C20 v1) or the posting consent v2 (C-02-T40): the same sheet. */
+  consent: Pick<ConsentCopyOut, "title" | "will" | "wont" | "authorization" | "continue_label"> & {
+    helper?: string | null | undefined;
+  };
   firm: string;
   open: boolean;
   mobile: boolean;
@@ -494,6 +545,30 @@ function DetailsDrawer({
               </ul>
             )}
           </DrawerCard>
+          {(detail?.writes ?? []).length > 0 && (
+            <DrawerCard className="p-[14px]" data-writes="">
+              <p className="text-cell font-medium text-ink-2">{COPY.writes}</p>
+              <ul className="mt-[6px] flex flex-col gap-[4px]">
+                {(detail?.writes ?? []).map((w) => (
+                  <li
+                    key={`${w.kind}:${w.at}`}
+                    className="flex justify-between gap-[8px] text-cell"
+                  >
+                    <span>
+                      {w.kind === "posted_entries"
+                        ? COPY.postedEntries(w.count ?? 0, w.batch_code ?? "")
+                        : COPY.closingDateSet(
+                            date(w.closing_date ?? "", { now, tz: DEFAULT_TZ, withYear: true }),
+                          )}
+                    </span>
+                    <span className="flex-none text-ink-3">
+                      {`${date(w.at, { now, tz: DEFAULT_TZ })}, ${time(w.at, { tz: DEFAULT_TZ })}`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </DrawerCard>
+          )}
           {(detail?.activity ?? []).length > 0 && (
             <DrawerCard className="p-[14px]">
               <p className="text-cell font-medium text-ink-2">{COPY.activity}</p>
@@ -547,6 +622,10 @@ export function POR16({
   const refresh = (): void => {
     void client.invalidateQueries({ queryKey: listEntityConnectionsQueryKey({ path }) });
   };
+  const [writeFor, setWriteFor] = useState<string | null>(null);
+  const [revokeFor, setRevokeFor] = useState<string | null>(null);
+  const grant = useMutation(grantWriteMutation());
+  const revoke = useMutation(revokeWriteMutation());
   const start = useMutation(startConnectionMutation());
   const retry = useMutation(retryConnectionMutation());
   const disconnect = useMutation(disconnectConnectionMutation());
@@ -624,6 +703,49 @@ export function POR16({
       },
     );
   };
+  // C-02-T40: the owner grants posting with a fresh second factor (a stale one asks to sign in
+  // again), under the consent copy version the sheet showed; revoking always goes in.
+  const allowPosting = (card: PortalConnectionCardOut): void => {
+    const consent = card.write?.consent;
+    if (!card.connection_id || consent == null) return;
+    grant.mutate(
+      {
+        path: { connection_id: card.connection_id },
+        body: {
+          capability_id: "ledger_post_journal_entries",
+          consent_copy_version: consent.version as "por16.qbo.post_entries.v2",
+        },
+      },
+      {
+        onSuccess: () => {
+          setWriteFor(null);
+          toast.show(COPY.postingOn);
+          refresh();
+        },
+        onError: (error: unknown) => {
+          if (needsStepUp(error) && onStepUp) onStepUp();
+          else failed();
+        },
+      },
+    );
+  };
+  const turnOffPosting = (card: PortalConnectionCardOut): void => {
+    if (!card.connection_id) return;
+    revoke.mutate(
+      { path: { connection_id: card.connection_id } },
+      {
+        onSuccess: () => {
+          setRevokeFor(null);
+          toast.show(COPY.postingOff);
+          refresh();
+        },
+        onError: (error: unknown) => {
+          if (needsStepUp(error) && onStepUp) onStepUp();
+          else failed();
+        },
+      },
+    );
+  };
   const exportInstead = (): void => {
     // A-02-T28: the open trial-balance request's guided steps (the portal's Documents); with no
     // page to go to, the team asks when it needs one (ADR-108: connecting is never required).
@@ -638,7 +760,11 @@ export function POR16({
         <EmptyState icon="link" title={COPY.empty(firm)} />
       ) : (
         <>
-          <Relationship firm={firm} mobile={mobile} />
+          <Relationship
+            firm={firm}
+            mobile={mobile}
+            posting={items.some((c) => c.write?.state === "granted")}
+          />
           <ul aria-label={COPY.pane} className="mx-[12px] flex flex-col gap-[8px]">
             {items.map((card) => (
               <ConnectionCard
@@ -662,6 +788,12 @@ export function POR16({
                   setDialogFor(card.connection_id ?? card.catalog_key);
                 }}
                 onExport={exportInstead}
+                onAllowPosting={() => {
+                  setWriteFor(card.connection_id ?? null);
+                }}
+                onTurnOffPosting={() => {
+                  setRevokeFor(card.connection_id ?? null);
+                }}
               />
             ))}
           </ul>
@@ -693,6 +825,8 @@ export function POR16({
     );
   }
   const consentCard = byKey(consentFor);
+  const writeCard = byKey(writeFor);
+  const revokeCard = byKey(revokeFor);
   const dialogCard = byKey(dialogFor);
   const detailsCard = byKey(detailsFor);
   const back = (
@@ -733,7 +867,11 @@ export function POR16({
             if (!next) setDialogFor(null);
           }}
           title={COPY.disconnectTitle(dialogCard.name)}
-          description={COPY.disconnectBody(firm)}
+          description={
+            dialogCard.write?.state === "granted"
+              ? COPY.disconnectBodyPosting(firm)
+              : COPY.disconnectBody(firm)
+          }
         >
           <div className="flex justify-end gap-[8px] p-[14px]">
             <Button
@@ -754,6 +892,54 @@ export function POR16({
               }}
             >
               {COPY.disconnect}
+            </Button>
+          </div>
+        </Dialog>
+      )}
+      {writeCard?.write?.consent != null && (
+        <ConsentSheet
+          consent={writeCard.write.consent}
+          firm={firm}
+          open
+          mobile={mobile}
+          busy={grant.isPending}
+          onClose={() => {
+            setWriteFor(null);
+          }}
+          onContinue={() => {
+            allowPosting(writeCard);
+          }}
+        />
+      )}
+      {revokeCard !== undefined && (
+        <Dialog
+          open
+          size="sm"
+          onOpenChange={(next) => {
+            if (!next) setRevokeFor(null);
+          }}
+          title={COPY.turnOffTitle(revokeCard.name)}
+          description={COPY.turnOffBody(firm)}
+        >
+          <div className="flex justify-end gap-[8px] p-[14px]">
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={() => {
+                setRevokeFor(null);
+              }}
+            >
+              {COPY.cancel}
+            </Button>
+            <Button
+              variant="destructive"
+              size="md"
+              disabled={revoke.isPending}
+              onClick={() => {
+                turnOffPosting(revokeCard);
+              }}
+            >
+              {COPY.turnOffConfirm}
             </Button>
           </div>
         </Dialog>
@@ -812,6 +998,16 @@ export function isStepUp(error: unknown): boolean {
   if (typeof error !== "object" || error === null) return false;
   const facts = (error as { facts?: { reason?: unknown } }).facts;
   return facts?.reason === "mfa_required";
+}
+
+/** C-02-T40: a posting change refused for a stale second factor (409 `mfa_required`). */
+export function needsStepUp(error: unknown): boolean {
+  if (isStepUp(error)) return true;
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: unknown }).code === "mfa_required"
+  );
 }
 
 function isMissing(error: unknown): boolean {

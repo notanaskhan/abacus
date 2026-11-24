@@ -88,7 +88,11 @@ def test_the_canvas_list_and_order_win() -> None:
 def test_df34_no_auth_line_names_a_person_and_oq4_writes_are_registered() -> None:
     rows = _doc().rows
     assert not [r.key for r in rows if r.auth_line and "added by" in r.auth_line]
-    assert {r.key: r.writes for r in rows if r.writes} == {"cch": ["tax_engine_file_bridge"]}
+    # C-02-T40 (DEC-5926): QuickBooks Online declares W1, the write its posting consent v2 names.
+    assert {r.key: r.writes for r in rows if r.writes} == {
+        "cch": ["tax_engine_file_bridge"],
+        "quickbooks_online": ["ledger_post_journal_entries"],
+    }
 
 
 def test_l10_dec89_no_kit_sample_text_and_no_payment_copy() -> None:

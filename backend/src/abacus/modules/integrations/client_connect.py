@@ -68,6 +68,9 @@ from abacus.modules.integrations.contract import (
     PortalConnectionDetailOut,
     PortalConnectionsOut,
     PortalEntityOut,
+    PortalWriteConsentOut,
+    PortalWriteRowOut,
+    PortalWriteScopeOut,
     StatusReason,
     SyncRunRefOut,
     SyncRunSummaryOut,
@@ -193,6 +196,85 @@ def _card(
     )
 
 
+_CONSENT_FIELDS = ("version", "title", "will", "wont", "authorization", "continue_label")
+
+
+async def _write_scope(
+    ctx: AuthContext,
+    entry: CatalogEntry,
+    c: EntityConnectionView | None,
+    *,
+    engagement_id: UUID,
+    entity_id: UUID,
+) -> PortalWriteScopeOut | None:
+    """C-02-T40 (DF-19; ADR-344 §6; DEC-5926): the posting scope a live ledger card shows. None
+    unless the catalogue declares a write consent for the system and the firm holds W1 (the
+    registry released and the firm switch on): before that no write copy appears anywhere. An
+    attest client reads `read_only` (no consent, no control); otherwise `offered` with the
+    catalogue's consent v2, or `granted` with who granted it and when. Only a person who holds
+    `connection.grant_write` on the entity (its owner) may change it."""
+    from abacus.modules.identity.api import names_of
+    from abacus.modules.integrations import w1_switches as w1
+    from abacus.modules.integrations.connect_catalog import write_consent_of
+    from abacus.modules.organisations.api import attest_client_of, client_of_entity
+
+    if c is None or c.status == "revoked" or entry.row.connector_provider is None:
+        return None
+    async with tenant_session(ctx.tenant) as session:
+        copy = await write_consent_of(session, entry.row.connector_provider)
+    if copy is None:
+        return None
+    switch = await w1.firm_switch(ctx.tenant)
+    if not (switch.released and switch.enabled):
+        return None
+    client = await client_of_entity(ctx.tenant, entity_id)
+    if client is None or await attest_client_of(ctx.tenant, client) is not False:
+        return PortalWriteScopeOut(state="read_only")
+    ref = await get_ref(ctx, engagement_id)
+    may = await allowed_actions(
+        ctx, ref.resource(), ["connection.grant_write", "connection.revoke_write"]
+    )
+    consent = PortalWriteConsentOut.model_validate({k: copy[k] for k in _CONSENT_FIELDS})
+    latest = await w1.latest_grant(ctx.tenant, c.id)
+    if latest is None or latest.event != "granted":
+        return PortalWriteScopeOut(
+            state="offered", consent=consent, can_change="connection.grant_write" in may
+        )
+    by = (await names_of([latest.by])).get(latest.by) if latest.by is not None else None
+    return PortalWriteScopeOut(
+        state="granted",
+        consent=consent,
+        granted_at=latest.at,
+        granted_by=by,
+        can_change="connection.revoke_write" in may,
+    )
+
+
+async def _writes(ctx: AuthContext, entity_id: UUID) -> list[PortalWriteRowOut]:
+    """C-02-T40: the client-visible write log for the entity's ledger (ADR-040), newest first:
+    each posted batch ("Posted 6 journal entries · batch 2026-08-A") and the closing date the
+    firm set after posting. Read from adjustments' registered posting log (never its tables)."""
+    from abacus.modules.integrations.ledger_console import posting_facts
+
+    facts = await posting_facts(ctx.tenant, entity_id)
+    rows = [
+        PortalWriteRowOut(
+            at=r.posted_at, kind="posted_entries", count=r.entry_count, batch_code=r.batch_code
+        )
+        for r in facts.rows
+        if r.status == "posted" and r.posted_at is not None
+    ]
+    closing = facts.closing_date
+    if closing is not None and closing.set_by is not None:  # set by the firm, not read
+        rows.append(
+            PortalWriteRowOut(
+                at=closing.at, kind="closing_date", closing_date=closing.closing_date
+            )
+        )
+    rows.sort(key=lambda w: w.at, reverse=True)
+    return rows[:50]
+
+
 async def _may_retry(ctx: AuthContext, engagement_id: UUID) -> bool:
     ref = await get_ref(ctx, engagement_id)
     return "connection.retry" in await allowed_actions(ctx, ref.resource(), ["connection.retry"])
@@ -209,7 +291,11 @@ async def portal_cards(ctx: AuthContext, entity_id: UUID) -> PortalConnectionsOu
         if not mine:
             items.append(_card(entry, None, client=facts.is_client, may_retry=may_retry))
         for c in mine:
-            items.append(_card(entry, c, client=facts.is_client, may_retry=may_retry))
+            card = _card(entry, c, client=facts.is_client, may_retry=may_retry)
+            write = await _write_scope(
+                ctx, entry, c, engagement_id=facts.engagement_id, entity_id=entity_id
+            )
+            items.append(card if write is None else card.model_copy(update={"write": write}))
     return PortalConnectionsOut(
         entity=PortalEntityOut(
             client_entity_id=entity_id,
@@ -304,8 +390,14 @@ async def detail_of(ctx: AuthContext, connection_id: UUID) -> PortalConnectionDe
         raise NotFound("connection")
     may_retry = await _may_retry(ctx, found.engagement_id)
     card = _card(entry, found.connection, client=found.is_client, may_retry=may_retry)
+    entity_id = await entity_of_connection(ctx, connection_id)
+    write = await _write_scope(
+        ctx, entry, found.connection, engagement_id=found.engagement_id, entity_id=entity_id
+    )
+    ledger = entry.row.category == "ledger"
     return PortalConnectionDetailOut(
-        card=card,
+        card=card if write is None else card.model_copy(update={"write": write}),
+        writes=await _writes(ctx, entity_id) if ledger else [],
         recent_syncs=[
             SyncRunSummaryOut(
                 sync_run_id=r.id,
