@@ -160,6 +160,7 @@ async def return_facts(
             owner_user_ids=scopes[r.engagement_id].owners,
             signer_user_id=scopes[r.engagement_id].signer,
             reference_set_version_ids=r.sets,
+            rule_key=FORM_LABEL.get(r.form, r.form),  # DF-10's offsets are per form (T-08-T44)
             extension_form=EXTENSION_FORM.get(r.form) if r.extended_due_on else None,
             extended_due_on=r.extended_due_on,
             done=r.done,

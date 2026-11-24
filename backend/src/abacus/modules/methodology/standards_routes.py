@@ -34,6 +34,7 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.methodology import standards, standards_import
 from abacus.modules.methodology.standards_contract import (
+    DeadlineRulesSectionOut,
     StandardCreateIn,
     StandardDetailOut,
     StandardDraftPatchIn,
@@ -132,6 +133,16 @@ async def list_standards_route(
     await _gate(ctx)
     items = await standards.list_standards(ctx, kind)
     return ListPage[StandardOut](items=items, total=len(items))
+
+
+@standards_router.get(
+    "/deadline-rules", action="firm_standard.read", response_model=DeadlineRulesSectionOut
+)
+async def deadline_rules_section_route(ctx: Ctx) -> DeadlineRulesSectionOut:
+    """KNW-04 section j (T-08-T44, DF-10): platform rows read-only beside the firm's overrides,
+    which their owner drafts and publishes through the standard's own routes."""
+    await _gate(ctx)
+    return await standards.deadline_rules_section(ctx)
 
 
 @standards_router.post(

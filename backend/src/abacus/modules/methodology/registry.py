@@ -6,7 +6,7 @@ re-owned the five SPEC-008 tables from engagements and added the version lifecyc
 
 from __future__ import annotations
 
-TABLES: frozenset[str] = frozenset(
+_TABLES_PRE_S53: frozenset[str] = frozenset(
     {
         "methodology_templates",
         "methodology_versions",
@@ -44,7 +44,7 @@ TABLES: frozenset[str] = frozenset(
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
-INSERT_ONLY: frozenset[str] = frozenset(
+_INSERT_ONLY_PRE_S53: frozenset[str] = frozenset(
     {
         "methodology_templates",
         "methodology_versions",
@@ -201,7 +201,7 @@ UPDATE_COLUMNS["statement_note_template_versions"] = frozenset(
 # K-03-T11 (1010, TASK-8901; SPEC-720 §4): templates v2 core. Components move only while their
 # version is a draft (template_component_guard); a published version moves only its deprecate and
 # retire fields (template_version_guard).
-TABLES = TABLES | frozenset(
+_TABLES_S53_1: frozenset[str] = frozenset(
     {
         "agent_skill_versions",
         "agent_skills",
@@ -221,7 +221,9 @@ TABLES = TABLES | frozenset(
         "template_versions",
     }
 )
-INSERT_ONLY = INSERT_ONLY | frozenset({"agent_skills", "agent_skill_versions", "template_changes"})
+_INSERT_ONLY_S53_1: frozenset[str] = frozenset(
+    {"agent_skills", "agent_skill_versions", "template_changes"}
+)
 INSERT_COLUMNS["agent_skill_versions"] = frozenset(
     {
         "body_md",
@@ -510,10 +512,10 @@ UPDATE_COLUMNS["template_versions"] = frozenset(
 )
 
 # K-03-T12 (1011, TASK-8902): template links, rollouts, updates and scoping evaluations
-TABLES = TABLES | frozenset(
+_TABLES_S53_2: frozenset[str] = frozenset(
     {"scoping_evaluations", "template_rollout_actions", "template_rollouts"}
 )
-INSERT_ONLY = INSERT_ONLY | frozenset({"scoping_evaluations"})
+_INSERT_ONLY_S53_2: frozenset[str] = frozenset({"scoping_evaluations"})
 INSERT_COLUMNS["scoping_evaluations"] = frozenset(
     {"engagement_id", "inputs_hash", "result", "rule_id", "template_version_id", "tenant_id"}
 )
@@ -541,3 +543,7 @@ UPDATE_COLUMNS["template_rollouts"] = frozenset(
 INSERT_COLUMNS["report_template_versions"] = INSERT_COLUMNS[
     "report_template_versions"
 ] | frozenset({"field_manifest"})  # T-06-T43 (1015, TASK-8912): a form face's field manifest
+
+# The tables this module owns and its insert-only tables after S53 (one definition each).
+TABLES: frozenset[str] = _TABLES_PRE_S53 | _TABLES_S53_1 | _TABLES_S53_2
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S53 | _INSERT_ONLY_S53_1 | _INSERT_ONLY_S53_2

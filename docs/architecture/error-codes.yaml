@@ -3144,6 +3144,12 @@ codes:
     raised_by:
     - abacus.modules.adjustments.posting_errors.PostingNotEnabled
     summary: 'Posting is off for this engagement (`posting_enabled`): export the approved entries.'
+  postponement_notice_unknown:
+    status: 409
+    raised_by:
+    - abacus.modules.practice.deadline_overrides.PostponementNoticeUnknown
+    summary: 'The named version in effect carries no notice with this id (or the version is not the one
+      in effect): nothing is applied.'
   predecessor_file_mismatch:
     status: 422
     raised_by:

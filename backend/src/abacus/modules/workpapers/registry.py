@@ -7,7 +7,7 @@ from __future__ import annotations
 
 # SPEC-308 (TASK-319): working papers, all insert-only. `workpaper_sections` arrives with
 # multi-sheet papers; the table exists so the version content can name sheets.
-TABLES: frozenset[str] = frozenset(
+_TABLES_PRE_S53: frozenset[str] = frozenset(
     {
         "workpapers",
         "workpaper_sections",
@@ -28,7 +28,7 @@ TABLES: frozenset[str] = frozenset(
         "control_deviations",
     }
 )
-INSERT_ONLY: frozenset[str] = TABLES - {
+_INSERT_ONLY_PRE_S53: frozenset[str] = _TABLES_PRE_S53 - {
     "tie_out_checks", "attention_flags", "program_procedures", "attribute_tests"
 }  # fmt: skip
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -137,7 +137,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
 }
 
 # K-03-T13 (1012, TASK-8903): the Sheets engine core
-TABLES = TABLES | frozenset(
+_TABLES_S53_1: frozenset[str] = frozenset(
     {
         "agent_column_previews",
         "agent_column_run_rows",
@@ -386,3 +386,7 @@ UPDATE_COLUMNS["sheets"] = frozenset({"sample_set_id", "sample_version", "title"
 UPDATE_COLUMNS["program_procedures"] = UPDATE_COLUMNS["program_procedures"] | frozenset(
     {"scoped_out_by_rule"}
 )  # K-03-T13 (1012, TASK-8903): the Sheets engine core
+
+# The tables this module owns and its insert-only tables after S53 (one definition each).
+TABLES: frozenset[str] = _TABLES_PRE_S53 | _TABLES_S53_1
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S53

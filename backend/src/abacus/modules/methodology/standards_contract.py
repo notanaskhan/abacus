@@ -42,7 +42,12 @@ from abacus.modules.identity.api import AuthContext
 
 # `firm_standards` kinds and `threshold_policies` kinds (K-02 §4.2, M-B).
 FirmStandardKind = Literal[
-    "review_checklist", "review_levels", "return_approval_policy", "ssars_cas_settings"
+    "review_checklist",
+    "review_levels",
+    "return_approval_policy",
+    "ssars_cas_settings",
+    "deadline_overrides",
+    "deadline_overrides",  # T-08-T44 (DF-10, DEC-5921): KNW-04 section j's firm rows
 ]
 ThresholdPolicyKind = Literal[
     "aje_thresholds",
@@ -59,6 +64,7 @@ StandardKind = Literal[
     "review_levels",
     "return_approval_policy",
     "ssars_cas_settings",
+    "deadline_overrides",
     "aje_thresholds",
     "variance_thresholds",
     "materiality_ranges",
@@ -285,6 +291,64 @@ class SsarsCasSettingsPayload(BaseModel):
     early_adopt_ssars27: Annotated[bool, classified("internal")]
 
 
+class DeadlineOffsetRow(BaseModel):
+    """DF-10: the firm's internal target for a form, this many days before the statutory due
+    date (moved earlier past a weekend or a firm closure day). HOME-03 keeps the statutory date."""
+
+    model_config = _frozen()
+
+    form: Annotated[str, Field(pattern=r"^[0-9A-Za-z-]{2,20}$"), classified("internal")]
+    internal_offset_days: Annotated[int, Field(ge=1, le=120), classified("internal")]
+
+
+class FirmClosureRow(BaseModel):
+    """A day the firm is closed: an internal target never falls on it (statutory dates roll on
+    the platform's legal holidays only, IRC §7503)."""
+
+    model_config = _frozen()
+
+    date: Annotated[date, classified("internal")]
+    name: Annotated[str, Field(min_length=1, max_length=100), classified("internal")]
+
+
+class FirmPostponementArea(BaseModel):
+    model_config = _frozen()
+
+    state_code: Annotated[str, Field(pattern=r"^[A-Z]{2}$"), classified("internal")]
+    counties: Annotated[list[str], Field(max_length=300), classified("internal")] = []
+
+
+class FirmPostponementRow(BaseModel):
+    """A relief notice the firm tracks that the platform set does not carry yet (a state's own
+    notice): applied to a client by its notice id, never to every return in the area."""
+
+    model_config = _frozen()
+
+    notice_id: Annotated[
+        str, Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9-]{1,39}$"), classified("internal")
+    ]
+    title: Annotated[str, Field(min_length=1, max_length=200), classified("internal")]
+    areas: Annotated[list[FirmPostponementArea], Field(max_length=60), classified("internal")] = []
+    window_start: Annotated[date, classified("internal")]
+    window_end: Annotated[date, classified("internal")]
+    postponed_to: Annotated[date, classified("internal")]
+
+
+class DeadlineOverridesPayload(BaseModel):
+    """DF-10 firm overrides on top of the platform rules (T-08-T44; K-02 lifecycle: owner-drafted,
+    owner-published, effective-dated). Platform rows stay read-only; these never change a
+    statutory date except through a person's per-client postponement application."""
+
+    model_config = _frozen()
+
+    kind: Annotated[Literal["deadline_overrides"], classified("internal")]
+    offsets: Annotated[list[DeadlineOffsetRow], Field(max_length=50), classified("internal")] = []
+    closures: Annotated[list[FirmClosureRow], Field(max_length=100), classified("internal")] = []
+    postponements: Annotated[
+        list[FirmPostponementRow], Field(max_length=100), classified("internal")
+    ] = []
+
+
 Rmm = Literal["low", "moderate", "high"]
 
 
@@ -398,7 +462,8 @@ StandardPayload = Annotated[
     | ReviewChecklistPayload
     | ReviewLevelsPayload
     | ReturnApprovalPolicyPayload
-    | SsarsCasSettingsPayload,
+    | SsarsCasSettingsPayload
+    | DeadlineOverridesPayload,
     Field(discriminator="kind"),
 ]
 
@@ -452,6 +517,56 @@ class StandardOut(BaseModel):
     # KNW-04 b's "Checks"); null with no version in effect.
     entries: Annotated[int | None, classified("internal")] = None
     allowed_actions: Annotated[list[str], classified("internal")]
+
+
+class PlatformDeadlineRuleOut(BaseModel):
+    """A platform due-date rule, read-only in KNW-04 section j (DF-10)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    form: Annotated[str, classified("public")]
+    months_after_period_end: Annotated[int, classified("public")]
+    day: Annotated[int, classified("public")]
+    extension_form: Annotated[str | None, classified("public")]
+    extension_months: Annotated[int | None, classified("public")]
+    authority: Annotated[str, classified("public")]
+    version_id: Annotated[UUID, classified("internal")]
+
+
+class DeadlineHolidayOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    date: Annotated[date, classified("public")]
+    name: Annotated[str, classified("public")]
+    jurisdiction: Annotated[str, classified("public")]
+    source: Annotated[Literal["platform", "firm"], classified("internal")]
+    version_id: Annotated[UUID, classified("internal")]
+
+
+class DeadlinePostponementOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    notice_id: Annotated[str, classified("public")]
+    window_start: Annotated[date, classified("public")]
+    window_end: Annotated[date, classified("public")]
+    postponed_to: Annotated[date, classified("public")]
+    source: Annotated[Literal["platform", "firm"], classified("internal")]
+    version_id: Annotated[UUID, classified("internal")]
+
+
+class DeadlineRulesSectionOut(BaseModel):
+    """KNW-04 section j (T-08-T44, DF-10, DEC-5921): the platform's rules, holidays and relief
+    notices in effect, read-only, beside the firm's `deadline_overrides` standard (its version in
+    effect, editable and published by its owner through the K-02 lifecycle)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    platform_rules: Annotated[list[PlatformDeadlineRuleOut], classified("public")]
+    holidays: Annotated[list[DeadlineHolidayOut], classified("public")]
+    postponements: Annotated[list[DeadlinePostponementOut], classified("public")]
+    firm_standard: Annotated[StandardOut | None, classified("internal")] = None
+    firm_overrides: Annotated[DeadlineOverridesPayload | None, classified("internal")] = None
+    platform_read_only: Annotated[Literal[True], classified("internal")] = True
 
 
 class StandardVersionOut(BaseModel):

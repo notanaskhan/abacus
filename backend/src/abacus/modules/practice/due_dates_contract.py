@@ -113,6 +113,10 @@ class DueDates:
     # Additive (T-02-T10): the rule as the Due popover reads it, original and extended.
     rule_text: str | None = None
     extended_rule_text: str | None = None
+    # Additive (T-08-T44, DF-10): the firm's internal target and the original a client's relief
+    # application moved, when the caller named the firm and the client.
+    internal_target_on: date | None = None
+    postponed_from: date | None = None
 
 
 @dataclass(frozen=True)

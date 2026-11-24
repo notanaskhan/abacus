@@ -25,7 +25,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import PRACTICE_FILING_DEADLINES
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
 
@@ -137,7 +137,10 @@ class FilingDeadlinePostponementIn(BaseModel):
     model_config = _cfg()
 
     client_id: Annotated[UUID, Internal]
-    notice_id: Annotated[UUID, Internal]
+    # The notice's id as its set names it ("IR-2026-01"): a platform `disaster_postponements` row
+    # or a firm `deadline_overrides` row (T-08-T44, DEC-5921).
+    notice_id: Annotated[str, Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9-]{1,39}$"), Internal]
+    # The version the person read: the platform set's, or the firm overrides' version in effect.
     reference_set_version_id: Annotated[UUID, Internal]
 
 
@@ -300,7 +303,7 @@ async def filing_deadline_route(filing_deadline_id: UUID, ctx: Ctx) -> FilingDea
         item=item,
         original_due_on=r.original_due_on,
         extended_due_on=r.extended_due_on,
-        internal_target_on=None,
+        internal_target_on=r.internal_target_on,
         reference_set_version_ids=list(r.reference_set_version_ids),
         computed_at=r.computed_at,
     )
@@ -311,11 +314,24 @@ async def filing_deadline_route(filing_deadline_id: UUID, ctx: Ctx) -> FilingDea
     action="filing_deadline.apply_postponement",
     response_model=FilingDeadlinePostponementOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def postponement_application_route(
     body: FilingDeadlinePostponementIn, ctx: Ctx, key: IdempotencyKey
 ) -> FilingDeadlinePostponementOut:
-    """Human-only with fresh MFA (OQ-17); only that client's dates move."""
+    """Human-only with fresh MFA (OQ-17); only that client's dates move (T-08-T44, DEC-5921).
+    409 `postponement_notice_unknown` when the named version in effect carries no such notice;
+    the same notice again answers the first application."""
     await _human(ctx, "filing_deadline.apply_postponement")
-    raise NotImplementedYet
+    from abacus.modules.practice.deadline_overrides import apply_postponement
+
+    del key  # one application per client and notice: the retry answers the first
+    found = await apply_postponement(
+        ctx, body.client_id, body.notice_id, body.reference_set_version_id
+    )
+    return FilingDeadlinePostponementOut(
+        application_id=found.application_id,
+        client_id=found.client_id,
+        moved=found.moved,
+        applied_at=found.applied_at,
+    )
