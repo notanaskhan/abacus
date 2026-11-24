@@ -169,6 +169,10 @@ async def current_rows_v2(dsn: str) -> list[Mapping[str, object]]:
         row["categories"] = list(cast(list[str], b["categories"] or []))
         pre = b["prerequisite"]
         row["prerequisite"] = json.loads(pre) if isinstance(pre, str) else pre
+        # 0933's detail copy (C-02-T40's write consent lives in it): without it every re-import
+        # planned a change the database, rightly, never wrote (S53 main CI).
+        detail = b["detail_copy"]
+        row["detail_copy"] = json.loads(detail) if isinstance(detail, str) else detail
     return list(rows.values())
 
 

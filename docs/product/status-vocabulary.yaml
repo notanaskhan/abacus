@@ -533,6 +533,9 @@ objects:
     codes:
       granted: {label: "Posting allowed", variant: green-tint, terminal: false, derived: false, client_label: "Your accountant can post approved entries"}
       revoked: {label: "Posting paused", variant: amber, terminal: false, derived: false, context_labels: {by: "Posting paused · write access revoked by {name}"}, client_label: "Posting turned off"}
+      # C-02-T40 (DEC-5926): the scope before a grant (PortalWriteScopeOut.state; S53 end pass).
+      offered:   {label: "Posting not allowed", variant: neutral, terminal: false, derived: true, client_label: "Your accountant can't post entries yet"}
+      read_only: {label: "Read only", variant: muted, terminal: false, derived: true, client_label: "Read-only access"}   # an attest client: no consent, no grant
 
   close_deliverable:   # close_deliverables.status (CLS-08)
     source: "C-02 §4.2, §4.7; CLS-08 a-g; DF-23"
@@ -984,6 +987,13 @@ objects:
       third_party_disclosure: {label: "Consent to disclose — named third party", variant: tag, terminal: false, derived: false}
 
   # ---- Platform ----
+  capability_run_outcome:   # one inline capability run's end (C-02-T34 vendor screen, Q-05-T22 post-issuance analysis)
+    source: "C-02-T34; Q-05-T22; SPEC-036 agent stages (S53 end pass)"
+    codes:
+      succeeded: {label: "Ready for review", variant: state, terminal: true, derived: false}
+      escalated: {label: "Escalated", variant: red-tint, terminal: true, derived: false}
+      shadow:    {label: "Shadow (nothing shown)", variant: muted, terminal: true, derived: false}   # the agent's stage is shadow: it ran, nothing is shown
+
   agent_run:
     source: "blueprint 3.3.1; 9.5.6; DEC-09"
     codes:

@@ -46,7 +46,11 @@ def test_a_different_checkpoint_hash_is_a_different_document() -> None:
 def test_item_f_the_watermark_and_the_masked_tin_are_on_the_pages() -> None:
     with pdfplumber.open(io.BytesIO(_pdf())) as pdf:
         texts = [page.extract_text() or "" for page in pdf.pages]
+        # The watermark is drawn at -35 degrees, and extract_text orders glyphs by position, so a
+        # rotated phrase comes back scattered: read each page's glyphs in drawing order instead.
+        drawn = ["".join(str(c["text"]) for c in page.chars) for page in pdf.pages]
     assert len(texts) == 2
     assert "17,914,500" in texts[0]
-    assert all("Draft — not for filing" in t for t in texts)
+    mark = "Draft—notforfiling"  # the watermark, whitespace dropped
+    assert all(mark in "".join(d.split()) for d in drawn)
     assert "0287" in texts[0] and "1,231,600.00" in texts[1]

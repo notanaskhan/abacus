@@ -34,6 +34,10 @@ WALL_NAME = re.compile(r"(hidden|walled|wall_count|by_wall)")
 MASKED = "#/components/schemas/MaskedTinOut"
 # The one schema allowed a plain TIN: the reveal response, reached only by the reveal route.
 REVEAL = ("TinRevealOut", "value")
+# The one schema allowed to take a whole TIN in: the W-9 entry (C-02-T33, DEC-5907), write-only,
+# sealed on arrival, never echoed. Held below: request bodies only, never a response.
+W9_ENTRY = ("DeliveryW9RecordIn", "tin")
+TIN_KINDS = frozenset({"ssn", "ein", "itin"})
 
 
 def _props(schema: str) -> dict[str, Json]:
@@ -117,6 +121,11 @@ def test_ac22_no_schema_carries_a_plain_tin(schema: str) -> None:
         if TIN_NAME.search(name):
             if name.endswith("_last4") and _last4_only(prop):
                 continue  # A-05-T10: four restricted digits typed for a check, never a whole TIN
+            if (schema, name) == W9_ENTRY:
+                continue  # held by the W-9 entry test below
+            kinds = set(cast(list[str], prop.get("enum", [])))
+            if name.endswith("_kind") and kinds and kinds <= TIN_KINDS:
+                continue  # which kind of TIN (`ssn`, `ein`), never a TIN's digits
             # A TIN-named field is the masked shape, by reference, and nothing else.
             assert _refs(prop) == {MASKED}, f"{schema}.{name} is not MaskedTinOut"
 
@@ -160,6 +169,28 @@ def test_ac22_the_plain_value_is_only_in_the_reveal_response_and_restricted() ->
         ("/v1/client-entities/{entity_id}/tin/reveal", "post"),
         ("/v1/vendors/{vendor_id}/tin:reveal", "post"),  # C-02-T07: a 1099 vendor's, same schema
     ]
+
+
+def test_ac22_the_w9_entry_is_write_only_restricted_and_never_answered() -> None:
+    schema, field = W9_ENTRY
+    prop = _props(schema)[field]
+    assert prop["cls"] == "restricted"
+    assert prop.get("writeOnly") is True and prop.get("format") == "password"
+    ref = f"#/components/schemas/{schema}"
+    answered = [
+        (path, method)
+        for path, ops in PATHS.items()
+        for method, op in ops.items()
+        if ref in json.dumps(op.get("responses", {}))
+    ]
+    assert answered == []
+    taken = [
+        (path, method)
+        for path, ops in PATHS.items()
+        for method, op in ops.items()
+        if ref in json.dumps(op.get("requestBody", {}))
+    ]
+    assert len(taken) == 1, taken
 
 
 # --- C2 status codes ----------------------------------------------------------------------------

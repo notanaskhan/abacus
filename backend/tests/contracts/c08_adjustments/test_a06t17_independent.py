@@ -66,6 +66,9 @@ W1_POSTING = {
     "posting_recovery.py": ("posted", "failed_post"),
     # C-02-T31 (S52): CLS-07 compares an entry's status to offer Retry; it never writes one.
     "close_approvals.py": ("posted", "failed_post"),
+    # C-02-T41 (S53, DEC-5927): POR-08/09 list the client's posted entries beside the pending ones;
+    # it reads `status = 'posted'` and never writes a status.
+    "client_approvals.py": ("posted",),
     "posting_contract.py": ("failed_post",),
 }
 MIGRATION_0896 = (BACKEND / "migrations/versions/0896_adjustments_eliminations.py").read_text()

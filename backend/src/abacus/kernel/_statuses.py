@@ -433,6 +433,7 @@ class ClosingDateConflictStatus(StrEnum):
 class LedgerWriteGrantStatus(StrEnum):
     GRANTED = "granted"
     REVOKED = "revoked"
+    # derived, never stored: offered, read_only
 
 
 class CloseDeliverableStatus(StrEnum):
@@ -807,6 +808,12 @@ class ConsentPurposeStatus(StrEnum):
     AI_DISCLOSURE = "ai_disclosure"
     OFFSHORE_DISCLOSURE = "offshore_disclosure"
     THIRD_PARTY_DISCLOSURE = "third_party_disclosure"
+
+
+class CapabilityRunOutcomeStatus(StrEnum):
+    SUCCEEDED = "succeeded"
+    ESCALATED = "escalated"
+    SHADOW = "shadow"
 
 
 class AgentRunStatus(StrEnum):
@@ -2459,6 +2466,11 @@ STORED: dict[str, tuple[str, ...]] = {
         "ai_disclosure",
         "offshore_disclosure",
         "third_party_disclosure",
+    ),
+    "capability_run_outcome": (
+        "succeeded",
+        "escalated",
+        "shadow",
     ),
     "agent_run": (
         "queued",

@@ -271,6 +271,11 @@ class TbHandoffLandingOut(BaseModel):
         return self
 
 
+# T-06-T45: the preview's AUD-38 fields name classes defined below it; resolve them once all exist
+# (an unresolved forward reference leaves its classification unread, S53 main CI).
+TbHandoffPreviewOut.model_rebuild()
+
+
 # --- routes (each 501, one action) ------------------------------------------------------------
 
 tb_handoff_router = AbacusRouter(prefix="/v1", tags=["tax"])

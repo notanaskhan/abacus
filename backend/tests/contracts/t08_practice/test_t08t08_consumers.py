@@ -121,10 +121,16 @@ def test_the_three_stubs_declare_42_operations() -> None:
     assert len(_operations()) == 42
 
 
+# S53: the planning family (T-08-T19, DEC-5916) and the postponement apply (T-08-T44, DEC-5921)
+# are live, so they answer without the stub's 501; every other operation is still a stub.
+LIVE_PREFIXES = ("/v1/planning-", "/v1/postponement-applications")
+
+
 @pytest.mark.parametrize(("method", "path", "action"), _operations())
 def test_every_operation_is_declared_with_its_action_and_501(
     method: str, path: str, action: str
 ) -> None:
     operation = PATHS[path][method]
     assert operation["x-abacus-action"] == action
-    assert "501" in cast(Json, operation["responses"])
+    live = path.startswith(LIVE_PREFIXES)
+    assert ("501" in cast(Json, operation["responses"])) is not live, path
