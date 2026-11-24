@@ -12,6 +12,11 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-22 (S53, C-02-T33): a vendor's W-9 on file, a TIN Matching result and a
+        # backup-withholding event; codes, a status and an evidence id only (never a TIN digit)
+        "backup_withholding.recorded",
+        "tin_match.recorded",
+        "vendor.updated",
         # reviewed 2026-11-21 (S52 end pass): C-02-T25 write grants, C-02-T31 approvals, Q-05-T16
         # firm-scope decisions; identifiers and a capability flag only (no amounts or names)
         "decision.recorded",

@@ -387,6 +387,17 @@ codes:
     raised_by:
     - abacus.modules.agents.engagement_run.AutoModeNotAvailable
     summary: Auto mode is forced off for a real firm until the capability is live (DEC-50).
+  backup_withholding_not_due:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.vendor_tins.BackupWithholdingNotDue
+    summary: Backup withholding starts only 30 business days after a CP2100 B-notice with no new certified
+      TIN, or when no TIN is on file (`facts.reason`).
+  backup_withholding_state:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.vendor_tins.BackupWithholdingState
+    summary: The event does not follow from the vendor's withholding state (`facts.state`).
   basis_required:
     status: 422
     raised_by:
@@ -1336,6 +1347,11 @@ codes:
     - abacus.modules.evidence.withdrawals.EvidenceNotWithdrawable
     summary: 'Not a client''s detached-key upload (a firm upload, or one stored before detached-key mode):
       nothing can erase it, so it is not withdrawn (ADR-162 §8).'
+  evidence_required:
+    status: 422
+    raised_by:
+    - abacus.modules.closes.vendor_tins.EvidenceRequired
+    summary: This record needs its evidence (the W-9, the TIN Matching screenshot or the notice).
   evidence_version_invalid:
     status: 422
     raised_by:
@@ -3908,6 +3924,7 @@ codes:
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.assurance.rep_letters.StaleLetter
     - abacus.modules.closes.service.StaleClose
+    - abacus.modules.closes.vendor_tins.StaleVendor
     - abacus.modules.collaboration.errors.StaleVersion
     - abacus.modules.communications.follow_up_policy.FollowUpPolicyStale
     - abacus.modules.communications.template_service.TemplateDraftStale
@@ -4256,6 +4273,11 @@ codes:
     - abacus.modules.organisations.tin.TinKindNotAllowed
     summary: An SSN or ITIN can't be stored for a firm that isn't synthetic until the §7216 consent gate
       (C19) lands; an EIN can (P-07 OQ-4, DEC-52).
+  tin_not_on_file:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.vendor_tins.TinNotOnFile
+    summary: TIN Matching needs a TIN on file (record the W-9 first).
   todo_already_done:
     status: 409
     raised_by:

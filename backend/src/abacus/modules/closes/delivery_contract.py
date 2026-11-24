@@ -22,7 +22,7 @@ from typing import Annotated, Any, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Response
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from pydantic.config import JsonDict
 
 from abacus.kernel._flags import CLOSES_DELIVERY, CLOSES_INFORMATION_RETURNS, CLOSES_TAX_HANDOFF
@@ -271,6 +271,21 @@ class DeliveryVendorPatchIn(BaseModel):
     expected_version: Annotated[int, Field(ge=1), Internal]
 
 
+class DeliveryW9RecordIn(BaseModel):
+    """C-02-T33 (DEC-5907): the TIN a person reads off the vendor's W-9, sealed on arrival and
+    never echoed; the W-9 itself is evidence on the close engagement."""
+
+    model_config = _cfg()
+
+    tin: Annotated[
+        SecretStr, Field(min_length=9, max_length=11), classified("restricted", pii_kind="tin")
+    ]
+    tin_kind: Annotated[Literal["ssn", "ein"], Internal]
+    evidence_version_id: Annotated[UUID, Internal]
+    signed_on: Annotated[date, Internal]
+    expected_version: Annotated[int, Field(ge=1), Internal]
+
+
 class DeliveryRevealIn(BaseModel):
     model_config = _cfg()
 
@@ -306,6 +321,7 @@ class DeliveryBackupWithholdingIn(BaseModel):
     event: Annotated[BackupEvent, Internal]
     reason: Annotated[str, Field(min_length=1, max_length=500), Confidential]
     evidence_version_id: Annotated[UUID | None, Internal] = None
+    notice_received_on: Annotated[date | None, Internal] = None  # a CP2100 B-notice (C-02-T33)
 
 
 class DeliveryRecordOut(BaseModel):
@@ -567,11 +583,31 @@ async def information_returns_route(
 
 @delivery_router.get(
     "/vendors/{vendor_id}", action="information_returns.read", response_model=DeliveryVendorRowOut,
-    errors=(501,),
+    errors=(503,),
 )  # fmt: skip
 async def vendor_route(vendor_id: UUID, ctx: Ctx) -> DeliveryVendorRowOut:
+    """CLS-13's drawer (C-02-T33): the TIN's last four only, nulled for an offshore reader."""
     await _on(ctx, CLOSES_INFORMATION_RETURNS)
-    return await mask_tins_for(ctx, _not_built(DeliveryVendorRowOut))
+    from abacus.modules.closes import vendor_tins
+
+    return await mask_tins_for(ctx, await vendor_tins.get_vendor(ctx, vendor_id))
+
+
+@delivery_router.put(
+    "/vendors/{vendor_id}/w9", action="vendor_1099.update", response_model=DeliveryVendorRowOut,
+    errors=(409,),
+)  # fmt: skip
+async def vendor_w9_route(
+    vendor_id: UUID, body: DeliveryW9RecordIn, ctx: Ctx, response: Response
+) -> DeliveryVendorRowOut:
+    """C-02-T33: a person records the vendor's W-9; the TIN is sealed (ADR-167) and the answer
+    carries its last four only. 422 `tin_invalid` / `tin_kind_not_allowed`, 409 `tin_conflict` /
+    `stale_version`."""
+    await _human(ctx, CLOSES_INFORMATION_RETURNS, "vendor_1099.update")
+    from abacus.modules.closes import vendor_tins
+
+    response.headers["Cache-Control"] = "no-store"
+    return await mask_tins_for(ctx, await vendor_tins.record_w9(ctx, vendor_id, body))
 
 
 @delivery_router.patch(
@@ -587,13 +623,21 @@ async def vendor_patch_route(
 
 @delivery_router.post(
     "/vendors/{vendor_id}/tin:reveal", action="tin.reveal", response_model=TinRevealOut,
-    errors=(409, 501),
+    errors=(429,),
 )  # fmt: skip
-async def tin_reveal_route(vendor_id: UUID, body: DeliveryRevealIn, ctx: Ctx) -> TinRevealOut:
+async def tin_reveal_route(
+    vendor_id: UUID, body: DeliveryRevealIn, ctx: Ctx, response: Response
+) -> TinRevealOut:
     """Logged; refused offshore (`tin_reveal_refused`). The one reveal payload (organisations'
-    `TinRevealOut`, the vendor as `entity_id`): no second schema carries a TIN (DEC-141)."""
+    `TinRevealOut`, the vendor as `entity_id`): no second schema carries a TIN (DEC-141).
+    C-02-T33: P-03's field reveal (one `pii_reveals` row naming the person), `no-store`."""
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "tin.reveal")
-    raise NotImplementedYet
+    from abacus.modules.closes import vendor_tins
+
+    kind, revealed = await vendor_tins.reveal_vendor_tin(ctx, vendor_id)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    return TinRevealOut(entity_id=vendor_id, kind=cast(Any, kind), value=revealed.value)
 
 
 @delivery_router.post(
@@ -610,24 +654,28 @@ async def w9_request_route(
 
 @delivery_router.post(
     "/vendors/{vendor_id}/tin-match-results", action="tin_match.record",
-    response_model=DeliveryRecordOut, status_code=201, errors=(409, 501),
+    response_model=DeliveryRecordOut, status_code=201, errors=(409,),
 )  # fmt: skip
 async def tin_match_route(
     vendor_id: UUID, body: DeliveryTinMatchIn, ctx: Ctx
 ) -> DeliveryRecordOut:
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "tin_match.record")
-    raise NotImplementedYet
+    from abacus.modules.closes import vendor_tins
+
+    return await vendor_tins.record_tin_match(ctx, vendor_id, body)
 
 
 @delivery_router.post(
     "/vendors/{vendor_id}/backup-withholding", action="backup_withholding.record",
-    response_model=DeliveryRecordOut, status_code=201, errors=(409, 501),
+    response_model=DeliveryRecordOut, status_code=201, errors=(409,),
 )  # fmt: skip
 async def backup_withholding_route(
     vendor_id: UUID, body: DeliveryBackupWithholdingIn, ctx: Ctx
 ) -> DeliveryRecordOut:
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "backup_withholding.record")
-    raise NotImplementedYet
+    from abacus.modules.closes import vendor_tins
+
+    return await vendor_tins.record_backup_withholding(ctx, vendor_id, body)
 
 
 @delivery_router.post(
