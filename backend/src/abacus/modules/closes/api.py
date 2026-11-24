@@ -135,6 +135,7 @@ from abacus.modules.closes.package_render import ACTIVITIES as _PACKAGE_ACTIVITI
 from abacus.modules.closes.package_render import FINISH as PACKAGE_FINISH  # noqa: E402
 from abacus.modules.closes.package_render import PackageAssemblyWorkflow  # noqa: E402
 from abacus.modules.closes.release import register as _register_release  # noqa: E402
+from abacus.modules.closes.vendor_tins import __all__ as _VENDOR_TINS  # noqa: E402, F401
 
 _register_release()  # C-02-T29: C18's fs_package provider
 
