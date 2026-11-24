@@ -259,6 +259,7 @@ INCOME_STATEMENT: Final = {
 PACKAGE_ROUTE: Final = "ar_c_70_preparation"
 PACKAGE_LEGEND: Final = "No assurance is provided."
 RELEASED_AT: Final = datetime(2026, 9, 14, 16, 25, tzinfo=CT)
+RELEASED_BY: Final = "Priya Raman"  # the engagement Partner (CLS-08d)
 CLIENT_APPROVED_AT: Final = datetime(2026, 9, 15, 8, 42, tzinfo=CT)
 
 # --- CLS-12 the December 2026 close handed to tax ------------------------------------------------
@@ -535,6 +536,10 @@ def cls08_package() -> dict[str, object]:
         "legend": PACKAGE_LEGEND,
         "released_at": RELEASED_AT.isoformat(),
         "client_approved_at": CLIENT_APPROVED_AT.isoformat(),
+        # C-02-T37 (DEC-5925): who released, whom approval was asked of, who approved (POR-08).
+        "released_by": RELEASED_BY,
+        "approval_requested_from": [CLIENT_PERSONAS["tess-moreno"], CLIENT_PERSONAS["ben-ashby"]],
+        "client_approved_by": CLIENT_PERSONAS["tess-moreno"],
         "balance_sheet": bs,
         "income_statement": inc,
     }

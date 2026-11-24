@@ -6,21 +6,44 @@
 // edit goes to the server as a new version. Release is a Partner's, through its own dialog (C-02's
 // release task); this screen never writes a figure.
 import type { DeliveryPackageOut, DeliveryStatementLineOut } from "@abacus/api-client";
-import { commentaryMutation, packageEditMutation, packageOptions } from "@abacus/api-client/query";
+import {
+  closeSummaryOptions,
+  closeSummaryQueryKey,
+  commentaryMutation,
+  lockMutation,
+  packageEditMutation,
+  packageOptions,
+  reopenMutation,
+} from "@abacus/api-client/query";
 import {
   Button,
   type ClauseVM,
+  ConfirmDialog,
+  DASH,
+  Dialog,
   DocumentOnWell,
   type KvSheetVM,
   Pill,
   Skeleton,
+  Tooltip,
   ValueRow,
   amount,
   cn,
+  date,
+  monthYear,
+  time,
+  toast,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
+import { useNow } from "../../app-core/clock";
+import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { COPY as C } from "./copy";
+
+/** "Sep 15, 8:42 AM" (the year only outside the current one). */
+function stamp(v: string, now: Date): string {
+  return `${date(v, { now })}, ${time(v)}`;
+}
 
 const SECTIONS = [
   "balance_sheet",
@@ -142,14 +165,25 @@ function structure(
           { key: C.basis.periodEnd, value: periodEnd },
           { key: C.basis.adoption, value: C.basis.notAdopted, linkId: "KNW-04" },
           { key: C.basis.route, value: route },
-          {
-            key: C.basis.legend,
-            value:
-              pkg.legend === null || pkg.legend === undefined
-                ? null
-                : C.basis.legendEach(pkg.legend),
-          },
-          { key: C.basis.report, value: C.basis.none },
+          ...(pkg.route === "standalone_letter"
+            ? [
+                // G: the route follows the engagement letter; ENG-04 is a planned link (drawn
+                // only where planned screens are, hidden in production).
+                { key: C.basis.legendOrReport, value: C.basis.perLetter },
+                ...(PLANNED_VISIBLE
+                  ? [{ key: C.basis.letter, value: C.basis.openLetter, linkId: "ENG-04" }]
+                  : []),
+              ]
+            : [
+                {
+                  key: C.basis.legend,
+                  value:
+                    pkg.legend === null || pkg.legend === undefined
+                      ? null
+                      : C.basis.legendEach(pkg.legend),
+                },
+                { key: C.basis.report, value: C.basis.none },
+              ]),
         ],
       },
     ],
@@ -173,7 +207,26 @@ function structure(
       },
     ],
   };
-  return { clauses, after: [basis, preconditions] };
+  // R2: the studio's version row is a planned link until A-10 builds FSP-01 (absent in live).
+  const release: KvSheetVM[] = PLANNED_VISIBLE
+    ? [
+        {
+          crumb: C.release_band.title,
+          sections: [
+            {
+              title: C.release_band.title,
+              rows: [
+                {
+                  key: C.release_band.studioVersion,
+                  value: C.release_band.studioSynced(pkg.version_no),
+                },
+              ],
+            },
+          ],
+        },
+      ]
+    : [];
+  return { clauses, after: [basis, preconditions, ...release] };
 }
 
 export interface CLS08Props {
@@ -204,6 +257,36 @@ export function CLS08({
       return qc.invalidateQueries({ queryKey: packageOptions({ path }).queryKey });
     },
   });
+  const now = useNow();
+  const summary = useQuery(closeSummaryOptions({ path }));
+  const [ask, setAsk] = useState<"lock" | "reopen" | null>(null);
+  const [reason, setReason] = useState("");
+  const [closeState, setCloseState] = useState<string | null>(null);
+  const lock = useMutation({
+    ...lockMutation(),
+    onSuccess: async (out) => {
+      setCloseState(out.status);
+      setAsk(null);
+      toast.show({ kind: "success", text: C.lock.locked });
+      await qc.invalidateQueries({ queryKey: closeSummaryQueryKey({ path }) });
+    },
+    onError: () => {
+      toast.show({ kind: "error", text: C.failed });
+    },
+  });
+  const reopen = useMutation({
+    ...reopenMutation(),
+    onSuccess: async (out) => {
+      setCloseState(out.status);
+      setAsk(null);
+      setReason("");
+      toast.show({ kind: "success", text: C.reopen.reopened });
+      await qc.invalidateQueries({ queryKey: closeSummaryQueryKey({ path }) });
+    },
+    onError: () => {
+      toast.show({ kind: "error", text: C.failed });
+    },
+  });
   if (pkg.data === undefined)
     return <Skeleton aria-label={C.drafting} className="h-[700px] w-full" />;
   const data = pkg.data;
@@ -215,13 +298,134 @@ export function CLS08({
     (s) => on.has(s) && (s !== "commentary" || typeof data.commentary === "string"),
   );
   const { clauses, after } = structure(data, on, periodEnd);
+  const approved = data.status === "approved_by_client";
+  const closeStatus = closeState ?? summary.data?.status ?? null;
+  const locked = closeStatus === "locked";
+  const period = summary.data ? monthYear(summary.data.period) : "";
+  const line = approved
+    ? C.status.approvedLine(
+        data.client_approved_by ?? DASH,
+        data.client_approved_at ? stamp(data.client_approved_at, now) : DASH,
+        data.released_by ?? null,
+        data.released_at ? stamp(data.released_at, now) : null,
+      )
+    : released
+      ? C.status.releasedLine(
+          data.released_by ?? DASH,
+          data.released_at ? time(data.released_at) : DASH,
+          data.approval_requested_from ?? [],
+        )
+      : null;
   return (
     <div data-screen="CLS-08" className="flex flex-col gap-[8px]">
-      {released ? (
-        <Pill variant="green-tint" size="sm" check>
-          {data.status === "approved_by_client" ? C.status.approved : C.status.released}
-        </Pill>
-      ) : null}
+      <div className="flex min-h-[29px] items-center gap-[8px]" data-cls08="status">
+        {released ? (
+          <Pill variant={approved ? "green" : "green-tint"} size="sm" check={!approved}>
+            {approved ? C.status.approved : C.status.released}
+          </Pill>
+        ) : null}
+        {locked ? (
+          <Pill variant="soon" size="sm">
+            {C.status.locked}
+          </Pill>
+        ) : null}
+        {line === null ? null : (
+          <span className="flex-1 text-[11.5px] text-ink-3" data-cls08="released-line">
+            {line}
+          </span>
+        )}
+        {PLANNED_VISIBLE && !drafting ? (
+          // R2: "Open in statements studio" / "View in studio" (FSP-01) is a planned link until
+          // A-10; production drops it, so no live scenario shows it.
+          <Tooltip content={C.studio.hint}>
+            <span data-planned-link="FSP-01">
+              <Button variant="secondary" size="sm" disabled>
+                {released ? C.studio.view : C.studio.open}
+              </Button>
+            </span>
+          </Tooltip>
+        ) : null}
+        {approved && !locked ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={lock.isPending}
+            onClick={() => {
+              setAsk("lock");
+            }}
+          >
+            {C.lockClose}
+          </Button>
+        ) : null}
+        {locked ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={reopen.isPending}
+            onClick={() => {
+              setAsk("reopen");
+            }}
+          >
+            {C.reopen.open}
+          </Button>
+        ) : null}
+      </div>
+      <ConfirmDialog
+        open={ask === "lock"}
+        onOpenChange={(o) => {
+          if (!o) setAsk(null);
+        }}
+        title={C.lock.title(period)}
+        confirmLabel={C.lock.confirm}
+        destructive={false}
+        onConfirm={() => {
+          lock.mutate({ path });
+        }}
+      >
+        {C.lock.body}
+      </ConfirmDialog>
+      <Dialog
+        open={ask === "reopen"}
+        onOpenChange={(o) => {
+          if (!o) {
+            setAsk(null);
+            setReason("");
+          }
+        }}
+        title={C.reopen.title(period)}
+        description={C.reopen.body}
+        size="sm"
+      >
+        <div className="flex flex-col gap-[10px]">
+          <ValueRow
+            kind="paragraph"
+            label={C.reopen.reason}
+            value={reason}
+            rows={3}
+            onChange={setReason}
+          />
+          <div className="flex justify-end gap-[8px]">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setAsk(null);
+                setReason("");
+              }}
+            >
+              {C.reopen.cancel}
+            </Button>
+            <Button
+              variant="primary"
+              disabled={reason.trim() === "" || reopen.isPending}
+              onClick={() => {
+                reopen.mutate({ path, body: { reason: reason.trim() } });
+              }}
+            >
+              {C.reopen.confirm}
+            </Button>
+          </div>
+        </div>
+      </Dialog>
       <DocumentOnWell
         bare={bare}
         record={null}

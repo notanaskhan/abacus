@@ -2,9 +2,10 @@
 // August 2026 close package, released by Priya Raman. Each artboard's persona and clock (CDT until
 // Sun Nov 1, 2026; CST after). The statements are the Python scenario's
 // (`seed/scenario.cls08-package.json`, `make fixtures`, never hand written); each state sets only
-// what the artboard changes: b drafting, c the three blockers of 9:24 AM, d released at 4:25 PM,
-// e approved by Tess Moreno at 8:42 AM on Sep 15, f the SSARS 27 route (no legend), g the "No"
-// answer (a standalone engagement).
+// what the artboard changes: b drafting, c the three blockers of 9:24 AM, d released at 4:25 PM by
+// Priya Raman with approval requested from Tess Moreno and Ben Ashby, e approved by Tess Moreno at
+// 8:42 AM on Sep 15 (Lock close, then Reopen close…), f the SSARS 27 route (no legend), g the "No"
+// answer (a standalone engagement; Open letter is ENG-04's planned link).
 import type { DeliveryPackageOut } from "@abacus/api-client";
 import { type Scenario, defineScenarios, json } from "../../app-core/fixture-mode";
 import exported from "../seed/scenario.cls08-package.json";
@@ -46,13 +47,22 @@ function pkg(state: string): DeliveryPackageOut {
         ],
       };
     case "d":
-      return { ...base, status: "released", released_at: exported.released_at };
+      return {
+        ...base,
+        status: "released",
+        released_at: exported.released_at,
+        released_by: exported.released_by,
+        approval_requested_from: exported.approval_requested_from,
+      };
     case "e":
       return {
         ...base,
         status: "approved_by_client",
         released_at: exported.released_at,
+        released_by: exported.released_by,
+        approval_requested_from: exported.approval_requested_from,
         client_approved_at: exported.client_approved_at,
+        client_approved_by: exported.client_approved_by,
       };
     case "f":
       return { ...base, route: "cas_by_product", legend: null };
@@ -85,6 +95,11 @@ function at(state: string, persona: string, clock: string): Scenario {
         },
         "GET /v1/closes/{close_id}/package": () => json(pkg(state)),
         "PATCH /v1/closes/{close_id}/package": () => json(pkg(state)),
+        // C-02-T37: e's Lock close and the reopen that follows (DeliveryCloseStateOut).
+        "POST /v1/closes/{close_id}/lock": () =>
+          json({ close_id: CLS08_CLOSE_ID, status: "locked", version: 3 }),
+        "POST /v1/closes/{close_id}/reopen": () =>
+          json({ close_id: CLS08_CLOSE_ID, status: "in_review", version: 4 }),
         "PATCH /v1/closes/{close_id}/package/commentary": ({ body }: { body?: unknown }) =>
           json({ ...pkg(state), commentary: (body as { doc?: string } | undefined)?.doc ?? null }),
       };

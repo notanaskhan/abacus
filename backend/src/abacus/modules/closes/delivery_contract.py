@@ -122,6 +122,9 @@ class DeliveryPackageOut(BaseModel):
     released_by: Annotated[str | None, Field(max_length=200), Confidential] = None
     client_approved_at: Annotated[datetime | None, Internal] = None
     client_approved_by: Annotated[str | None, Field(max_length=200), Confidential] = None
+    # C-02-T37 (additive, DEC-5925): CLS-08d's "approval requested from Tess Moreno and Ben
+    # Ashby" (the owner and the approver of record the release asked).
+    approval_requested_from: Annotated[list[str], Confidential] = []
     content_hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$"), Internal]
     version: Annotated[int, Field(ge=1), Internal]
 
