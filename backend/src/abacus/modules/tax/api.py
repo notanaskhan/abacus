@@ -760,3 +760,7 @@ for _name, _handler in planning_service.SUBSCRIPTIONS.items():
 from abacus.modules.tax import deadline_sources as _filing_deadline_sources  # noqa: E402
 
 _filing_deadline_sources.register()
+
+# C-02-T39 (DEC-5922): the return a December close hands off to (closes' CLS-12 reads it).
+from abacus.modules.tax.tb_handoff_landing import HandoffTarget as HandoffTarget  # noqa: E402
+from abacus.modules.tax.tb_handoff_landing import handoff_target as handoff_target  # noqa: E402

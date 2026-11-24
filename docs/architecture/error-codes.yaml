@@ -1706,8 +1706,14 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.closes.delivery_errors.HandoffNotAvailable
+    - abacus.modules.closes.tax_handoff.HandoffNotAvailable
     - abacus.modules.ledger.handoff_errors.HandoffNotAvailable
     summary: The source is not released (G8, a review's release or a locked close).
+  handoff_preview_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.tax_handoff.HandoffStale
+    summary: The close changed since the person read the sheet (its row version).
   has_flags:
     status: 409
     raised_by:

@@ -191,6 +191,17 @@ class DeliveryScheduleOut(BaseModel):
     figures: Annotated[dict[str, Decimal], Confidential] = {}
 
 
+class DeliveryHandoffItemOut(BaseModel):
+    """A tax-relevant close item (CLS-12 a's "Open tax-relevant items")."""
+
+    model_config = _cfg()
+
+    issue_id: Annotated[UUID, Internal]
+    title: Annotated[str, Field(max_length=500), Confidential]
+    resolved: Annotated[bool, Internal]
+    create_tax_issue: Annotated[bool, Internal] = True
+
+
 class DeliveryHandoffOut(BaseModel):
     model_config = _cfg()
 
@@ -202,6 +213,10 @@ class DeliveryHandoffOut(BaseModel):
     schedules: Annotated[list[DeliveryScheduleOut], Internal] = []
     superseded_on_next: Annotated[bool, Internal] = False
     version: Annotated[int, Field(ge=1), Internal] = 1
+    # C-02-T39 (additive): the tax-relevant items (CLS-06 notes, "Create tax issue" on) and the
+    # source TB's tie.
+    items: Annotated[list[DeliveryHandoffItemOut], Internal] = []
+    balanced: Annotated[bool | None, Internal] = None
 
 
 class DeliveryHandoffIn(BaseModel):
@@ -554,12 +569,33 @@ async def reopen_route(close_id: UUID, body: DeliveryReopenIn, ctx: Ctx) -> Deli
     f"{_C}/tax-handoff",
     action="tax_handoff.read",
     response_model=DeliveryHandoffOut,
-    errors=(501,),
 )
 async def close_tax_handoff_route(close_id: UUID, ctx: Ctx) -> DeliveryHandoffOut:
-    """Availability and preview; `handoff_not_available` before a locked December close."""
+    """Availability and preview (C-02-T39, DEC-5922): `not_available` with its reason before a
+    locked December close; the schedules and tax-relevant items otherwise."""
     await _on(ctx, CLOSES_TAX_HANDOFF)
-    raise NotImplementedYet
+    from abacus.modules.closes import tax_handoff
+
+    found = await tax_handoff.availability(ctx, close_id)
+    return DeliveryHandoffOut(
+        status=found.status,
+        reason=found.reason,
+        tb_version=found.tb_version,
+        locked_at=found.locked_at,
+        target_return_id=found.target_return_id,
+        schedules=[
+            DeliveryScheduleOut(key=s.key, label=s.label, included=s.included,
+                                figures=dict(s.figures))
+            for s in found.schedules
+        ],
+        superseded_on_next=found.superseded_on_next,
+        version=found.version,
+        items=[
+            DeliveryHandoffItemOut(issue_id=i.issue_id, title=i.title, resolved=i.resolved)
+            for i in found.items
+        ],
+        balanced=found.balanced,
+    )  # fmt: skip
 
 
 @delivery_router.post(
@@ -567,14 +603,25 @@ async def close_tax_handoff_route(close_id: UUID, ctx: Ctx) -> DeliveryHandoffOu
     action="tax_handoff.publish",
     response_model=DeliveryHandoffPublishedOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def close_tax_handoff_publish_route(
     close_id: UUID, body: DeliveryHandoffIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> DeliveryHandoffPublishedOut:
-    """Publish through C12 `receive_tb_handoff` (C-02-T39)."""
+    """Publish through C12 (C-02-T39, DEC-5922): the year's TB lands as the return's UTB with its
+    provenance; 409 `handoff_not_available`, `handoff_preview_changed`."""
     await _human(ctx, CLOSES_TAX_HANDOFF, "tax_handoff.publish")
-    raise NotImplementedYet
+    from abacus.modules.closes import tax_handoff
+
+    del idempotency_key  # one version per publish; a stale sheet answers 409
+    found = await tax_handoff.publish(
+        ctx, close_id, schedules_on=body.schedules, items_on=body.items,
+        seen_version=body.seen_version,
+    )  # fmt: skip
+    return DeliveryHandoffPublishedOut(
+        handoff_id=found.handoff_id, tb_version=found.tb_version,
+        tax_issues_created=found.tax_issues,
+    )  # fmt: skip
 
 
 @delivery_router.get(

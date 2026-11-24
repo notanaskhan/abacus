@@ -48,6 +48,9 @@ ITEM_TITLES: Final = {
         "Passed audit adjustment {ref} ({amount}) handed off: consider it for the M-1"
     ),
     "book_tax_expense": "Book income tax expense ({amount}) handed off: reconcile it on the M-1",
+    # C-02-T39 (DEC-5922): a tax-relevant note from the handing-off close (its text stays on the
+    # close; the issue links it by id).
+    "close_issue": "Tax-relevant item from the {ref} handed off: review it for the return",
 }
 Source = Literal["tb_mapper", "firm_mapping", "person", "blank"]
 _TRAVEL_SOURCE: Final[dict[str, Source]] = {
@@ -286,3 +289,51 @@ __all__ = [
     "on_tb_handoff_created",
     "source_label",
 ]
+
+
+# --- C-02-T39 (DEC-5922): the return a December close hands off to -------------------------------
+
+
+@dataclass(frozen=True)
+class HandoffTarget:
+    """The entity's return for the close's year (CLS-12's Target fieldset): the form, the engine
+    and the tax team (its preparer and first reviewer), identifiers only."""
+
+    return_id: UUID
+    form: str
+    tax_year: int
+    engine: str | None
+    preparer_user_id: UUID | None
+    reviewer_user_id: UUID | None
+
+
+_TARGETS: Final = text(
+    "SELECT work_item_id, form, tax_year, engine FROM tax_returns WHERE client_entity_id = :e "
+    "AND tax_year = :y AND form NOT IN ('1040x') AND amends_return_id IS NULL "
+    "ORDER BY form, work_item_id LIMIT 1"
+)
+
+
+async def handoff_target(
+    tenant: TenantContext, client_entity_id: UUID, tax_year: int
+) -> HandoffTarget | None:
+    """For a caller that scoped the close: the entity's original return for the year, or None."""
+    from abacus.modules.engagements.api import holders_of
+    from abacus.modules.tax.entity_partners import REVIEWERS
+
+    async with tenant_session(tenant) as session:
+        row = (await session.execute(_TARGETS, {"e": client_entity_id, "y": tax_year})).first()
+    if row is None:
+        return None
+    return_id = cast(UUID, row.work_item_id)
+    preparers = await holders_of(tenant, return_id, "preparer")
+    reviewer: UUID | None = None
+    for function in REVIEWERS:
+        found = await holders_of(tenant, return_id, function)
+        if found:
+            reviewer = found[0]
+            break
+    return HandoffTarget(
+        return_id, str(row.form), int(row.tax_year), cast("str | None", row.engine),
+        preparers[0] if preparers else None, reviewer,
+    )  # fmt: skip
