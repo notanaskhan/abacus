@@ -4,9 +4,10 @@ DEC-5732; SPEC-710 AC-9 to AC-16). Dark behind `practice.filing_deadlines`.
 - **Recompute** (nightly, and on demand): every return with a due date becomes one
   `filing_deadlines` row keyed (source kind, source ref, filing label), upserted only when its
   `inputs_hash` changed (metadata only: client, office, filing, dates, stage, owners; never TRI or
-  an amount). The due date is the extended one when the return is extended. Rows whose source is
-  gone are left as they are (their source owns deletion). Return deadlines are the source built
-  now; the other source kinds register with their owners.
+  an amount). Every source kind registered to platform's slot is asked for a window from the
+  season before to eighteen months ahead (T-08-T20: tax, closes, notices, assurance, signatures and
+  organisations each register theirs; practice imports none of them). Rows whose source is gone
+  are left as they are (their source owns deletion).
 - **Read**: the window's rows the viewer may see (a walled client contributes no row, day count
   or "+n more"; AC-14), risk tier and days left computed on read in the firm's zone, month grid
   days with three chips each, list and week views, and a detail with the reference-set versions.
@@ -34,9 +35,9 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.safe_xlsx import Sheet, workbook
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.api import AuthContext, Resource, authorise, walled_from
+from abacus.modules.platform.api import FilingDeadlineFact, FilingDeadlineWindow
 from abacus.modules.practice.compute import deadlines as calc
 
-SOURCE: Final = "tax_return"
 _log = get_logger(__name__)
 
 
@@ -68,15 +69,20 @@ class Row:
 _UPSERT = text(
     "INSERT INTO filing_deadlines (tenant_id, source_kind, source_ref, client_id, office_id, "
     "service_line, filing_label, rule_key, reference_set_version_ids, original_due_on, "
-    "extension_form, extended_due_on, due_on, owner_user_ids, signer_user_id, stage_code, "
-    "done_at, work_item_id, inputs_hash) VALUES (:t, :kind, :ref, :client, :office, 'tax', "
-    ":label, NULL, :sets, :orig, :ext_form, :ext, :due, :owners, :signer, :stage, "
+    "extension_form, extension_filed_on, extended_due_on, due_on, postponement_notice_id, "
+    "postponed_from, owner_user_ids, signer_user_id, stage_code, done_at, work_item_id, "
+    "inputs_hash) VALUES (:t, :kind, :ref, :client, :office, :line, :label, :rule, :sets, "
+    ":orig, :ext_form, :ext_filed, :ext, :due, :notice, :postponed, :owners, :signer, :stage, "
     "CASE WHEN :done THEN clock_timestamp() END, :wi, :hash) "
     "ON CONFLICT (tenant_id, source_kind, source_ref, filing_label) DO UPDATE SET "
     "client_id = EXCLUDED.client_id, office_id = EXCLUDED.office_id, "
+    "service_line = EXCLUDED.service_line, rule_key = EXCLUDED.rule_key, "
     "reference_set_version_ids = EXCLUDED.reference_set_version_ids, "
     "original_due_on = EXCLUDED.original_due_on, extension_form = EXCLUDED.extension_form, "
+    "extension_filed_on = EXCLUDED.extension_filed_on, "
     "extended_due_on = EXCLUDED.extended_due_on, due_on = EXCLUDED.due_on, "
+    "postponement_notice_id = EXCLUDED.postponement_notice_id, "
+    "postponed_from = EXCLUDED.postponed_from, "
     "owner_user_ids = EXCLUDED.owner_user_ids, signer_user_id = EXCLUDED.signer_user_id, "
     "stage_code = EXCLUDED.stage_code, "
     "done_at = CASE WHEN :done THEN coalesce(filing_deadlines.done_at, clock_timestamp()) END, "
@@ -84,60 +90,83 @@ _UPSERT = text(
     "computed_at = clock_timestamp() "
     "WHERE filing_deadlines.inputs_hash <> EXCLUDED.inputs_hash RETURNING id"
 )
-_EXTENSION_FORM: Final = {"1040": "4868", "1041": "7004", "1065": "7004", "1120s": "7004",
-                          "1120": "7004", "990": "8868"}  # fmt: skip
+# The window every source is asked for: the season before (overdue and filed rows) to eighteen
+# months ahead.
+BACK: Final = timedelta(days=400)
+AHEAD: Final = timedelta(days=548)
+
+
+def inputs_hash(fact: FilingDeadlineFact) -> str:
+    """The fact's inputs, hashed: a recompute writes a row only when this moved (AC-15)."""
+    body = {
+        "client": None if fact.client_id is None else str(fact.client_id),
+        "office": None if fact.office_id is None else str(fact.office_id),
+        "line": fact.service_line, "rule": fact.rule_key, "orig": str(fact.original_due_on),
+        "ext_form": fact.extension_form, "ext_filed": str(fact.extension_filed_on),
+        "ext": str(fact.extended_due_on), "due": str(fact.due_on),
+        "notice": None if fact.postponement_notice_id is None
+        else str(fact.postponement_notice_id),
+        "postponed": str(fact.postponed_from),
+        "owners": [str(u) for u in fact.owner_user_ids],
+        "signer": None if fact.signer_user_id is None else str(fact.signer_user_id),
+        "stage": fact.stage_code, "done": fact.done,
+        "sets": [str(s) for s in fact.reference_set_version_ids],
+        "work": None if fact.work_item_id is None else str(fact.work_item_id),
+    }  # fmt: skip
+    return hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
 
 
 async def recompute(tenant_id: UUID) -> int:
-    """One firm's return deadlines; answers the rows that changed."""
-    from abacus.modules.engagements.api import engagement_retention_facts
-    from abacus.modules.identity.api import team_of
-    from abacus.modules.tax.api import return_deadlines
+    """One firm's filing deadlines from every registered source (T-08-T20, DEC-5917; tax's
+    returns, extensions, estimates, 8971s and 65-day windows; closes; notices; plan audits;
+    envelopes; consents); answers the rows that changed. A source that fails is logged by kind
+    and the others still run; an unregistered kind yields nothing (AC-20)."""
+    from abacus.modules.platform.api import filing_deadline_source, filing_deadline_source_kinds
 
     tenant = TenantContext(tenant_id, "system", "practice:filing_deadlines")
-    found = await return_deadlines(tenant)
-    facts = await engagement_retention_facts(
-        tenant, sorted({d.engagement_id for d in found if d.engagement_id}, key=str)
-    )
+    today = calc.firm_today(await clock_now(tenant), str(FIRM_ZONE))
+    window = FilingDeadlineWindow(today - BACK, today + AHEAD)
     changed = 0
-    for d in found:
-        f = facts.get(d.engagement_id) if d.engagement_id else None
-        team = [] if d.engagement_id is None else await team_of(tenant_id, d.engagement_id)
-        owners = sorted({u for u, r in team if str(r) in ("senior", "staff", "reviewer",
-                                                          "manager")}, key=str)  # fmt: skip
-        signer = next((u for u, r in team if str(r) == "engagement_partner"), None)
-        due = d.extended_due_on if d.extended and d.extended_due_on else d.original_due_on
-        ext_form = _EXTENSION_FORM.get(d.form) if d.extended else None
-        body = {
-            "client": None if f is None else str(f.client_id),
-            "office": None if f is None or f.office_id is None else str(f.office_id),
-            "orig": str(d.original_due_on), "ext": str(d.extended_due_on), "due": str(due),
-            "ext_form": ext_form, "owners": [str(u) for u in owners],
-            "signer": None if signer is None else str(signer), "stage": d.stage_code,
-            "sets": [str(s) for s in d.reference_set_version_ids],
-        }  # fmt: skip
-        digest = hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
-        try:
-            async with uow(tenant) as tx:
-                moved = await tx.session.scalar(
-                    _UPSERT,
-                    {
-                        "t": tenant_id, "kind": SOURCE, "ref": str(d.work_item_id),
-                        "client": None if f is None else f.client_id,
-                        "office": None if f is None else f.office_id, "label": d.label,
-                        "sets": list(d.reference_set_version_ids), "orig": d.original_due_on,
-                        "ext_form": ext_form, "ext": d.extended_due_on, "due": due,
-                        "owners": owners, "signer": signer, "stage": d.stage_code, "done": d.done,
-                        "wi": d.work_item_id, "hash": digest,
-                    },
-                )  # fmt: skip
-                if moved is None:
-                    raise _Unchanged
-                changed += 1
-                tx.record("filing_deadline.recomputed", target=Target("filing_deadline", moved))
-        except _Unchanged:
+    for kind in filing_deadline_source_kinds():
+        provider = filing_deadline_source(kind)
+        if provider is None:
             continue
+        try:
+            facts = await provider(tenant, window)
+        except Exception as exc:
+            _log.error("filing_deadlines.source_failed", kind=kind, error=type(exc).__name__)
+            continue
+        for fact in facts:
+            if fact.source_kind != kind:
+                continue  # a provider answers its own kind only
+            changed += await _upsert(tenant, fact)
     return changed
+
+
+async def _upsert(tenant: TenantContext, fact: FilingDeadlineFact) -> int:
+    try:
+        async with uow(tenant) as tx:
+            moved = await tx.session.scalar(
+                _UPSERT,
+                {
+                    "t": tenant.tenant_id, "kind": fact.source_kind, "ref": fact.source_ref,
+                    "client": fact.client_id, "office": fact.office_id,
+                    "line": fact.service_line, "label": fact.filing_label[:80],
+                    "rule": fact.rule_key, "sets": list(fact.reference_set_version_ids),
+                    "orig": fact.original_due_on, "ext_form": fact.extension_form,
+                    "ext_filed": fact.extension_filed_on, "ext": fact.extended_due_on,
+                    "due": fact.due_on, "notice": fact.postponement_notice_id,
+                    "postponed": fact.postponed_from, "owners": list(fact.owner_user_ids),
+                    "signer": fact.signer_user_id, "stage": fact.stage_code, "done": fact.done,
+                    "wi": fact.work_item_id, "hash": inputs_hash(fact),
+                },
+            )  # fmt: skip
+            if moved is None:
+                raise _Unchanged
+            tx.record("filing_deadline.recomputed", target=Target("filing_deadline", moved))
+    except _Unchanged:
+        return 0
+    return 1
 
 
 class _Unchanged(Exception):

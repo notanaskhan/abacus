@@ -751,3 +751,8 @@ SUBSCRIPTIONS["envelope.completed"] = _chain(
 for _name, _handler in planning_service.SUBSCRIPTIONS.items():
     _prior = SUBSCRIPTIONS.get(_name)
     SUBSCRIPTIONS[_name] = _handler if _prior is None else _chain(_prior, _handler)
+
+# T-08-T20 (DEC-5917): this module's due dates on HOME-03 through platform's filing-deadline slot.
+from abacus.modules.tax import deadline_sources as _filing_deadline_sources  # noqa: E402
+
+_filing_deadline_sources.register()

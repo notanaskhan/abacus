@@ -159,3 +159,8 @@ register_open_notices(_portal_home.open_notice_rows)
 from abacus.modules.notices.gate_sources import register_notice_gates  # noqa: E402
 
 register_notice_gates()
+
+# T-08-T20 (DEC-5917): this module's due dates on HOME-03 through platform's filing-deadline slot.
+from abacus.modules.notices import deadline_sources as _filing_deadline_sources  # noqa: E402
+
+_filing_deadline_sources.register()
