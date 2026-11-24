@@ -19,7 +19,7 @@ Clock is the demo clock (DEC-27): CDT (UTC−5) until Sun Nov 1, 2026, CST (UTC�
 | b | dana-kowalski | Thu Oct 8, 2026 | Approved by you · Oct 8; watermark stays until release | live (T09, T17; DV-04) |
 | c | dana-kowalski | Fri Oct 9, 2026 10:30 AM CDT | Report 3 pages, FS 14 pages, both Final, no watermark, Download | live (T09, T17; A-07's release) |
 | d | meera-shah | Tue Sep 15, 2026 | Role union: 2025 Tax Return Not ready yet; My K-1s, Ridgeline K-1 released Sep 15 (468,008 / 6,992 / 2,356 / 228,000; 38%) | live (T17; DV-09) |
-| e | tess-moreno | Mon Sep 14, 2026 4:40 PM CDT | Copperleaf August package row, Waiting for approval, AR-C 70 legend on every page | fixture-only (DV-08) |
+| e | tess-moreno | Mon Sep 14, 2026 4:40 PM CDT | Copperleaf August package row, Waiting for approval, AR-C 70 legend on every page, Approve in Approvals → (POR-08) | live (C-02-T41: `fs_package` registered; DV-08 closed) |
 | f | luis-ferrante | Tue Oct 6, 2026 11:10 AM CDT | Nothing delivered yet. | live (T17) |
 | g | luis-ferrante | Fri Oct 23, 2026 10:20 AM CDT | Suggest edits, R2 revision | deferred (DV-06; A-10) |
 | h | luis-ferrante | Mon Oct 26, 2026 9:00 AM CDT | Changes after firm review, R2 revision | deferred (DV-06; A-10) |
@@ -50,7 +50,7 @@ Every endpoint is in `docs/contracts/deliverables.md` (T02) or `docs/contracts/p
 - DV-04: README time label is wrong; b is Thu Oct 8, 2026
 - DV-06: g, h, i are not built (A-10, X-01); the CoReview kit is not mounted and the Comment · Suggest edits control is absent
 - DV-07: the 390 layout is derived from the spec text and T7-M (DF-03); no PNG, no pixel parity at 390
-- DV-08: e is fixture-only until a provider registers `fs_package`
+- DV-08: closed by C-02-T41 (DEC-5927): `fs_package` is registered, a governed version reads Waiting for approval / Approved by you from its C18 item, and the header links to POR-08.
 - DV-09: K-1 attachment chips use T-02's routes and its electronic-furnishing consent sheet
 
 - (R-02-T25) **g, h and i are not built.** The co-review states (POR-09 g, h) are A-10's; i waits on the same work. Pins, the composer and the mobile sheet (a, a2) are R-02-T22's.

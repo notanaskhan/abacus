@@ -45,7 +45,9 @@ Confidential = classified("confidential")
 Restricted = classified("restricted")  # a TIN (ADR-167): never logged
 Money = Annotated[Decimal, Field(max_digits=20, decimal_places=2), Confidential]
 
-DeliverableStatus = Literal["drafting", "draft", "released", "approved_by_client"]
+DeliverableStatus = Literal[
+    "drafting", "draft", "released", "approved_by_client", "declined_by_client"
+]
 Route = Literal["ar_c_70_preparation", "cas_by_product", "standalone_letter"]
 Section = Literal[
     "balance_sheet", "income_statement", "cash_flows", "reconciliation_summary", "commentary"
@@ -125,6 +127,12 @@ class DeliveryPackageOut(BaseModel):
     # C-02-T37 (additive, DEC-5925): CLS-08d's "approval requested from Tess Moreno and Ben
     # Ashby" (the owner and the approver of record the release asked).
     approval_requested_from: Annotated[list[str], Confidential] = []
+    # C-02-T41 (additive, DEC-5927): POR-08 c's decline as the firm reads it.
+    client_declined_at: Annotated[datetime | None, Internal] = None
+    client_declined_by: Annotated[str | None, Field(max_length=200), Confidential] = None
+    client_decline_reason: Annotated[
+        Literal["number_looks_wrong", "something_missing", "other"] | None, Internal
+    ] = None
     content_hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$"), Internal]
     version: Annotated[int, Field(ge=1), Internal]
 

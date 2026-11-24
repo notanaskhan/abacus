@@ -21,6 +21,22 @@ RETURN = uuid.uuid4()
 FACTS = RunStepFacts(uuid.uuid4(), uuid.uuid4(), "capital_m2", 4, {"return_id": str(RETURN)})
 
 
+@pytest.fixture(autouse=True)
+def _no_live_register(monkeypatch: pytest.MonkeyPatch) -> None:
+    """T-06-T41 (DEC-5912) reads the return's live fixed-asset register and approved state
+    sourcing first; these cases are the imported-report path T-05 built, so the return has
+    neither here."""
+
+    async def none(*_a: object) -> None:
+        return None
+
+    async def nothing(*_a: object) -> list[object]:
+        return []
+
+    monkeypatch.setattr(run_steps, "_live_assets", none)
+    monkeypatch.setattr(run_steps, "_approved_states", nothing)
+
+
 class _Agent:
     tenant: Any = object()  # Any: a stand-in tenant
 

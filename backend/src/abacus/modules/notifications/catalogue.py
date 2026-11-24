@@ -492,6 +492,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "close_deliverable.client_approved": Kind(
         "package_client_approved", _listed, "close", "close_id"
     ),
+    # C-02-T41 (DEC-5927): the client declined the released package (POR-08 c).
+    "close_deliverable.client_declined": Kind(
+        "package_client_declined", _listed, "close", "close_id"
+    ),
     "tax_handoff.published": Kind(
         "tax_handoff_received", _listed, "tax_handoff", "tax_handoff_id"
     ),
@@ -926,6 +930,7 @@ TEMPLATES: Final[dict[str, str]] = {
     "posting_batch.failed": "An entry in a posting batch for {subject} failed to post.",
     "posting_batch.posted": "A posting batch for {subject} posted to QuickBooks Online.",
     "close_deliverable.client_approved": "The client approved the statements for {subject}.",
+    "close_deliverable.client_declined": "The client declined the statements for {subject}.",
     "tax_handoff.published": "A trial balance was handed off to a return you prepare or review.",
     "tax_handoff.superseded": "A handed-off trial balance was replaced after its close reopened.",
     "w9.uploaded": "The client uploaded a vendor's Form W-9.",
@@ -1154,6 +1159,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("posting_failed", "run", "TriangleAlert", email_default=True),
     NotificationKind("posting_batch_posted", "run", "ListChecks"),
     NotificationKind("package_client_approved", "approval", "ShieldCheck"),
+    NotificationKind("package_client_declined", "approval", "TriangleAlert"),
     NotificationKind("tax_handoff_received", "approval", "ListChecks"),
     NotificationKind("tax_handoff_superseded", "other", "TriangleAlert"),
     NotificationKind("vendor_form_uploaded", "client_activity", "FileText"),

@@ -50,10 +50,16 @@ def _given(mode: agent.Mode, **kw: object) -> agent.CloseAgentInput:
 
 @pytest.mark.parametrize("mode", agent.MODES)
 def test_ac_every_fake_response_settles_with_numbers_only_as_facts(mode: agent.Mode) -> None:
+    from abacus.modules.closes import vendor_screen
+
     given = _given(
         mode,
-        options=["5010", "6100"] if mode == "aje" else [],
+        options=["5010", "6100"]
+        if mode == "aje"
+        else (list(vendor_screen.ENTITY_TYPES) if mode == "vendor_screen" else []),
         choices=CHOICES if mode == "planner" else [],
+        # C-02-T34: the vendor screen reads the W-9's offered pages (DEC-5908).
+        **({"pages": [1]} if mode == "vendor_screen" else {}),
     )
     settled = agent.settle(given, agent.FAKE_RESPONSES[mode])
     assert settled.mode == mode
@@ -109,7 +115,8 @@ def test_the_spec_binds_the_tools_scope_prompts_and_suite() -> None:
     assert EVAL_SUITES[agent.CAPABILITY][0] == agent.PROMPTS["run"]
     assert set(EVAL_SUITE_MODES[agent.CAPABILITY]) == {
         agent.PROMPTS[m]
-        for m in ("intake", "bank_rec", "aje", "flux", "planner")  # + C-01-T30
+        for m in ("intake", "bank_rec", "aje", "flux", "planner", "vendor_screen")
+        # + C-01-T30; + C-02-T34 (DEC-5908)
     }
     for prompt in agent.PROMPTS.values():
         name, _, version = prompt.partition("@")

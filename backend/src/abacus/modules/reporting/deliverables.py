@@ -29,7 +29,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import Final, Literal
+from typing import Final, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -593,6 +593,7 @@ _PORTAL = text(
     SELECT d.id, d.kind, d.title, d.client_id, d.client_entity_id, d.engagement_id,
            d.work_item_id, d.restricted_use,
            v.version_no, v.page_count, v.is_draft, v.published_at,
+           v.approval_kind, v.approval_item_id,
            (SELECT max(e.created_at) FROM deliverable_events e
              WHERE e.deliverable_version_id = v.id AND e.kind = 'withdrawn') AS withdrawn_at
       FROM deliverables d
@@ -620,6 +621,24 @@ def _status(is_draft: bool, withdrawn: bool) -> str:
     if withdrawn:
         return _STATUS_REPLACED
     return _STATUS_DRAFT if is_draft else _STATUS_FINAL
+
+
+async def approval_status(tenant: TenantContext, kind: object, item_id: object, base: str) -> str:
+    """C-02-T41 (POR-09 e; DEC-5927): a version a C18 item governs (a close package, a draft
+    for approval) reads as that item stands: "Waiting for approval" while it waits for the
+    client, "Approved by you" once approved; otherwise the version's own status."""
+    from abacus.modules.engagements.api import client_approval_provider
+
+    if kind is None or item_id is None or base == _STATUS_REPLACED:
+        return base
+    item = await client_approval_provider(str(kind)).item(tenant, cast(UUID, item_id))
+    if item is None or not item.sent_to_client:
+        return base
+    if item.state == "approved":
+        return "approved_by_you"
+    if item.state in ("waiting", "question_sent"):
+        return "waiting_for_approval"
+    return base
 
 
 async def portal_deliverables(ctx: AuthContext, client_ids: Sequence[UUID]) -> PortalDeliverables:
@@ -655,7 +674,12 @@ async def portal_deliverables(ctx: AuthContext, client_ids: Sequence[UUID]) -> P
                 deliverable_id=r.id,
                 kind=r.kind,
                 title=r.title,
-                status=_status(r.is_draft, r.withdrawn_at is not None),
+                status=await approval_status(
+                    ctx.tenant,
+                    getattr(r, "approval_kind", None),
+                    getattr(r, "approval_item_id", None),
+                    _status(r.is_draft, r.withdrawn_at is not None),
+                ),
                 latest_version=r.version_no,
                 page_count=r.page_count,
                 released_on=None if r.is_draft else r.published_at.date(),

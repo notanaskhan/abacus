@@ -75,6 +75,8 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "variance_explanations.ready",
         # S49: C-02 posting, delivery and the 1099 tracker; T-06 hand-offs and decisions.
         "close_deliverable.client_approved",
+        "close_deliverable.client_declined",  # C-02-T41 (DEC-5927)
+        "template_update.available",  # K-03-T12 (DEC-5904)
         "posting_batch.failed",
         "posting_batch.posted",
         "proposed_entry.approval_requested",

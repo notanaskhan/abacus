@@ -458,11 +458,14 @@ function Viewer({
   mobile,
   initialPage,
   confirming,
+  onApprovals,
 }: {
   deliverable: DeliverableOut;
   mobile: boolean;
   initialPage: number;
   confirming: boolean;
+  /** C-02-T41 (POR-09 e): a released close package waiting for approval goes to POR-08. */
+  onApprovals?: (() => void) | undefined;
 }): JSX.Element {
   // The firm in the client's words comes from its branding, never from copy (portal-dist-check).
   const brandData = useBranding().data;
@@ -523,6 +526,16 @@ function Viewer({
       </h2>
       {draft && !approved && <Pill variant="amber">{COPY.draftForReview}</Pill>}
       {approved && <RegistryStatus object="deliverable" code="approved_by_you" client />}
+      {deliverable.status === "waiting_for_approval" && (
+        <>
+          <RegistryStatus object="deliverable" code="waiting_for_approval" client />
+          {onApprovals !== undefined && (
+            <Button variant="link" size="sm" onClick={onApprovals} data-por09="to-approvals">
+              {COPY.approveInApprovals}
+            </Button>
+          )}
+        </>
+      )}
       <div className="mx-auto flex items-center gap-[6px]">
         <span className="inline-flex items-center gap-[2px] rounded-pill bg-card p-[3px] shadow-e1">
           <button
@@ -797,6 +810,13 @@ function Deliverables(props: Por09Props): JSX.Element {
         mobile={mobile}
         initialPage={props.page ?? 1}
         confirming={props.confirming === true}
+        onApprovals={
+          props.onNavigate === undefined
+            ? undefined
+            : () => {
+                props.onNavigate?.("Approvals");
+              }
+        }
       />
     );
   }

@@ -368,10 +368,29 @@ async def state_of(tenant: TenantContext, close_id: UUID) -> tuple[str, int]:
 
 _PACKAGE_ITEM = text(
     "SELECT d.status, d.released_by, d.released_at, d.client_approved_at, "
+    "d.client_declined_at, d.client_decline_reason, "
     "v.content_hash FROM close_deliverables d JOIN close_deliverable_versions "
     "v ON v.deliverable_id = d.id AND v.version_no = d.current_version_no "
     "WHERE d.close_id = :c AND d.released_at IS NOT NULL"
 )
+# C-02-T41 (DEC-5927): a released package on a scope C18 lists by (the close's work item, or its
+# engagement when the person's grant is on the client or the entity, DEC-3025).
+_PACKAGES_ON_SCOPE = text(
+    "SELECT d.close_id FROM close_deliverables d JOIN closes c ON c.work_item_id = d.close_id "
+    "WHERE d.released_at IS NOT NULL AND (d.close_id = :s OR c.engagement_id = :s) "
+    "ORDER BY c.period DESC"
+)
+
+
+class PackageClientDeclined(DomainEvent):
+    """C-02-T41: C16 `package_client_declined` to the releasing partner (INB-04 carries the
+    reason); the close goes back to review so the firm can revise and release again."""
+
+    event_type: ClassVar[str] = "close_deliverable.client_declined"
+
+    close_id: Annotated[UUID, classified("internal")]
+    recipient_user_ids: Annotated[list[UUID], classified("internal")]
+    reason_code: Annotated[str, classified("internal")]
 
 
 async def _package_item(session: AsyncSession, item_id: UUID) -> ApprovalItem | None:
@@ -382,13 +401,18 @@ async def _package_item(session: AsyncSession, item_id: UUID) -> ApprovalItem | 
     row = (await session.execute(_PACKAGE_ITEM, {"c": item_id})).first()
     if row is None:
         return None
+    declined = row.status == "declined_by_client"
+    state = "approved" if row.client_approved_at is not None else (
+        "declined" if declined else "waiting"
+    )  # fmt: skip
     return ApprovalItem(
         kind=APPROVAL_KIND, item_id=item_id, scope_kind="work_item", scope_id=item_id,
         sent_to_client=True, title="Financial statements",
-        state="approved" if row.client_approved_at is not None else "waiting",
+        state=state,
         seen_hash=str(row.content_hash), legend="No assurance is provided.",
         released_by_user_id=row.released_by, released_at=row.released_at,
-        decided_at=row.client_approved_at,
+        decided_at=row.client_declined_at if declined else row.client_approved_at,
+        reason_code=row.client_decline_reason if declined else None,
     )  # fmt: skip
 
 
@@ -397,8 +421,12 @@ class FsPackageApprovals:
     an attest client's also needs the SKE designee, DeciderRule)."""
 
     async def items(self, tenant: TenantContext, scope_id: UUID) -> Sequence[object]:
-        found = await self.item(tenant, scope_id)
-        return [] if found is None else [found]
+        """C-02-T41: every released package on the scope (a close, or an engagement for a
+        client- or entity-wide grant); the portal still judges each by its covering grant."""
+        async with tenant_session(tenant) as session:
+            ids = [r.close_id for r in await session.execute(_PACKAGES_ON_SCOPE, {"s": scope_id})]
+            found = [await _package_item(session, i) for i in ids]
+        return [f for f in found if f is not None]
 
     async def item(self, tenant: TenantContext, item_id: UUID) -> ApprovalItem | None:
         async with tenant_session(tenant) as session:
@@ -419,6 +447,8 @@ class FsPackageApprovals:
         if decision.seen_hash != current.seen_hash:
             raise ItemChanged
         contact = context.contact_id
+        if decision.decision == "decline":
+            return await _decline(tx, item_id, decision, contact) or current
         released_by = await tx.session.scalar(
             text(
                 "UPDATE close_deliverables SET status = 'approved_by_client', "
@@ -446,6 +476,58 @@ class FsPackageApprovals:
         return ApprovalFacts(await attest_of(tenant, close.engagement_id) is True, item_id)
 
 
+async def _decline(
+    tx: UnitOfWork, close_id: UUID, decision: ClientDecision, contact: UUID
+) -> ApprovalItem | None:
+    """C-02-T41 (POR-08 c; DEC-5927): the client declines the released package with a reason
+    (and, for `other`, a note sealed under the tenant's key). Once only, while it waits; the
+    close goes back to review (the firm revises and releases again) and the releasing partner
+    is told, with the reason, in INB-04."""
+    from abacus.kernel.crypto import seal
+    from abacus.modules.engagements.api import ItemChanged
+
+    tenant_id = await tx.session.scalar(
+        text("SELECT tenant_id FROM close_deliverables WHERE close_id = :c"), {"c": close_id}
+    )
+    sealed = (
+        None
+        if decision.note is None or tenant_id is None
+        else await seal(cast(UUID, tenant_id), decision.note.encode(), "closes.decline_note")
+    )
+    reason = decision.reason_code or "other"
+    released_by = await tx.session.scalar(
+        text(
+            "UPDATE close_deliverables SET status = 'declined_by_client', "
+            "client_declined_by_contact_id = :k, client_declined_at = clock_timestamp(), "
+            "client_decline_reason = :r, client_decline_note_sealed = :n WHERE close_id = :c "
+            "AND status = 'released' AND client_approved_at IS NULL RETURNING released_by"
+        ),
+        {"k": contact, "c": close_id, "r": reason, "n": sealed},
+    )
+    if released_by is None:
+        raise ItemChanged
+    close = await repo.close_row(tx.session, close_id, lock=True)
+    if close is not None and close.status in ("approved", "delivered"):
+        await repo.update_status(
+            tx.session, close_id, status="in_review", on_hold=False, reason=None,
+            seen=close.row_version,
+        )  # fmt: skip
+    tx.record(
+        "close_package.client_declined",
+        target=Target("close", close_id),
+        after=Ref(reason=_REASONS.index(reason) if reason in _REASONS else 2),
+    )
+    tx.emit(
+        PackageClientDeclined(
+            close_id=close_id, recipient_user_ids=[cast(UUID, released_by)], reason_code=reason
+        )
+    )
+    return await _package_item(tx.session, close_id)
+
+
+_REASONS: Final = ("number_looks_wrong", "something_missing", "other")
+
+
 PROVIDER: Final = FsPackageApprovals()
 
 
@@ -458,6 +540,7 @@ def register() -> None:
 __all__ = [
     "ClientApprovalRequired",
     "FsPackageApprovals",
+    "PackageClientDeclined",
     "PreconditionsUnmet",
     "deliver",
     "lock",

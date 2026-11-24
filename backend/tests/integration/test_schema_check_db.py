@@ -3253,6 +3253,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "c10_deliverable_ref",
                 "c18_approval_ref",
                 "client_approved_at",
+                "client_decline_note_sealed",
+                "client_decline_reason",
+                "client_declined_at",
+                "client_declined_by_contact_id",
                 "client_approved_by_contact_id",
                 "current_version_no",
                 "released_at",
@@ -3421,6 +3425,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         "post_issuance_events": frozenset(
             {
+                "analysis_citation_ids",
+                "analysis_recommendation",
+                "analysis_run_id",
+                "analysis_sealed",
                 "decided_actor_kind",
                 "decided_at",
                 "decided_by",
@@ -3428,7 +3436,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "rationale_sealed",
                 "status",
             }
-        ) | frozenset({"analysis_citation_ids", "analysis_recommendation", "analysis_run_id", "analysis_sealed"}),
+        ),
         "posting_batches": frozenset(
             {
                 "closing_date_set_at",
