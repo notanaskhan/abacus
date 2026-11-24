@@ -39,6 +39,15 @@ describe("Granite Peak FY2026 wave-5 slices", () => {
     );
   });
 
+  it("TPL-21 (F-08-T23): every execution area's program count is its cards; 8 + 13 = 21", () => {
+    const areas = AUDIT_PROGRAM_BOARD.areas;
+    for (const a of areas.filter((x) => x.phase === "execution")) {
+      expect(AUDIT_PROGRAM_BOARD.cards.filter((c) => c.area === a.key).length).toBe(a.programs);
+    }
+    const total = areas.reduce((n, a) => n + a.programs, 0);
+    expect(total).toBe(AUDIT_PROGRAM_BOARD.binder.total);
+  });
+
   it("TPL-21e: binder Preparer 12 of 21 · Reviewer 10 of 21", () => {
     expect(AUDIT_PROGRAM_BOARD.binder).toEqual({ preparer: 12, reviewer: 10, total: 21 });
   });

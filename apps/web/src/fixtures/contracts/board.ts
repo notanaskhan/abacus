@@ -13,10 +13,17 @@ export interface BoardCardDraft {
   metrics: { days: number; evidence: number; requests: number; todos: number };
   overlay?: BoardOverlayDraft;
   signoffs: { preparer: string | null; reviewer: string | null };
+  /** F-08-T23: the audit area (its lane) and C-26's state ("done", "not_run", or a percent). */
+  area?: string;
+  agent?: "done" | "not_run" | { pct: number; running?: boolean };
+  /** "2 of 4 responses" under the ID. */
+  sub?: string;
 }
 
 export interface BoardDraft {
   engagement: string;
   cards: BoardCardDraft[];
   binder: { preparer: number; reviewer: number; total: number };
+  /** F-08-T23: the audit-area lanes in order (Planning is collapsed, all done, no card here). */
+  areas?: { key: string; title: string; phase: "planning" | "execution"; programs: number }[];
 }
