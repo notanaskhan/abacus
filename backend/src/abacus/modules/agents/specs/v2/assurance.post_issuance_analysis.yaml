@@ -1,0 +1,36 @@
+# assurance.post_issuance_analysis v1 (Q-05-T22; Q-05 §6; SPEC-711 AC-15, AC-16; TASK-8909;
+# DEC-5911). A compared post-issuance case's analysis: `modules/assurance/post_issuance_analysis.py`
+# gives the model code's comparison and evaluation facts, code's options and the one code marks
+# eligible, and both certifications' masked text as untrusted input; code settles the AgentBlocks
+# (numbers by reference only), the recommendation (only the code-eligible option), quotes from both
+# certifications (verified as citations) and appends the closing sentences ("I have not decided
+# whether this needs action."). One call, no tools: code hands the model its facts (C17 refuses a
+# tool on `post_issuance.read`, TOOL-001). The engagement partner decides (INV-1). Source of truth: compiled into ../_specs_v2.py by
+# `python -m abacus_tools.codegen.agent_specs_v2`.
+id: assurance.post_issuance_analysis
+version: 1
+purpose: Restate a post-issuance case's code comparison and evaluation by reference, cite both certifications and tag the option code marks eligible, ending that it has not decided, for the engagement partner to decide.
+shape: single_call
+prompt: audit.post_issuance_analysis@v1
+tier: medium
+escalation_tier: medium
+input_schema: PostIssuanceAnalysisInput
+output_schema: PostIssuanceAnalysisOutput
+tools: {}
+task_scope: []
+limits:
+  max_output_tokens: 1500
+  max_cost_usd: "0.20"
+  max_steps: 1
+  max_seconds: 120
+  max_tool_calls: 1
+plan: never
+autonomy: propose
+data_classes: [confidential]
+untrusted_inputs: [corrected_certification, certified_trust_report]
+evaluation_suite: evals/post_issuance_analysis
+work_class: interactive
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]
+client_data: none

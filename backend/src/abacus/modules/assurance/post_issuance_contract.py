@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Literal, cast
+from typing import Annotated, Any, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header
@@ -25,7 +25,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import AUDIT_POST_ISSUANCE
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
 
@@ -141,6 +141,24 @@ class PostIssuanceRunOut(BaseModel):
 
     run_id: Annotated[UUID, Internal]
     started_at: Annotated[datetime, Internal]
+    # Q-05-T22 (DEC-5911): the run's end; `escalated` kept nothing (`reason` is a code).
+    status: Annotated[Literal["succeeded", "escalated", "shadow"], Internal] = "succeeded"
+    reason: Annotated[str | None, Field(max_length=60), Internal] = None
+
+
+class PostIssuanceAnalysisOut(BaseModel):
+    """AUD-30 c: the case's kept analysis. `blocks` are AgentBlocks the screen renders through
+    AgentText; `recommendation` is the code-eligible option the analysis tagged ("Agent
+    recommendation"), never a decision; the closing paragraph ends "I have not decided whether
+    this needs action." (AC-16)."""
+
+    model_config = _cfg()
+
+    case_id: Annotated[UUID, Internal]
+    run_id: Annotated[UUID, Internal]
+    blocks: Annotated[dict[str, object], Confidential]
+    recommendation: Annotated[DecisionOption | None, Internal] = None
+    citation_ids: Annotated[list[UUID], Internal] = []
 
 
 class PostIssuanceReissueOut(BaseModel):
@@ -316,14 +334,41 @@ async def post_issuance_case_create_route(
 async def post_issuance_analysis_route(
     work_item_id: UUID, case_id: UUID, ctx: Ctx, key: IdempotencyKey
 ) -> PostIssuanceRunOut:
-    """409 `comparison_unavailable` (DV-9); the analysis ends with the not-decided sentence. The
-    agent's analysis prompt lands with its capability task (ADR-079: after its eval suite,
-    Q-05-T10): until then a compared case answers 501."""
+    """409 `comparison_unavailable` (DV-9), 409 `agent_not_available` on a real firm; the
+    analysis ends with the not-decided sentence (Q-05-T22, `assurance.post_issuance_analysis`
+    v1, synthetic firms only until its clearance record)."""
     await _human(ctx, "post_issuance.analyse")
-    from abacus.modules.assurance import post_issuance as pi
+    from abacus.modules.assurance import post_issuance_analysis as pia
 
-    await pi.require_comparison(ctx, work_item_id, case_id)
-    raise NotImplementedYet
+    run = await pia.analyse(ctx, work_item_id, case_id)
+    return PostIssuanceRunOut(
+        run_id=run.run_id, started_at=run.started_at, status=run.status, reason=run.reason
+    )
+
+
+@post_issuance_router.get(
+    f"{_C}/{{case_id}}/analysis",
+    action="post_issuance.read",
+    response_model=PostIssuanceAnalysisOut,
+)
+async def post_issuance_analysis_read_route(
+    work_item_id: UUID, case_id: UUID, ctx: Ctx
+) -> PostIssuanceAnalysisOut:
+    """The kept analysis (404 when none was kept)."""
+    from abacus.modules.assurance import post_issuance as pi
+    from abacus.modules.assurance import post_issuance_analysis as pia
+
+    await pi.case(ctx, work_item_id, case_id)
+    kept = await pia.read_analysis(ctx, case_id)
+    if kept is None:
+        raise NotFound("post_issuance_analysis")
+    return PostIssuanceAnalysisOut(
+        case_id=case_id,
+        run_id=cast(UUID, kept["run_id"]),
+        blocks=cast("dict[str, object]", kept["blocks"]),
+        recommendation=cast(Any, kept["recommendation"]),
+        citation_ids=cast("list[UUID]", kept["citation_ids"]),
+    )
 
 
 @post_issuance_router.post(

@@ -1696,6 +1696,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "w9_status",
             }
         ),
+        # Q-05-T22 (1014, TASK-8909): the case's latest analysis run
         # K-01-T02 (0180): guarded lifecycle transitions (ED-111: declared without this row).
         "methodology_version_states": frozenset(
             {
@@ -3425,7 +3426,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "rationale_sealed",
                 "status",
             }
-        ),
+        ) | frozenset({"analysis_citation_ids", "analysis_recommendation", "analysis_run_id", "analysis_sealed"}),
         "posting_batches": frozenset(
             {
                 "closing_date_set_at",

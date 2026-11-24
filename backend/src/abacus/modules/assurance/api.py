@@ -1000,3 +1000,8 @@ from abacus.modules.assurance.group_contract import (  # noqa: E402
 from abacus.modules.assurance.group_pull import ConsolidationPullAll, PullAllInput  # noqa: E402
 
 _handoff_gate.register()
+
+# Q-05-T22 (DEC-5911): the post-issuance analysis capability (its errors and run).
+from abacus.modules.assurance import (  # noqa: E402
+    post_issuance_analysis as _post_issuance_analysis,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- imported for its errors
+)
