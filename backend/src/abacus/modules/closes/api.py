@@ -210,3 +210,6 @@ _handoff_gate.register()
 from abacus.modules.closes import deadline_sources as _filing_deadline_sources  # noqa: E402
 
 _filing_deadline_sources.register()
+
+# C-02-T39 (DEC-5922): the close-to-tax hand-off (CLS-12), closes side.
+from abacus.modules.closes import tax_handoff as tax_handoff  # noqa: E402

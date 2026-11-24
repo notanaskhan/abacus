@@ -93,9 +93,19 @@ class AccountChoice:
     needs_review: bool
 
 
+# C-02-T39 (1017, DEC-5922): a December close's tax-relevant close item (`close_issue`).
+ItemKind = Literal["passed_adjustment", "book_tax_expense", "close_issue"]
+# The schedules a hand-off may carry (C-02-T39 adds a close's prepaid, deferred revenue and
+# shareholder distributions to T-06's three).
+ScheduleKind = Literal[
+    "fixed_assets", "accrued_liabilities", "passed_adjustments", "prepaid_expenses",
+    "deferred_revenue", "shareholder_distributions",
+]  # fmt: skip
+
+
 @dataclass(frozen=True)
 class TaxItem:
-    item_kind: Literal["passed_adjustment", "book_tax_expense"]
+    item_kind: ItemKind
     source_ref: Mapping[str, str]
     amount: Decimal
     create_issue: bool
