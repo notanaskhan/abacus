@@ -47814,6 +47814,10 @@ export type QualityAnnualEvaluationOut = {
      */
     allowed_actions?: Array<string>;
     /**
+     * As Of
+     */
+    as_of?: string | null;
+    /**
      * Checklist
      */
     checklist?: {
@@ -47827,6 +47831,18 @@ export type QualityAnnualEvaluationOut = {
      * Decision Card Id
      */
     decision_card_id?: string | null;
+    /**
+     * Inputs Findings
+     */
+    inputs_findings?: number;
+    /**
+     * Inputs Inspections
+     */
+    inputs_inspections?: number;
+    /**
+     * Inputs Objectives
+     */
+    inputs_objectives?: number;
     /**
      * Inspections Open
      */
@@ -48058,6 +48074,14 @@ export type QualityFindingOut = {
      */
     due_on?: string | null;
     /**
+     * Evaluated By
+     */
+    evaluated_by?: string | null;
+    /**
+     * Evaluated On
+     */
+    evaluated_on?: string | null;
+    /**
      * Evaluation
      */
     evaluation?: 'finding_open' | 'not_a_deficiency' | 'deficiency' | 'severe_deficiency' | 'severe_and_pervasive' | null;
@@ -48078,6 +48102,14 @@ export type QualityFindingOut = {
      * Ref
      */
     ref: string;
+    /**
+     * Remediation
+     */
+    remediation?: string | null;
+    /**
+     * Root Cause
+     */
+    root_cause?: string | null;
     /**
      * Root Cause Category
      */
@@ -48221,13 +48253,25 @@ export type QualityInspectionOut = {
      */
     basis: 'sqms1' | 'firm_policy_c230_10_36';
     /**
+     * Concluded On
+     */
+    concluded_on?: string | null;
+    /**
      * Due On
      */
     due_on?: string | null;
     /**
+     * Engagement Line
+     */
+    engagement_line?: string | null;
+    /**
      * Engagement Name
      */
     engagement_name: string;
+    /**
+     * Findings
+     */
+    findings?: number;
     /**
      * Inspection Id
      */
@@ -48241,6 +48285,11 @@ export type QualityInspectionOut = {
      * Ref
      */
     ref: string;
+    /**
+     * Selected Because
+     */
+    selected_because?: string | null;
+    signer?: QualityPersonOut | null;
     /**
      * Status
      */

@@ -49,7 +49,15 @@ export const admScreens = {
     path: "/settings/portal",
   },
   "ADM-11": { name: "Quality management dashboard", status: "planned", path: null },
-  "ADM-12": { name: "Monitoring & inspections", status: "planned", path: null },
+  // Q-05-T23 (DEC-5935): built a–g on fixtures at /settings/monitoring behind
+  // `quality.management`, wired to ADM-01, ADM-05, ADM-08 and TAX-02. Planned until FIL-01's
+  // drawer can carry a QM-finding link (files has no such link kind yet) and the screen is walked
+  // on staging, as ADM-10 is.
+  "ADM-12": {
+    name: "Monitoring & inspections",
+    status: "planned",
+    path: "/settings/monitoring",
+  },
   "ADM-13": { name: "Firm settings › Data model", status: "planned", path: null },
   "ADM-14": { name: "Firm settings › Plan & usage", status: "planned", path: null, entry: true },
   // seed-manifest: new screens are added above this line
