@@ -109,6 +109,7 @@ import { scenarios as txp06 } from "./scenarios/TXP-06";
 import { scenarios as txp07 } from "./scenarios/TXP-07";
 import { scenarios as txp10 } from "./scenarios/TXP-10";
 import { TXP03_OPENS, scenarios as t06txp03 } from "./scenarios/TXP-03";
+import { scenarios as adm12 } from "./scenarios/ADM-12";
 import { scenarios as adm14 } from "./scenarios/ADM-14";
 import { scenarios as fil02 } from "./scenarios/FIL-02";
 import { scenarios as aud28 } from "./scenarios/AUD-28";
@@ -469,6 +470,18 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
     scenarios: tax09,
     opens: {},
     ids: Object.fromEntries(Object.keys(tax09).map((s) => [s, { returnId: FELD_RETURN_ID }])),
+  },
+  // Q-05-T23 (TASK-8933): ADM-12 a–g at `/settings/monitoring`; the sheet, cycle and finding in
+  // the URL.
+  "ADM-12": {
+    scenarios: adm12,
+    opens: {
+      b: "?sheet=select",
+      c: "?sheet=finding",
+      d: "?sheet=decide",
+      e: "?cycle=2027",
+      g: "?finding=QM-F-02",
+    },
   },
   // G-04-T21: ADM-14 Plan & usage for j01 A4 and j27 2 (`/settings/plan`, `ADM-14:<state>`).
   "ADM-14": { scenarios: adm14, opens: {} },

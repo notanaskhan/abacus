@@ -156,6 +156,7 @@ export function ADM01({ onNavigate, onBack }: ADM01Props): JSX.Element {
   const go = (section: string): void => {
     if (section === "consents") open(hrefOf(to.ADM05()));
     else if (section === "integrations") open(hrefOf(to.ADM08()));
+    else if (section === "monitoring") open(hrefOf(to.ADM12()));
     else onNavigate?.(section);
   };
   const queryClient = useQueryClient();

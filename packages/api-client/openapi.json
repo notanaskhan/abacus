@@ -101529,6 +101529,19 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "As Of"
+          },
           "checklist": {
             "additionalProperties": {
               "type": "boolean"
@@ -101563,6 +101576,27 @@
             ],
             "cls": "internal",
             "title": "Decision Card Id"
+          },
+          "inputs_findings": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Inputs Findings",
+            "type": "integer"
+          },
+          "inputs_inspections": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Inputs Inspections",
+            "type": "integer"
+          },
+          "inputs_objectives": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Inputs Objectives",
+            "type": "integer"
           },
           "inspections_open": {
             "cls": "internal",
@@ -102031,6 +102065,32 @@
             "cls": "internal",
             "title": "Due On"
           },
+          "evaluated_by": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Evaluated By"
+          },
+          "evaluated_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Evaluated On"
+          },
           "evaluation": {
             "anyOf": [
               {
@@ -102094,6 +102154,32 @@
             "maxLength": 20,
             "title": "Ref",
             "type": "string"
+          },
+          "remediation": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Remediation"
+          },
+          "root_cause": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Root Cause"
           },
           "root_cause_category": {
             "anyOf": [
@@ -102423,6 +102509,19 @@
             "title": "Basis",
             "type": "string"
           },
+          "concluded_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Concluded On"
+          },
           "due_on": {
             "anyOf": [
               {
@@ -102436,11 +102535,31 @@
             "cls": "internal",
             "title": "Due On"
           },
+          "engagement_line": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Engagement Line"
+          },
           "engagement_name": {
             "cls": "confidential",
             "maxLength": 200,
             "title": "Engagement Name",
             "type": "string"
+          },
+          "findings": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Findings",
+            "type": "integer"
           },
           "inspection_id": {
             "cls": "internal",
@@ -102468,6 +102587,30 @@
             "maxLength": 20,
             "title": "Ref",
             "type": "string"
+          },
+          "selected_because": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Selected Because"
+          },
+          "signer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QualityPersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
           },
           "status": {
             "cls": "internal",

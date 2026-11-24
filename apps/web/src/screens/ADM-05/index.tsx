@@ -305,6 +305,7 @@ export function ADM05({
       onSelect={(id) => {
         if (id === "general") home();
         else if (id === "integrations") open(hrefOf(to.ADM08()));
+        else if (id === "monitoring") open(hrefOf(to.ADM12()));
         else if (id !== "consents") onNavigate?.(id);
       }}
       dirty={false}

@@ -275,10 +275,11 @@ async def inspections(tenant: TenantContext, cycle_id: UUID | None) -> list[dict
             (
                 await session.execute(
                     text(
-                        "SELECT id, ref, work_item_id, inspected_engagement_id, kind, basis, "
-                        "inspector_user_id, "
-                        "status, due_on FROM inspections WHERE CAST(:c AS uuid) IS NULL OR "
-                        "cycle_id = :c ORDER BY ref"
+                        "SELECT i.id, i.ref, i.work_item_id, i.inspected_engagement_id, i.kind, "
+                        "i.basis, i.inspector_user_id, i.ep_signer_user_id, i.selected_because, "
+                        "i.concluded_on, i.status, i.due_on, (SELECT count(*) FROM qm_findings f "
+                        "WHERE f.inspection_id = i.id) AS findings FROM inspections i "
+                        "WHERE CAST(:c AS uuid) IS NULL OR i.cycle_id = :c ORDER BY i.ref"
                     ),
                     {"c": cycle_id},
                 )
@@ -460,7 +461,11 @@ async def findings(
                 await session.execute(
                     text(
                         "SELECT f.id, f.ref, f.source, f.agent_key, f.title_sealed, f.status, "
-                        "f.root_cause_category, "
+                        "f.root_cause_category, f.root_cause_sealed, f.remediation_sealed, "
+                        "(SELECT e.evaluated_by FROM qm_finding_evaluations e "
+                        "WHERE e.finding_id = f.id ORDER BY e.at DESC LIMIT 1) AS evaluated_by, "
+                        "(SELECT e.at FROM qm_finding_evaluations e WHERE e.finding_id = "
+                        "f.id ORDER BY e.at DESC LIMIT 1) AS evaluated_at, "
                         "f.owner_user_id, f.due_on, f.raised_by_kind, f.version, i.ref AS "
                         "inspection_ref, "
                         "(SELECT e.evaluation FROM qm_finding_evaluations e WHERE e.finding_id = "
@@ -477,12 +482,31 @@ async def findings(
             .mappings()
             .all()
         )
+    from abacus.modules.identity.api import names_of
+
+    people = [r["evaluated_by"] for r in rows if r["evaluated_by"] is not None]
+    names = await names_of(cast(list[UUID], people)) if people else {}
     out: list[dict[str, object]] = []
     for r in rows:
         row = dict(r)
         row["title"] = (
             await open_sealed(tenant.tenant_id, bytes(r["title_sealed"]), _FINGERPRINT)
         ).decode()
+        # Q-05-T23 (DEC-5935): the detail pane's words, opened under the same fingerprint.
+        for col, key in (
+            ("root_cause_sealed", "root_cause"),
+            ("remediation_sealed", "remediation"),
+        ):
+            raw = r[col]
+            row[key] = (
+                None
+                if raw is None
+                else (await open_sealed(tenant.tenant_id, bytes(raw), _FINGERPRINT)).decode()
+            )
+        by = r["evaluated_by"]
+        row["evaluated_by_name"] = None if by is None else names.get(cast(UUID, by))
+        at = r["evaluated_at"]
+        row["evaluated_on"] = None if at is None else at.date()
         out.append(row)
     return out
 
@@ -512,6 +536,18 @@ async def annual_evaluation(tenant: TenantContext, year: int) -> dict[str, objec
         open_n = int(cast(int, await session.scalar(text(
             "SELECT count(*) FROM inspections WHERE cycle_id = :c AND status <> 'concluded'"
         ), {"c": cycle.id})))  # fmt: skip
+        # Q-05-T23 (DEC-5935): "As of Dec 15, 2026" and the inputs line.
+        as_of = await session.scalar(
+            text("SELECT as_of FROM qm_cycles WHERE id = :c"), {"c": cycle.id}
+        )
+        on_cycle = {"c": cycle.id}
+        n_insp = await session.scalar(
+            text("SELECT count(*) FROM inspections WHERE cycle_id = :c"), on_cycle
+        )
+        n_find = await session.scalar(
+            text("SELECT count(*) FROM qm_findings WHERE cycle_id = :c"), on_cycle
+        )
+        n_obj = await session.scalar(text("SELECT count(*) FROM qm_objectives"))
     decided = None
     if row is not None and row.decision_card_id is not None:
         from abacus.modules.review.api import card_decided_at
@@ -525,6 +561,8 @@ async def annual_evaluation(tenant: TenantContext, year: int) -> dict[str, objec
         "decision_card_id": None if row is None else row.decision_card_id,
         "checklist": {} if row is None else dict(row.checklist), "inspections_open": open_n,
         "status": "concluded" if decided is not None else "not_started", "concluded_at": decided,
+        "as_of": as_of, "inputs_inspections": int(n_insp or 0),
+        "inputs_findings": int(n_find or 0), "inputs_objectives": int(n_obj or 0),
     }  # fmt: skip
 
 

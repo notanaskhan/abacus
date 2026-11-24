@@ -251,6 +251,17 @@ class QualityInspectionOut(BaseModel):
     inspector: Annotated[QualityPersonOut, classified("confidential")]
     status: Annotated[InspectionStatus, Internal]
     due_on: Annotated[date | None, Internal] = None
+    # Q-05-T23 (additive, DEC-5935): ADM-12's row: the engagement's line ("FS audit FYE
+    # 12/31/2025"), the EP / signer, why it was selected, when it concluded and its findings.
+    engagement_line: Annotated[str | None, Field(max_length=200), classified("confidential")] = (
+        None
+    )
+    signer: Annotated[QualityPersonOut | None, classified("confidential")] = None
+    selected_because: Annotated[str | None, Field(max_length=300), classified("confidential")] = (
+        None
+    )
+    concluded_on: Annotated[date | None, Internal] = None
+    findings: Annotated[int, Field(ge=0), Internal] = 0
     allowed_actions: Annotated[list[str], Internal] = []
 
 
@@ -306,6 +317,12 @@ class QualityFindingOut(BaseModel):
     due_on: Annotated[date | None, Internal] = None
     raised_by_kind: Annotated[Literal["human", "system"], Internal]
     version: Annotated[int, Field(ge=1), Internal]
+    # Q-05-T23 (additive, DEC-5935): the detail pane's root cause and remediation words and who
+    # evaluated it when (SQMS No. 1: finding, deficiency, severe, pervasive).
+    root_cause: Annotated[str | None, Field(max_length=2000), classified("confidential")] = None
+    remediation: Annotated[str | None, Field(max_length=2000), classified("confidential")] = None
+    evaluated_by: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+    evaluated_on: Annotated[date | None, Internal] = None
     allowed_actions: Annotated[list[str], Internal] = []
 
 
@@ -379,6 +396,11 @@ class QualityAnnualEvaluationOut(BaseModel):
     concluded_at: Annotated[datetime | None, Internal] = None
     checklist: Annotated[dict[str, bool], Internal] = {}
     inspections_open: Count
+    # Q-05-T23 (additive, DEC-5935): "As of Dec 15, 2026" and the inputs line.
+    as_of: Annotated[date | None, Internal] = None
+    inputs_inspections: Annotated[int, Field(ge=0), Internal] = 0
+    inputs_findings: Annotated[int, Field(ge=0), Internal] = 0
+    inputs_objectives: Annotated[int, Field(ge=0), Internal] = 0
     allowed_actions: Annotated[list[str], Internal] = []
 
 
@@ -904,7 +926,21 @@ async def _inspection_out(ctx: AuthContext, r: dict[str, object]) -> QualityInsp
         inspector=await _person(cast(UUID, r["inspector_user_id"])),
         status=cast(InspectionStatus, r["status"]),
         due_on=cast(Any, r["due_on"]),  # Any: a row value
+        engagement_line=None if label is None else _line(label),
+        signer=None
+        if r.get("ep_signer_user_id") is None
+        else await _person(cast(UUID, r["ep_signer_user_id"])),
+        selected_because=cast(str | None, r.get("selected_because")),
+        concluded_on=cast(Any, r.get("concluded_on")),  # Any: a row value
+        findings=int(cast(int, r.get("findings") or 0)),
     )
+
+
+def _line(label: object) -> str:
+    """ "FS audit · FY2025": the engagement's own name and fiscal year, as the label holds them."""
+    name = str(getattr(label, "name", "") or "")
+    year = getattr(label, "fiscal_year", None)
+    return f"{name} · FY{year}" if year else name
 
 
 async def _inspection_by_id(ctx: AuthContext, inspection_id: UUID) -> QualityInspectionOut:
@@ -934,6 +970,10 @@ async def _finding_out(r: dict[str, object]) -> QualityFindingOut:
             "due_on": r["due_on"],
             "raised_by_kind": r["raised_by_kind"],
             "version": r["version"],
+            "root_cause": r.get("root_cause"),
+            "remediation": r.get("remediation"),
+            "evaluated_by": r.get("evaluated_by_name"),
+            "evaluated_on": r.get("evaluated_on"),
         }
     )
 
@@ -959,6 +999,10 @@ async def _evaluation_out(ctx: AuthContext, year: int) -> QualityAnnualEvaluatio
         concluded_at=cast(Any, found["concluded_at"]),  # Any: a row value
         checklist=cast(dict[str, bool], found["checklist"]),
         inspections_open=int(cast(int, found["inspections_open"])),
+        as_of=cast(Any, found.get("as_of")),  # Any: a row value
+        inputs_inspections=int(cast(int, found.get("inputs_inspections") or 0)),
+        inputs_findings=int(cast(int, found.get("inputs_findings") or 0)),
+        inputs_objectives=int(cast(int, found.get("inputs_objectives") or 0)),
     )
 
 

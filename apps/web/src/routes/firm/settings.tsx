@@ -102,6 +102,8 @@ const FirmSettingsSecurity = lazyScreen(async () => (await import("../../screens
 // (`budget_alert.manage`, firm admin), a partner reads it with Request more… enabled.
 const FirmSettingsPlan = lazyScreen(async () => (await import("../../screens/ADM-14")).ADM14);
 const SECURITY_SEARCH = ["incident", "sessions", "export"] as const;
+// Q-05-T23: ADM-12's open sheet, cycle and selected finding live in the URL.
+const MONITORING_SEARCH = ["sheet", "cycle", "finding"] as const;
 
 // R-01-T25: POR-20 at /settings/portal/email-templates/$templateKey, lazy (the firm entry is at its
 // budget); the width (`w`) and the preview's sample contact (`sample`) live in the URL. Writes are
@@ -110,6 +112,7 @@ const EmailTemplates = lazyScreen(async () => (await import("../../screens/POR-2
 // R-01-T28: ADM-10 at /settings/portal; the preview's contact and device and the open template
 // drawer live in the URL. "Preview as" lists the sample client only until a visible-contact read
 // lands (DEC-20, DEC-956); the preview opens in a new tab at /settings/portal/preview.
+const Monitoring = lazyScreen(async () => (await import("../../screens/ADM-12")).ADM12);
 const PortalSettings = lazyScreen(async () => (await import("../../screens/ADM-10")).ADM10);
 const PortalSettingsPreview = lazyScreen(
   async () => (await import("../../screens/ADM-10")).ADM10Preview,
@@ -377,6 +380,38 @@ const settingsPlanRoute = createRoute({
     );
   },
 });
+// Q-05-T23 (DEC-5935): ADM-12 Monitoring & inspections behind `quality.management`, the flag
+// the quality routes already answer 404 behind.
+const settingsMonitoringRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/settings/monitoring",
+  validateSearch: (search: Record<string, unknown>) => pick(MONITORING_SEARCH, search),
+  component: function SettingsMonitoringPage(): JSX.Element {
+    const navigate = useNavigate();
+    const router = useRouter();
+    const search = pick(MONITORING_SEARCH, useSearch({ strict: false }));
+    const sheet = search.sheet;
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FeatureGate flag="quality.management" fallback={<NotBuilt />}>
+          <Monitoring
+            {...(sheet === "select" || sheet === "finding" || sheet === "decide"
+              ? { open: sheet }
+              : {})}
+            {...(search.cycle === "2027" ? { cycle: 2027 as const } : {})}
+            {...(search.finding === undefined ? {} : { finding: search.finding })}
+            onNavigate={(section) => {
+              void navigate({ to: "/settings/$section", params: { section } });
+            }}
+            onBack={() => {
+              router.history.back();
+            }}
+          />
+        </FeatureGate>
+      </div>
+    );
+  },
+});
 const settingsEmailTemplatesRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/settings/portal/email-templates/$templateKey",
@@ -536,6 +571,7 @@ export const settingsRoutes = [
   settingsIntegrationsRoute,
   settingsSecurityRoute,
   settingsPlanRoute,
+  settingsMonitoringRoute,
   settingsPortalRoute,
   settingsPortalPreviewRoute,
   settingsEmailTemplatesRoute,

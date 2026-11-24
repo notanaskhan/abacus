@@ -625,6 +625,7 @@ export function ADM08({
         // Built settings screens open through the manifest's builders (T-01-T51).
         if (id === "general") openHref(hrefOf(to.ADM01()));
         else if (id === "consents") openHref(hrefOf(to.ADM05()));
+        else if (id === "monitoring") openHref(hrefOf(to.ADM12()));
         else if (id !== "integrations") onNavigate?.(id);
       }}
       dirty={dirty}
