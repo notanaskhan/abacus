@@ -75,12 +75,17 @@ from abacus.modules.methodology.standards_contract import (
     AjeThresholdsPayload,
     AttributeSampleSizesPayload,
     AttributeSize,
+    DeadlineHolidayOut,
+    DeadlineOverridesPayload,
+    DeadlinePostponementOut,
+    DeadlineRulesSectionOut,
     EntryClassification,
     ExampleRow,
     ExamplesProvider,
     FirmStandardKind,
     JeRiskCriteriaPayload,
     MusConfidenceFactorsPayload,
+    PlatformDeadlineRuleOut,
     PolicyRef,
     RmmFor,
     RmmMatrixPayload,
@@ -437,6 +442,75 @@ async def list_standards(ctx: AuthContext, kind: StandardKind | None) -> list[St
         loaded = await _all(session, kind)
     names = await _names(loaded)
     return [await _standard_out(ctx, item, on, names, partner) for item in loaded]
+
+
+async def deadline_rules_section(ctx: AuthContext) -> DeadlineRulesSectionOut:
+    """KNW-04 section j (T-08-T44): platform rows read-only, the firm's overrides beside them."""
+    from abacus.modules.platform.api import (
+        DisasterPostponementsPayload,
+        DueDateRulesPayload,
+        LegalHolidaysPayload,
+        references_in_effect,
+    )
+
+    await authorise(ctx, READ, Resource.firm(ctx.tenant_id))
+    on = await today(ctx.tenant)
+    rules: list[PlatformDeadlineRuleOut] = []
+    for found in await references_in_effect("due_date_rules", on):
+        for row in cast(DueDateRulesPayload, found.payload).rows:
+            rules.append(
+                PlatformDeadlineRuleOut(
+                    form=row.form, months_after_period_end=row.original.months_after_period_end,
+                    day=row.original.day,
+                    extension_form=None if row.extension is None else row.extension.form,
+                    extension_months=None if row.extension is None else row.extension.months,
+                    authority=row.authority, version_id=found.version_id,
+                )
+            )  # fmt: skip
+    holidays: list[DeadlineHolidayOut] = []
+    for found in await references_in_effect("legal_holidays", on):
+        holidays += [
+            DeadlineHolidayOut(
+                date=r.date, name=r.name, jurisdiction=r.jurisdiction, source="platform",
+                version_id=found.version_id,
+            )
+            for r in cast(LegalHolidaysPayload, found.payload).rows
+        ]  # fmt: skip
+    notices: list[DeadlinePostponementOut] = []
+    for found in await references_in_effect("disaster_postponements", on):
+        notices += [
+            DeadlinePostponementOut(
+                notice_id=r.notice_id, window_start=r.window.start, window_end=r.window.end,
+                postponed_to=r.postponed_to, source="platform", version_id=found.version_id,
+            )
+            for r in cast(DisasterPostponementsPayload, found.payload).rows
+        ]  # fmt: skip
+    firm = next(iter(await list_standards(ctx, "deadline_overrides")), None)
+    in_effect_now = await deadline_overrides_in_effect(ctx.tenant_id, on)
+    payload = None
+    if in_effect_now is not None:
+        policy, payload = in_effect_now
+        holidays += [
+            DeadlineHolidayOut(
+                date=c.date, name=c.name, jurisdiction="firm", source="firm",
+                version_id=policy.version_id,
+            )
+            for c in payload.closures
+        ]  # fmt: skip
+        notices += [
+            DeadlinePostponementOut(
+                notice_id=p.notice_id, window_start=p.window_start, window_end=p.window_end,
+                postponed_to=p.postponed_to, source="firm", version_id=policy.version_id,
+            )
+            for p in payload.postponements
+        ]  # fmt: skip
+    return DeadlineRulesSectionOut(
+        platform_rules=sorted(rules, key=lambda r: r.form),
+        holidays=sorted(holidays, key=lambda h: (h.date, h.jurisdiction)),
+        postponements=sorted(notices, key=lambda n: (n.window_start, n.notice_id)),
+        firm_standard=firm,
+        firm_overrides=payload,
+    )
 
 
 async def standard_detail(
@@ -1192,6 +1266,19 @@ async def policy_payload(
             )
         ).scalar_one()
     return dict(payload)
+
+
+async def deadline_overrides_in_effect(
+    tenant_id: UUID, as_of: date
+) -> tuple[PolicyRef, DeadlineOverridesPayload] | None:
+    """T-08-T44 (DF-10, DEC-5921): the firm's published `deadline_overrides` version in effect on
+    `as_of` and its payload, for practice's due dates and recompute (pinned by version id); None
+    when the firm publishes none (the platform rules alone)."""
+    policy = await current_version_of_kind(tenant_id, "deadline_overrides", as_of)
+    if policy is None:
+        return None
+    payload = await policy_payload(tenant_id, policy, "deadline_overrides")
+    return policy, DeadlineOverridesPayload.model_validate(payload)
 
 
 async def je_risk_criteria_version(

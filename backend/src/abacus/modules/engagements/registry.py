@@ -396,11 +396,11 @@ INSERT_COLUMNS["season_row_steps"] = frozenset(
 )
 
 # The tables this module owns and its insert-only tables, after S50 (one definition each).
-TABLES: frozenset[str] = _TABLES_PRE_S50 | T08T05_TABLES
-INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1
+_TABLES_PRE_S53: frozenset[str] = _TABLES_PRE_S50 | T08T05_TABLES
+_INSERT_ONLY_PRE_S53: frozenset[str] = _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1
 
 # K-03-T12 (1011, TASK-8902): template links, rollouts, updates and scoping evaluations
-TABLES = TABLES | frozenset(
+_TABLES_S53_1: frozenset[str] = frozenset(
     {
         "engagement_template_links",
         "template_link_events",
@@ -408,7 +408,7 @@ TABLES = TABLES | frozenset(
         "template_updates",
     }
 )
-INSERT_ONLY = INSERT_ONLY | frozenset({"template_link_events"})
+_INSERT_ONLY_S53_1: frozenset[str] = frozenset({"template_link_events"})
 INSERT_COLUMNS["engagement_template_links"] = frozenset(
     {"engagement_id", "id", "state", "template_id", "template_version_id", "tenant_id"}
 )
@@ -466,3 +466,7 @@ INSERT_COLUMNS["template_updates"] = frozenset(
 UPDATE_COLUMNS["template_updates"] = frozenset(
     {"applied_at", "applied_count", "failure_code", "status"}
 )
+
+# The tables this module owns and its insert-only tables after S53 (one definition each).
+TABLES: frozenset[str] = _TABLES_PRE_S53 | _TABLES_S53_1
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S53 | _INSERT_ONLY_S53_1

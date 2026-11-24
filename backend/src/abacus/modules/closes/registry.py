@@ -240,11 +240,11 @@ INSERT_COLUMNS["tax_handoffs"] = frozenset(
 )
 
 # The tables this module owns and its insert-only tables, after S50 (one definition each).
-TABLES: frozenset[str] = _TABLES_PRE_S50 | C02T16_TABLES
-INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1
+_TABLES_PRE_S53: frozenset[str] = _TABLES_PRE_S50 | C02T16_TABLES
+_INSERT_ONLY_PRE_S53: frozenset[str] = _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1
 
 # C-02-T38 (1013, TASK-8904): information returns; TINs sealed (ADR-167)
-TABLES = TABLES | frozenset(
+_TABLES_S53_1: frozenset[str] = frozenset(
     {
         "backup_withholding_events",
         "information_return_batches",
@@ -255,7 +255,7 @@ TABLES = TABLES | frozenset(
         "w9_requests",
     }
 )
-INSERT_ONLY = INSERT_ONLY | frozenset(
+_INSERT_ONLY_S53_1: frozenset[str] = frozenset(
     {"backup_withholding_events", "information_returns", "tin_match_results", "w9_requests"}
 )
 INSERT_COLUMNS["backup_withholding_events"] = frozenset(
@@ -359,3 +359,7 @@ INSERT_COLUMNS["w9_requests"] = frozenset(
         "wording_template_version_id",
     }
 )
+
+# The tables this module owns and its insert-only tables after S53 (one definition each).
+TABLES: frozenset[str] = _TABLES_PRE_S53 | _TABLES_S53_1
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S53 | _INSERT_ONLY_S53_1

@@ -357,6 +357,14 @@ UPDATE_COLUMNS["draft_final_field_facts"] = frozenset(
     }
 )
 
+# T-08-T44 (1016, DEC-5921): DF-10 client postponement applications (insert-only).
+T08T44_TABLES: frozenset[str] = frozenset({"postponement_applications"})
+INSERT_COLUMNS["postponement_applications"] = frozenset(
+    {"applied_by", "client_id", "notice_id", "reference_set_version_id", "source", "tenant_id"}
+)
+
 # The tables this module owns and its insert-only tables, after S50 (one definition each).
-TABLES: frozenset[str] = _TABLES_PRE_S50 | T08T07_TABLES | Q05T05_TABLES
-INSERT_ONLY: frozenset[str] = _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1 | _S50_INSERT_ONLY_2
+TABLES: frozenset[str] = _TABLES_PRE_S50 | T08T07_TABLES | Q05T05_TABLES | T08T44_TABLES
+INSERT_ONLY: frozenset[str] = (
+    _INSERT_ONLY_PRE_S50 | _S50_INSERT_ONLY_1 | _S50_INSERT_ONLY_2 | T08T44_TABLES
+)

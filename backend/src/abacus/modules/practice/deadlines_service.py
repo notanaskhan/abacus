@@ -19,7 +19,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta
 from typing import Final, cast
 from uuid import UUID
@@ -61,6 +61,7 @@ class Row:
     service_line: str
     reference_set_version_ids: tuple[UUID, ...]
     computed_at: datetime
+    internal_target_on: date | None = None  # T-08-T44 (DF-10): stored and exported, not shown
 
     def deadline(self) -> calc.Deadline:
         return calc.Deadline(str(self.deadline_id), self.due_on, None, self.done)
@@ -70,10 +71,10 @@ _UPSERT = text(
     "INSERT INTO filing_deadlines (tenant_id, source_kind, source_ref, client_id, office_id, "
     "service_line, filing_label, rule_key, reference_set_version_ids, original_due_on, "
     "extension_form, extension_filed_on, extended_due_on, due_on, postponement_notice_id, "
-    "postponed_from, owner_user_ids, signer_user_id, stage_code, done_at, work_item_id, "
-    "inputs_hash) VALUES (:t, :kind, :ref, :client, :office, :line, :label, :rule, :sets, "
-    ":orig, :ext_form, :ext_filed, :ext, :due, :notice, :postponed, :owners, :signer, :stage, "
-    "CASE WHEN :done THEN clock_timestamp() END, :wi, :hash) "
+    "postponed_from, internal_target_on, owner_user_ids, signer_user_id, stage_code, done_at, "
+    "work_item_id, inputs_hash) VALUES (:t, :kind, :ref, :client, :office, :line, :label, :rule, "
+    ":sets, :orig, :ext_form, :ext_filed, :ext, :due, :notice, :postponed, :target, :owners, "
+    ":signer, :stage, CASE WHEN :done THEN clock_timestamp() END, :wi, :hash) "
     "ON CONFLICT (tenant_id, source_kind, source_ref, filing_label) DO UPDATE SET "
     "client_id = EXCLUDED.client_id, office_id = EXCLUDED.office_id, "
     "service_line = EXCLUDED.service_line, rule_key = EXCLUDED.rule_key, "
@@ -83,6 +84,7 @@ _UPSERT = text(
     "extended_due_on = EXCLUDED.extended_due_on, due_on = EXCLUDED.due_on, "
     "postponement_notice_id = EXCLUDED.postponement_notice_id, "
     "postponed_from = EXCLUDED.postponed_from, "
+    "internal_target_on = EXCLUDED.internal_target_on, "
     "owner_user_ids = EXCLUDED.owner_user_ids, signer_user_id = EXCLUDED.signer_user_id, "
     "stage_code = EXCLUDED.stage_code, "
     "done_at = CASE WHEN :done THEN coalesce(filing_deadlines.done_at, clock_timestamp()) END, "
@@ -96,9 +98,10 @@ BACK: Final = timedelta(days=400)
 AHEAD: Final = timedelta(days=548)
 
 
-def inputs_hash(fact: FilingDeadlineFact) -> str:
+def inputs_hash(fact: FilingDeadlineFact, internal_target_on: date | None = None) -> str:
     """The fact's inputs, hashed: a recompute writes a row only when this moved (AC-15)."""
     body = {
+        "target": None if internal_target_on is None else str(internal_target_on),
         "client": None if fact.client_id is None else str(fact.client_id),
         "office": None if fact.office_id is None else str(fact.office_id),
         "line": fact.service_line, "rule": fact.rule_key, "orig": str(fact.original_due_on),
@@ -116,16 +119,25 @@ def inputs_hash(fact: FilingDeadlineFact) -> str:
     return hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
 
 
-async def recompute(tenant_id: UUID) -> int:
+async def recompute(tenant_id: UUID, *, client_id: UUID | None = None) -> int:
     """One firm's filing deadlines from every registered source (T-08-T20, DEC-5917; tax's
     returns, extensions, estimates, 8971s and 65-day windows; closes; notices; plan audits;
-    envelopes; consents); answers the rows that changed. A source that fails is logged by kind
-    and the others still run; an unregistered kind yields nothing (AC-20)."""
+    envelopes; consents), with the firm's DF-10 overrides on top (T-08-T44, DEC-5921: internal
+    targets, and a person's client relief applications); answers the rows that changed (only
+    `client_id`'s when given). A source that fails is logged by kind and the others still run;
+    an unregistered kind yields nothing (AC-20)."""
     from abacus.modules.platform.api import filing_deadline_source, filing_deadline_source_kinds
+    from abacus.modules.practice import deadline_overrides as df10
+    from abacus.modules.practice.due_dates import federal_holidays
 
     tenant = TenantContext(tenant_id, "system", "practice:filing_deadlines")
     today = calc.firm_today(await clock_now(tenant), str(FIRM_ZONE))
     window = FilingDeadlineWindow(today - BACK, today + AHEAD)
+    overrides = await df10.overrides_in_effect(tenant_id, today)
+    applied = await df10.applications(tenant, today, client_id)
+    holidays: frozenset[date] = (
+        await federal_holidays(window.end) if overrides is not None else frozenset()
+    )
     changed = 0
     for kind in filing_deadline_source_kinds():
         provider = filing_deadline_source(kind)
@@ -136,14 +148,30 @@ async def recompute(tenant_id: UUID) -> int:
         except Exception as exc:
             _log.error("filing_deadlines.source_failed", kind=kind, error=type(exc).__name__)
             continue
-        for fact in facts:
-            if fact.source_kind != kind:
-                continue  # a provider answers its own kind only
-            changed += await _upsert(tenant, fact)
+        mine = [
+            f for f in facts
+            if f.source_kind == kind  # a provider answers its own kind only
+            and (client_id is None or f.client_id == client_id)
+        ]  # fmt: skip
+        for raw, target, app, moved_to in df10.apply_overrides(mine, overrides, applied, holidays):
+            fact = cast(FilingDeadlineFact, raw)
+            pins = list(fact.reference_set_version_ids)
+            if overrides is not None and target is not None:
+                pins.append(overrides.version_id)
+            if app is not None and moved_to is not None:
+                pins.append(app.notice.version_id)
+                fact = replace(
+                    fact, due_on=moved_to, postponed_from=fact.due_on,
+                    postponement_notice_id=app.id,
+                )  # fmt: skip
+            fact = replace(fact, reference_set_version_ids=tuple(dict.fromkeys(pins)))
+            changed += await _upsert(tenant, fact, target)
     return changed
 
 
-async def _upsert(tenant: TenantContext, fact: FilingDeadlineFact) -> int:
+async def _upsert(
+    tenant: TenantContext, fact: FilingDeadlineFact, internal_target_on: date | None = None
+) -> int:
     try:
         async with uow(tenant) as tx:
             moved = await tx.session.scalar(
@@ -156,9 +184,10 @@ async def _upsert(tenant: TenantContext, fact: FilingDeadlineFact) -> int:
                     "orig": fact.original_due_on, "ext_form": fact.extension_form,
                     "ext_filed": fact.extension_filed_on, "ext": fact.extended_due_on,
                     "due": fact.due_on, "notice": fact.postponement_notice_id,
-                    "postponed": fact.postponed_from, "owners": list(fact.owner_user_ids),
+                    "postponed": fact.postponed_from, "target": internal_target_on,
+                    "owners": list(fact.owner_user_ids),
                     "signer": fact.signer_user_id, "stage": fact.stage_code, "done": fact.done,
-                    "wi": fact.work_item_id, "hash": inputs_hash(fact),
+                    "wi": fact.work_item_id, "hash": inputs_hash(fact, internal_target_on),
                 },
             )  # fmt: skip
             if moved is None:
@@ -203,7 +232,7 @@ _ROWS = text(
     "SELECT id, source_kind, client_id, filing_label, original_due_on, extended_due_on, "
     "extension_form, due_on, postponed_from, stage_code, done_at IS NOT NULL, owner_user_ids, "
     "signer_user_id, work_item_id, office_id, service_line, reference_set_version_ids, "
-    "computed_at FROM filing_deadlines WHERE due_on BETWEEN :f AND :t "
+    "computed_at, internal_target_on FROM filing_deadlines WHERE due_on BETWEEN :f AND :t "
     "AND (CAST(:id AS uuid) IS NULL OR id = :id) ORDER BY due_on, filing_label, id"
 )
 
@@ -215,6 +244,7 @@ def _row(r: tuple[object, ...]) -> Row:
         cast(date | None, r[8]), str(r[9]), bool(r[10]), tuple(cast(list[UUID], r[11])),
         cast(UUID | None, r[12]), cast(UUID | None, r[13]), cast(UUID | None, r[14]),
         str(r[15]), tuple(cast(list[UUID], r[16])), cast(datetime, r[17]),
+        cast(date | None, r[18]),
     )  # fmt: skip
 
 

@@ -116,6 +116,13 @@ async def _holidays(as_of: date, jurisdiction: str = "US") -> tuple[frozenset[da
     return frozenset(days), ids
 
 
+async def federal_holidays(as_of: date) -> frozenset[date]:
+    """T-08-T44: the federal and DC holidays in effect on `as_of` (an internal target never falls
+    on one)."""
+    days, _ids = await _holidays(as_of, "US")
+    return days
+
+
 async def _roll_as_of(latest: date) -> date:
     return max(await today(), latest + _ROLL_MARGIN)
 
@@ -127,13 +134,65 @@ async def due_dates_for(
     jurisdiction: str = "US",
     location: Location | None = None,
     event_date: date | None = None,
+    *,
+    tenant_id: UUID | None = None,
+    client_id: UUID | None = None,
 ) -> DueDates:
     """The original and extended due dates for a form and period end, from the rules in effect
-    on the period end (C21 `as_of` rule). Unknown form: `LookupError`."""
+    on the period end (C21 `as_of` rule). Unknown form: `LookupError`. With `tenant_id`, the
+    firm's DF-10 overrides on top (T-08-T44): the internal target for the form and, with
+    `client_id`, the client's relief applications, each version pinned."""
     rule, rules = await _rule_for(form, tax_year, period_end)
-    return await _dates_under(
+    found = await _dates_under(
         rule, rules, form, tax_year, period_end, jurisdiction, location, event_date
     )
+    return found if tenant_id is None else await _with_overrides(found, tenant_id, client_id)
+
+
+async def _with_overrides(found: DueDates, tenant_id: UUID, client_id: UUID | None) -> DueDates:
+    from dataclasses import replace
+
+    from abacus.kernel.db import TenantContext
+    from abacus.modules.practice import deadline_overrides as df10
+
+    as_of = await today()
+    overrides = await df10.overrides_in_effect(tenant_id, as_of)
+    pins = list(found.reference_set_version_ids)
+    due = found.original_due_on
+    notice_id, postponed_to, postponed_from = (
+        found.postponement_notice_id, found.postponed_to, None,
+    )  # fmt: skip
+    if client_id is not None:
+        tenant = TenantContext(tenant_id, "system", "practice:due_dates_overrides")
+        best: tuple[date, df10.Application] | None = None
+        for app in (await df10.applications(tenant, as_of, client_id)).get(client_id, []):
+            to = df10.postponed(found.original_due_on, postponed_to or due, app.notice)
+            if to is not None and (best is None or to > best[0]):
+                best = (to, app)
+        if best is not None:
+            postponed_from = postponed_to or due
+            postponed_to, notice_id = best[0], best[1].notice.notice_id
+            pins.append(best[1].notice.version_id)
+    target = None
+    if overrides is not None and found.form in overrides.offsets:
+        target = df10.internal_target(
+            postponed_to or due, overrides.offsets[found.form], overrides.closures,
+            await federal_holidays(as_of),
+        )  # fmt: skip
+        pins.append(overrides.version_id)
+    pinned = tuple(dict.fromkeys(pins))
+    return replace(
+        found,
+        postponement_notice_id=notice_id,
+        postponed_to=postponed_to,
+        postponed_from=postponed_from,
+        internal_target_on=target,
+        reference_set_version_ids=pinned,
+        inputs_hash=calendar.inputs_hash(
+            {"base": found.inputs_hash, "client": None if client_id is None else str(client_id),
+             "reference_set_version_ids": [str(v) for v in pinned]}
+        ),
+    )  # fmt: skip
 
 
 async def due_dates_for_extension(

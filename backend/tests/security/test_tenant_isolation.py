@@ -540,6 +540,7 @@ TABLES: tuple[str, ...] = (
     "post_issuance_sources",
     "posting_batches",
     "posting_results",
+    "postponement_applications",
     "preparer_memo_events",
     "preparer_memo_versions",
     "preparer_memos",
