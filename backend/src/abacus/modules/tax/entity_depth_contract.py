@@ -364,9 +364,14 @@ class TaxDepthFunctionalExpensesOut(BaseModel):
 
 
 class TaxDepthRunOut(BaseModel):
+    """T-06-T42 (DEC-5913): "Explain…" answers the SHL-15 issue it created (no run until
+    T-06-T54's agent path); the allocation answers its run and the proposal a person adopts."""
+
     model_config = _cfg()
 
-    run_id: Annotated[UUID, Internal]
+    run_id: Annotated[UUID | None, Internal] = None
+    issue_id: Annotated[UUID | None, Internal] = None
+    proposal_id: Annotated[UUID | None, Internal] = None
 
 
 # --- TAX-11 form pages -------------------------------------------------------------------------
@@ -886,24 +891,39 @@ async def ptet_route(
     f"{_R}/schedules/aaa",
     action="other_workpapers.read",
     response_model=TaxDepthAaaOut,
-    errors=(501,),
+    errors=(),
 )
 async def aaa_route(return_id: UUID, ctx: Ctx) -> TaxDepthAaaOut:
+    """TXP-13 a (T-06-T42): E10's roll of the M-2 columns; `locked` once Filed or Accepted."""
     await _on(ctx, _W)
-    raise NotImplementedYet
+    from abacus.modules.tax import other_entities_service as oe
+
+    found = await oe.aaa(ctx, return_id)
+    return TaxDepthAaaOut(
+        aaa=found.aaa, pti=found.pti, e_and_p=found.e_and_p, oaa=found.oaa,
+        shareholder_pcts=list(found.shareholder_pcts), locked=found.locked,
+    )  # fmt: skip
 
 
 @entity_depth_router.get(
     f"{_R}/provision",
     action="other_workpapers.read",
     response_model=TaxDepthProvisionOut,
-    errors=(501,),
+    errors=(),
 )
 async def provision_route(
     return_id: UUID, ctx: Ctx, view: ProvisionView = "provision"
 ) -> TaxDepthProvisionOut:
+    """TXP-13 b, b2 (T-06-T42): current + deferred = total, the ETR and the tally."""
     await _on(ctx, _W)
-    raise NotImplementedYet
+    from abacus.modules.tax import other_entities_service as oe
+
+    found = await oe.provision(ctx, return_id, view)
+    return TaxDepthProvisionOut(
+        view=found.view, current=found.current, deferred=found.deferred, total=found.total,
+        effective_rate=found.effective_rate, rate_reconciliation_tally=found.tally,
+        unclassified=found.unclassified,
+    )  # fmt: skip
 
 
 @entity_depth_router.post(
@@ -911,26 +931,38 @@ async def provision_route(
     action="issue.create",
     response_model=TaxDepthRunOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def provision_explain_route(return_id: UUID, item_id: UUID, ctx: Ctx) -> TaxDepthRunOut:
-    """An SHL-15 issue; the classification arrives as a proposal (zero gateway calls without
-    consent)."""
+    """An SHL-15 issue (T-06-T42); the classification is a reviewer's, and the agent's suggestion
+    for it arrives with T-06-T54 (zero gateway calls here). 409 `return_locked`,
+    `not_unclassified`."""
     await _human(ctx, _W, "issue.create")
-    raise NotImplementedYet
+    from abacus.modules.tax import other_entities_service as oe
+
+    return TaxDepthRunOut(issue_id=await oe.explain_item(ctx, return_id, item_id))
 
 
 @entity_depth_router.get(
     f"{_R}/functional-expenses",
     action="other_workpapers.read",
     response_model=TaxDepthFunctionalExpensesOut,
-    errors=(501,),
+    errors=(),
 )
 async def functional_expenses_route(
     return_id: UUID, ctx: Ctx, view: ExpenseView = "part_ix"
 ) -> TaxDepthFunctionalExpensesOut:
+    """TXP-13 c, c2 (T-06-T42): E12's Part IX foots and crossfoots; ratios by code."""
     await _on(ctx, _W)
-    raise NotImplementedYet
+    from abacus.modules.tax import other_entities_service as oe
+
+    found = await oe.functional_expenses(ctx, return_id, view)
+    p = found.part_ix
+    return TaxDepthFunctionalExpensesOut(
+        view=found.view, program=p.program, management=p.management_general,
+        fundraising=p.fundraising, total=p.total, program_ratio=p.program_ratio,
+        public_support=found.public_support,
+    )  # fmt: skip
 
 
 @entity_depth_router.post(
@@ -938,13 +970,16 @@ async def functional_expenses_route(
     action="allocation_run.start",
     response_model=TaxDepthRunOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def allocation_run_route(
     return_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> TaxDepthRunOut:
     await _human(ctx, _W, "allocation_run.start")
-    raise NotImplementedYet
+    from abacus.modules.tax import other_entities_service as oe
+
+    run = await oe.start_allocation(ctx, return_id)
+    return TaxDepthRunOut(run_id=run.run_id, proposal_id=run.proposal_id)
 
 
 @entity_depth_router.get(
