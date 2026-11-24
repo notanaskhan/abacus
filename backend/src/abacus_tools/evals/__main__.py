@@ -164,6 +164,21 @@ def main(argv: list[str]) -> int:
             cast(Path, args.out),
             "fast" if args.subset == "fast" else "full",
         )
+    if args.agent in ("tax_return_analyst", "tb_mapping_tax_lines"):  # T-06-T46, frozen
+        import json as _json
+
+        from abacus_tools.evals import tax_entity_depth as depth
+
+        failures = depth.gate(cast(depth.Agent, args.agent))
+        _results, rates = depth.run(cast(depth.Agent, args.agent))
+        print(
+            _json.dumps(
+                {"agent": args.agent, "status": "failed" if failures else "passed",
+                 "rates": rates, "failures": failures},
+                indent=2,
+            )
+        )  # fmt: skip
+        return 1 if failures else 0
     if args.agent in ("tax_memo_drafter", "tax_recommender_modes"):  # T-05-T30, frozen
         from abacus_tools.evals.tax_entity_part2 import main as part2_main
 
