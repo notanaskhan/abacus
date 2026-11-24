@@ -727,3 +727,97 @@ async def season_counts(agent: AgentContext, args: SeasonIn) -> SeasonOut:
         engagements_with_two_returns=sum(1 for n in engagements.values() if n >= 2),
         stalled=stalled,
     )
+
+
+# --- T-08-T26 (DEC-5923): the two_year and planning_screen modes' reads --------------------------
+
+
+class SummaryLine(BaseModel):
+    model_config = _cfg()
+
+    id: Annotated[str, Field(max_length=40), Int]  # the line key (ADR-049: rows carry an id)
+    line_key: Annotated[str, Field(max_length=40), Int]
+    amount: Annotated[Decimal, Tri]
+
+
+class EngineSummaryOut(BaseModel):
+    """The return's newest approved engine summary (TAX-10's CY side), amounts by line key."""
+
+    model_config = _cfg()
+
+    engine_version: Annotated[str | None, Int] = None
+    lines: Annotated[list[SummaryLine], Field(max_length=MAX), Tri] = []
+
+
+@agent_tool(
+    name="tax.read_engine_summary", kind="read", action="tax_return.read", data_class="tri",
+    input_model=ReturnIn, output_model=EngineSummaryOut, records_read="tax_return",
+)  # fmt: skip
+async def read_engine_summary(agent: AgentContext, args: ReturnIn) -> EngineSummaryOut:
+    _engagement, return_id = await _return_of(agent, args)
+    async with tenant_session(agent.tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT engine_version, lines FROM return_engine_summaries WHERE "
+                    "work_item_id = :r AND kind <> 'pro_forma' ORDER BY approved_at DESC LIMIT 1"
+                ),
+                {"r": return_id},
+            )
+        ).first()
+    if row is None:
+        return EngineSummaryOut()
+    lines: list[SummaryLine] = []
+    for entry in cast("list[dict[str, object]]", row.lines or []):
+        key, amount = entry.get("line_key"), entry.get("amount")
+        if isinstance(key, str) and amount is not None:
+            lines.append(SummaryLine(id=key[:40], line_key=key[:40], amount=Decimal(str(amount))))
+    return EngineSummaryOut(engine_version=str(row.engine_version), lines=lines[:MAX])
+
+
+class CandidateIn(ReturnIn):
+    opportunity_id: Annotated[UUID, Int]
+
+
+class CandidateOut(BaseModel):
+    """One planning opportunity as code screened it: its rule, title and the calculator's basis
+    (inputs by line key, code's figures, the parameter version)."""
+
+    model_config = _cfg()
+
+    rule_key: Annotated[str | None, Int]
+    title: Annotated[str, Tri]
+    status: Annotated[str, Int]
+    est_savings: Annotated[Decimal | None, Tri] = None
+    figures: Annotated[dict[str, str], Tri] = {}
+    parameter_version: Annotated[str | None, Int] = None
+
+
+@agent_tool(
+    name="tax.read_planning_candidate", kind="read", action="planning.read", data_class="tri",
+    input_model=CandidateIn, output_model=CandidateOut, records_read="planning_opportunity",
+)  # fmt: skip
+async def read_planning_candidate(agent: AgentContext, args: CandidateIn) -> CandidateOut:
+    _engagement, return_id = await _return_of(agent, args)
+    async with tenant_session(agent.tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT rule_key, title, status, est_savings, savings_basis FROM "
+                    "planning_opportunities WHERE id = :o AND work_item_id = :r"
+                ),
+                {"o": args.opportunity_id, "r": return_id},
+            )
+        ).first()
+    if row is None:
+        raise NotFound("planning_opportunity")
+    basis = cast("dict[str, object]", row.savings_basis or {})
+    return CandidateOut(
+        rule_key=cast("str | None", row.rule_key), title=str(row.title), status=str(row.status),
+        est_savings=cast("Decimal | None", row.est_savings),
+        figures={
+            str(k): str(v)
+            for k, v in cast("dict[str, object]", basis.get("figures") or {}).items()
+        },
+        parameter_version=cast("str | None", basis.get("parameter_version")),
+    )  # fmt: skip

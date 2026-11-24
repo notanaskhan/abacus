@@ -5,6 +5,9 @@
 # (`modules/tax/explain.py`) gives the model code's facts and their verified citations only; code
 # keeps verified citations and code's numbers. It decides nothing. Source of truth: compiled into
 # ../_specs_v2.py by `python -m abacus_tools.codegen.agent_specs_v2`.
+# T-08-T26 (TASK-8921; DEC-5923): modes two_year and planning_screen (`modules/tax/practice_modes.py`,
+# prompts tax.return_analyst.{two_year,planning_screen}@v1) read through the two new C17 reads and
+# write suggestions with verified citations only; no client draft (ADR P-25 not accepted).
 id: tax.return_analyst
 version: 1
 purpose: Explain a return's issue in plain sentences over code's facts and their verified citations, deciding nothing.
@@ -15,7 +18,7 @@ escalation_tier: medium
 input_schema: ExplainInput
 output_schema: ExplainOutput
 tools:
-  read: [tax.read_return, tax.list_documents, tax.read_prior_year, tax.read_pass_through_activity]
+  read: [tax.read_return, tax.list_documents, tax.read_prior_year, tax.read_pass_through_activity, tax.read_engine_summary, tax.read_planning_candidate]
   compute: [tax.compute_residency_facts, tax.compare_years]
   propose: [tax.propose_pass_through_treatments, tax.propose_residency]
 task_scope:
@@ -24,6 +27,8 @@ task_scope:
   - k1_treatment.read
   - residency.read
   - proposal.create
+  - planning.read
+  - suggestion.create
 limits:
   max_output_tokens: 500
   max_cost_usd: "0.03"

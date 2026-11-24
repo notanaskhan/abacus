@@ -762,5 +762,10 @@ from abacus.modules.tax import deadline_sources as _filing_deadline_sources  # n
 _filing_deadline_sources.register()
 
 # C-02-T39 (DEC-5922): the return a December close hands off to (closes' CLS-12 reads it).
+# T-08-T26 (DEC-5923): `tax.return_analyst` modes two_year and planning_screen (the appliers and
+# the planning narrator).
+from abacus.modules.tax import practice_modes as _practice_modes  # noqa: E402
 from abacus.modules.tax.tb_handoff_landing import HandoffTarget as HandoffTarget  # noqa: E402
 from abacus.modules.tax.tb_handoff_landing import handoff_target as handoff_target  # noqa: E402
+
+_practice_modes.register()

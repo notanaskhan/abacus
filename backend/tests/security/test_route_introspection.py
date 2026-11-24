@@ -862,6 +862,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/standards-runs", "standards_run.read"),
     ("GET", "/v1/standards-runs/{run_id}", "standards_run.read"),
     ("GET", "/v1/standards-runs/{run_id}/items/{work_item_id}/checks", "standards_run.read"),
+    ("GET", "/v1/standards/deadline-rules", "firm_standard.read"),
     ("GET", "/v1/standards/{standard_id}", "firm_standard.read"),
     ("GET", "/v1/standards/{standard_id}/examples", "firm_standard.read"),
     ("GET", "/v1/standards/{standard_id}/versions/{version_id}", "firm_standard.read"),
