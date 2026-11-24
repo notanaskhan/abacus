@@ -65,6 +65,38 @@ const CARDS: Card[] = [
   ["BH-FS-520", "Estimates & Related Parties", "SB", "in_progress", [2, 3, 1, 0], null, null],
 ];
 
+// F-08-T23: each program's audit area (its lane) and C-26 state, as TPL-21 lists them.
+const AREA: Record<string, string> = {
+  "BH-FS-310": "cash",
+  "BH-FS-320": "receivables",
+  "BH-FS-325": "receivables",
+  "BH-FS-330": "receivables",
+  "BH-FS-340": "inventory",
+  "BH-FS-350": "property",
+  "BH-FS-410": "payables",
+  "BH-FS-420": "payables",
+  "BH-FS-430": "payables",
+  "BH-FS-440": "debt",
+  "BH-FS-460": "debt",
+  "BH-FS-510": "journal",
+  "BH-FS-520": "estimates",
+};
+const AGENT: Record<string, BoardCardDraft["agent"]> = {
+  "BH-FS-310": "done",
+  "BH-FS-320": "done",
+  "BH-FS-325": { pct: 50 },
+  "BH-FS-330": { pct: 60 },
+  "BH-FS-340": "done",
+  "BH-FS-350": "done",
+  "BH-FS-410": "not_run",
+  "BH-FS-420": "not_run",
+  "BH-FS-430": "not_run",
+  "BH-FS-440": { pct: 70 },
+  "BH-FS-460": "not_run",
+  "BH-FS-510": { pct: 35, running: true },
+  "BH-FS-520": { pct: 50 },
+};
+
 export const AUDIT_PROGRAM_BOARD = {
   engagement: "Granite Peak Outdoor Co. · FY2026 audit",
   cards: CARDS.map(
@@ -76,9 +108,23 @@ export const AUDIT_PROGRAM_BOARD = {
       metrics: { days, evidence, requests, todos },
       ...(overlay === undefined ? {} : { overlay }),
       signoffs: { preparer: p, reviewer: r },
+      ...(AREA[ref] === undefined ? {} : { area: AREA[ref] }),
+      ...(AGENT[ref] === undefined ? {} : { agent: AGENT[ref] }),
+      ...(ref === "BH-FS-325" ? { sub: "2 of 4 responses" } : {}),
     }),
   ),
   binder: { preparer: 12, reviewer: 10, total: 21 },
+  areas: [
+    { key: "planning", title: "Planning", phase: "planning", programs: 8 },
+    { key: "cash", title: "Cash", phase: "execution", programs: 1 },
+    { key: "receivables", title: "Receivables & revenue", phase: "execution", programs: 3 },
+    { key: "inventory", title: "Inventory & cost of sales", phase: "execution", programs: 1 },
+    { key: "property", title: "Property", phase: "execution", programs: 1 },
+    { key: "payables", title: "Payables & accrued", phase: "execution", programs: 3 },
+    { key: "debt", title: "Debt & equity", phase: "execution", programs: 2 },
+    { key: "journal", title: "Journal entries", phase: "execution", programs: 1 },
+    { key: "estimates", title: "Estimates & related parties", phase: "execution", programs: 1 },
+  ],
 } satisfies BoardDraft;
 
 /** TPL-21c: Cole drags BH-FS-430 to In progress; the run starts (0d · 0 · 1 · 0, 40%). */
@@ -92,6 +138,7 @@ export function afterBhFs430Move(board: BoardDraft): BoardDraft {
             column: "in_progress",
             overlay: "agent_running",
             metrics: { days: 0, evidence: 0, requests: 1, todos: 0 },
+            agent: { pct: 40, running: true },
           }
         : c,
     ),

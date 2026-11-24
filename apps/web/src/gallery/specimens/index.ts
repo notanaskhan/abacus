@@ -11,6 +11,7 @@ import { Tpl10Artboard } from "./TPL-10";
 import { Tpl16Artboard } from "./TPL-16";
 import { Tpl19Artboard } from "./TPL-19";
 import { Tpl20Artboard } from "./TPL-20";
+import { Tpl21Artboard } from "./TPL-21";
 import { Tpl23Artboard } from "./TPL-23";
 import { Tpl24Artboard } from "./TPL-24";
 import { T4Artboard, Tpl04Artboard } from "./T4";
@@ -94,4 +95,10 @@ registerScreen("TPL-20", {
 registerScreen("TPL-24", {
   title: "Accrued add-in · AP leadsheet.xlsx",
   Component: Tpl24Artboard,
+});
+
+// F-08-T23 (TASK-8929): TPL-21, Granite Peak FY2026 audit programs on the T19 board, a to f.
+registerScreen("TPL-21", {
+  title: "Board · FY2026 Financial Statement Audit, Granite Peak",
+  Component: Tpl21Artboard,
 });

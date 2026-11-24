@@ -39,3 +39,9 @@ The designed links of the handoff link graph (link-contract rule 5); each is wir
 | tooltip or toast inside kits/Board Specimen | ENG-01 | designed (handoff link graph) |
 | tooltip or toast inside kits/Board Specimen | AUD-02 | designed (handoff link graph) |
 | tooltip or toast inside kits/Board Specimen | AUD-36 | designed (handoff link graph) |
+
+## Built (F-08-T23, DEC-5931)
+
+Gallery specimen at `/components/screens/TPL-21?st=a…f` (`apps/web/src/gallery/specimens/TPL-21`) on T19 `BoardLayout` with the Granite Peak audit-program seed (`fixtures/seed/granite-peak-fy2026-board.ts`, now with each program's audit area, C-26 state and the area lanes; footed in `granite-peak-fy2026.foot.test.ts`). Headers 4 · 5 · 2 · 2 at 9:30 AM, 3 · 6 · 2 · 2 after the 10:05 AM drop; BH-FS-430 Agent running 40%; Binder footer "Preparer 12 of 21 · Reviewer 10 of 21"; f is the overlay strip (specimen, not seed). The manifest stays `planned` (gallery only).
+
+Deviations: the record subbar and tabs bar are drawn as text rows (the shell's RecordHeader belongs to ENG-10 in K-04); the lane's right summary ("1 in review") and Presence are not drawn; the SHL-13 dock in c is a static card (the dock itself is P-04's).

@@ -25,11 +25,12 @@ import { Spinner } from "../components/motion";
 
 // ---- C-26 AgentProgress ------------------------------------------------------------------------
 
-export type AgentProgressState = "progress" | "running" | "input" | "client" | "done" | "none";
+export type AgentProgressState =
+  "progress" | "running" | "input" | "client" | "done" | "not_run" | "none";
 
 export interface AgentProgressProps {
   state: AgentProgressState;
-  /** "progress": the run's percent (0–100), the server's. */
+  /** The run's percent (0–100), the server's: the bar for "progress", and beside "Running". */
   pct?: number;
   /** The run's line ("Procedure session · BH-FS-430 · Cole Hart via Agent · started 10:05 AM"). */
   tip?: string;
@@ -37,40 +38,57 @@ export interface AgentProgressProps {
   onOpen?: () => void;
 }
 
-/** C-26: the Accrued Agent's state on a card: a bar with its percent, or a chip. */
+function Bar({ pct }: { pct: number }): JSX.Element {
+  const width = Math.max(0, Math.min(100, pct));
+  return (
+    <span className="flex items-center gap-[6px]" data-agent-progress={width}>
+      <span className="h-[3px] w-[96px] overflow-hidden rounded-pill bg-chip">
+        <span
+          className="block h-full rounded-pill bg-ink"
+          style={{ width: `${String(width)}%` }}
+        />
+      </span>
+      <span className="text-[11px] tabular-nums text-ink-2">{`${String(width)}%`}</span>
+    </span>
+  );
+}
+
+/** C-26: the Accrued Agent's state on a card: a bar with its percent, a chip, or "Not run". */
 export function AgentProgress({
   state,
-  pct = 0,
+  pct,
   tip,
   onOpen,
 }: AgentProgressProps): JSX.Element | null {
   if (state === "none") return null;
-  const width = Math.max(0, Math.min(100, pct));
-  const body =
-    state === "progress" ? (
-      <span className="flex items-center gap-[6px]" data-agent-progress={width}>
-        <span className="h-[4px] w-[64px] overflow-hidden rounded-pill bg-chip">
-          <span
-            className="block h-full rounded-pill bg-ink-2"
-            style={{ width: `${String(width)}%` }}
-          />
-        </span>
-        <span className="text-[11px] tabular-nums text-ink-2">{`${String(width)}%`}</span>
+  if (state === "not_run") {
+    return (
+      <span
+        data-agent="not_run"
+        className="inline-flex items-center gap-[6px] text-[11px] text-ink-4"
+      >
+        <Icon name="atom" size={12} />
+        Not run
       </span>
-    ) : (
-      <span className="flex items-center gap-[4px] text-[11px] text-ink-2">
+    );
+  }
+  const chip =
+    state === "progress" ? null : (
+      <span
+        className={cn(
+          "flex items-center gap-[4px] text-[11px]",
+          state === "done" ? "font-medium text-green-ink" : "text-ink-2",
+        )}
+      >
         {state === "running" ? <Spinner size={10} label="Running" /> : null}
         {state === "input" ? (
           <span aria-hidden className="size-[6px] rounded-full bg-amber" />
         ) : null}
         {state === "done" ? <StatusDisc state="done" size={13} /> : null}
         {
-          {
-            running: "Running",
-            input: "Needs input",
-            client: "Waiting on client",
-            done: "Done",
-          }[state]
+          { running: "Running", input: "Needs input", client: "Waiting on client", done: "Done" }[
+            state
+          ]
         }
       </span>
     );
@@ -83,13 +101,27 @@ export function AgentProgress({
       className="inline-flex items-center gap-[6px] text-[11px] text-ink-2"
     >
       <Icon name="atom" size={12} className="text-ink-3" />
-      {body}
+      {chip}
+      {state === "progress" || (state === "running" && pct !== undefined) ? (
+        <Bar pct={pct ?? 0} />
+      ) : null}
     </button>
   );
 }
 
 // ---- C-25 P/R slots on a card --------------------------------------------------------------------
 
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .map((w) => w.charAt(0))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+/** C-25 on a card: a signed slot is the olive-dot initials chip, a stale one the amber "!",
+ * an empty one a ring with its letter. */
 function Slot({ slot, letter }: { slot: SignOffSlot | undefined; letter: string }): JSX.Element {
   const signed = slot?.signer !== null && slot?.signer !== undefined;
   const stale = slot?.stale === true;
@@ -98,16 +130,28 @@ function Slot({ slot, letter }: { slot: SignOffSlot | undefined; letter: string 
       ? `${slot.role}: ${slot.signer ?? ""}${slot.at ? ` · ${slot.at}` : ""}${stale ? " · changed since" : ""}`
       : `${slot.role}: not signed`
     : `${letter}: not signed`;
+  const state = stale ? "stale" : signed ? "signed" : "empty";
+  if (signed && !stale) {
+    return (
+      <span
+        title={label}
+        aria-label={label}
+        data-slot={state}
+        className="inline-flex h-[18px] items-center gap-[4px] rounded-pill bg-green-tint px-[6px] text-[10.5px] font-medium text-green-ink"
+      >
+        <span aria-hidden className="size-[4px] rounded-full bg-green" />
+        {initials(slot.signer ?? "")}
+      </span>
+    );
+  }
   return (
     <span
       title={label}
       aria-label={label}
-      data-slot={stale ? "stale" : signed ? "signed" : "empty"}
+      data-slot={state}
       className={cn(
         "inline-flex size-[18px] items-center justify-center rounded-full text-[9.5px] font-medium",
-        signed && !stale && "bg-ink text-on-dark",
-        stale && "text-amber-ink ring-1 ring-amber",
-        !signed && "text-ink-3 ring-1 ring-ink-4",
+        stale ? "text-amber-ink ring-1 ring-amber" : "text-ink-4 ring-1 ring-ink-4",
       )}
     >
       {stale ? "!" : letter}

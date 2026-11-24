@@ -97,6 +97,8 @@ export interface BoardLayoutProps {
   onOpenCard?: (cardId: string) => void;
   /** Sheet view: the host's T18 over the same rows. */
   sheet?: ReactNode;
+  /** Binder view's footer, the server's ("Preparer 12 of 21 · Reviewer 10 of 21"). */
+  binderFooter?: string;
   /** Specimens: hold a drag (T19b). */
   forceDrag?: { cardId: string; over: string } | undefined;
 }
@@ -297,7 +299,17 @@ export function BoardLayout(p: BoardLayoutProps): JSX.Element {
           {p.view === "sheet" ? (
             <div data-board-sheet="">{p.sheet}</div>
           ) : p.view === "binder" ? (
-            <Binder lanes={visibleLanes} cards={p.cards} />
+            <>
+              <Binder lanes={visibleLanes} cards={p.cards} />
+              {p.binderFooter ? (
+                <p
+                  data-binder-footer=""
+                  className="bg-card px-[10px] py-[8px] text-[11.5px] text-ink-3"
+                >
+                  {p.binderFooter}
+                </p>
+              ) : null}
+            </>
           ) : state === "empty" ? (
             <EmptyState icon="kanban" title={p.empty?.title ?? "No programs yet."}>
               {p.empty?.body ?? "Programs appear when the engagement template is applied."}
