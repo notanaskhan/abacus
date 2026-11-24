@@ -38,6 +38,7 @@ from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import DomainInvalid
 from abacus.modules.agents.api import PlanRequest, PlanStep, register_plan_provider
 from abacus.modules.engagements.api import work_item_tri_subject
+from abacus.modules.identity.api import AuthContext
 from abacus.modules.organisations.api import tri_consent_verdict
 
 PROVIDER: Final = "tax.entity_workbook"
@@ -319,11 +320,48 @@ async def entity_workbook_plan(
 
 register_plan_provider(PROVIDER, entity_workbook_plan)
 
+
+# --- T-06-T41 (DEC-5912): what an approved change re-runs ----------------------------------------
+# An approved fixed-asset change re-runs the depreciation steps and what reads them (capital, the
+# K-1s); an approved sourcing re-runs apportionment and the K-1s. A §754 election recomputes basis
+# in the client's own decision (E8, `basis_service.recompute_basis`), so it starts no run.
+RECOMPUTE_EDGES: Final[Mapping[str, tuple[str, ...]]] = {
+    "asset_change": ("depreciation_register", "bonus_eligibility"),
+    "sourcing": ("apportionment_ptet",),
+}
+
+
+def steps_for_change(change: str) -> list[str]:
+    """The step keys a change re-runs: its roots and every step downstream, in plan order."""
+    return [s.key for s in selected("task", RECOMPUTE_EDGES[change])]
+
+
+async def rerun_for(ctx: AuthContext, return_id: UUID, change: str) -> UUID | None:
+    """Start the return's re-run for an approved change, as the person who approved it; None
+    while another run on the return is active (it reads the change anyway)."""
+    from abacus.modules.agents.api import start_engagement_run, work_item_runs
+    from abacus.modules.engagements.api import work_item_engagement
+
+    engagement_id = await work_item_engagement(ctx.tenant, return_id)
+    ref = f"tax_return:{return_id}"
+    if engagement_id is None or any(r.active for r in await work_item_runs(ctx.tenant, ref, 5)):
+        return None
+    started = await start_engagement_run(
+        ctx,
+        engagement_id,
+        work_item_ref=ref,
+        provider=PROVIDER,
+        request=PlanRequest(return_id, "task", RECOMPUTE_EDGES[change]),
+    )
+    return started.run_id
+
+
 __all__ = [
     "DEPTH",
     "GROUPS",
     "PROVIDER",
     "QUESTION_706D",
+    "RECOMPUTE_EDGES",
     "STEPS",
     "ConventionQuestion",
     "RunKeysInvalid",
@@ -331,6 +369,8 @@ __all__ = [
     "dependants",
     "entity_workbook_plan",
     "plan_steps",
+    "rerun_for",
     "selected",
     "settled_convention",
+    "steps_for_change",
 ]

@@ -287,6 +287,26 @@ async def latest_sourcing(tenant: TenantContext, return_id: UUID) -> Any:  # noq
         return (await session.execute(_SOURCING, {"r": return_id})).first()
 
 
+async def approved_states(
+    tenant: TenantContext, return_id: UUID
+) -> list[tuple[str, Decimal, Decimal]]:
+    """T-06-T41 (DEC-5912): per state of an approved sourcing, its apportionment percent (code,
+    4 places) and the PTET paid; empty while any state's apportionment is not approved."""
+    async with tenant_session(tenant) as session:
+        apportion = (await session.execute(_APPORTION, {"r": return_id})).all()
+        paid = {str(p.state): p for p in await session.execute(_PAID, {"r": return_id})}
+        sourcing = (await session.execute(_SOURCING, {"r": return_id})).first()
+    approved = sourcing is not None and str(sourcing.status) == "approved"
+    if not apportion or not (approved or all(a.approved for a in apportion)):
+        return []
+    out: list[tuple[str, Decimal, Decimal]] = []
+    for a in apportion:
+        pct = (Decimal(a.numerator) * HUNDRED / Decimal(a.denominator)).quantize(Decimal("0.0001"))
+        p = paid.get(str(a.state))
+        out.append((str(a.state), pct, ZERO if p is None else Decimal(p.paid)))
+    return out
+
+
 async def approve_sourcing(ctx: AuthContext, return_id: UUID) -> list[UUID]:
     """A reviewer's approval (module docstring); answers the issues it resolved (once)."""
     _human(ctx, APPROVE)
@@ -310,7 +330,11 @@ async def approve_sourcing(ctx: AuthContext, return_id: UUID) -> list[UUID]:
             target=Target(TARGET, UUID(str(latest.id))),
             scope=Scope(engagement_id=engagement_id, work_item_id=return_id),
         )
-    return await _resolve(ctx.tenant, sourcing_ref(return_id))
+    resolved = await _resolve(ctx.tenant, sourcing_ref(return_id))
+    from abacus.modules.tax.entity_run_plan import rerun_for  # T-06-T41: apportionment, K-1s
+
+    await rerun_for(ctx, return_id, "sourcing")
+    return resolved
 
 
 async def undo_sourcing(ctx: AuthContext, return_id: UUID) -> None:
@@ -472,6 +496,7 @@ __all__ = [
     "StatesView",
     "UndoWindowClosed",
     "approve_sourcing",
+    "approved_states",
     "partner_state_credits",
     "propose_sourcing",
     "undo_sourcing",
