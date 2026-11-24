@@ -248,6 +248,10 @@ SUBSCRIPTIONS["residency_determination.confirmed"] = _residency_confirmed
 from abacus.modules.tax import standards_runs as _standards_runs  # noqa: E402
 
 _standards_runs.register()
+# T-08-T23 (DEC-5918): the 1065 v4 check library (eight named checks and the data-presence set).
+from abacus.modules.tax import standards_checks as _standards_checks  # noqa: E402
+
+_standards_checks.register()
 StandardsRunWorkflow = _standards_runs.StandardsRunWorkflow  # T-08-T14, for the replay recorder
 STANDARDS_ITEM_ACTIVITY = _standards_runs.ITEM_ACTIVITY
 STANDARDS_FINISH_ACTIVITY = _standards_runs.FINISH_ACTIVITY
