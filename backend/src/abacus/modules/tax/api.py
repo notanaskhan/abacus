@@ -641,6 +641,9 @@ _run_steps.register()
 from abacus.modules.tax import allocation_structure as _allocation_structure  # noqa: E402
 
 _allocation_structure.register()
+from abacus.modules.tax import other_entities_service as _other_entities  # noqa: E402
+
+_other_entities.register()  # T-06-T42: the time-study allocation's adapter and line target
 
 # T-05-T42 (DEC-4705, DEC-4706): workbook sections as reviewables; tie-outs after every run.
 from abacus.modules.tax import entity_sections as _entity_sections  # noqa: E402

@@ -20,3 +20,10 @@ Every figure is TRI (`restricted`, `tri=True`): agents read it only with §7216 
 | `POST …/functional-expenses/allocation-runs` | `allocation_run.start` | c3; E12 allocates in code |
 
 **Examples:** AAA 1,488,200; provision 2,134,650 + 122,550 = 2,257,200 (ETR 28.9%); Part IX 3,210,000 + 486,000 + 318,000 = 4,014,000; 80.0%; 87.4%.
+
+## Built (T-06-T42, DEC-5913)
+
+- `GET …/schedules/aaa`, `GET …/provision?view=`, `GET …/functional-expenses?view=` read the return's 0966 rows through E10, E11 and E12 (code computes every figure); 404 when the return has no rows of that kind.
+- `POST …/provision/items/{item_id}/explain` creates an SHL-15 issue for an unclassified reconciliation difference and answers `{issue_id}` (409 `not_unclassified`); no gateway call (the agent's suggestion arrives with T-06-T54).
+- `POST …/functional-expenses/allocation-runs` allocates every time-study line from its imported percentages (`time_study.pct`) and answers `{run_id, proposal_id}`: a `time_study_allocation` proposal a person adopts (409 `time_study_missing`). `TaxDepthRunOut` now carries optional `run_id`, `issue_id` and `proposal_id`.
+- Every write on a Filed or Accepted return answers 409 `return_locked`.

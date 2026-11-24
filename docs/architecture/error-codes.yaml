@@ -2702,6 +2702,11 @@ codes:
     raised_by:
     - abacus.modules.review.notes.NotTheRaiser
     summary: Only the reviewer who raised a note (or, to clear it, the engagement partner).
+  not_unclassified:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.other_entities_service.NotUnclassified
+    summary: Only an unclassified reconciliation difference is explained.
   not_voidable:
     status: 409
     raised_by:
@@ -4276,6 +4281,11 @@ codes:
     raised_by:
     - abacus.modules.tax.entity_depth_errors.TieOutOffNoteRequired
     summary: A sign-off over a tally that is off needs a note.
+  time_study_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.other_entities_service.TimeStudyMissing
+    summary: No line on the return is allocated by a time study with its percentages imported.
   tin_conflict:
     status: 409
     raised_by:
