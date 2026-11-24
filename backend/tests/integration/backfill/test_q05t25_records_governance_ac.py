@@ -23,30 +23,55 @@ import pytest
 from .support import Net, Seeder
 
 pytestmark = pytest.mark.asyncio
-POLICY = {
-    "record_type": "audit_workpapers",
-    "service_line": "audit",
-    "firm_years": 1,
-    "clock_start_event": "report_release",
-}
+
+
+async def _governed(seed: Seeder) -> tuple[uuid.UUID, str]:
+    """A firm with records governance on, and a record type with a published 7-year floor (the
+    floor set is platform content a second staff member approves, Q-02-T23; written here as one
+    published row on its own record type so no other set is superseded)."""
+    tenant = await seed.firm()
+    await seed.run(
+        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
+        "VALUES ($1, 'records.governance', 'true', 'test-seed', 'Q-05-T25')",
+        tenant,
+    )
+    record_type = f"q05t25_{uuid.uuid4().hex[:12]}"
+    await seed.run(
+        "INSERT INTO retention_floors (set_version, record_type, service_line, "
+        "legal_floor_years, anchor, authority, status, imported_by, approved_by, published_at) "
+        "VALUES (1, $1, 'any', 7, 'report_release', 'Probe authority', 'published', 'staff-a', "
+        "'staff-b', clock_timestamp())",
+        record_type,
+    )
+    return tenant, record_type
+
+
+def _policy(record_type: str, years: int) -> dict[str, object]:
+    return {"record_type": record_type, "service_line": "audit", "retention_years": years}
 
 
 async def test_ac_a_below_floor_policy_is_refused(net: Net, seed: Seeder) -> None:
-    tenant = await seed.firm()
+    tenant, record_type = await _governed(seed)
     admin = await seed.person(tenant, "firm_admin")
-    refused = await net.call("POST", "/v1/retention/policies", admin, body=POLICY)
+    refused = await net.call(
+        "POST", "/v1/retention/policies", admin, body=_policy(record_type, 1), headers=net.keyed()
+    )
     assert refused.status_code == 422, refused.text
-    assert refused.json().get("code") == "below_floor"
+    assert refused.json().get("detail") == "below_floor"
 
 
 async def test_ac_policy_changes_need_an_admin_with_fresh_mfa(net: Net, seed: Seeder) -> None:
-    tenant = await seed.firm()
+    tenant, record_type = await _governed(seed)
     admin = await seed.person(tenant, "firm_admin")
     manager = await seed.person(tenant)
-    long_enough = {**POLICY, "firm_years": 8}
-    as_manager = await net.call("POST", "/v1/retention/policies", manager, body=long_enough)
+    long_enough = _policy(record_type, 8)
+    as_manager = await net.call(
+        "POST", "/v1/retention/policies", manager, body=long_enough, headers=net.keyed()
+    )
     assert as_manager.status_code == 403, as_manager.text
-    stale = await net.call("POST", "/v1/retention/policies", admin, body=long_enough, mfa=False)
+    stale = await net.call(
+        "POST", "/v1/retention/policies", admin, body=long_enough, mfa=False, headers=net.keyed()
+    )
     assert stale.status_code == 403, stale.text
 
 
@@ -54,7 +79,7 @@ async def test_ac_destruction_approval_is_an_admins(net: Net, seed: Seeder) -> N
     tenant = await seed.firm()
     manager = await seed.person(tenant)
     path = f"/v1/destruction-batches/{uuid.uuid4()}/approvals"
-    refused = await net.call("POST", path, manager, body={"items_seen": 1204})
+    refused = await net.call("POST", path, manager, body={"items_seen": 1204}, headers=net.keyed())
     assert refused.status_code in (403, 404), refused.text
     assert refused.status_code != 201
     stranger_admin = await seed.person(await seed.firm(), "firm_admin")

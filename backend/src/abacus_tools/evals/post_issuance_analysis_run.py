@@ -33,7 +33,7 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Final, Literal, cast
 
-from abacus.modules.assurance import post_issuance_analysis as pia
+from abacus.modules.assurance.api import post_issuance_analysis as pia
 from abacus_tools.evals.post_issuance_analysis import (
     SUITE,
     Case,

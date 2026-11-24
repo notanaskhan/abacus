@@ -18,7 +18,7 @@ own session (RLS).
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from datetime import date, datetime
+from datetime import date
 from typing import Any, Final
 from uuid import UUID
 
@@ -26,7 +26,6 @@ from sqlalchemy import Row, select, text
 
 from abacus.kernel._flags import AUDIT_POST_ISSUANCE
 from abacus.kernel._statuses import AuditSectionStatus
-from abacus.kernel.clock import FIRM_ZONE
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
@@ -188,12 +187,6 @@ _CASES = text(
     "count(*) FILTER (WHERE decision = 'revise_and_reissue') "
     "FROM post_issuance_events WHERE work_item_id = :w"
 )
-
-
-def _on(at: datetime) -> str:
-    """ "Dec 3, 2026" in the firm's zone."""
-    d = at.astimezone(FIRM_ZONE).date()
-    return f"{month_day(d)}, {d.year}"
 
 
 async def post_issuance_row(tenant: TenantContext, work_item_id: UUID) -> SectionState | None:

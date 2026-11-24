@@ -131,12 +131,12 @@ SUBSCRIPTIONS: dict[str, Handler] = {
     **RECONCILIATION_SUBSCRIPTIONS,  # C-01-T23
     **REGISTRATION_SUBSCRIPTIONS,  # C-01-T26: close runs and answered questions (C16)
 }
+from abacus.modules.closes import vendor_tins as vendor_tins  # noqa: E402  # registrations
 from abacus.modules.closes.package_render import ACTIVITIES as _PACKAGE_ACTIVITIES  # noqa: E402
 from abacus.modules.closes.package_render import FINISH as PACKAGE_FINISH  # noqa: E402
 from abacus.modules.closes.package_render import PackageAssemblyWorkflow  # noqa: E402
 from abacus.modules.closes.release import register as _register_release  # noqa: E402
 from abacus.modules.closes.vendor_screen import register as _register_vendor_screen  # noqa: E402
-from abacus.modules.closes.vendor_tins import __all__ as _VENDOR_TINS  # noqa: E402, F401
 
 _register_release()  # C-02-T29: C18's fs_package provider
 _register_vendor_screen()  # C-02-T34: the vendor screen's tools and its suggestion applier
@@ -161,6 +161,7 @@ __all__ = [
     "REQUESTS_SECONDS_UNTIL",
     "ROUTERS",
     "SUBSCRIPTIONS",
+    "VENDOR_ENTITY_TYPES",
     "WORKFLOWS",
     "AssigneesIn",
     "CloseFacts",
@@ -179,6 +180,7 @@ __all__ = [
     "add_note",
     "add_request_template",
     "add_row",
+    "close_agent",
     "close_for",
     "close_summary",
     "create_draft",
@@ -212,4 +214,8 @@ from abacus.modules.closes import deadline_sources as _filing_deadline_sources  
 _filing_deadline_sources.register()
 
 # C-02-T39 (DEC-5922): the close-to-tax hand-off (CLS-12), closes side.
+# End pass (BOUND-001): the vendor-screen eval runner reaches the agent and the screen here.
+from abacus.modules.closes import agent as close_agent  # noqa: E402
 from abacus.modules.closes import tax_handoff as tax_handoff  # noqa: E402
+from abacus.modules.closes.vendor_screen import ENTITY_TYPES as VENDOR_ENTITY_TYPES  # noqa: E402
+from abacus.modules.closes.vendor_screen import scrub_digits as scrub_digits  # noqa: E402

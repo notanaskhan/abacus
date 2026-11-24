@@ -1185,6 +1185,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/tax-returns/{return_id}/fixed-assets/{asset_id}/changes",
         "/v1/tax-returns/{return_id}/states/sourcing:propose",
         "/v1/vendors/{vendor_id}/backup-withholding",
+        # C-02-T34 (DEC-5908): a vendor screen inserts its run row, 201.
+        "/v1/vendors/{vendor_id}/screen",
         "/v1/vendors/{vendor_id}/tin-match-results",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)

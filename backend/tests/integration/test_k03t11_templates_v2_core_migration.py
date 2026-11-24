@@ -59,7 +59,7 @@ async def _methodology(
     template = uuid.uuid4()
     await seed.run(
         "INSERT INTO methodology_templates (id, tenant_id, name, created_by, engagement_types, "
-        "family) VALUES ($1, $2, 'BH Audit Methodology · FS', $3, '{audit}', 'fs')",
+        "family) VALUES ($1, $2, 'BH Audit Methodology · FS', $3, '{fs_audit}', 'fs')",
         template,
         tenant,
         person.user_id,

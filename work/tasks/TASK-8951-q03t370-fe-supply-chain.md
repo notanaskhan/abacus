@@ -23,3 +23,4 @@ Front-end supply-chain hygiene 2028 Q4: pnpm audit --prod, dependency bumps thro
 
 ## Progress log
 - `2026-11-23` — 2026-11-23: done; the override is a protected-file change (pnpm-workspace.yaml) noted for the end-pass review.
+- `2026-11-24` — End pass: the pnpm-workspace `overrides` was reverted. The dependency policy (`check_dependencies`, ADR-083) refuses overrides because they change which packages install. The production audit is still clean. The four dev-tooling advisories stay open: js-yaml through @hey-api/openapi-ts in the API-client generator, and minimatch through typescript-eslint. The open dependabot PR for the javascript group, or a protected package.json bump of those parents, closes them. Acceptance is therefore **not met** for dev dependencies.

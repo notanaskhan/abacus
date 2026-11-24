@@ -35,7 +35,6 @@ async def _audit(seed: Seeder) -> tuple[Person, Person, Site, uuid.UUID]:
     site = await seed.site(tenant, partner.user_id, "Northwind")
     await seed.member(site, partner, "engagement_partner")
     await seed.member(site, manager, "manager")
-    await seed.open_engagement(tenant, site.engagement_id, decided_by=partner.user_id)
     await seed.run(
         "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
         "VALUES ($1, 'audit.post_issuance', 'true', 'test-seed', 'Q-05-T26')",
@@ -44,13 +43,11 @@ async def _audit(seed: Seeder) -> tuple[Person, Person, Site, uuid.UUID]:
     item = cast(
         uuid.UUID,
         await seed.value(
-            "INSERT INTO work_items (tenant_id, engagement_id, client_id, kind, name, created_by) "
-            "VALUES ($1, $2, $3, 'audit', $4, $5) RETURNING id",
+            # `site()` opens the engagement with its one assurance work item (the audit).
+            "SELECT id FROM work_items WHERE tenant_id = $1 AND engagement_id = $2 "
+            "AND kind = 'assurance'",
             tenant,
             site.engagement_id,
-            site.client_id,
-            f"PY2025 EBP audit {site.marker}",
-            partner.user_id,
         ),
     )
     return partner, manager, site, item
@@ -69,11 +66,13 @@ async def test_ac17_only_the_partner_decides_with_fresh_mfa_and_a_rationale(
     before = await seed.value(
         "SELECT count(*) FROM audit_events WHERE tenant_id = $1", site.tenant_id
     )
-    as_manager = await net.call("POST", path, manager, body=body)
+    as_manager = await net.call("POST", path, manager, body=body, headers=net.keyed())
     assert as_manager.status_code == 403, as_manager.text
-    stale = await net.call("POST", path, partner, body=body, mfa=False)
+    stale = await net.call("POST", path, partner, body=body, mfa=False, headers=net.keyed())
     assert stale.status_code == 403, stale.text
-    empty = await net.call("POST", path, partner, body={"decision": "no_action", "rationale": ""})
+    empty = await net.call(
+        "POST", path, partner, body={"decision": "no_action", "rationale": ""}, headers=net.keyed()
+    )
     assert empty.status_code == 422, empty.text
     after = await seed.value(
         "SELECT count(*) FROM audit_events WHERE tenant_id = $1", site.tenant_id
@@ -84,7 +83,11 @@ async def test_ac17_only_the_partner_decides_with_fresh_mfa_and_a_rationale(
 async def test_ac18_only_the_partner_reopens_for_reissue(net: Net, seed: Seeder) -> None:
     _partner, manager, _site, item = await _audit(seed)
     refused = await net.call(
-        "POST", f"{_cases(item)}/{uuid.uuid4()}/reopen-for-reissue", manager, body={}
+        "POST",
+        f"{_cases(item)}/{uuid.uuid4()}/reopen-for-reissue",
+        manager,
+        body={},
+        headers=net.keyed(),
     )
     assert refused.status_code == 403, refused.text
 
@@ -100,9 +103,10 @@ async def test_ac15_a_case_opens_only_on_an_archived_audit(net: Net, seed: Seede
             "source_kind": "other",
             "description": "Harborline issued a corrected certification",
         },
+        headers=net.keyed(),
     )
     assert opened.status_code == 409, opened.text
-    assert opened.json().get("code") == "not_archived"
+    assert opened.json().get("detail") == "not_archived"
     count = await seed.value(
         "SELECT count(*) FROM post_issuance_events WHERE tenant_id = $1", site.tenant_id
     )

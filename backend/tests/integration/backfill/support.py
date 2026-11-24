@@ -384,10 +384,15 @@ class Net:
         body: Mapping[str, object] | None = None,
         mfa: bool = True,
         tenant: uuid.UUID | None = None,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, str] | None = None,
     ) -> httpx.Response:
-        return await self.http.request(
-            method, path, json=body, headers=self.headers(who, mfa=mfa, tenant=tenant)
-        )
+        sent = self.headers(who, mfa=mfa, tenant=tenant) | dict(headers or {})
+        return await self.http.request(method, path, json=body, headers=sent, params=params)
+
+    def keyed(self) -> dict[str, str]:
+        """A fresh `Idempotency-Key` header for a keyed write."""
+        return {"Idempotency-Key": str(uuid.uuid4())}
 
     def newcomer(self, email: str) -> tuple[str, dict[str, str]]:
         """A sign-in for someone with no account yet: their subject and bearer header, the

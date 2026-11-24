@@ -31,8 +31,8 @@ def _ctx() -> SimpleNamespace:
 
 @pytest.fixture
 def accepted(monkeypatch: pytest.MonkeyPatch) -> None:
-    async def loaded(_ctx: object, return_id: object, _action: str) -> oe._Return:  # pyright: ignore[reportPrivateUsage]
-        return oe._Return(return_id, uuid4(), "accepted", object())  # type: ignore[arg-type]  # pyright: ignore[reportPrivateUsage]
+    async def loaded(_ctx: object, return_id: object, _action: str) -> oe._Return:  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
+        return oe._Return(return_id, uuid4(), "accepted", object())  # type: ignore[arg-type]  -- a test double stands in
 
     def unreachable(*_: object, **__: object) -> object:
         raise AssertionError("nothing is read or written on a locked return")
@@ -44,12 +44,12 @@ def accepted(monkeypatch: pytest.MonkeyPatch) -> None:
 
 async def test_bluestem_answers_return_locked_on_explain(accepted: None) -> None:
     with pytest.raises(ReturnLocked):
-        await oe.explain_item(_ctx(), uuid4(), uuid4())  # type: ignore[arg-type]
+        await oe.explain_item(_ctx(), uuid4(), uuid4())  # type: ignore[arg-type]  -- a test double stands in
 
 
 async def test_bluestem_answers_return_locked_on_the_allocation(accepted: None) -> None:
     with pytest.raises(ReturnLocked):
-        await oe.start_allocation(_ctx(), uuid4())  # type: ignore[arg-type]
+        await oe.start_allocation(_ctx(), uuid4())  # type: ignore[arg-type]  -- a test double stands in
 
 
 def test_the_m2_columns_roll_by_line() -> None:
@@ -120,10 +120,10 @@ async def test_lakeshores_allocation_lands_only_as_a_proposal(
             return None
 
     tx = _Tx()
-    tx.session = tx  # type: ignore[assignment]
+    tx.session = tx  # type: ignore[assignment]  -- a test double stands in
 
-    async def loaded(_ctx: object, return_id: object, _action: str) -> oe._Return:  # pyright: ignore[reportPrivateUsage]
-        return oe._Return(return_id, uuid4(), "in_review", object())  # type: ignore[arg-type]  # pyright: ignore[reportPrivateUsage]
+    async def loaded(_ctx: object, return_id: object, _action: str) -> oe._Return:  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
+        return oe._Return(return_id, uuid4(), "in_review", object())  # type: ignore[arg-type]  -- a test double stands in
 
     async def start(*_: object) -> object:
         return SimpleNamespace(agent_run_id=uuid4())
@@ -136,16 +136,16 @@ async def test_lakeshores_allocation_lands_only_as_a_proposal(
         return None
 
     monkeypatch.setattr(oe, "_loaded", loaded)
-    monkeypatch.setattr(oe, "tenant_session", lambda _t: _Session())  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]
-    monkeypatch.setattr(oe, "uow", lambda _t: tx)  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]
+    monkeypatch.setattr(oe, "tenant_session", lambda _t: _Session())  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]  -- a test double stands in
+    monkeypatch.setattr(oe, "uow", lambda _t: tx)  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]  -- a test double stands in
     monkeypatch.setattr(agents, "start_capability_run", start)
     monkeypatch.setattr(agents, "create_proposal", propose)
     monkeypatch.setattr(agents, "end_capability_run", end)
-    run = await oe.start_allocation(_ctx(), uuid4())  # type: ignore[arg-type]
+    run = await oe.start_allocation(_ctx(), uuid4())  # type: ignore[arg-type]  -- a test double stands in
     assert run.proposal_id is not None
     assert [p["kind"] for p in proposals] == ["time_study_allocation"]
     rows = proposals[0]["rows"]
-    assert [r.target_type for r in rows] == ["functional_expense_line"]  # type: ignore[attr-defined]
+    assert [r.target_type for r in rows] == ["functional_expense_line"]  # type: ignore[attr-defined]  -- a test double stands in
     assert not any("UPDATE functional_expense_lines" in sql for sql in executed)
 
 

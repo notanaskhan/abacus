@@ -183,6 +183,10 @@ _EXISTING: Final = text(
 )
 
 
+class _Nothing(Exception):
+    """Leave the unit of work without a commit (nothing changed)."""
+
+
 async def apply_postponement(
     ctx: AuthContext, client_id: UUID, notice_id: str, reference_set_version_id: UUID
 ) -> Applied:
@@ -206,20 +210,25 @@ async def apply_postponement(
         notice = None if firm is None else firm.notices.get(notice_id)
     if notice is None or notice.version_id != reference_set_version_id:
         raise PostponementNoticeUnknown(facts={"notice_id": notice_id})
-    async with uow(ctx.tenant) as tx:
-        row = (
-            await tx.session.execute(
-                _INSERT,
-                {"t": ctx.tenant_id, "c": client_id, "n": notice_id, "s": notice.source,
-                 "v": reference_set_version_id, "by": ctx.user_id},
-            )
-        ).first()  # fmt: skip
-        if row is not None:
+    row = None
+    try:
+        async with uow(ctx.tenant) as tx:
+            row = (
+                await tx.session.execute(
+                    _INSERT,
+                    {"t": ctx.tenant_id, "c": client_id, "n": notice_id, "s": notice.source,
+                     "v": reference_set_version_id, "by": ctx.user_id},
+                )
+            ).first()  # fmt: skip
+            if row is None:
+                raise _Nothing  # applied before: no write, no event
             tx.record(
                 "postponement.applied",
                 target=Target("client", client_id),
                 after=Ref(application=cast(UUID, row.id), version=reference_set_version_id),
             )
+    except _Nothing:
+        row = None
     if row is None:  # applied before: answer the first
         async with tenant_session(ctx.tenant) as session:
             row = (await session.execute(_EXISTING, {"c": client_id, "n": notice_id})).first()

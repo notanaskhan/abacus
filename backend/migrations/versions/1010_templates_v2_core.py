@@ -174,7 +174,8 @@ COMPONENTS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
             shown_by_rule_id uuid NULL,
             position integer NOT NULL DEFAULT 0 CHECK (position >= 0),
             UNIQUE (tenant_id, template_version_id, request_key),
-            FOREIGN KEY (methodology_request_item_id) REFERENCES methodology_request_items (id),
+            -- methodology_request_items has a composite key (tenant, version, position) and no
+            -- id: the link is a nullable reference the service validates (S53 end pass).
             FOREIGN KEY (tenant_id, shown_by_rule_id) REFERENCES scoping_rules (tenant_id, id)
                 ON DELETE SET NULL (shown_by_rule_id)
         """,

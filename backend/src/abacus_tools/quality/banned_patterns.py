@@ -1731,7 +1731,10 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "closes": _BASE
     | {"organisations", "engagements", "methodology", "requests", "evidence", "ledger"}
     | {"review", "workpapers", "adjustments", "reporting", "communications", "agents"}
-    | {"integrations"},
+    | {"integrations"}
+    # C-02-T39 (DEC-5940): CLS-12 reads the entity's return through tax's api (`handoff_target`);
+    # tax never imports closes.
+    | {"tax"},
     # N-04-T12 (DEC-2240, DEC-2262): the response drafts from the firm's report template
     # (methodology's versions, reporting's template blocks); neither imports notices.
     "notices": _BASE
@@ -1752,6 +1755,9 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     # S51 partials (Q-05-T08): ADM-11's open-consultations signal (assurance never imports
     # practice, an edge module).
     | {"assurance"}
+    # T-08-T44 (DEC-5940): deadline overrides are methodology's published standards
+    # (`deadline_overrides_in_effect`); methodology imports only identity and platform.
+    | {"methodology"}
     # Q-05-T16/T18 (S52 end pass): inspection findings open a to-do (collaboration) and the QM
     # register reads its imported workbook (evidence); neither imports practice, an edge module.
     | {"collaboration", "evidence"},
@@ -2604,6 +2610,8 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/backfill/test_k02t09_reference_sets_independent.py",
             # A-03-T05/T06: the schema tests of 0520 and 0521 act as the app.
             "tests/integration/backfill/test_a03t05_sampling_tables.py",
+            # S53 end pass (DEC-5940): the sheets migration's forced-RLS check as the app role.
+            "tests/integration/test_k03t13_sheets_core_migration.py",
             "tests/integration/backfill/test_a03t06_taxonomy_db.py",
             # K-02-T05: the platform reference sets (global, definer-guarded) are seeded as the
             # owner role; the service under test then reads them as the app role.
@@ -2862,6 +2870,10 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/backfill/test_n02t13_envelope_hub.py",
             "tests/integration/backfill/test_n02t14_envelope_workflow.py",
             "tests/integration/backfill/test_n02t16_signatures_independent.py",
+            # S53 end pass (DEC-5940): schema and seed steps acting as the app or a person.
+            "tests/integration/test_c02t39_tax_handoff.py",
+            "tests/integration/test_k03t13_sheets_core_migration.py",
+            "tests/integration/test_t08t44_deadline_overrides.py",
             # N-02-T22, T23, T25: the same retention policy seeded as a session sets it, a sent
             # envelope's actor set by hand, and the database refusing a person's supersede marker.
             "tests/integration/backfill/test_n02t22_send_independent.py",
@@ -3353,6 +3365,8 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/evidence/destruction_execute.py",
             # Q-05-T17 (DEC-5828): the reissue draft and the intake source, `post_issuance` kind.
             "src/abacus/modules/assurance/post_issuance_reissue.py",
+            # Q-05-T22 (DEC-5940): the kept analysis on the case row, `post_issuance` kind.
+            "src/abacus/modules/assurance/post_issuance_analysis.py",
         ),
     ),
     Rule(

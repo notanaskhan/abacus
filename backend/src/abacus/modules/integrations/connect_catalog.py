@@ -192,7 +192,8 @@ async def write_consent_of(
     for row in await workbench_rows(session):
         if row.connector_provider == provider:
             found = (row.detail_copy or {}).get("write_consent")
-            return cast(dict[str, Any], found) if isinstance(found, dict) else None
+            consent = cast(dict[str, Any], found)  # Any: catalogue JSON, validated on import
+            return consent if isinstance(found, dict) else None
     return None
 
 

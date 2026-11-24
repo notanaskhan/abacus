@@ -45,11 +45,19 @@ async def test_ac_the_write_grant_is_the_clients(net: Net, seed: Seeder) -> None
     partner, _staff, site = await _cas(seed)
     path = f"/v1/portal/connections/{uuid.uuid4()}/write-grants"
     as_firm = await net.call(
-        "POST", path, partner, body={"scopes": ["ledger_post_journal_entries"]}
+        "POST",
+        path,
+        partner,
+        body={
+            "capability_id": "ledger_post_journal_entries",
+            "consent_copy_version": "por16.qbo.post_entries.v2",
+        },
+        headers=net.keyed(),
     )
     assert as_firm.status_code in (403, 404), as_firm.text
     client = await seed.client_contact(site)
-    unknown = await net.call("GET", f"{path}/current", client)
+    # The current grant is only ever revoked (DELETE); an unknown connection is absent.
+    unknown = await net.call("DELETE", f"{path}/current", client, headers=net.keyed())
     assert unknown.status_code == 404, unknown.text
 
 
@@ -76,7 +84,7 @@ async def test_ac_staff_cannot_retry_or_undo_a_batch(net: Net, seed: Seeder) -> 
         f"/v1/posting-batches/{batch}/undo",
         f"/v1/posting-batches/{batch}/entries/{uuid.uuid4()}/retry",
     ):
-        refused = await net.call("POST", path, staff, body={})
+        refused = await net.call("POST", path, staff, body={}, headers=net.keyed())
         assert refused.status_code in (403, 404), (path, refused.text)
         assert refused.status_code != 200
 

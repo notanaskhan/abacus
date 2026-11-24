@@ -70,10 +70,14 @@ _UPSERT: Final = (
 async def heartbeat(
     ctx: object, kind: str, object_id: UUID, anchor_kind: AnchorKind, anchor_key: str | None
 ) -> None:
-    from abacus.modules.identity.api import AuthContext
+    from abacus.modules.identity.api import AuthContext, authorise_own
 
     if not isinstance(ctx, AuthContext) or ctx.tenant.actor_kind != "human" or ctx.is_support:
         raise NotFound("presence")  # only people are present
+    # The matrix's cell for the person's own staff membership (portal principals, the agent and
+    # the system are denied), then the owner's read check on the object (S53 end pass: the route
+    # recorded no check, so the route guard answered 500).
+    await authorise_own(ctx, "presence.update")
     if not await _may_read(ctx, kind, object_id):
         raise NotFound(kind)  # absent, never forbidden (INV-3)
     await ephemeral_write(
@@ -101,9 +105,12 @@ class Present:
 
 async def present(ctx: object, kind: str, object_id: UUID) -> list[Present]:
     """Who else is on the object now (the viewer never sees themself), oldest join first."""
-    from abacus.modules.identity.api import AuthContext
+    from abacus.modules.identity.api import AuthContext, authorise_own
 
-    if not isinstance(ctx, AuthContext) or not await _may_read(ctx, kind, object_id):
+    if not isinstance(ctx, AuthContext):
+        raise NotFound(kind)
+    await authorise_own(ctx, "presence.read")
+    if not await _may_read(ctx, kind, object_id):
         raise NotFound(kind)
     async with tenant_session(ctx.tenant) as session:
         rows = (

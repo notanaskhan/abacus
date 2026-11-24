@@ -49,7 +49,8 @@ import { type JSX, type ReactNode, Suspense, lazy, useState } from "react";
 import { useFlag } from "../../app-core/flags";
 import { useOpenOverlay } from "../../app-core/open";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
-import { useTaxHandoffGate } from "../../domain/tax";
+// The gate's own entry: the tax barrel would add the whole tax domain to the cockpit chunk.
+import { useTaxHandoffGate } from "../../domain/tax-handoff";
 import { ov } from "../../routes/to";
 import { isNotFound } from "../../domain/audits";
 import type { EvidenceViewerTarget } from "../SHL-08";

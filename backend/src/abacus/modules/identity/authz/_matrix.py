@@ -5977,7 +5977,6 @@ ACTIONS: dict[str, dict[str, str]] = {
         "link_principal": "deny",
         "agent": "task_scope",
         "system": "deny",
-        "consent": "use,ai_disclosure",
     },
     "platform_content.publish": {
         "platform_admin": "allow",

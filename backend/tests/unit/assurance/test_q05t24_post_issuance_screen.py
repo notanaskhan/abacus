@@ -41,7 +41,7 @@ def _case(**over: object) -> pi.Case:
         "recommended": None,
     }
     base.update(over)
-    return pi.Case(**base)  # type: ignore[arg-type]
+    return pi.Case(**base)  # type: ignore[arg-type]  -- a test double stands in
 
 
 def test_addition_description_takes_the_persons_words_else_the_cases() -> None:
@@ -57,9 +57,9 @@ def test_addition_description_takes_the_persons_words_else_the_cases() -> None:
 
 
 def test_decision_reasons_follow_the_standard() -> None:
-    assert pi._REASON["subsequent_fact"] == "au_c_560_subsequently_discovered_fact"
-    assert pi._REASON["omitted_procedure"] == "au_c_585_omitted_procedure"
-    assert "reissuance_request" not in pi._REASON  # "other"
+    assert pi.ADDITION_REASON["subsequent_fact"] == "au_c_560_subsequently_discovered_fact"
+    assert pi.ADDITION_REASON["omitted_procedure"] == "au_c_585_omitted_procedure"
+    assert "reissuance_request" not in pi.ADDITION_REASON  # "other"
 
 
 def test_omitted_procedure_offers_two_options_and_no_recommendation() -> None:

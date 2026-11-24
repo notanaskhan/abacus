@@ -68,7 +68,7 @@ def test_02_is_written_from_the_register_and_foots() -> None:
         },
         register=SimpleNamespace(current=27483),
     )
-    writes = {w.address: w for w in run_steps.register_writes(found, computed)}  # type: ignore[arg-type]
+    writes = {w.address: w for w in run_steps.register_writes(found, computed)}  # type: ignore[arg-type]  -- a test double stands in
     assert writes["02!A2"].value == "1" and writes["02!F2"].value == Decimal(26400)
     assert writes["02!A3"].value == "2" and writes["02!G2"].value == Decimal("60")
     assert "02!A4" in writes and writes["02!A4"].value == "Total"

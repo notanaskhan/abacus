@@ -94,7 +94,7 @@ def upgrade() -> None:
                 REFERENCES template_versions (tenant_id, id),
             FOREIGN KEY (tenant_id, sheet_definition_id)
                 REFERENCES template_sheet_definitions (tenant_id, id),
-            FOREIGN KEY (sample_set_id) REFERENCES sample_sets (id),
+            FOREIGN KEY (tenant_id, sample_set_id) REFERENCES sample_sets (tenant_id, id),
             {_person("created_by")},
             CHECK ((sample_set_id IS NULL) = (sample_version IS NULL))
         )

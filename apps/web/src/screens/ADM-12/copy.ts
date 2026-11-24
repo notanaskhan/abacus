@@ -64,7 +64,7 @@ export const COPY = {
   } as Record<string, string>,
   markRemediated: "Mark remediated…",
   openStep: "Open BH-EBP-140 step 8 ›",
-  addTask: "Add remediation task…",
+  addTask: "Add remediation to-do…",
   evaluationTitle: "Annual evaluation of the system of quality management",
   asOf: "As of",
   responsible: "Individual with ultimate responsibility",

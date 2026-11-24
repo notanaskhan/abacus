@@ -151,7 +151,9 @@ class VendorFactsOut(BaseModel):
     payments: Annotated[list[PaymentFact], Field(max_length=10), Int] = []
 
 
-async def _on_run(caller: ToolCaller, vendor_id: UUID) -> Row[Any]:
+async def _on_run(
+    caller: ToolCaller, vendor_id: UUID
+) -> Row[Any]:  # Any: a SQL row of mixed column types
     async with tenant_session(caller.tenant) as session:
         row = (await session.execute(_VENDOR, {"v": vendor_id})).one_or_none()
         engagement = (
@@ -337,7 +339,8 @@ async def propose_vendor_classification(
         ),
         rationale_ref=args.rationale_ref,
     )
-    assert suggestion is not None  # noqa: S101 -- a tool call is never a shadow run
+    if suggestion is None:  # a tool call is never a shadow run
+        raise RuntimeError("propose_classification returned no suggestion outside shadow mode")
     return ProposeClassificationOut(suggestion_id=suggestion, citation_ids=cited)
 
 
@@ -416,7 +419,8 @@ async def screen_vendor(ctx: AuthContext, vendor_id: UUID) -> RunOutcome:
         settled = await close_agent.answer(agent, given)
     except close_agent.OutputRefused as refused:
         return await _end(agent, "escalated", str((refused.facts or {}).get("reason")))
-    assert settled.screen is not None  # noqa: S101 -- settle_screen requires it
+    if settled.screen is None:  # settle_screen requires it
+        raise RuntimeError("a settled screen without its screen")
     try:
         suggestion, cited = await propose_classification(
             agent, vendor_id, settled.screen, shadow=shadow

@@ -13,7 +13,7 @@ import { Icon, type IconName } from "../icons";
 import { useMotion } from "../motion";
 import { Button } from "./button";
 import { LiveDot, PULSE_STAGGER_MS, Pulse, Spinner } from "./motion";
-import { StatusDisc } from "./status";
+import { StatusDisc } from "./status-disc";
 import { PRODUCT } from "../product";
 
 // Feedback states (C-20 States kit; F-05-T19): EmptyState, Skeleton, ErrorRow, WaitingBadge,

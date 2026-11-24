@@ -116,16 +116,28 @@ class Opportunity:
     tax_year: int | None
 
 
-_COLUMNS: Final = (
-    "o.id, o.engagement_id, o.work_item_id, o.client_id, o.source_kind, o.rule_key, o.category, "
-    "o.product_kind, o.title, o.body, o.status, o.previous_status, o.est_savings, "
+# End pass (SQL-001): one literal query; every filter is a bound parameter, NULL when unused.
+_ROWS: Final = text(
+    "SELECT o.id, o.engagement_id, o.work_item_id, o.client_id, o.source_kind, o.rule_key, "
+    "o.category, o.product_kind, o.title, o.body, o.status, o.previous_status, o.est_savings, "
     "o.rationale_suggestion_id, o.consent_basis, o.owner_user_id, o.project_engagement_id, "
     "o.raised_message_id, o.row_version, r.tax_year, "
     "(SELECT max(e.at) FROM planning_opportunity_events e WHERE e.opportunity_id = o.id "
-    " AND e.to_status = 'raised') AS raised_at"
+    " AND e.to_status = 'raised') AS raised_at "
+    "FROM planning_opportunities o JOIN tax_returns r ON r.work_item_id = o.work_item_id "
+    "WHERE o.work_item_id = ANY(:visible) "
+    "AND (CAST(:id AS uuid) IS NULL OR o.id = :id) "
+    "AND (CAST(:year AS integer) IS NULL OR r.tax_year = :year) "
+    "AND (CAST(:partner AS uuid) IS NULL OR o.owner_user_id = :partner) "
+    "AND (CAST(:status AS text) IS NULL OR o.status = :status) "
+    "AND (CAST(:work AS uuid) IS NULL OR o.work_item_id = :work) "
+    "AND (CAST(:rule AS text) IS NULL OR o.rule_key = :rule) "
+    "AND (CAST(:dismissed AS boolean) IS NULL OR CAST(:dismissed AS boolean) "
+    "OR o.status <> 'dismissed') "
+    "ORDER BY o.created_at, o.id"
 )
-_FROM: Final = (
-    "FROM planning_opportunities o JOIN tax_returns r ON r.work_item_id = o.work_item_id"
+_NO_FILTER: Final[Mapping[str, object]] = dict.fromkeys(
+    ("id", "year", "partner", "status", "work", "rule", "dismissed")
 )
 
 
@@ -185,19 +197,13 @@ async def _visible_returns(ctx: AuthContext) -> dict[UUID, tuple[UUID, str]]:
     }
 
 
-async def _rows(ctx: AuthContext, where: str, params: Mapping[str, object]) -> list[Opportunity]:
+async def _rows(ctx: AuthContext, params: Mapping[str, object]) -> list[Opportunity]:
     clients = await _visible_returns(ctx)
     if not clients:
         return []
     async with tenant_session(ctx.tenant) as session:
         rows = (
-            await session.execute(
-                text(
-                    f"SELECT {_COLUMNS} {_FROM} WHERE o.work_item_id = ANY(:visible) {where} "
-                    "ORDER BY o.created_at, o.id"
-                ),
-                {"visible": list(clients), **params},
-            )
+            await session.execute(_ROWS, {**_NO_FILTER, "visible": list(clients), **params})
         ).mappings()
         return [_row(cast("Mapping[str, object]", r), clients) for r in rows]
 
@@ -238,12 +244,7 @@ def summarise(items: Sequence[Opportunity], tax_year: int) -> Summary:
 
 
 async def summary(ctx: AuthContext, tax_year: int, partner_id: UUID | None) -> Summary:
-    items = await _rows(
-        ctx,
-        "AND r.tax_year = :year "
-        "AND (CAST(:partner AS uuid) IS NULL OR o.owner_user_id = :partner)",
-        {"year": tax_year, "partner": partner_id},
-    )
+    items = await _rows(ctx, {"year": tax_year, "partner": partner_id})
     return summarise(items, tax_year)
 
 
@@ -258,9 +259,6 @@ async def opportunities(
     """The queue: every visible opportunity, filtered; dismissed rows only when asked."""
     found = await _rows(
         ctx,
-        "AND (CAST(:status AS text) IS NULL OR o.status = :status) "
-        "AND (CAST(:work AS uuid) IS NULL OR o.work_item_id = :work) "
-        "AND (CAST(:dismissed AS boolean) OR o.status <> 'dismissed')",
         {
             "status": status,
             "work": work_item_id,
@@ -271,7 +269,7 @@ async def opportunities(
 
 
 async def opportunity(ctx: AuthContext, opportunity_id: UUID) -> Opportunity:
-    found = await _rows(ctx, "AND o.id = :id", {"id": opportunity_id})
+    found = await _rows(ctx, {"id": opportunity_id})
     if not found:
         raise NotFound("planning_opportunity")
     return found[0]
@@ -561,6 +559,10 @@ _MANUAL: Final = text(
 )
 
 
+class _Nothing(Exception):
+    """Leave the unit of work without a commit (nothing changed)."""
+
+
 async def create_manual(
     ctx: AuthContext, work_item_id: UUID, title: str, source: str, source_ref: str
 ) -> Opportunity:
@@ -580,14 +582,16 @@ async def create_manual(
     await authorise(ctx, CREATE, await _resource(ctx.tenant, scope.engagement_id, work_item_id))
     ref = hashlib.sha256(source_ref.encode()).hexdigest()[:16]
     rule_key = f"manual.{source}.{ref}"[:60]
-    async with uow(ctx.tenant) as tx:
-        new_id = await tx.session.scalar(
-            _MANUAL,
-            {"t": ctx.tenant_id, "e": scope.engagement_id, "r": work_item_id, "title": title,
-             "body": json.dumps([]), "client": clients[work_item_id][0], "rule": rule_key,
-             "owner": ctx.user_id},
-        )  # fmt: skip
-        if new_id is not None:
+    try:
+        async with uow(ctx.tenant) as tx:
+            new_id = await tx.session.scalar(
+                _MANUAL,
+                {"t": ctx.tenant_id, "e": scope.engagement_id, "r": work_item_id, "title": title,
+                 "body": json.dumps([]), "client": clients[work_item_id][0], "rule": rule_key,
+                 "owner": ctx.user_id},
+            )  # fmt: skip
+            if new_id is None:
+                raise _Nothing  # added before from the same source item: answer that one
             await tx.session.execute(
                 _EVENT,
                 {"t": ctx.tenant_id, "o": new_id, "f": None, "to": "open", "ev": "created",
@@ -598,9 +602,9 @@ async def create_manual(
                 target=Target("planning_opportunity", new_id),
                 scope=Scope(engagement_id=scope.engagement_id, work_item_id=work_item_id),
             )
-    existing = await _rows(
-        ctx, "AND o.work_item_id = :r AND o.rule_key = :k", {"r": work_item_id, "k": rule_key}
-    )
+    except _Nothing:
+        pass
+    existing = await _rows(ctx, {"work": work_item_id, "rule": rule_key})
     return existing[0]
 
 

@@ -29,8 +29,8 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Final, cast
 
-from abacus.modules.closes import agent as close_agent
-from abacus.modules.closes.vendor_screen import ENTITY_TYPES, scrub_digits
+from abacus.modules.closes.api import VENDOR_ENTITY_TYPES as ENTITY_TYPES
+from abacus.modules.closes.api import close_agent, scrub_digits
 from abacus_tools.evals.close_vendor_screen import (
     SUITE,
     Case,

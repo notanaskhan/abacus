@@ -122,14 +122,14 @@ async def test_an_unverified_quote_proposes_nothing(monkeypatch: pytest.MonkeyPa
     from abacus.kernel import uow as uow_module
     from abacus.modules.agents import api as agents
 
-    monkeypatch.setattr(vendor_screen, "tenant_session", lambda _t: _Session())  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]
-    monkeypatch.setattr(uow_module, "uow", lambda _t: _Tx())  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]
+    monkeypatch.setattr(vendor_screen, "tenant_session", lambda _t: _Session())  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]  -- a test double stands in
+    monkeypatch.setattr(uow_module, "uow", lambda _t: _Tx())  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]  -- a test double stands in
     monkeypatch.setattr(evidence, "record_citations", unverified)
     monkeypatch.setattr(agents, "create_suggestion", suggestion)
     agent = SimpleNamespace(tenant=SimpleNamespace(tenant_id=uuid4()), engagement_id=uuid4())
     with pytest.raises(vendor_screen.UnverifiedQuote):
         await vendor_screen.propose_classification(
-            agent,  # type: ignore[arg-type]
+            agent,  # type: ignore[arg-type]  -- a test double stands in
             uuid4(),
             close_agent.VendorScreenOut(
                 entity_type="partnership",
@@ -182,7 +182,7 @@ async def test_adopting_writes_the_vendor_as_the_person(monkeypatch: pytest.Monk
         citation_ids=(uuid4(),), citation_note=None, checkpoint_id=None, proposal_id=None,
     )  # fmt: skip
     ctx = SimpleNamespace(tenant=SimpleNamespace(tenant_id=uuid4()), user_id=person)
-    await vendor_screen.apply_vendor_classification(tx, ctx, value)  # type: ignore[arg-type]
+    await vendor_screen.apply_vendor_classification(tx, ctx, value)  # type: ignore[arg-type]  -- a test double stands in
     assert tx.params == [
         {"entity_type": "partnership", "attorney": True, "exempt": None, "by": person,
          "v": vendor}
@@ -200,7 +200,7 @@ async def test_an_adopted_value_outside_the_closed_sets_is_refused() -> None:
         citation_note="edited", checkpoint_id=None, proposal_id=None,
     )  # fmt: skip
     with pytest.raises(close_agent.OutputRefused):
-        await vendor_screen.apply_vendor_classification(_AdoptTx(), SimpleNamespace(), value)  # type: ignore[arg-type]
+        await vendor_screen.apply_vendor_classification(_AdoptTx(), SimpleNamespace(), value)  # type: ignore[arg-type]  -- a test double stands in
 
 
 def test_the_fake_model_run_passes_t51s_frozen_suite_and_signs(

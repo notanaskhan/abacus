@@ -29,9 +29,11 @@ pytestmark = pytest.mark.asyncio
 
 SEP15_0842 = datetime(2026, 9, 15, 13, 42, tzinfo=UTC)
 PRIYA, BEN = uuid4(), uuid4()
-decline = cast(Callable[..., Awaitable[Any]], release._decline)  # pyright: ignore[reportPrivateUsage]
-package_item = cast(Callable[..., Awaitable[Any]], release._package_item)  # pyright: ignore[reportPrivateUsage]
-bucket = portal._bucket  # pyright: ignore[reportPrivateUsage]
+_decline_impl = release._decline  # pyright: ignore[reportPrivateUsage]  -- the unit under test
+decline = cast(Callable[..., Awaitable[Any]], _decline_impl)  # Any: its loose test shape
+_package_item_impl = release._package_item  # pyright: ignore[reportPrivateUsage]  -- the unit under test
+package_item = cast(Callable[..., Awaitable[Any]], _package_item_impl)  # Any: its loose test shape
+bucket = portal._bucket  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
 
 
 def _row(**over: object) -> object:
@@ -73,9 +75,9 @@ class _Session:
 async def test_ac_posted_entries_fill_por08s_posted_card() -> None:
     assert bucket("posted") == "posted"
     assert bucket("waiting") == "waiting" and bucket("approved") == "approved"
-    sql = str(entries._POSTED_ON_SCOPE)  # pyright: ignore[reportPrivateUsage]
+    sql = str(entries._POSTED_ON_SCOPE)  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
     assert "e.status = 'posted'" in sql and "NOT e.is_attest_client" in sql
-    assert entries._STATE["posted"] == "posted"  # pyright: ignore[reportPrivateUsage]
+    assert entries._STATE["posted"] == "posted"  # pyright: ignore[reportPrivateUsage]  -- a test double stands in
 
 
 async def test_ac_the_package_reads_waiting_approved_and_declined() -> None:
@@ -108,11 +110,13 @@ async def test_ac_an_entity_grant_finds_the_package_on_its_engagement(
     async def item(_s: object, i: UUID) -> object:
         return SimpleNamespace(item_id=i)
 
-    monkeypatch.setattr(release, "tenant_session", lambda _t: _Ctx())  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]
+    monkeypatch.setattr(release, "tenant_session", lambda _t: _Ctx())  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]  -- a test double stands in
     monkeypatch.setattr(release, "_package_item", item)
     engagement = uuid4()
-    found = await release.PROVIDER.items(cast(Any, None), engagement)
-    assert [f.item_id for f in cast(list[Any], found)] == [close]
+    no_tenant = cast(Any, None)  # Any: the stubbed read ignores the tenant
+    found = await release.PROVIDER.items(no_tenant, engagement)
+    items = cast(list[Any], found)  # Any: the provider's item shape
+    assert [f.item_id for f in items] == [close]
     sql, params = session.sql[0]
     assert "c.engagement_id = :s" in sql and params == {"s": engagement}
 
@@ -168,6 +172,6 @@ async def test_a_decided_package_cannot_be_declined(monkeypatch: pytest.MonkeyPa
     from abacus.modules.engagements.api import ItemChanged
 
     session = _Session([], scalars=[uuid4(), None])  # the UPDATE matches no waiting package
-    tx = SimpleNamespace(session=session, record=lambda *_a, **_k: None, emit=lambda _e: None)  # pyright: ignore[reportUnknownLambdaType]
+    tx = SimpleNamespace(session=session, record=lambda *_a, **_k: None, emit=lambda _e: None)  # pyright: ignore[reportUnknownLambdaType]  -- a test double stands in
     with pytest.raises(ItemChanged):
         await decline(tx, uuid4(), ClientDecision("decline", "a" * 64, "something_missing"), BEN)

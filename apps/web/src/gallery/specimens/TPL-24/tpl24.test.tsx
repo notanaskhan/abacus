@@ -45,7 +45,7 @@ describe("TPL-24 add-in pane specimen", () => {
       (m) => document.querySelector(`[data-usage="${m}"]`)?.textContent,
     );
     expect(usage).toEqual(["2", "1", "0", "3", "0"]);
-    const grid = ["E12", "E13", "E14"].map((a) => cell(a).textContent ?? "").join(" ");
+    const grid = ["E12", "E13", "E14"].map((a) => cell(a).textContent).join(" ");
     expect(grid.split("✓").length - 1).toBe(2);
     expect(grid.split("⊕").length - 1).toBe(1);
     expect(grid.split("◊").length - 1).toBe(3);

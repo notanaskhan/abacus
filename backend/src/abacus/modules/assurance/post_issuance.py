@@ -219,9 +219,11 @@ async def case(ctx: AuthContext, work_item_id: UUID, case_id: UUID) -> Case:
 
 
 # Q-05-T24: the lock's own time, and only a locked archive (an assembling one is not archived).
+# A v1 archive (no work item, no status) is sealed when its row is written; a v2 archive is sealed
+# only once locked, at `locked_at` (an open or building v2 row is not an archive yet).
 _LOCKED = text(
-    "SELECT locked_at FROM archives WHERE engagement_id = :e AND status = 'locked' "
-    "AND locked_at IS NOT NULL"
+    "SELECT min(CASE WHEN work_item_id IS NULL THEN created_at "
+    "WHEN status = 'locked' THEN locked_at END) FROM archives WHERE engagement_id = :e"
 )
 
 
@@ -410,7 +412,7 @@ _DECIDE = text(
 )
 
 
-_REASON: Final[Mapping[str, aa.AdditionReason]] = {
+ADDITION_REASON: Final[Mapping[str, aa.AdditionReason]] = {
     "subsequent_fact": "au_c_560_subsequently_discovered_fact",
     "omitted_procedure": "au_c_585_omitted_procedure",
 }
@@ -455,7 +457,7 @@ async def record_case_decision(
             ctx,
             work_item_id,
             description=addition_description(found, addition),
-            reason_code=_REASON.get(found.type, "other"),
+            reason_code=ADDITION_REASON.get(found.type, "other"),
             evidence_version_id=found.source_evidence_version_id,
             post_issuance_event_id=case_id,
         )

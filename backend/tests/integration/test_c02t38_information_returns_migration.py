@@ -28,8 +28,18 @@ TABLES = (
     "information_return_batches",
     "information_returns",
 )
-INSERT_ONLY = ("w9_requests", "tin_match_results", "backup_withholding_events",
-               "information_returns")  # fmt: skip
+# Each insert-only table refuses UPDATE and DELETE to the app role (literal statements, no
+# string-built SQL).
+REFUSED = (
+    "UPDATE w9_requests SET tenant_id = tenant_id WHERE id = $1",
+    "DELETE FROM w9_requests WHERE id = $1",
+    "UPDATE tin_match_results SET tenant_id = tenant_id WHERE id = $1",
+    "DELETE FROM tin_match_results WHERE id = $1",
+    "UPDATE backup_withholding_events SET tenant_id = tenant_id WHERE id = $1",
+    "DELETE FROM backup_withholding_events WHERE id = $1",
+    "UPDATE information_returns SET tenant_id = tenant_id WHERE id = $1",
+    "DELETE FROM information_returns WHERE id = $1",
+)
 
 
 @pytest.fixture(scope="module")
@@ -111,13 +121,9 @@ def test_ac_the_insert_only_tables_refuse_update_and_delete(private_db: sc.Datab
     actor = ("human", str(person.user_id))
 
     async def refused() -> None:
-        for table in INSERT_ONLY:
-            for statement in (
-                f"UPDATE {table} SET tenant_id = tenant_id WHERE id = $1",  # noqa: S608
-                f"DELETE FROM {table} WHERE id = $1",  # noqa: S608
-            ):
-                with pytest.raises(asyncpg.InsufficientPrivilegeError):
-                    await app.as_actor(tenant, actor, statement, uuid.uuid4())
+        for statement in REFUSED:
+            with pytest.raises(asyncpg.InsufficientPrivilegeError):
+                await app.as_actor(tenant, actor, statement, uuid.uuid4())
         # A vendor link request waits for R-03's link principal.
         entity = await seed.entity(tenant)
         vendor = uuid.uuid4()
