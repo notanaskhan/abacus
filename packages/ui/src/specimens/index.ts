@@ -38,6 +38,7 @@ import {
 import { AgentFilledSpecimen, AttributionSpecimen } from "./attribution";
 import { GatesSpecimen } from "./gates";
 import { BoardCardSpecimen } from "./board-card";
+import { T19Specimen } from "./t19-board";
 import { Tpl19Specimen } from "./tpl19";
 import { MenuSpecimen, TooltipSpecimen } from "./menus";
 import { IndexListSpecimen } from "./templates";
@@ -513,6 +514,8 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "e7-gates", kit: "E7", title: "Human gates", Component: GatesSpecimen },
   // F-08-T21: C-24 BoardCard, Header, Lane, C-26 AgentProgress and the 280 navigator
   { id: "c24-board-card", kit: "C-24", title: "BoardCard", Component: BoardCardSpecimen },
+  // F-08-T22: T19 BoardLayout a–l on placeholder content
+  { id: "t19-board", kit: "T19", title: "Board", Component: T19Specimen },
   // TPL-19 frames 1 to 8 on T7-M (F-06-T10, F-06-T11): Claire Feld at 390
   { id: "tpl-19", kit: "TPL-19", title: "Portal mobile specimen", Component: Tpl19Specimen },
   {
@@ -543,3 +546,5 @@ export {
   type HostWindowProps,
   WordPage,
 } from "./host-frames";
+// F-08-T22/T23: the T19 board's states, for the TPL-21 specimen and tests.
+export { T19Board, T19_STATES, type T19State, t19Props } from "./t19-board";

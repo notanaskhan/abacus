@@ -49,6 +49,14 @@ export interface BoardCanvasProps {
   renderCard?: (card: BoardCardVM) => ReactNode;
   /** Specimens: hold a state (b dragging with a target, d the guarded spring-back). */
   forceDrag?: { cardId: string; over: string } | undefined;
+  /** F-08-T21/T22: 262 (audit, returns, close) or 196 (the control set's compact columns). */
+  columnWidth?: 262 | 196;
+  /** F-08-T22: BoardLayout draws the sticky headers once above its lanes. */
+  headers?: boolean;
+  /** F-08-T22: the card renders its own C-24 shell (no wrapper padding or fill). */
+  bareCards?: boolean;
+  /** F-08-T22: the dragging card id, for a layout drawing a column preview elsewhere. */
+  onOver?: ((column: string | null) => void) | undefined;
 }
 
 function Column({
@@ -59,6 +67,9 @@ function Column({
   renderCard,
   onMove,
   columns,
+  width,
+  header,
+  bare,
 }: {
   column: BoardColumn;
   cards: readonly BoardCardVM[];
@@ -67,6 +78,9 @@ function Column({
   renderCard: (card: BoardCardVM) => ReactNode;
   onMove: (card: BoardCardVM, to: string) => void;
   columns: readonly BoardColumn[];
+  width: 262 | 196;
+  header: boolean;
+  bare: boolean;
 }): JSX.Element {
   const { setNodeRef } = useDroppable({
     id: `column:${column.key}`,
@@ -80,21 +94,31 @@ function Column({
       data-board-column={column.key}
       data-dim={dim ? "true" : undefined}
       data-over={over ? "true" : undefined}
+      style={{ width: width + 16 }}
       className={cn(
-        "flex w-[262px] flex-none flex-col gap-[8px] rounded-[12px] p-[8px]",
+        "flex flex-none flex-col gap-[8px] rounded-[12px] p-[8px]",
         dim && "opacity-50",
         over && "inset-ring-2 inset-ring-ink",
       )}
     >
-      <header className="sticky top-0 flex h-[40px] items-center gap-[6px] text-[13px] font-medium text-ink">
-        <span className="flex-1">{column.label}</span>
-        <span data-count className="tabular-nums text-ink-2">
-          {String(over ? column.count + 1 : column.count)}
-        </span>
-      </header>
+      {header ? (
+        <header className="sticky top-0 flex h-[40px] items-center gap-[6px] text-[13px] font-medium text-ink">
+          <span className="flex-1">{column.label}</span>
+          <span data-count className="tabular-nums text-ink-2">
+            {String(over ? column.count + 1 : column.count)}
+          </span>
+        </header>
+      ) : null}
       <SortableContext items={cards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
         {cards.map((c) => (
-          <Card key={c.id} card={c} renderCard={renderCard} onMove={onMove} columns={columns} />
+          <Card
+            key={c.id}
+            card={c}
+            renderCard={renderCard}
+            onMove={onMove}
+            columns={columns}
+            bare={bare}
+          />
         ))}
       </SortableContext>
     </section>
@@ -106,11 +130,13 @@ function Card({
   renderCard,
   onMove,
   columns,
+  bare,
 }: {
   card: BoardCardVM;
   renderCard: (card: BoardCardVM) => ReactNode;
   onMove: (card: BoardCardVM, to: string) => void;
   columns: readonly BoardColumn[];
+  bare: boolean;
 }): JSX.Element {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
@@ -124,8 +150,10 @@ function Card({
         transition: transition ?? `transform ${String(SPRING_BACK_MS)}ms`,
       }}
       className={cn(
-        "relative rounded-[10px] bg-card p-[10px] shadow-e1",
-        isDragging && "border border-dashed border-hair bg-transparent shadow-none",
+        "relative rounded-[10px]",
+        !bare && "bg-card p-[10px] shadow-e1",
+        isDragging &&
+          "border border-dashed border-hair bg-transparent shadow-none [&>*]:invisible",
       )}
       {...attributes}
       {...listeners}
@@ -169,6 +197,10 @@ export function BoardCanvas({
   runOnMove,
   renderCard = (c) => <span className="text-[13px] text-ink">{c.title}</span>,
   forceDrag,
+  columnWidth = 262,
+  headers = true,
+  bareCards = false,
+  onOver,
 }: BoardCanvasProps): JSX.Element {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -219,14 +251,18 @@ export function BoardCanvas({
   const onDragOver = (id: string | null): void => {
     if (id === null) {
       setOverColumn(null);
+      onOver?.(null);
       return;
     }
     if (id.startsWith("column:")) {
       setOverColumn(id.slice(7));
+      onOver?.(id.slice(7));
       return;
     }
     const card = cards.find((c) => c.id === id);
-    setOverColumn(card === undefined ? null : columnOf(card));
+    const col = card === undefined ? null : columnOf(card);
+    setOverColumn(col);
+    onOver?.(col);
   };
   const onDragEnd = (e: DragEndEvent): void => {
     const card = cards.find((c) => c.id === e.active.id);
@@ -265,13 +301,19 @@ export function BoardCanvas({
             renderCard={renderCard}
             onMove={(card, to) => void move(card, to)}
             columns={columns}
+            width={columnWidth}
+            header={headers}
+            bare={bareCards}
           />
         ))}
         <DragOverlay>
           {activeCard ? (
             <div
               data-board-ghost=""
-              className="rotate-[1.5deg] rounded-[10px] bg-card p-[10px] shadow-e3"
+              className={cn(
+                "rotate-[1.5deg] rounded-[10px] shadow-e3",
+                !bareCards && "bg-card p-[10px]",
+              )}
             >
               {renderCard(activeCard)}
             </div>
