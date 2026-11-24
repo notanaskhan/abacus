@@ -1651,6 +1651,51 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"filters", "group_by", "name", "shared", "sort", "version", "visible_columns"}
         ),
         "sheets": frozenset({"sample_set_id", "sample_version", "title", "version"}),
+        # C-02-T38 (1013, TASK-8904): information returns; TINs sealed (ADR-167)
+        "information_return_batches": frozenset(
+            {
+                "ack_at",
+                "ack_evidence_version_id",
+                "ack_recorded_by",
+                "approved_at",
+                "approved_by",
+                "due_on",
+                "exported_at",
+                "exported_by",
+                "filed_at",
+                "filed_evidence_version_id",
+                "filed_on",
+                "filed_recorded_by",
+                "iris_file_document_id",
+                "iris_file_sha256",
+                "iris_receipt_id",
+                "status",
+                "version",
+            }
+        ),
+        "vendor_payment_rollups": frozenset(
+            {"amount", "computed_at", "source_snapshot_id", "txn_count"}
+        ),
+        "vendors_1099": frozenset(
+            {
+                "backup_withholding",
+                "display_name",
+                "entity_type",
+                "entity_type_source",
+                "exempt_reason",
+                "is_attorney",
+                "tin_fingerprint",
+                "tin_kind",
+                "tin_last4",
+                "tin_sealed",
+                "updated_at",
+                "updated_by",
+                "version",
+                "w9_evidence_version_id",
+                "w9_signed_on",
+                "w9_status",
+            }
+        ),
         # K-01-T02 (0180): guarded lifecycle transitions (ED-111: declared without this row).
         "methodology_version_states": frozenset(
             {
