@@ -79,13 +79,13 @@ def test_the_kind_is_composed_in_the_code_only_layout() -> None:
 def test_the_kind_list_stays_one_list() -> None:
     # The newest migration that rewrites the kind CHECK holds the whole list: 0763 added the
     # journal; A-09-T27's 0944 adds `component_instructions` on top of it; C-02-T28's 0993 adds
-    # `close_package` on top of that.
-    path = Path(__file__).parents[3] / "migrations/versions/0993_close_package_kind.py"
-    spec = spec_from_file_location("m0993", path)
+    # `close_package` on top of that; T-06-T43's 1015 adds `tax_form_face` (DEC-5914).
+    path = Path(__file__).parents[3] / "migrations/versions/1015_tax_form_face_templates.py"
+    spec = spec_from_file_location("m1015", path)
     assert spec is not None and spec.loader is not None
     module = module_from_spec(spec)
     spec.loader.exec_module(module)
-    assert set(module._NEW) == set(get_args(GeneratedDocumentKind))
+    assert set(module._KINDS_NEW) == set(get_args(GeneratedDocumentKind))
 
 
 def _wire(

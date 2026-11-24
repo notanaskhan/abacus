@@ -18,6 +18,10 @@ from abacus.modules.engagements.api import work_item_engagement
 # T-04-T15: a worksheet is its own row, owned by its engagement. T-04-T36: a K-1 activity and
 # its treatments too (audited as `pass_through_*`: audit names hold no digits).
 _ROWS = {
+    # T-08-T19 (DEC-5916): a planning opportunity belongs to its engagement.
+    "planning_opportunity": text(
+        "SELECT id, engagement_id FROM planning_opportunities WHERE id = ANY(:ids)"
+    ),
     "return_worksheet": text(
         "SELECT id, engagement_id FROM return_worksheets WHERE id = ANY(:ids)"
     ),

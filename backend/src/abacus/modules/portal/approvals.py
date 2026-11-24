@@ -116,6 +116,8 @@ async def _shown(ctx: AuthContext, item: ApprovalItem) -> Shown | None:
 
 
 def _bucket(state: str) -> ApprovalFilter:
+    if state == "posted":  # C-02-T41: POR-08 Card B (read-only, ask only)
+        return "posted"
     if state in _APPROVED:
         return "approved"
     if state in _DECLINED:

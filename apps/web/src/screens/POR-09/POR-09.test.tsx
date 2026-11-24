@@ -137,10 +137,22 @@ describe("POR-09 deliverables", () => {
     expect(screen.queryByText(/Pell Street/)).toBeNull();
   });
 
-  it("e: Copperleaf's package carries the AR-C 70 legend (fixture only)", async () => {
+  it("e: Copperleaf's package carries the AR-C 70 legend and waits for approval", async () => {
     at("e");
     expect(await screen.findByText(COPY.legend(FIRM))).toBeTruthy();
-    expect(screen.getByText("Waiting for approval")).toBeTruthy();
+    expect(screen.getAllByText("Waiting for approval").length).toBeGreaterThan(0);
+  });
+
+  it("e (C-02-T41): Approve in Approvals → takes Tess to POR-08", async () => {
+    const went: string[] = [];
+    show(scenarios.e, {
+      ...(OPENING.e ?? {}),
+      onNavigate: (area: string) => {
+        went.push(area);
+      },
+    });
+    fireEvent.click(await screen.findByRole("button", { name: COPY.approveInApprovals }));
+    expect(went).toEqual(["Approvals"]);
   });
 
   it("f: nothing delivered yet", async () => {

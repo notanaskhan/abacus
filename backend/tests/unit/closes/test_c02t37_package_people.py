@@ -24,9 +24,13 @@ people = cast(Callable[..., Awaitable[Any]], ps._people)  # pyright: ignore[repo
 EMPTY = ps._People()  # pyright: ignore[reportPrivateUsage]
 
 
-def _row(*, released: bool = True, approved_by: UUID | None = None) -> object:
+def _row(
+    *, released: bool = True, approved_by: UUID | None = None, declined_by: UUID | None = None
+) -> object:
     return SimpleNamespace(
-        released_by=PRIYA if released else None, client_approved_by_contact_id=approved_by
+        released_by=PRIYA if released else None,
+        client_approved_by_contact_id=approved_by,
+        client_declined_by_contact_id=declined_by,  # C-02-T41
     )
 
 
@@ -77,3 +81,12 @@ async def test_ac_nothing_before_release_and_no_names_without_contact_read(
     assert await people(SimpleNamespace(tenant=None), uuid4(), _row(released=False)) == EMPTY
     found = await people(SimpleNamespace(tenant=None), uuid4(), _row())
     assert (found.released_by, found.requested_from) == ("Priya Raman", ())
+
+
+async def test_c02t41_the_declining_contact(monkeypatch: pytest.MonkeyPatch) -> None:
+    """C-02-T41 (DEC-5927): POR-08 c's decline names the client contact who declined."""
+    _patch(
+        monkeypatch, contacts=[SimpleNamespace(contact_id=BEN, designation="approver_of_record")]
+    )
+    found = await people(SimpleNamespace(tenant=None), uuid4(), _row(declined_by=BEN))
+    assert found.client_declined_by == "Ben Ashby"

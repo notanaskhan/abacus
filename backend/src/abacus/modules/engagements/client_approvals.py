@@ -44,8 +44,17 @@ ClientApprovalKind = Literal[
 ]
 ClientDecisionWord = Literal["accept", "decline", "approve", "acknowledge"]
 DeclineReason = Literal["number_looks_wrong", "something_missing", "other"]
+# C-02-T41 (DEC-5927): `posted` is an entry the firm posted for a non-attest client, read-only on
+# POR-08's "Entries posted for August" card.
 ClientApprovalState = Literal[
-    "waiting", "approved", "declined", "accepted", "not_recorded", "acknowledged", "question_sent"
+    "waiting",
+    "approved",
+    "declined",
+    "accepted",
+    "not_recorded",
+    "acknowledged",
+    "question_sent",
+    "posted",
 ]
 DesignationBasis = Literal["owner", "approver_of_record", "ske_designee"]
 CLIENT_APPROVAL_KINDS: Final = frozenset(get_args(ClientApprovalKind))

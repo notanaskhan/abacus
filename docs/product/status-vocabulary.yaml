@@ -541,6 +541,7 @@ objects:
       draft:              {label: "Draft", variant: state, terminal: false, derived: false}
       released:           {label: "Released", variant: green-tint, terminal: false, derived: false, context_labels: {on: "Released {date}"}}
       approved_by_client: {label: "Approved by client", variant: green, terminal: true, derived: false, context_labels: {by: "Approved by {name} · {date}"}}
+      declined_by_client: {label: "Declined by client", variant: red-tint, terminal: false, derived: false, context_labels: {by: "Declined by {name} · {date}"}}   # C-02-T41 (DEC-5927): POR-08 c; the firm revises and releases again
 
   tax_handoff:   # tax_handoffs (CLS-12); not_available and ready are derived from the close
     source: "C-02 §4.7; CLS-12 a-d"
@@ -1267,6 +1268,7 @@ objects:
       not_recorded:  {label: "Not recorded", variant: neutral, terminal: true, derived: true}
       acknowledged:  {label: "Acknowledged", variant: green-tint, terminal: true, derived: true}
       question_sent: {label: "Question sent", variant: neutral, terminal: false, derived: true}
+      posted:        {label: "Posted", variant: green-tint, terminal: true, derived: true}   # C-02-T41 (DEC-5927): an entry the firm posted for a non-attest client, read-only (POR-08 Card B)
 
   governance_room_letter:   # portal client words (POR-15; DF-31; R-02 §4.2, R-02-T04)
     source: "R-02 §4.2 (POR-15)"

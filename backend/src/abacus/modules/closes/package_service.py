@@ -46,7 +46,8 @@ LEGENDS: Final = {pkg.NO_ASSURANCE: "No assurance is provided."}
 
 _DELIVERABLE = text(
     "SELECT d.id, d.status, d.current_version_no, d.released_at, d.client_approved_at, "
-    "d.released_by, d.client_approved_by_contact_id, "
+    "d.released_by, d.client_approved_by_contact_id, d.client_declined_by_contact_id, "
+    "d.client_declined_at, d.client_decline_reason, "
     "v.sections, v.cas_answer, v.content_hash, v.route, v.legend_key, v.posted_tb_ref, "
     "v.commentary FROM close_deliverables d "
     "LEFT JOIN close_deliverable_versions v ON v.deliverable_id = d.id "
@@ -204,6 +205,9 @@ async def get_package(ctx: AuthContext, close_id: UUID) -> DeliveryPackageOut:
         client_approved_at=row.client_approved_at if row is not None else None,
         client_approved_by=people.client_approved_by,
         approval_requested_from=list(people.requested_from),
+        client_declined_at=row.client_declined_at if row is not None else None,
+        client_declined_by=people.client_declined_by,
+        client_decline_reason=row.client_decline_reason if row is not None else None,
         content_hash=pkg.content_hash(bs, inc, routed, sections),
         version=version_no,
         commentary=commentary if "commentary" in sections else None,
@@ -215,6 +219,7 @@ class _People:
     released_by: str | None = None
     client_approved_by: str | None = None
     requested_from: tuple[str, ...] = ()
+    client_declined_by: str | None = None  # C-02-T41
 
 
 async def _people(
@@ -242,15 +247,22 @@ async def _people(
     wanted = [*asked]
     if row.client_approved_by_contact_id is not None:
         wanted.append(row.client_approved_by_contact_id)
+    if row.client_declined_by_contact_id is not None:
+        wanted.append(row.client_declined_by_contact_id)
     names = await client_contact_names(ctx.tenant, engagement_id, wanted) if wanted else {}
     approver = (
         None if row.client_approved_by_contact_id is None
         else names.get(row.client_approved_by_contact_id)
     )  # fmt: skip
+    decliner = (
+        None if row.client_declined_by_contact_id is None
+        else names.get(row.client_declined_by_contact_id)
+    )  # fmt: skip
     return _People(
         released,
         approver,
         tuple(dict.fromkeys(n for c in asked if (n := names.get(c)) is not None)),
+        decliner,
     )
 
 

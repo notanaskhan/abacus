@@ -1216,6 +1216,24 @@ REVIEWED_FALLBACK: Final = frozenset(
         "close_package.exported",
         "close_package.released",  # C-02-T29 (TASK-8815): CLS-08 d, e and POR-08
         "close_package.client_approved",
+        "close_package.client_declined",  # C-02-T41 (TASK-8925): POR-08 c
+        # S53 (reviewed in C-02-T41's pass): rows whose own screens show them; none needs a
+        # sentence in the firm's activity feed. T-06-T44's form preview download; T-08-T19's
+        # planning opportunity life and its client message; T-08-T26's rationale adoption and
+        # narration; Q-05-T22's post-issuance analysis; T-08-T44's postponement application;
+        # C-02-T39's hand-off publish; T-08-T26's two-year variance explanation proposal.
+        "form_preview.downloaded",
+        "planning_message.sent",
+        "planning_opportunity.accepted",
+        "planning_opportunity.created",
+        "planning_opportunity.narrated",
+        "planning_opportunity.project_prefilled",
+        "planning_opportunity.rationale_adopted",
+        "planning_opportunity.screened",
+        "post_issuance.analysed",
+        "postponement.applied",
+        "tax_handoff.published",
+        "variance_explanation.proposed",
         "close.delivered",
         "close.locked",
         "close.reopened",

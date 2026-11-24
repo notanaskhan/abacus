@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Final, Literal
+from typing import Final, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -135,10 +135,15 @@ async def portal_deliverable(ctx: AuthContext, deliverable_id: UUID) -> PortalDe
     if not readable:
         raise NotFound("deliverable")
     latest = readable[-1]
+    waiting = "approve" in latest.allowed_actions
     status = (
         "approved_by_you"
-        if approved and latest.is_draft
-        else ("for_your_review" if latest.is_draft else "final")
+        if approved and (latest.is_draft or head_governed(rows))
+        else (
+            "waiting_for_approval"
+            if waiting and not latest.is_draft  # C-02-T41: POR-09 e, a released close package
+            else ("for_your_review" if latest.is_draft else "final")
+        )
     )
     return PortalDeliverable(
         id=deliverable_id,
@@ -149,6 +154,12 @@ async def portal_deliverable(ctx: AuthContext, deliverable_id: UUID) -> PortalDe
         legend_kind=None if head.legend_kind is None else str(head.legend_kind),
         versions=tuple(versions),
     )
+
+
+def head_governed(rows: object) -> bool:
+    """C-02-T41: whether any published version carries a C18 item (a final it approves)."""
+    found = cast(list[object], rows)
+    return any(getattr(r, "approval_item_id", None) is not None for r in found)
 
 
 @dataclass(frozen=True)

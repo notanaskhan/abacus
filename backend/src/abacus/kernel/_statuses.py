@@ -440,6 +440,7 @@ class CloseDeliverableStatus(StrEnum):
     DRAFT = "draft"
     RELEASED = "released"
     APPROVED_BY_CLIENT = "approved_by_client"
+    DECLINED_BY_CLIENT = "declined_by_client"
 
 
 class TaxHandoffStatus(StrEnum):
@@ -1040,7 +1041,7 @@ class DeliverableStatus(StrEnum):
 class ClientApprovalItemStatus(StrEnum):
     pass
     # derived, never stored: waiting, approved, declined, accepted, not_recorded, acknowledged,
-    # question_sent
+    # question_sent, posted
 
 
 class GovernanceRoomLetterStatus(StrEnum):
@@ -2163,6 +2164,7 @@ STORED: dict[str, tuple[str, ...]] = {
         "draft",
         "released",
         "approved_by_client",
+        "declined_by_client",
     ),
     "tax_handoff": (
         "handed_off",

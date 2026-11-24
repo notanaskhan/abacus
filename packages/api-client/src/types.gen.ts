@@ -3117,7 +3117,7 @@ export type ApprovalContextOut = {
     /**
      * State
      */
-    state?: 'waiting' | 'approved' | 'declined' | 'accepted' | 'not_recorded' | 'acknowledged' | 'question_sent' | null;
+    state?: 'waiting' | 'approved' | 'declined' | 'accepted' | 'not_recorded' | 'acknowledged' | 'question_sent' | 'posted' | null;
 };
 
 /**
@@ -3216,7 +3216,7 @@ export type ApprovalItemDetailOut = {
     /**
      * State
      */
-    state: 'waiting' | 'approved' | 'declined' | 'accepted' | 'not_recorded' | 'acknowledged' | 'question_sent';
+    state: 'waiting' | 'approved' | 'declined' | 'accepted' | 'not_recorded' | 'acknowledged' | 'question_sent' | 'posted';
     /**
      * Support
      */
@@ -3276,7 +3276,7 @@ export type ApprovalItemOut = {
     /**
      * State
      */
-    state: 'waiting' | 'approved' | 'declined' | 'accepted' | 'not_recorded' | 'acknowledged' | 'question_sent';
+    state: 'waiting' | 'approved' | 'declined' | 'accepted' | 'not_recorded' | 'acknowledged' | 'question_sent' | 'posted';
     /**
      * Title
      */
@@ -16894,6 +16894,18 @@ export type DeliveryPackageOut = {
      */
     client_approved_by?: string | null;
     /**
+     * Client Decline Reason
+     */
+    client_decline_reason?: 'number_looks_wrong' | 'something_missing' | 'other' | null;
+    /**
+     * Client Declined At
+     */
+    client_declined_at?: string | null;
+    /**
+     * Client Declined By
+     */
+    client_declined_by?: string | null;
+    /**
      * Close Id
      */
     close_id: string;
@@ -16936,7 +16948,7 @@ export type DeliveryPackageOut = {
     /**
      * Status
      */
-    status: 'drafting' | 'draft' | 'released' | 'approved_by_client';
+    status: 'drafting' | 'draft' | 'released' | 'approved_by_client' | 'declined_by_client';
     /**
      * Version
      */

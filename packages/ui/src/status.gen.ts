@@ -1917,6 +1917,15 @@ export const STATUS_REGISTRY = {
       "contextLabels": {
         "by": "Approved by {name} · {date}"
       }
+    },
+    "declined_by_client": {
+      "label": "Declined by client",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "by": "Declined by {name} · {date}"
+      }
     }
   },
   "tax_handoff": {
@@ -4587,6 +4596,12 @@ export const STATUS_REGISTRY = {
       "label": "Question sent",
       "variant": "neutral",
       "terminal": false,
+      "derived": true
+    },
+    "posted": {
+      "label": "Posted",
+      "variant": "green-tint",
+      "terminal": true,
       "derived": true
     }
   },

@@ -65,6 +65,20 @@ _ON_SCOPE_SQL = _SENT + " AND (e.work_item_id = :scope OR e.engagement_id = :sco
 _ONE_SQL = _SENT + " AND e.id = :id"
 _ON_SCOPE = text(_ON_SCOPE_SQL)
 _ONE = text(_ONE_SQL)
+# C-02-T41 (DEC-5927): entries the firm posted for a non-attest client (C8 v2's posted state),
+# shown read-only on POR-08's "Entries posted for August" card: never an attest client's, whose
+# entries are the client's own to record (DF-19). Released is the batch's post.
+_POSTED = (
+    "SELECT e.id, e.engagement_id, e.work_item_id, e.ref, e.description, e.amount, e.status, "
+    "e.version, e.is_attest_client, e.misstatement_id, b.posted_by_user_id::text AS released_by, "
+    "b.posted_at AS released_at FROM proposed_entries e "
+    "JOIN posting_batches b ON b.id = e.posting_batch_id "
+    "WHERE e.status = 'posted' AND NOT e.is_attest_client"
+)
+_POSTED_ON_SCOPE = text(
+    _POSTED + " AND (e.work_item_id = :scope OR e.engagement_id = :scope) ORDER BY e.ref"
+)
+_POSTED_ONE = text(_POSTED + " AND e.id = :id")
 _LINES = text(
     "SELECT entry_id, line_no, account_code, account_name, debit, credit "
     "FROM proposed_entry_lines WHERE entry_id = ANY(:ids) ORDER BY entry_id, line_no"
@@ -78,6 +92,7 @@ _STATE: Final[dict[str, ClientApprovalState]] = {
     "approved": "waiting",
     "client_approved": "accepted",
     "client_declined": "declined",
+    "posted": "posted",  # C-02-T41
 }
 _WORD: Final = {"accept": "client_accepted", "decline": "client_declined"}
 _STATUS: Final = {"client_accepted": "client_approved", "client_declined": "client_declined"}
@@ -144,7 +159,10 @@ async def _items(tenant: TenantContext, rows: Sequence[Row]) -> list[ApprovalIte
                 sent_to_client=True,
                 released_by_user_id=user_of(r["released_by"]),
                 released_at=cast("datetime | None", r["released_at"]),
-                title=f"{ref} · {description}" if description else ref,
+                # A posted entry reads as the design's Card B names it ("Payroll accrual").
+                title=(description or ref)
+                if r["status"] == "posted"
+                else (f"{ref} · {description}" if description else ref),
                 state=_STATE[str(r["status"])],
                 seen_hash=seen_hash(
                     entry_id, cast(int, r["version"]), amount, description, entry_lines
@@ -163,12 +181,15 @@ class ProposedEntryApprovals:
 
     async def items(self, tenant: TenantContext, scope_id: UUID) -> Sequence[ApprovalItem]:
         async with tenant_session(tenant) as session:
-            rows = (await session.execute(_ON_SCOPE, {"scope": scope_id})).mappings().all()
+            rows = list((await session.execute(_ON_SCOPE, {"scope": scope_id})).mappings().all())
+            rows += (await session.execute(_POSTED_ON_SCOPE, {"scope": scope_id})).mappings().all()
         return await _items(tenant, rows)
 
     async def item(self, tenant: TenantContext, item_id: UUID) -> ApprovalItem | None:
         async with tenant_session(tenant) as session:
             row = (await session.execute(_ONE, {"id": item_id})).mappings().first()
+            if row is None:
+                row = (await session.execute(_POSTED_ONE, {"id": item_id})).mappings().first()
         if row is None:
             return None
         found = await _items(tenant, [row])
