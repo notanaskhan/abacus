@@ -90,6 +90,18 @@ SCOPES: Final[dict[str, tuple[str, ...]]] = {
     ),
     # P-10-T52 (ADR-079): the SSE stream, its slots, frames, topics and invalidations.
     "kernel/realtime": ("src/abacus/kernel/realtime.py",),
+    # Q-03-T366 (ADR-079; DEC-5943): W1, the one write to a client ledger: the posting service, its
+    # retry and closing-date recovery, the workflow, the write registry, the capability gates, the
+    # consent switches and the QBO writer. Target 75; the floor is the first measured run's.
+    "w1/posting": (  # literal: the floor check reads SCOPES from source
+        "src/abacus/modules/adjustments/posting.py",
+        "src/abacus/modules/adjustments/posting_recovery.py",
+        "src/abacus/modules/adjustments/posting_workflow.py",
+        "src/abacus/modules/integrations/writes.py",
+        "src/abacus/modules/integrations/capabilities.py",
+        "src/abacus/modules/integrations/w1_switches.py",
+        "src/abacus/modules/integrations/writers/quickbooks_online.py",
+    ),
 }
 # Generated files are regenerated, never mutated.
 GENERATED: Final = (

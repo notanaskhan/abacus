@@ -37,6 +37,7 @@ line:
   kernel/realtime: 0
   # T-04-T53 (DEC-4513): the individual return's engines and the tax tools.
   tax/individual: 0
+  w1/posting: 0  # Q-03-T366 (DEC-5943): a new red scope; raised after its first measured run
 branch:
   identity/authz: 52
   kernel/db: 77
@@ -52,3 +53,4 @@ branch:
   agents/runtime: 0
   kernel/realtime: 0
   tax/individual: 0
+  w1/posting: 0  # Q-03-T366 (DEC-5943): a new red scope; raised after its first measured run

@@ -61,6 +61,7 @@ def test_t026_the_committed_mutmut_config_names_every_scope() -> None:
         "tests/unit",
         "tests/property",
         "tests/acceptance",
+        "tests/golden",  # Q-03-T367 (DEC-5942): pure goldens decide a compute package's mutants
     ]
     for generated in mutation.GENERATED:
         assert f"*/{generated}" in config["do_not_mutate"]

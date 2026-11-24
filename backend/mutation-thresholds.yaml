@@ -54,3 +54,8 @@ floors:
   # profile (abacus_tools.loadtest.t04_budgets, checked on staging): review tree <= 300 ms for 41
   # documents, worksheet fields <= 250 ms, approve <= 500 ms.
   tax/individual: 52
+  # Q-03-T366 (DEC-5943): W1 posting and writes, a new scope, target 75 (ADR-079). The floor is
+  # its first measured run rounded down (local mutmut 3.8.0, 2026-11-24: 308 killed of 4,223,
+  # 7.3%): 3,504 mutants have no container-free test, the path being proved by its integration
+  # suites, which mutation runs cannot use; raising it needs unit tests over its pure parts.
+  w1/posting: 7

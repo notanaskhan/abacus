@@ -205,6 +205,21 @@ only_mutate = [
     "src/abacus/modules/assurance/archive_lock.py",
     "src/abacus/modules/assurance/archive_seal.py",
     "src/abacus/modules/assurance/archive_additions.py",
+    # Q-03-T366 (DEC-5943): W1 posting and writes (mutation.SCOPES["w1/posting"]).
+    "src/abacus/modules/adjustments/posting",
+    "src/abacus/modules/adjustments/posting_recovery",
+    "src/abacus/modules/adjustments/posting_workflow",
+    "src/abacus/modules/integrations/writes",
+    "src/abacus/modules/integrations/capabilities",
+    "src/abacus/modules/integrations/w1_switches",
+    "src/abacus/modules/integrations/writers/quickbooks_online",
+    "src/abacus/modules/adjustments/posting.py",
+    "src/abacus/modules/adjustments/posting_recovery.py",
+    "src/abacus/modules/adjustments/posting_workflow.py",
+    "src/abacus/modules/integrations/writes.py",
+    "src/abacus/modules/integrations/capabilities.py",
+    "src/abacus/modules/integrations/w1_switches.py",
+    "src/abacus/modules/integrations/writers/quickbooks_online.py",
     # P-10-T52 (DEC-4402): runtime v2 and the SSE stream (SCOPES agents/runtime, kernel/realtime).
     "src/abacus/modules/agents/run_plan",
     "src/abacus/modules/agents/run_workflow",
@@ -249,7 +264,9 @@ do_not_mutate = [
     "*/_human_only_actions.py",
     "*/_provider_terms.py",
 ]
-pytest_add_cli_args_test_selection = ["tests/unit", "tests/property", "tests/acceptance"]
+# Q-03-T367 (DEC-5942): the goldens are pure and need no container either, and they are what
+# kills a compute package's mutants (ADR-050: code computes, the goldens prove the figures).
+pytest_add_cli_args_test_selection = ["tests/unit", "tests/property", "tests/acceptance", "tests/golden"]
 pytest_add_cli_args = ["-p", "no:xdist", "-p", "no:cacheprovider", "-m", "not serial"]
 also_copy = ["migrations", "alembic.ini", "typings"]
 
