@@ -37,7 +37,7 @@ import re
 from collections.abc import Mapping, Sequence
 from datetime import date
 from decimal import Decimal
-from typing import Final
+from typing import TYPE_CHECKING, Final
 from uuid import UUID
 
 from sqlalchemy import text
@@ -59,6 +59,9 @@ from abacus.modules.tax.workbook_service import (
     engine_may_write,
     write_cells,
 )
+
+if TYPE_CHECKING:
+    from abacus.modules.tax.fixed_assets_service import Computed, Facts
 
 ZERO: Final = Decimal("0")
 _PCT: Final = re.compile(r"(\d{1,3}(?:\.\d+)?)\s*%")
@@ -303,7 +306,10 @@ FAILURE_CLASSES: Final = {
     "closing_amounts_required": "Key the interim closing amounts on 04 Allocation",
     "apportionment_missing": "Import the state apportionment schedule",
     "return_missing": "The run names no return",
+    "bonus_check": "Cite the acquisition or binding-contract date for the elected bonus",
 }
+# T-06-T41: a failure class whose issue title is its own, whatever the step.
+_CODE_TITLES: Final = {"bonus_check": "Bonus depreciation the cited dates cannot show"}
 _ISSUE_TITLES: Final = {
     "depreciation_register": "Depreciation report not imported",
     "bonus_eligibility": "Bonus depreciation needs the depreciation report",
@@ -327,7 +333,8 @@ async def _needs_attention(
         record_id=return_id,
         kind="action_required",
         priority="high",
-        title=_ISSUE_TITLES.get(facts.step_key, FAILURE_CLASSES.get(code, code)),
+        title=_CODE_TITLES.get(code)
+        or _ISSUE_TITLES.get(facts.step_key, FAILURE_CLASSES.get(code, code)),
         internal_note=None,
         client_wording=None,
         client_contact_id=None,
@@ -349,11 +356,63 @@ def _rows_of(values: Mapping[str, Mapping[str, object]], sheet: str, col: str) -
     return out
 
 
+async def _live_assets(
+    agent: AgentContext, facts: RunStepFacts, return_id: UUID
+) -> tuple[Facts, Computed] | None:
+    """T-06-T41 (DEC-5912): the return's fixed-asset register (T-06-T33) through E3, when it has
+    live assets; None sends the step to the imported report (T-05's path)."""
+    from abacus.modules.tax.fixed_assets_service import compute, facts_of
+
+    found = await facts_of(agent.tenant, return_id, facts.engagement_id)
+    if not [a for a in found.assets if not a.disposed]:
+        return None
+    return found, compute(found)
+
+
+def register_writes(found: Facts, computed: Computed) -> list[CellWrite]:
+    """02 from the register: per live depreciable asset, A number, B description, C placed in
+    service, D cost, F the year's depreciation (E3) and G the elected bonus percent; the Total row
+    foots F."""
+    rows: list[CellWrite] = []
+    n = 1
+    for a in (x for x in found.assets if not x.disposed):
+        row = computed.by_asset.get(str(a.id))
+        if row is None:  # land and non-depreciable assets carry no register row
+            continue
+        n += 1
+        placed = a.placed_in_service_on.isoformat() if a.placed_in_service_on else ""
+        rows += [
+            CellWrite(f"02!A{n}", str(a.asset_no), "tb_linked"),
+            CellWrite(f"02!B{n}", a.description, "tb_linked"),
+            CellWrite(f"02!C{n}", placed, "tb_linked"),
+            CellWrite(f"02!D{n}", Decimal(row.cost), "formula"),
+            CellWrite(f"02!F{n}", Decimal(row.current), "formula"),
+            CellWrite(f"02!G{n}", a.bonus_pct, "formula"),
+        ]
+    if n > 1:
+        total = n + 1
+        rows += [
+            CellWrite(f"02!A{total}", "Total", "tb_linked"),
+            CellWrite(
+                f"02!F{total}", Decimal(computed.register.current), "formula",
+                formula=f"=SUM(F2:F{n})",
+            ),
+        ]  # fmt: skip
+    return rows
+
+
 async def depreciation_register(agent: AgentContext, facts: RunStepFacts) -> RunStepResult:
-    """02's imported or keyed assets: succeeded with their count; none, Needs attention."""
+    """The live path (T-06-T41): the register's assets through E3 into 02. Without register
+    assets, 02's imported or keyed assets (T-05): succeeded with their count; none, Needs
+    attention."""
     return_id = _return_of(facts)
     if return_id is None:
         return RunStepResult("failed", "return_missing")
+    live = await _live_assets(agent, facts, return_id)
+    if live is not None:
+        found, computed = live
+        await _write(agent, facts, return_id, register_writes(found, computed))
+        return RunStepResult("succeeded", records_read=len(computed.by_asset))
     values = await current_values(agent.tenant, WORKBOOK, return_id)
     assets = [
         n for n in _rows_of(values, "02", "A") if str(values[f"02!A{n}"].get("v")) != "Total"
@@ -364,10 +423,18 @@ async def depreciation_register(agent: AgentContext, facts: RunStepFacts) -> Run
 
 
 async def bonus_eligibility(agent: AgentContext, facts: RunStepFacts) -> RunStepResult:
-    """The bonus column of the same report (02!G); eligibility judgments are T-06's (E3)."""
+    """The live path (T-06-T41): E3's bonus check per register asset; an asset whose elected
+    bonus the cited dates cannot show (`check`) or that is not eligible stops the step at Needs
+    attention. Without register assets, the bonus column of the imported report (02!G)."""
     return_id = _return_of(facts)
     if return_id is None:
         return RunStepResult("failed", "return_missing")
+    live = await _live_assets(agent, facts, return_id)
+    if live is not None:
+        checks = live[1].bonus
+        if any(v != "tie" for v in checks.values()):
+            return await _needs_attention(agent, facts, return_id, "bonus_check")
+        return RunStepResult("succeeded", records_read=len(checks))
     values = await current_values(agent.tenant, WORKBOOK, return_id)
     assets = [
         n for n in _rows_of(values, "02", "A") if str(values[f"02!A{n}"].get("v")) != "Total"
@@ -450,13 +517,34 @@ def _states(values: Mapping[str, Mapping[str, object]]) -> list[tuple[str, Decim
     return out
 
 
+async def _approved_states(agent: AgentContext, return_id: UUID) -> list[CellWrite]:
+    """T-06-T41 (DEC-5912): the approved sourcing (T-06-T36's apportionments) and PTET into 08
+    (F state, G apportionment percent, H PTET paid), one row per state; none when the sourcing is
+    not approved (the imported schedule stays)."""
+    from abacus.modules.tax.states_service import approved_states
+
+    rows: list[CellWrite] = []
+    for n, (state, pct, ptet) in enumerate(
+        await approved_states(agent.tenant, return_id), start=2
+    ):
+        rows += [
+            CellWrite(f"08!F{n}", state, "tb_linked"),
+            CellWrite(f"08!G{n}", pct, "formula"),
+            CellWrite(f"08!H{n}", ptet, "formula"),
+        ]
+    return rows
+
+
 async def apportionment_ptet(agent: AgentContext, facts: RunStepFacts) -> RunStepResult:
     """06's state column (D) for the first state on 08's schedule: each Schedule K line times its
-    apportionment percentage, as a formula (code computes; ADR-050). Sourcing and PTET credit
-    splits are T-06's engines (E9); the PTET paid stays as imported."""
+    apportionment percentage, as a formula (code computes; ADR-050). The live path (T-06-T41)
+    first writes 08 from the approved sourcing and PTET; otherwise 08 is the imported schedule."""
     return_id = _return_of(facts)
     if return_id is None:
         return RunStepResult("failed", "return_missing")
+    approved = await _approved_states(agent, return_id)
+    if approved:
+        await _write(agent, facts, return_id, approved)
     values = await current_values(agent.tenant, WORKBOOK, return_id)
     states = _states(values)
     if not states:

@@ -584,6 +584,9 @@ async def settle_change(
             scope=scope,
         )
     checkpoint = await save_checkpoint(ctx, WORKBOOK, return_id, "Fixed asset change approved")
+    from abacus.modules.tax.entity_run_plan import rerun_for  # T-06-T41: depreciation and K-1s
+
+    await rerun_for(ctx, return_id, "asset_change")
     return Decided(
         request_id, "approved", computed.register.current, getattr(checkpoint, "id", None)
     )

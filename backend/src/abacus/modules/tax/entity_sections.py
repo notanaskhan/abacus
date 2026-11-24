@@ -149,6 +149,11 @@ WHY: Final[Mapping[str, str]] = {
         "M-2 line 9 is {m2}; the partners' ending capital on 05 totals {item_l}; off {difference}."
     ),
     "k1_sum_k": "{count} Schedule K lines do not equal the sum of the partners' K-1 shares.",
+    # T-06-T41 (DEC-5912): sheets 02 and 08.
+    "fa_foots": "The assets' depreciation on 02 totals {assets}; the Total row reads {total}.",
+    "state_k1_sum": (
+        "{count} state lines on 06 do not equal the sum of the partners' state shares on 08."
+    ),
 }
 
 
@@ -228,6 +233,54 @@ def tie_outs(values: Values) -> list[TieOut]:
                                  {"sheet": "09", "range": f"B{n}:{last}{n}"})
                 ),
                 {"count": str(len(off_lines))},
+            )
+        )  # fmt: skip
+    return out + sheet_tie_outs(values)
+
+
+def sheet_tie_outs(values: Values) -> list[TieOut]:
+    """T-06-T41 (DEC-5912): 02 foots (the assets' depreciation to its Total row) and the state
+    K-1 shares on 08 sum to 06's state column, line by line."""
+    out: list[TieOut] = []
+    assets: list[int] = []
+    total_row: int | None = None
+    for n in _rows(values, "02"):
+        if _text(values, f"02!A{n}") == "Total":
+            total_row = n
+        else:
+            assets.append(n)
+    if assets and total_row is not None:
+        parts = sum((_dec(values, f"02!F{n}") or ZERO for n in assets), ZERO)
+        total = _dec(values, f"02!F{total_row}") or ZERO
+        difference = parts - total
+        out.append(
+            TieOut(
+                "fa_foots", "fixed-assets", "Depreciation register foots",
+                "tie" if difference == ZERO else "off", difference,
+                ({"sheet": "02", "range": f"F{assets[0]}:F{total_row}"},),
+                {"assets": _fmt(parts), "total": _fmt(total)},
+            )
+        )  # fmt: skip
+    shares: dict[str, Decimal] = {}
+    n = 2
+    while f"08!K{n}" in values:
+        line = _text(values, f"08!K{n}")
+        if line:
+            shares[line] = shares.get(line, ZERO) + (_dec(values, f"08!L{n}") or ZERO)
+        n += 1
+    if shares:
+        off: list[int] = []
+        for row in _rows(values, "06"):
+            line = _text(values, f"06!A{row}")
+            state = _dec(values, f"06!D{row}")
+            if line in shares and state is not None and shares[line] != state:
+                off.append(row)
+        out.append(
+            TieOut(
+                "state_k1_sum", "states", "Σ state K-1 = state K", "off" if off else "tie",
+                Decimal(len(off)),
+                tuple({"sheet": "06", "range": f"D{r}"} for r in off),
+                {"count": str(len(off))},
             )
         )  # fmt: skip
     return out
