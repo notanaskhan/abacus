@@ -240,3 +240,108 @@ export function update(status: TemplateUpdateOut["status"], applied = 0): Templa
     workflow_id: status === "dry_run" ? null : "template_update:harlow:fs-v6",
   };
 }
+
+// --- K-03-T15 (TASK-8931; DEC-5933): the slices the remaining TV-1 artboards read ---------------
+
+/** FS v6's 38 program steps by phase (addendum §9.9.1: 8 + 16 + 3 + 7 + 4; FS v5 had 35, the
+ * three group-audit steps BH-FS-700, 710 and 720 are new). Phase words are the program's. */
+export const FS_V6_STEPS_BY_PHASE = [
+  { phase: "Planning", steps: 8 },
+  { phase: "Execution", steps: 16 },
+  { phase: "Group audit", steps: 3 },
+  { phase: "Completion", steps: 7 },
+  { phase: "Reporting", steps: 4 },
+] as const;
+
+/** DF-34: skill BH-SK-430 v2 is published at 9:34 AM, before FS v6 at 9:38 AM (Oct 1, 2026). */
+export const SKILL_BH_SK_430_V2 = {
+  key: "BH-SK-430",
+  version: 2,
+  published_at: "2026-10-01T09:34:00-05:00",
+  evaluation: { passed: 18, of: 20 },
+} as const;
+
+/** KNW-01 g: the library's counts once FS v6 is published (All 107). */
+export const KNW01_COUNTS_V6 = {
+  all: 107,
+  categories: [
+    { key: "engagement_templates", label: "Engagement templates", count: 6 },
+    { key: "methodology", label: "Methodology", count: 5 },
+    { key: "frameworks", label: "Frameworks", count: 11 },
+    { key: "firm_standards", label: "Firm standards", count: 12 },
+    { key: "skills", label: "Skills", count: 9 },
+    { key: "notes", label: "Notes", count: 18 },
+    { key: "templates", label: "Templates", count: 12 },
+    { key: "research", label: "Research & positions", count: 6 },
+    { key: "content_packs", label: "Content packs", count: 14 },
+    { key: "agent_instructions", label: "Agent instructions", count: 14 },
+  ],
+  fs_v6: "BH Audit Methodology · FS · v6 · Published · Effective Oct 1, 2026",
+  fs_v5_note: "Deprecated for new engagements",
+} as const;
+
+/** KNW-01 h: the six engagement templates (version chip and status); FS v6 carries its rollout. */
+export const ENGAGEMENT_TEMPLATE_CARDS = [
+  {
+    title: "BH Audit Methodology · FS",
+    version: "v6",
+    status: "Published",
+    rollout: "Rollout: 3 update now · 3 held",
+  },
+  { title: "BH Audit Methodology · EBP", version: "v3", status: "Published", rollout: null },
+  { title: "BH SSARS Methodology", version: "v2", status: "Published", rollout: null },
+  { title: "BH SOC 2 · TSC 2017 (rev. 2022)", version: "v1", status: "Published", rollout: null },
+  {
+    title: "BH Internal Audit · IIA Standards",
+    version: "v1",
+    status: "Published",
+    rollout: null,
+  },
+  {
+    title: "BH IA · BSA/AML independent testing",
+    version: "v1",
+    status: "Published",
+    rollout: null,
+  },
+] as const;
+
+/** KNW-03 g: FS v6's steps that carry a rule or a skill (the Rules segment). */
+export const FS_V6_RULE_ROWS = [
+  {
+    ref: "BH-FS-345",
+    title: "Inventory obsolescence reserve",
+    rules: 1,
+    rule: "Scoping › Audit areas › Inventory · Significant = Yes → Show",
+    skill: null,
+  },
+  {
+    ref: "BH-FS-430",
+    title: "Search for unrecorded liabilities",
+    rules: 0,
+    rule: null,
+    skill: "BH-SK-430 v2",
+  },
+  {
+    ref: "BH-FS-700",
+    title: "Group scoping & component materiality",
+    rules: 1,
+    rule: "Engagement › Group audit = Yes → Show",
+    skill: null,
+  },
+  {
+    ref: "BH-FS-710",
+    title: "Component auditor instructions & communications",
+    rules: 1,
+    rule: "Engagement › Group audit = Yes → Show",
+    skill: null,
+  },
+  {
+    ref: "BH-FS-720",
+    title: "Consolidation & eliminations",
+    rules: 1,
+    rule: "Engagement › Group audit = Yes → Show",
+    skill: null,
+  },
+] as const;
+export const FS_V6_RULES_FOOTER =
+  "2 rules act on program steps. FS v6 holds 6 scoping rules in all (SHT-03).";
