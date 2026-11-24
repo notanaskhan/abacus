@@ -12,4 +12,9 @@ describe("SH-1 seed", () => {
   it("the conclusions add to 40", () => {
     expect(Object.values(CONCLUSIONS).reduce((t, n) => t + n, 0)).toBe(sheet().status.rows);
   });
+  // K-03-T15 (TASK-8931): the two strata by name, as the row's acceptance states them.
+  it("24 + 16 = 40 rows and 3,286,400.00 + 412,300.00 = 3,698,700.00", () => {
+    expect(SURL_SHEET.sections.map((x) => x.count)).toEqual([24, 16]);
+    expect(SURL_SHEET.sections.map((x) => x.total)).toEqual([3286400, 412300]);
+  });
 });
