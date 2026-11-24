@@ -3,12 +3,13 @@
 # options code offers; code settles every answer (AgentBlocks number provenance, closed options) and
 # refuses any tool outside the list. Six modes, one prompt each (`close.agent.<mode>@v1`): run
 # (the default, bound to C-01's code plan provider `closes.close_run`), intake, bank_rec, aje, and
-# (C-01-T30, DEC-5413) flux (drivers code foots to the change) and planner (closed option sets). No
-# TRI in closes. Source of truth: compiled into ../_specs_v2.py by
+# (C-01-T30, DEC-5413) flux (drivers code foots to the change) and planner (closed option sets);
+# (C-02-T34, DEC-5908) vendor_screen (a 1099 vendor's entity type, attorney flag and exemption from
+# its masked W-9, quotes verified by code, a suggestion a person adopts). No TRI in closes. Source of truth: compiled into ../_specs_v2.py by
 # `python -m abacus_tools.codegen.agent_specs_v2`.
 id: close.agent
 version: 1
-purpose: Write the close run's, intake's, bank reconciliation's, AJE draft's and flux line's sentences over figures code computed, citing their sources, group register lines into flux drivers that code foots, and draft close plan rows from the options code offers, for a named person to decide.
+purpose: Write the close run's, intake's, bank reconciliation's, AJE draft's and flux line's sentences over figures code computed, citing their sources, group register lines into flux drivers that code foots, draft close plan rows from the options code offers, and screen a 1099 vendor's masked W-9 for its entity type, attorney flag and exemption, for a named person to decide.
 shape: workflow
 prompt: close.agent.run@v1
 tier: medium
@@ -16,9 +17,9 @@ escalation_tier: medium
 input_schema: CloseAgentInput
 output_schema: CloseAgentOutput
 tools:
-  read: [close.read_checklist, close.read_register]
+  read: [close.read_checklist, close.read_register, close.read_vendor_facts, close.read_vendor_document]
   compute: [close.reconcile, close.read_upload_table, close.plan_history_profile]
-  propose: [close.propose_aje]
+  propose: [close.propose_aje, close.propose_vendor_classification]
 task_scope:
   - close.read
   - suggestion.create
@@ -34,7 +35,7 @@ limits:
 plan: required_when_writes
 autonomy: propose
 data_classes: [confidential]
-untrusted_inputs: [uploads, client_answers]
+untrusted_inputs: [uploads, client_answers, w9_documents, vendor_names]
 evaluation_suite: evals/close_agent
 work_class: background
 essential: false

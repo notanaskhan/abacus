@@ -647,5 +647,7 @@ AGENT_TOOLS: Final = (
 # C-01-T28: closes registers its own tools on C17 at import (agents may not import closes,
 # ADR-008); `closes.api` imports this module, as does the tool-registry check.
 from abacus.modules.agents.api import register_declared  # noqa: E402
+from abacus.modules.closes.vendor_screen import AGENT_TOOLS as _VENDOR_SCREEN_TOOLS  # noqa: E402
 
 register_declared(AGENT_TOOLS)
+register_declared(_VENDOR_SCREEN_TOOLS)  # C-02-T34 (DEC-5908): the vendor screen's three tools

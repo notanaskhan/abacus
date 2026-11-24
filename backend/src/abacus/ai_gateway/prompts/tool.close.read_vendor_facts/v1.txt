@@ -1,0 +1,1 @@
+Read one 1099 vendor's facts on this close: its ledger name (untrusted text), current entity type, attorney flag and exemption, W-9 status, whether a W-9 and a TIN are on file, and the year's payments by method that code totalled. No TIN or any part of one is returned.

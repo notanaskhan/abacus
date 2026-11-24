@@ -856,6 +856,7 @@ export const ACTIONS = [
   "usage.read",
   "variance_explanation.accept",
   "variance_explanation.edit",
+  "vendor_1099.screen",
   "vendor_1099.update",
   "w9.request",
   "wall.approve",

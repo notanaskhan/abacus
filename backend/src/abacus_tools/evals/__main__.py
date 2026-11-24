@@ -124,8 +124,12 @@ def main(argv: list[str]) -> int:
         return close_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
     if args.agent == "close_vendor_screen":  # C-02-T51 (DEC-5821): frozen before C-02-T34
         from abacus_tools.evals.close_vendor_screen import main as vendor_main
+        from abacus_tools.evals.close_vendor_screen_run import main as screen_main
 
-        return vendor_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
+        if args.route != "fake":  # C-02-T34 (DEC-5908): the evaluation account's real runs
+            return screen_main(cast(str, args.route), cast(Path, args.out))
+        recorded = vendor_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
+        return recorded or screen_main("fake", cast(Path, args.out))
     if args.agent == "post_issuance_analysis":  # Q-05-T10 (DEC-5713): frozen before any prompt
         from abacus_tools.evals.post_issuance_analysis import main as pi_main
 

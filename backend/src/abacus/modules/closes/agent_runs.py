@@ -584,6 +584,11 @@ async def plan_version_engagement(tenant: TenantContext, version_id: UUID) -> UU
     return None if entity is None else await _monthly_close_of(tenant, cast(UUID, entity))
 
 
+# C-02-T34: the vendor screen starts and ends its runs the same way.
+start_run = _start
+end_run = _end
+
+
 def register() -> None:
     from abacus.modules.agents.api import register_suggestion_target
 
@@ -597,8 +602,10 @@ __all__ = [
     "calibrate",
     "choices_for",
     "draft_from_history",
+    "end_run",
     "explain_line",
     "line_facts",
     "plain_text",
     "register",
+    "start_run",
 ]

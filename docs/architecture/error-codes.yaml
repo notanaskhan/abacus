@@ -90,6 +90,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.closes.agent_runs.AgentNotAvailable
+    - abacus.modules.closes.vendor_screen.ScreenNotAvailable
     summary: The firm's AI boundary is not cleared for this capability yet.
   agent_output_refused:
     status: 409
@@ -574,11 +575,12 @@ codes:
     raised_by:
     - abacus.modules.workpapers.tie_out.CitationRequired
   citation_unverified:
-    status: 422
+    status: 409 or 422
     raised_by:
     - abacus.modules.assurance.ebp_provisions.CitationUnverified
+    - abacus.modules.closes.vendor_screen.UnverifiedQuote
     - abacus.modules.sampling.populations.CitationUnverified
-    summary: A comparison cites something not verified and live on the engagement (INV-2).
+    summary: 'A quote is not on the W-9''s page: nothing is proposed.'
   client_approval_required:
     status: 409
     raised_by:
@@ -4566,6 +4568,11 @@ codes:
     raised_by:
     - abacus.modules.adjustments.eliminations.EliminationStale
     - abacus.modules.assurance.group_scoping.ComponentStale
+  w9_not_on_file:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.vendor_screen.W9NotOnFile
+    summary: 'The vendor has no W-9 on file to screen: request one first.'
   wall_exists:
     status: 409
     raised_by:
