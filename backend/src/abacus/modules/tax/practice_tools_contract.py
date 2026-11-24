@@ -531,9 +531,16 @@ async def two_year_route(
 async def two_year_explain_route(
     return_id: UUID, body: TaxPracticeExplainIn, ctx: Ctx, key: IdempotencyKey
 ) -> TaxPracticeRunStartedOut:
-    """A person starts the run; 409 `consent_7216_missing` without both consents (AC-23)."""
+    """A person starts the run; 409 `consent_7216_missing` without both consents (AC-23), 409
+    `agent_not_available` on a firm whose AI boundary is not cleared (DF-04). T-08-T26 (DEC-5923):
+    the run is inline; each flagged line gets a suggestion with verified citations and an agent
+    explanation version a reviewer accepts."""
     await _human(ctx, _Y, "two_year.explain")
-    raise NotImplementedYet
+    from abacus.modules.tax.practice_modes import two_year_explain
+
+    del key  # each start is a new run (the explanations are versions)
+    found = await two_year_explain(ctx, return_id, body.line_keys)
+    return TaxPracticeRunStartedOut(run_id=found.run_id, started_at=found.started_at)
 
 
 @practice_tools_router.put(

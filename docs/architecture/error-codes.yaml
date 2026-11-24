@@ -92,12 +92,14 @@ codes:
     - abacus.modules.assurance.post_issuance_analysis.AgentNotAvailable
     - abacus.modules.closes.agent_runs.AgentNotAvailable
     - abacus.modules.closes.vendor_screen.ScreenNotAvailable
+    - abacus.modules.tax.practice_modes.AgentNotAvailable
     summary: The firm's AI boundary is not cleared for this capability yet.
   agent_output_refused:
     status: 409
     raised_by:
     - abacus.modules.assurance.post_issuance_analysis.OutputRefused
     - abacus.modules.closes.agent.OutputRefused
+    - abacus.modules.tax.practice_modes.OutputRefused
     summary: 'The analysis may not be shown: `facts.reason` names why (a code, never the text).'
   agent_run_not_recorded:
     status: 409
