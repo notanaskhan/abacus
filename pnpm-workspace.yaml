@@ -14,3 +14,8 @@ minimumReleaseAgeExclude:
   - '@typescript-eslint/visitor-keys@8.71.1'
   - '@vitejs/plugin-react@6.1.2'
   - typescript-eslint@8.71.1
+# Q-03-T370 (2028 Q4 front-end supply chain): dev-tooling advisories closed by override. js-yaml
+# reaches only the API client's code generator; minimatch only typescript-eslint. Prod had none.
+overrides:
+  js-yaml@>=4.0.0 <4.3.2: 4.3.2
+  minimatch@>=7.0.0 <11.0.1: 11.0.9
