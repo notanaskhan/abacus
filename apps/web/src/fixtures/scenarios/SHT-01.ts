@@ -1,6 +1,8 @@
 // SHT-01 fixture scenarios (K-03-T09; SH-1): BH-FS-430 on Granite Peak FY2026, viewer Cole Hart.
 import { type Scenario, defineScenarios, json } from "../../app-core/fixture-mode";
-import { type SheetVariant, rows, sheet } from "../seed/sheets-sh1";
+import { SHEET_ID, type SheetVariant, rows, sheet } from "../seed/sheets-sh1";
+
+export { SHEET_ID };
 
 function at(state: string, clock: string, v: SheetVariant): Scenario {
   return {

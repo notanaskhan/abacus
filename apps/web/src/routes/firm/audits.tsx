@@ -1,7 +1,7 @@
 import { FlagOffState } from "@abacus/ui";
 import { createRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import type { JSX } from "react";
-import { FeatureGate } from "../../app-core/flags";
+import { FeatureGate, useFlag } from "../../app-core/flags";
 import { useOverlays } from "../../app-core/overlay-host";
 import { appRoute, lazyScreen } from "../root";
 import { useParam } from "../params";
@@ -490,7 +490,33 @@ export const misstatementsRoute = evaluationRoute("misstatements");
 export const reviewNotesRoute = evaluationRoute("review-notes");
 export const fsDisclosureRoute = evaluationRoute("fs-disclosure");
 
+// K-03-T16 (TASK-8932): SHT-01, a work item's sheet in the audit cockpit with the rail hidden,
+// behind `sheets.enabled` (K-03's rollout flag).
+const SheetScreen = lazyScreen(async () => (await import("../../screens/SHT-01")).SHT01);
+
+export const auditSheetRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/audits/$auditId/sheets/$sheetId",
+  component: function AuditSheetPage(): JSX.Element {
+    const enabled = useFlag("sheets.enabled") === true;
+    const { auditId, sheetId } = auditSheetRoute.useParams();
+    if (!enabled) {
+      return (
+        <div data-screen="SHT-01" className="flex min-h-0 flex-1 flex-col">
+          <FlagOffState flag="sheets.enabled" label="Sheets" />
+        </div>
+      );
+    }
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <SheetScreen auditId={auditId} sheetId={sheetId} />
+      </div>
+    );
+  },
+});
+
 export const auditRoutes = [
+  auditSheetRoute,
   eqrRoute,
   auditsRoute,
   auditRoute,
