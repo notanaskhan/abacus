@@ -130,6 +130,10 @@ def main(argv: list[str]) -> int:
             return screen_main(cast(str, args.route), cast(Path, args.out))
         recorded = vendor_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
         return recorded or screen_main("fake", cast(Path, args.out))
+    if args.agent == "column_filler":  # K-03-T14 (DEC-5910): frozen before any prompt work
+        from abacus_tools.evals.column_filler import main as filler_main
+
+        return filler_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
     if args.agent == "post_issuance_analysis":  # Q-05-T10 (DEC-5713): frozen before any prompt
         from abacus_tools.evals.post_issuance_analysis import main as pi_main
 
