@@ -23,6 +23,7 @@ Parity tier target: C (T-06 §5.4). Copy keys live in `apps/web/src/screens/TXP-
 | d | 1120 · from the audit (Granite Peak) | `granite-peak-1120` | Leo Wong | Nov 9, 2026 11:00 AM | built | AY |
 
 ## Deviations
+- T-06-T45 (DEC-5937): frame d built at `/tax-returns/$returnId/review/workpapers` behind `tax.tb_handoff` over the landing read (banner, tally, M-1 starting point); the subbar omits "(FYE …)" (no period end on the record); "Explain…" waits on TXP-10. Frames a–c stay T-06's other rows.
 - DV-5: a/b/c letters from the README; per-frame toggles composed under DF-08 (T-06-T02, waits on the CLI-03 board).
 - DV-6: 1120-S tab is AAA analysis only; Form 7203 note in the footer.
 - DV-7: no 1120 M-3 in v1.

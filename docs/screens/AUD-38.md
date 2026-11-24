@@ -21,6 +21,7 @@ Parity tier target: C (T-06 §5.4). Copy keys live in `apps/web/src/screens/AUD-
 | e | Superseded | `granite-peak-superseded` | Hannah Leclerc | Nov 9, 10:29 AM (illustrative) | built | AY |
 
 ## Deviations
+- T-06-T45 (DEC-5937): built a–e as the O3 sheet (`?ov=tax-handoff:<auditWorkItemId>`); copy in `screens/AUD-38/copy.ts`; fixtures from the Python slice (`tb_handoff_slice.aud38_rows`, `seed/scenario.aud38.json`). Preview and create stay C12 stubs until T-06-T59, so the manifest reads fixture. Segmented `active={null}` draws b with neither option chosen.
 - DV-13: e is built and reachable through the supersede event on staging.
 - Plus AUD-06 h (the ··· menu item) on AUD-06's contract.
 

@@ -179,9 +179,11 @@ export const audScreens = {
     path: null,
     entry: true,
   },
+  // T-06-T45 (DEC-5937): a–e as the O3 sheet over AUD-06 (`?ov=tax-handoff`); its preview and
+  // create are C12 stubs until T-06-T59's assembly, so fixture.
   "AUD-38": {
     name: "Hand off to tax — Granite Peak FY2026 Final TB → FY2026 Form 1120",
-    status: "planned",
+    status: "fixture",
     path: null,
   },
   // seed-manifest: new screens are added above this line

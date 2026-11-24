@@ -47,7 +47,10 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, type ReactNode, Suspense, lazy, useState } from "react";
 import { useFlag } from "../../app-core/flags";
+import { useOpenOverlay } from "../../app-core/open";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
+import { useTaxHandoffGate } from "../../domain/tax";
+import { ov } from "../../routes/to";
 import { isNotFound } from "../../domain/audits";
 import type { EvidenceViewerTarget } from "../SHL-08";
 import { COPY } from "./copy";
@@ -745,6 +748,15 @@ export function useTrialBalancePane(
     void view.refetch();
   });
   const allowed = new Set(v?.allowed_actions ?? []);
+  // T-06-T45 (AUD-06 h, AUD-38 d): the live gate when the C12 reads answer; the artboard's planned
+  // facts otherwise (dev, fixture and gallery builds only).
+  const liveGate = useTaxHandoffGate(engagementId, enabled);
+  const handOff: { state: "ready" | "not_released" | "planned"; tooltip: string } | undefined =
+    liveGate ??
+    (PLANNED_VISIBLE && planned.handOffToTax !== undefined
+      ? { state: "planned", tooltip: planned.handOffToTax }
+      : undefined);
+  const openOverlay = useOpenOverlay();
   const available = new Set(v?.layers_available ?? ["unadjusted"]);
   const someUnavailable = LAYERS.some((l) => !available.has(l));
 
@@ -800,10 +812,21 @@ export function useTrialBalancePane(
             {COPY.agentDraft}
           </span>
         )}
-        {PLANNED_VISIBLE && planned.handOffToTax !== undefined && v?.layer === "final" && (
-          <Tooltip content={planned.handOffToTax}>
-            <span tabIndex={0} data-aud06="hand-off" aria-label={planned.handOffToTax}>
-              <PaneAction label={COPY.handOffToTax} disabled />
+        {handOff !== undefined && v?.layer === "final" && (
+          <Tooltip content={handOff.tooltip}>
+            <span tabIndex={0} data-aud06="hand-off" aria-label={handOff.tooltip}>
+              <PaneAction
+                label={COPY.handOffToTax}
+                opensDialog
+                disabled={handOff.state !== "ready" || auditId === undefined}
+                {...(handOff.state === "ready" && auditId !== undefined
+                  ? {
+                      onClick: () => {
+                        openOverlay(ov.AUD38(auditId));
+                      },
+                    }
+                  : {})}
+              />
             </span>
           </Tooltip>
         )}

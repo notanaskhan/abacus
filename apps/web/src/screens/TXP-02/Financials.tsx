@@ -13,7 +13,13 @@ import {
   entityTrialBalanceOptions,
 } from "@abacus/api-client/query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ENTITY_CAPABILITIES, useEntityAgentGate } from "../../domain/tax";
+import { useOpenHref, useOpenOverlay } from "../../app-core/open";
+import {
+  ENTITY_CAPABILITIES,
+  HandoffProvenanceBanner,
+  useEntityAgentGate,
+} from "../../domain/tax";
+import { hrefOf, ov, to } from "../../routes/to";
 import { type JSX, useState } from "react";
 import { TXP02, type Txp02Statement, type Txp02View } from "./index";
 import { type CellTarget, CellDrawer, EntryDrawer, LinePicker } from "./Overlays";
@@ -74,9 +80,30 @@ export function Financials({
   const building = runs.data?.items[0]?.state === "running";
   // T-05-T66 (AC-13.1): with the mapper off the person maps by hand; the screen says why.
   const mapper = useEntityAgentGate(returnId, ENTITY_CAPABILITIES.mapper);
+  const openHref = useOpenHref();
+  const openOverlay = useOpenOverlay();
   return (
     <>
       <TXP02
+        banner={
+          <HandoffProvenanceBanner
+            returnId={returnId}
+            onOpenSource={(l) => {
+              if (l.source_work_item_id != null && l.source_kind !== "close_lock") {
+                openHref(
+                  hrefOf(to.AUD02({ auditId: l.source_work_item_id }), {
+                    section: "trial_balance",
+                  }),
+                );
+              }
+            }}
+            onDetails={(l) => {
+              if (l.source_work_item_id != null && l.source_kind !== "close_lock") {
+                openOverlay(ov.AUD38(l.source_work_item_id));
+              }
+            }}
+          />
+        }
         agentReason={mapper.offered ? null : mapper.reason}
         tb={tb.data}
         tallies={tallies.data}

@@ -91,6 +91,8 @@ class TbHandoffReviewAccountOut(BaseModel):
     choice: Annotated[AccountTravel | None, Internal] = None
     # T-06-T06: every account names where its suggestion came from (never blank).
     source: Annotated[Literal["tb_mapper", "firm_mapping", "person"], Internal]
+    # T-06-T45 (AUD-38 §3): the line under the account (why it needs a person).
+    detail: Annotated[str | None, Field(max_length=400), Confidential] = None
 
 
 class TbHandoffBookIncomeOut(BaseModel):
@@ -112,6 +114,9 @@ class TbHandoffTaxItemOut(BaseModel):
     label: Annotated[str, Field(max_length=200), Confidential]
     amount: Money
     included: Annotated[bool, Internal]
+    # T-06-T45: the item's sentence under its label (AUD-38 §5) and whether a tax issue is offered.
+    detail: Annotated[str | None, Field(max_length=600), Confidential] = None
+    issue_offered: Annotated[bool, Internal] = True
 
 
 class TbHandoffPreviewOut(BaseModel):
@@ -130,6 +135,12 @@ class TbHandoffPreviewOut(BaseModel):
     tax_items: Annotated[list[TbHandoffTaxItemOut], Internal] = []
     current_version_no: Annotated[int | None, Field(ge=1), Internal] = None
     preview_hash: Hash
+    # T-06-T45 (AUD-38's fieldsets; additive on the stub, filled by T-06-T59's assembly).
+    source: Annotated[TbHandoffSourceOut | None, Internal] = None
+    target: Annotated[TbHandoffTargetDetailOut | None, Internal] = None
+    schedule_rows: Annotated[list[TbHandoffScheduleOut], Internal] = []
+    accounts: Annotated[list[TbHandoffMappingRowOut], Internal] = []
+    independence: Annotated[str | None, Field(max_length=600), Confidential] = None
 
     @model_validator(mode="after")
     def _close_reference(self) -> Self:
@@ -188,6 +199,51 @@ class TbHandoffMappingsOut(BaseModel):
     total: Annotated[int, Field(ge=0), Internal]
 
 
+class TbHandoffCandidateOut(BaseModel):
+    """T-06-T45 (TXP-13 d): a passed audit adjustment carried as an M-1 candidate, not booked."""
+
+    model_config = _cfg()
+
+    ref: Annotated[str, Field(max_length=40), Internal]
+    amount: Money
+
+
+class TbHandoffSourceOut(BaseModel):
+    """T-06-T45 (AUD-38 Source fieldset): what is handed off, as the release recorded it."""
+
+    model_config = _cfg()
+
+    engagement_label: Annotated[str, Field(max_length=200), Confidential]
+    tb_label: Annotated[str, Field(max_length=120), Internal]
+    released_on: Annotated[datetime | None, Internal] = None
+    released_by: Annotated[str | None, Field(max_length=200), Internal] = None
+    balanced: Annotated[bool, Internal] = False
+
+
+class TbHandoffTargetDetailOut(BaseModel):
+    """T-06-T45 (AUD-38 Target fieldset): the return, its engagement and its tax team."""
+
+    model_config = _cfg()
+
+    return_label: Annotated[str, Field(max_length=200), Confidential]
+    return_detail: Annotated[str | None, Field(max_length=200), Internal] = None
+    engagement_created_on: Annotated[datetime | None, Internal] = None
+    extension_filed_on: Annotated[datetime | None, Internal] = None
+    due_on: Annotated[datetime | None, Internal] = None
+    team: Annotated[list[str], Field(max_length=6), Internal] = []
+
+
+class TbHandoffScheduleOut(BaseModel):
+    """T-06-T45 (AUD-38 Schedules carried): one schedule, its code-built line, carried or not."""
+
+    model_config = _cfg()
+
+    key: Annotated[str, Field(max_length=40), Internal]
+    label: Annotated[str, Field(max_length=80), Internal]
+    detail: Annotated[str, Field(max_length=300), Confidential]
+    included: Annotated[bool, Internal] = True
+
+
 class TbHandoffLandingOut(BaseModel):
     """TXP-13 d and TXP-02's banner: "From FY2026 audit · Final TB · handed off Nov 9"."""
 
@@ -202,6 +258,11 @@ class TbHandoffLandingOut(BaseModel):
     source_link_allowed: Annotated[bool, Internal] = False  # absent, never disabled
     superseded: Annotated[bool, Internal] = False
     book_income: Annotated[TbHandoffBookIncomeOut | None, Internal] = None
+    # T-06-T45 (TXP-13 d tally and M-1 starting point).
+    counts: Annotated[TbHandoffCountsOut | None, Internal] = None
+    candidates: Annotated[list[TbHandoffCandidateOut], Internal] = []
+    # The source work item, only for a reader of it (the banner's links; absent otherwise).
+    source_work_item_id: Annotated[UUID | None, Internal] = None
 
     @model_validator(mode="after")
     def _close_reference(self) -> Self:
@@ -346,4 +407,14 @@ async def return_handoff_route(return_id: UUID, ctx: Ctx) -> TbHandoffLandingOut
         book_income=TbHandoffBookIncomeOut(
             pretax=before, income_tax_expense=expense, net_income=before - expense
         ),
+        counts=TbHandoffCountsOut(
+            mapped=found.counts.get("prior_year", 0),
+            suggested=found.counts.get("suggested", 0),
+            review=found.counts.get("blank", 0),
+            total=sum(found.counts.get(k, 0) for k in ("prior_year", "suggested", "blank")),
+        )
+        if found.counts
+        else None,
+        candidates=[TbHandoffCandidateOut(ref=r, amount=a) for r, a in found.candidates],
+        source_work_item_id=found.source_work_item_id if found.source_link_allowed else None,
     )

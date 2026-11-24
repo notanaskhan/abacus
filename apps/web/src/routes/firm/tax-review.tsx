@@ -300,6 +300,33 @@ export const taxEstateRoute = createRoute({
   },
 });
 
+// T-06-T45 (DEC-5937): TXP-13 d, the 1120 workpapers fed by an audit hand-off, behind
+// `tax.tb_handoff` (the landing 404s with it off). The static segment outranks `$section`.
+const Txp13 = lazyScreen(async () => (await import("../../screens/TXP-13")).TXP13);
+
+export const taxWorkpapers1120Route = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/$returnId/review/workpapers",
+  component: function TaxWorkpapers1120Page(): JSX.Element {
+    const returnId = useParam("returnId");
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FeatureGate
+          entitlement="tax_returns"
+          fallback={<FlagOffState flag="tax_returns" label="Tax Returns" />}
+        >
+          <FeatureGate
+            flag="tax.tb_handoff"
+            fallback={<FlagOffState flag="tax.tb_handoff" label="Hand-off workpapers" />}
+          >
+            <Txp13 returnId={returnId} />
+          </FeatureGate>
+        </FeatureGate>
+      </div>
+    );
+  },
+});
+
 export const taxReviewRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/tax-returns/$returnId/review/$section",
@@ -424,6 +451,7 @@ export const taxReviewRoutes = [
   taxBeneficiariesRoute,
   taxInstrumentRoute,
   taxTrustCalculationRoute,
+  taxWorkpapers1120Route,
   taxReviewRoute,
   taxIssuesRoute,
   taxActivityRoute,

@@ -1,0 +1,37 @@
+// TXP-13's frame d words (revision.md NEW STATES D, item 1; T-06-T45). Frames a–c are T-06's other
+// rows; their words land with them.
+export const COPY = {
+  tabsLabel: "Workpapers",
+  tabs: [
+    "Summary",
+    "Financials",
+    "Fixed Assets",
+    "M-1/M-3",
+    "Schedule M-2",
+    "Provision",
+    "States",
+  ],
+  active: "M-1/M-3",
+  tally: "M-1 starting point",
+  bookIncome: "Book income",
+  bookIncomeInfo: "Net income per books, from the handed-off Final TB.",
+  taxPerBooks: "Tax per books",
+  taxPerBooksInfo: "Income tax expense per books, added back on Schedule M-1.",
+  mapped: "Accounts mapped",
+  mappedValue: (m: number, t: number) => `${String(m)} of ${String(t)}`,
+  mappedInfo: (s: number, r: number) => `${String(s)} suggested · ${String(r)} need review`,
+  candidate: "Candidate M-1",
+  candidateInfo: "A passed audit adjustment carried for the M-1: flagged, not booked.",
+  pane: "Schedule M-1 — starting point",
+  netIncome: "Net income per books",
+  taxExpense: "Income tax expense per books",
+  deductions: "Deductions on this return not charged against book income",
+  passed: (ref: string) => `passed ${ref} freight`,
+  fromSum: "From the audit SUM · confirm all-events test",
+  explain: "Explain…",
+  note: (n: number) =>
+    `Taxable income is computed after the ${String(n)} mapping items are reviewed. Nothing here changes the audited statements.`,
+  none: "This return has no hand-off from an audit.",
+  noneBody: "Its workpapers open with T-06's 1120 frames.",
+  loading: "Loading the workpapers",
+};

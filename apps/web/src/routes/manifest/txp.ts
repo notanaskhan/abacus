@@ -67,10 +67,11 @@ export const txpScreens = {
     status: "fixture",
     path: "/tax-returns/$returnId/k1",
   },
+  // T-06-T45 (DEC-5937): frame d (1120 from the audit) at the path; a–c are T-06's other rows.
   "TXP-13": {
     name: "Other entity workpapers · 1120-S · 1120 · 990",
     status: "planned",
-    path: null,
+    path: "/tax-returns/$returnId/review/workpapers",
   },
   // seed-manifest: new screens are added above this line
 } as const satisfies Manifest;

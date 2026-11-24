@@ -21,7 +21,7 @@ the TXP-02 banner, AUD-38 c; ADR-004, ADR-007; DEC-5832). Amber.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Final, Literal, cast
@@ -188,6 +188,10 @@ class Landing:
     issues_created: int
     items_not_raised: int
     accounts_to_map: int
+    # T-06-T45 (TXP-13 d tally, M-1 starting point): the hand-off's account counts and the passed
+    # adjustments it carried as M-1 candidates (ref, amount), as the record holds them.
+    counts: dict[str, int] = field(default_factory=dict[str, int])
+    candidates: tuple[tuple[str, Decimal], ...] = ()
 
 
 def source_label(kind: str, period_end_year: int | None) -> str:
@@ -240,6 +244,12 @@ async def landing(ctx: object, return_id: UUID) -> Landing | None:
         issues_created=0 if landed is None else len(landed.issue_ids or []),
         items_not_raised=0 if landed is None else int(landed.items_not_raised),
         accounts_to_map=int(counts.get("suggested", 0)) + int(counts.get("blank", 0)),
+        counts={k: int(v) for k, v in counts.items()},
+        candidates=tuple(
+            (str(i.source_ref.get("ref", "")), i.amount)
+            for i in await tb_handoff.tax_items_of(ctx.tenant, found.id)
+            if i.item_kind == "passed_adjustment"
+        ),
     )
 
 

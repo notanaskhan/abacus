@@ -117,6 +117,8 @@ export const ov = {
     key: "consolidated-tb",
     args: [workItemId, consolidationId],
   }),
+  /** AUD-38, the tax hand-off sheet over AUD-06 (`?ov=tax-handoff:<auditWorkItemId>`; T-06-T45). */
+  AUD38: (workItemId: string): OverlayRef => ({ key: "tax-handoff", args: [workItemId] }),
   /** SHL-09, one field's provenance tray as a drawer (`?ov=provenance:<type>:<id>:<fieldKey>`;
    * AUD-33's ⓘ on a consolidated line). */
   SHL09: (type: string, id: string, fieldKey: string): OverlayRef => ({

@@ -91,10 +91,13 @@ interface Selection {
 // is already selected does nothing.
 function useSelection(
   options: readonly TabOption[],
-  active: string | undefined,
+  active: string | null | undefined,
   onChange: ((label: string) => void) | undefined,
 ): Selection {
-  const [state, setState] = useState<{ seen: string | undefined; label: string | undefined }>({
+  const [state, setState] = useState<{
+    seen: string | null | undefined;
+    label: string | null | undefined;
+  }>({
     seen: active,
     label: active,
   });
@@ -104,7 +107,9 @@ function useSelection(
     setState({ seen: active, label: active });
   }
   const valid = options.find((o) => o.label === label && o.disabled !== true);
-  const current = valid?.label ?? options.find((o) => o.disabled !== true)?.label;
+  // T-06-T45: `null` is "nothing chosen yet" (AUD-38 b's two rows): no option is drawn selected.
+  const current =
+    label === null ? undefined : (valid?.label ?? options.find((o) => o.disabled !== true)?.label);
   return {
     current,
     select: (next) => {
@@ -122,7 +127,8 @@ type Kind = "segmented" | "underline" | "sheet";
 interface TablistProps {
   kind: Kind;
   options: readonly Opt[];
-  active?: string | undefined;
+  /** The selected label; `null` draws none selected until the person picks one. */
+  active?: string | null | undefined;
   size?: "default" | "small";
   label: string;
   onChange?: ((label: string) => void) | undefined;
@@ -275,8 +281,8 @@ function Tablist({
 
 export interface SegmentedProps {
   options: readonly Opt[];
-  /** The selected label. A change from outside resets the selection. */
-  active?: string;
+  /** The selected label. A change from outside resets the selection; `null` selects none. */
+  active?: string | null;
   /** Default 30 high; small is 28, for pane headers. */
   size?: "default" | "small";
   /** The tablist's accessible name. */
