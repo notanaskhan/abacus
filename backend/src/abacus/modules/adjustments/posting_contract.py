@@ -520,6 +520,30 @@ async def reject_close_entry_route(
     return _decided(await _approvals.reject(ctx, entry_id, body.reason_code, body.note))
 
 
+class PostingLedgerMatchesOut(BaseModel):
+    """C-02-T32: the journals in the client's synced ledger that carry the entry's accounts and
+    amounts (`qbo:<txn id>`), for the person who records it."""
+
+    model_config = _cfg()
+
+    entry_id: Annotated[UUID, Internal]
+    match_refs: Annotated[list[str], Field(max_length=20), Internal]
+
+
+@posting_router.get(
+    "/proposed-entries/{entry_id}/ledger-matches",
+    action="proposed_entry.record_external",
+    response_model=PostingLedgerMatchesOut,
+)
+async def ledger_matches_route(entry_id: UUID, ctx: Ctx) -> PostingLedgerMatchesOut:
+    """Code's sync matches for one approved entry (C-02-T32); reads only."""
+    from abacus.modules.adjustments import attest_path
+
+    await _human(ctx, "proposed_entry.record_external")
+    found = await attest_path.ledger_matches(ctx, entry_id)
+    return PostingLedgerMatchesOut(entry_id=entry_id, match_refs=found[:20])
+
+
 @posting_router.post(
     "/proposed-entries/{entry_id}/record-external",
     action="proposed_entry.record_external",
@@ -529,8 +553,10 @@ async def reject_close_entry_route(
 async def record_external_route(
     entry_id: UUID, body: PostingRecordExternalIn, ctx: Ctx
 ) -> PostingDecisionOut:
-    """Recorded in ledger (export path): evidence or a sync match (C-02-T24). Recorded by
-    <client> for an attest client is C-02-T32's."""
+    """Recorded in ledger (export path): evidence or a sync match (C-02-T24). An attest client's
+    entry is "Recorded by <client>" once the client approved it (409 `client_approval_required`);
+    a sync match must be one code finds in the synced ledger (409 `ledger_match_not_found`)
+    (C-02-T32)."""
     from abacus.modules.adjustments import posting_recovery
 
     await _human(ctx, "proposed_entry.record_external")

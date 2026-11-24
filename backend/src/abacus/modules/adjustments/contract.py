@@ -114,7 +114,9 @@ class SendIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     entry_ids: Annotated[list[UUID], Field(min_length=1, max_length=100), classified("internal")]
-    recipient_contact_id: Annotated[UUID, classified("internal")]
+    # C-02-T32 (DEC-5909): an attest client's entries go to its approver of record, resolved by
+    # the server when this is omitted and refused when it names anyone else (DEC-63).
+    recipient_contact_id: Annotated[UUID | None, classified("internal")] = None
     wording_template_version_id: Annotated[UUID, classified("internal")]
     seen_versions: Annotated[dict[str, int], classified("internal")]
 
@@ -317,13 +319,14 @@ async def proposed_entries_send_route(
 ) -> AdjustmentSendOut:
     """Approve, batch and send through C18; the client sees nothing for 10 seconds (Undo, T10)."""
     await _gate(ctx, work_item_id, "proposed_entry.send_to_client")
-    from abacus.modules.adjustments import decisions
+    from abacus.modules.adjustments import attest_path, decisions
 
+    recipient, _ = await attest_path.recipient_for(ctx, work_item_id, body.recipient_contact_id)
     sent = await decisions.send(
         ctx,
         work_item_id,
         entry_ids=body.entry_ids,
-        recipient_contact_id=body.recipient_contact_id,
+        recipient_contact_id=recipient,
         wording_template_version_id=body.wording_template_version_id,
         seen_versions=body.seen_versions,
         label="Approved and sent to the client",

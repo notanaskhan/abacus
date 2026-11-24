@@ -87,3 +87,9 @@ Fixture footing: E1a 20,000,000 · E1b 26,000,000 · E2 18,000,000 · E3 240,000
 **Human-only actions:** approve, undo, withdraw, reject, record external, dry run, post, undo, retry, resolve.
 **Audit events:** `entry.approved` (batch id, policy version), `entry.approval_requested|approval_undone|approval_withdrawn|rejected|posted|post_failed|reversed|recorded_externally`, `posting_batch.created|posted|failed|undone`, `closing_date.set`, `closing_date_conflict.opened|client_asked|redated|resolved`. Values stay out (DEC-60).
 **Example** (Copperleaf, batch 2026-08-A): six entries, $35,300.00 = 20,020.00 + 14,900.00 + 380.00; QBO 48213–48218; closing date Aug 31, 2026. AJE-03 fails alone on "Accumulated Depreciation" inactive (CLS-07e).
+
+## C-02-T32 · the attest CAS path (DEC-5909)
+
+- `POST /v1/work-items/{id}/proposed-entries:approve-and-send`: `recipient_contact_id` is optional. An attest client's entries go to its approver of record (resolved by the server; another contact answers 409 `not_approver_of_record`, none on file 409 `approver_of_record_missing`). A non-attest send still names its contact.
+- `GET /v1/proposed-entries/{id}/ledger-matches` (`proposed_entry.record_external`): the journals code finds in the client's synced ledger (the entry's month and the next) carrying every account of the entry for the same amount, as `qbo:<txn id>`.
+- `POST /v1/proposed-entries/{id}/record-external`: an attest client's entry only after Client approved (409 `client_approval_required`); a `match_ref` must be one code finds (409 `ledger_match_not_found`). CLS-07 shows "Recorded by ‹client›" for an attest entry, "Recorded in ledger" otherwise.
