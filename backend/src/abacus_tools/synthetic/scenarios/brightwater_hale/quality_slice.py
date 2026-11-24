@@ -164,6 +164,113 @@ def pi01() -> _pi.PostIssuanceCaseOut:
     )
 
 
+# AUD-30 a, d, e (Q-05-T24, DEC-5936): Northwind's two cases, PI-02's memo addition and PI-01's
+# analysis, as the case, additions and analysis reads return them on Mon Jan 25, 2027.
+NORTHWIND_AUDIT: Final = _id("northwind-audit")
+RELEASED_AT: Final = datetime(2026, 10, 9, 21, 0, tzinfo=UTC)
+ARCHIVE_LOCKED_AT: Final = datetime(2026, 12, 3, 22, 0, tzinfo=UTC)
+PEOPLE: Final = {"HL": "Hannah Leclerc", "MO": "Margaret Okonkwo"}
+PI01_SOURCE: Final = "Harborline Corrected Certification 2025.pdf"
+PI01_ANALYSIS: Final = (
+    "The corrected certification lowers the Stable Value Fund by $12,250. The amount is below "
+    "clearly trivial ($12,610), and no note or supplemental-schedule total changes by more than "
+    "that. The \u00a7103(a)(3)(C) opinion covers whether certified information agrees with the "
+    "institution's certification; on the corrected figure the financial statements would differ "
+    "by $12,250. I have not decided whether this needs action."
+)
+PI02_DESCRIPTION: Final = (
+    "Report-date bring-down inquiry of the benefits committee was not documented\n"
+    "The completion file has no documented inquiry of the benefits committee at the report date, "
+    "Oct 9, 2026. The other report-date procedures are documented."
+)
+PI02_RATIONALE: Final = (
+    "Alternative procedure: obtained benefits committee minutes of Oct 8, 2026; no events "
+    "requiring adjustment or disclosure. The report remains supported."
+)
+PI02_MEMO: Final = "Memo \u2014 alternative procedure for the omitted bring-down inquiry"
+
+
+def _sha(seed: str) -> str:
+    """A fixture content hash with the handoff's visible ends (7c41\u2026e2a9)."""
+    import hashlib
+
+    return "7c41" + hashlib.sha256(seed.encode()).hexdigest()[4:60] + "e2a9"
+
+
+def aud30_rows() -> dict[str, object]:
+    """The case list (PI-01 under evaluation, PI-02 concluded), the additions and PI-01's
+    analysis, JSON-ready (`scenario.aud30.json`)."""
+    pi01_case = pi01().model_copy(
+        update={
+            "source_evidence_version_id": _id("pi01-source"),
+            "source_name": PI01_SOURCE,
+            "raised_by_name": PEOPLE["HL"],
+            "opened_at": datetime(2027, 1, 20, 15, 10, tzinfo=UTC),
+            "report_released_at": RELEASED_AT,
+            "analysis_run_id": _id("run-4511"),
+            "options": ["no_action", "revise_and_reissue", "notify_users"],
+            "recommended_option": "no_action",
+            "allowed_actions": [
+                "post_issuance.analyse",
+                "post_issuance.decide",
+                "post_issuance.reissue",
+            ],
+        }
+    )
+    pi02_case = _pi.PostIssuanceCaseOut(
+        case_id=_id("PI-02"),
+        ref="PI-02",
+        type="omitted_procedure",
+        standard="au_c_585",
+        source_kind="inspection_finding",
+        received_at=datetime(2027, 1, 11, 15, 0, tzinfo=UTC),
+        description=PI02_DESCRIPTION,
+        status="concluded_no_action",
+        options=["no_action", "revise_and_reissue"],
+        decision="no_action",
+        decided_by_user_id=_id("user:MO"),
+        decided_at=datetime(2027, 1, 15, 16, 30, tzinfo=UTC),
+        decided_by_name=PEOPLE["MO"],
+        raised_by_name=PEOPLE["HL"],
+        opened_at=datetime(2027, 1, 12, 15, 0, tzinfo=UTC),
+        report_released_at=RELEASED_AT,
+        rationale=PI02_RATIONALE,
+        source_evidence_version_id=_id("pi02-memo"),
+        allowed_actions=pi01_case.allowed_actions,
+    )
+    memo = {
+        "id": str(_id("addition:PI-02")),
+        "description": PI02_MEMO,
+        "reason_code": "au_c_585_omitted_procedure",
+        "evidence_version_id": str(_id("pi02-memo")),
+        "content_sha256": _sha("addition:PI-02"),
+        "added_by_name": PEOPLE["HL"],
+        "added_at": "2027-01-15T16:00:00Z",
+        "decision": "approved",
+        "decided_by_name": PEOPLE["MO"],
+        "decided_at": "2027-01-15T16:30:00Z",
+        "post_issuance_case_id": str(_id("PI-02")),
+    }
+    return {
+        "audit_id": str(NORTHWIND_AUDIT),
+        "archive_locked_at": ARCHIVE_LOCKED_AT.isoformat().replace("+00:00", "Z"),
+        "cases": [c.model_dump(mode="json") for c in (pi01_case, pi02_case)],
+        "additions": [memo],
+        "analysis": {
+            "case_id": str(_id("PI-01")),
+            "run_id": str(_id("run-4511")),
+            "run_number": 4511,
+            "blocks": {
+                "version": 1,
+                "parts": [{"kind": "p", "segments": [{"kind": "text", "text": PI01_ANALYSIS}]}],
+            },
+            "recommendation": "no_action",
+            "citation_ids": [],
+        },
+        "next_addition_sha": _sha("addition:PI-01"),
+    }
+
+
 # FIL-02 c, e, i (handoff spec): batch 2026-Q3; 3 documents held in the fil02e variant.
 BATCH_DOCUMENTS: Final = 1204
 BATCH_CLIENTS: Final = 31

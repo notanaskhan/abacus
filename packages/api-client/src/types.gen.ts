@@ -3582,6 +3582,10 @@ export type ArchiveAdditionOut = {
      */
     id: string;
     /**
+     * Post Issuance Case Id
+     */
+    post_issuance_case_id?: string | null;
+    /**
      * Reason Code
      */
     reason_code: 'au_c_585_omitted_procedure' | 'au_c_560_subsequently_discovered_fact' | 'other';
@@ -45448,6 +45452,10 @@ export type PostIssuanceAnalysisOut = {
      * Run Id
      */
     run_id: string;
+    /**
+     * Run Number
+     */
+    run_number?: number | null;
 };
 
 /**
@@ -45513,6 +45521,10 @@ export type PostIssuanceCaseOut = {
      */
     decided_at?: string | null;
     /**
+     * Decided By Name
+     */
+    decided_by_name?: string | null;
+    /**
      * Decided By User Id
      */
     decided_by_user_id?: string | null;
@@ -45534,9 +45546,21 @@ export type PostIssuanceCaseOut = {
     disclosure_affected?: boolean | null;
     evaluation?: PostIssuanceEvaluationOut | null;
     /**
+     * Opened At
+     */
+    opened_at?: string | null;
+    /**
      * Options
      */
     options?: Array<'no_action' | 'revise_and_reissue' | 'notify_users'>;
+    /**
+     * Raised By Name
+     */
+    raised_by_name?: string | null;
+    /**
+     * Rationale
+     */
+    rationale?: string | null;
     /**
      * Received At
      */
@@ -45550,6 +45574,10 @@ export type PostIssuanceCaseOut = {
      */
     ref: string;
     /**
+     * Report Released At
+     */
+    report_released_at?: string | null;
+    /**
      * Source Evidence Version Id
      */
     source_evidence_version_id?: string | null;
@@ -45557,6 +45585,10 @@ export type PostIssuanceCaseOut = {
      * Source Kind
      */
     source_kind: 'inbox_evidence' | 'inspection_finding' | 'other';
+    /**
+     * Source Name
+     */
+    source_name?: string | null;
     /**
      * Standard
      */
@@ -45628,6 +45660,10 @@ export type PostIssuanceComparisonLineOut = {
  * PostIssuanceDecisionIn
  */
 export type PostIssuanceDecisionIn = {
+    /**
+     * Addition Description
+     */
+    addition_description?: string | null;
     /**
      * Decision
      */
@@ -51330,6 +51366,14 @@ export type ReportVersionOut = {
      * Created By Name
      */
     created_by_name: string;
+    /**
+     * Dual Date
+     */
+    dual_date?: string | null;
+    /**
+     * Reissue Of Release Id
+     */
+    reissue_of_release_id?: string | null;
     /**
      * Report Date
      */

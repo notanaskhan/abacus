@@ -7679,6 +7679,19 @@
             "title": "Id",
             "type": "string"
           },
+          "post_issuance_case_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Post Issuance Case Id"
+          },
           "reason_code": {
             "cls": "internal",
             "enum": [
@@ -96522,6 +96535,18 @@
             "format": "uuid",
             "title": "Run Id",
             "type": "string"
+          },
+          "run_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Run Number"
           }
         },
         "required": [
@@ -96669,6 +96694,19 @@
             "cls": "internal",
             "title": "Decided At"
           },
+          "decided_by_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided By Name"
+          },
           "decided_by_user_id": {
             "anyOf": [
               {
@@ -96741,6 +96779,19 @@
             ],
             "cls": "internal"
           },
+          "opened_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Opened At"
+          },
           "options": {
             "cls": "internal",
             "default": [],
@@ -96754,6 +96805,32 @@
             },
             "title": "Options",
             "type": "array"
+          },
+          "raised_by_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Raised By Name"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Rationale"
           },
           "received_at": {
             "cls": "internal",
@@ -96784,6 +96861,19 @@
             "title": "Ref",
             "type": "string"
           },
+          "report_released_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Report Released At"
+          },
           "source_evidence_version_id": {
             "anyOf": [
               {
@@ -96806,6 +96896,19 @@
             ],
             "title": "Source Kind",
             "type": "string"
+          },
+          "source_name": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Source Name"
           },
           "standard": {
             "anyOf": [
@@ -96968,6 +97071,19 @@
       "PostIssuanceDecisionIn": {
         "additionalProperties": false,
         "properties": {
+          "addition_description": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Addition Description"
+          },
           "decision": {
             "cls": "internal",
             "enum": [
@@ -109035,6 +109151,32 @@
             "cls": "internal",
             "title": "Created By Name",
             "type": "string"
+          },
+          "dual_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Dual Date"
+          },
+          "reissue_of_release_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reissue Of Release Id"
           },
           "report_date": {
             "anyOf": [

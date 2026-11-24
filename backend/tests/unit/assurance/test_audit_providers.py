@@ -44,6 +44,7 @@ def test_ac23_a01_registers_its_overview_rows_in_order_and_three_metadata_tags()
         ("source_documents", "Source Documents", "AUD-03", "planned"),
         ("team", "Team", "ENG-05", "planned"),
         ("activity", "Activity", "AUD-29", "planned"),
+        ("post_issuance", "Post-issuance", "AUD-30", "live"),  # Q-05-T24
     ]
     metadata = {t.name for t in sections.registered_index_tags(metadata_only=True)}
     assert {"letter_sent", "eqr", "no_report"} <= metadata

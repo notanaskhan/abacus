@@ -180,4 +180,33 @@ describe("AUD-23 live report: Request EQR… (DV-4; DF-05)", () => {
     await screen.findByText("In our opinion …");
     expect(screen.queryByRole("button", { name: "Request EQR…" })).toBeNull();
   });
+
+  it("g live (Q-05-T24): a reissue draft is dual-dated and marked Reissued report", async () => {
+    const base = report();
+    show(
+      report({
+        current_version: {
+          ...(base.current_version as NonNullable<AuditReportOut["current_version"]>),
+          version_no: 3,
+          report_date: "2026-10-09",
+          dual_date: "2027-01-25",
+          reissue_of_release_id: "00000000-0000-4000-8000-0000000a3001",
+        },
+      }),
+    );
+    expect(await screen.findByText("Reissued report")).toBeTruthy();
+    const row = document.querySelector("[data-report='dual-date']");
+    expect(row?.textContent).toContain("Jan 25, 2027");
+    expect(document.querySelector("[data-report='dual-line']")?.textContent).toBe(
+      "Dual dating · Jan 25, 2027",
+    );
+    expect(screen.getByText("Oct 9, 2026")).toBeTruthy();
+  });
+
+  it("a report that is not a reissue shows no dual date", async () => {
+    show(report());
+    await screen.findByText("In our opinion …");
+    expect(screen.queryByText("Reissued report")).toBeNull();
+    expect(document.querySelector("[data-report='dual-date']")).toBeNull();
+  });
 });

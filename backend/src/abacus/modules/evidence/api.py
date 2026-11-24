@@ -572,6 +572,7 @@ from abacus.modules.evidence.retention_anchor import (  # noqa: E402
     engagement_stored_versions,
     engagement_version_leaves,
     extend_versions_until,
+    version_display_name,
     version_fingerprint,
 )
 from abacus.modules.evidence.workflows import LongOcr, OcrBackfill  # noqa: E402
@@ -870,6 +871,7 @@ __all__ = [
     "verified_citation_ids",
     "verify_document_citation",
     "version_content",
+    "version_display_name",
     "version_file_facts",
     "version_fingerprint",
     "version_titles",

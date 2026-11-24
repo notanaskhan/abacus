@@ -1,0 +1,152 @@
+{
+  "scenario": "bh-2026.10.3",
+  "slice": "quality",
+  "snapshot": "E0",
+  "audit_id": "3c252385-c040-5c2f-962a-a41d27cf1b89",
+  "archive_locked_at": "2026-12-03T22:00:00Z",
+  "cases": [
+    {
+      "case_id": "f045054c-d5fb-521b-9b9a-d828f4ae3b19",
+      "ref": "PI-01",
+      "type": "subsequently_discovered_facts",
+      "standard": "au_c_560",
+      "source_kind": "inbox_evidence",
+      "received_at": "2027-01-19T15:24:00Z",
+      "description": "Harborline issued a corrected 2025 certification for the Stable Value Fund",
+      "status": "under_evaluation",
+      "comparison": [
+        {
+          "line_key": "stable_value_fund",
+          "label": "Harborline Stable Value Fund",
+          "as_certified": "1163480",
+          "as_corrected": "1151230",
+          "difference": "-12250",
+          "as_certified_citation_id": null,
+          "as_corrected_citation_id": null
+        },
+        {
+          "line_key": "total_investments",
+          "label": "Total investments at fair value",
+          "as_certified": "16500000",
+          "as_corrected": "16487750",
+          "difference": "-12250",
+          "as_certified_citation_id": null,
+          "as_corrected_citation_id": null
+        },
+        {
+          "line_key": "net_assets",
+          "label": "Net assets available for benefits",
+          "as_certified": "16861000",
+          "as_corrected": "16848750",
+          "difference": "-12250",
+          "as_certified_citation_id": null,
+          "as_corrected_citation_id": null
+        }
+      ],
+      "evaluation": {
+        "total_difference": "-12250",
+        "clearly_trivial": "12610",
+        "overall_materiality": "252200",
+        "share_pct": "4.9",
+        "materiality_version_id": "b9af61f5-0c52-5819-86e6-96aeceb16d94",
+        "below_clearly_trivial": true
+      },
+      "analysis_run_id": "d9070af7-3ea4-5534-bd8a-2dc69d844862",
+      "decision_card_id": null,
+      "allowed_actions": [
+        "post_issuance.analyse",
+        "post_issuance.decide",
+        "post_issuance.reissue"
+      ],
+      "source_evidence_version_id": "3d62f2b8-1c02-5f19-9c6e-c23641396c2e",
+      "disclosure_affected": null,
+      "options": [
+        "no_action",
+        "revise_and_reissue",
+        "notify_users"
+      ],
+      "recommended_option": "no_action",
+      "decision": null,
+      "decided_by_user_id": null,
+      "decided_at": null,
+      "source_name": "Harborline Corrected Certification 2025.pdf",
+      "raised_by_name": "Hannah Leclerc",
+      "opened_at": "2027-01-20T15:10:00Z",
+      "report_released_at": "2026-10-09T21:00:00Z",
+      "decided_by_name": null,
+      "rationale": null
+    },
+    {
+      "case_id": "f444c926-ac4d-5339-a4fa-5051085e4896",
+      "ref": "PI-02",
+      "type": "omitted_procedure",
+      "standard": "au_c_585",
+      "source_kind": "inspection_finding",
+      "received_at": "2027-01-11T15:00:00Z",
+      "description": "Report-date bring-down inquiry of the benefits committee was not documented\nThe completion file has no documented inquiry of the benefits committee at the report date, Oct 9, 2026. The other report-date procedures are documented.",
+      "status": "concluded_no_action",
+      "comparison": [],
+      "evaluation": null,
+      "analysis_run_id": null,
+      "decision_card_id": null,
+      "allowed_actions": [
+        "post_issuance.analyse",
+        "post_issuance.decide",
+        "post_issuance.reissue"
+      ],
+      "source_evidence_version_id": "3c5a900e-9d74-504e-9827-6e43bfad2f7e",
+      "disclosure_affected": null,
+      "options": [
+        "no_action",
+        "revise_and_reissue"
+      ],
+      "recommended_option": null,
+      "decision": "no_action",
+      "decided_by_user_id": "42491605-b936-5057-b895-67364d2ffbad",
+      "decided_at": "2027-01-15T16:30:00Z",
+      "source_name": null,
+      "raised_by_name": "Hannah Leclerc",
+      "opened_at": "2027-01-12T15:00:00Z",
+      "report_released_at": "2026-10-09T21:00:00Z",
+      "decided_by_name": "Margaret Okonkwo",
+      "rationale": "Alternative procedure: obtained benefits committee minutes of Oct 8, 2026; no events requiring adjustment or disclosure. The report remains supported."
+    }
+  ],
+  "additions": [
+    {
+      "id": "92487c4c-62ac-54e6-88c2-4d6241d90086",
+      "description": "Memo — alternative procedure for the omitted bring-down inquiry",
+      "reason_code": "au_c_585_omitted_procedure",
+      "evidence_version_id": "3c5a900e-9d74-504e-9827-6e43bfad2f7e",
+      "content_sha256": "7c41d2ced7958723e00da0a18cdbb30bbceb5c72352727fc00c4f4c11584e2a9",
+      "added_by_name": "Hannah Leclerc",
+      "added_at": "2027-01-15T16:00:00Z",
+      "decision": "approved",
+      "decided_by_name": "Margaret Okonkwo",
+      "decided_at": "2027-01-15T16:30:00Z",
+      "post_issuance_case_id": "f444c926-ac4d-5339-a4fa-5051085e4896"
+    }
+  ],
+  "analysis": {
+    "case_id": "f045054c-d5fb-521b-9b9a-d828f4ae3b19",
+    "run_id": "d9070af7-3ea4-5534-bd8a-2dc69d844862",
+    "run_number": 4511,
+    "blocks": {
+      "version": 1,
+      "parts": [
+        {
+          "kind": "p",
+          "segments": [
+            {
+              "kind": "text",
+              "text": "The corrected certification lowers the Stable Value Fund by $12,250. The amount is below clearly trivial ($12,610), and no note or supplemental-schedule total changes by more than that. The §103(a)(3)(C) opinion covers whether certified information agrees with the institution's certification; on the corrected figure the financial statements would differ by $12,250. I have not decided whether this needs action."
+            }
+          ]
+        }
+      ]
+    },
+    "recommendation": "no_action",
+    "citation_ids": []
+  },
+  "next_addition_sha": "7c41b081505a0317b42910535d983621a54025e005857524756554ea464de2a9"
+}

@@ -91,6 +91,7 @@ describe("screen scenarios on the firm entry", () => {
       "TAX-02", // P-04-T47: j06 coordination
       "TAX-09", // T-01-T29: j06 D1 and D2
       // T-06-T23 (DEC-5636): the eight T-06 screens, one state per contract artboard.
+      "AUD-30", // Q-05-T24
       "ADM-12", // Q-05-T23
       "ADM-14", // G-04-T21: j01 A4 and j27 2
       "FIL-02", // Q-05-T21 (S52)

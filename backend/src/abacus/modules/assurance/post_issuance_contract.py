@@ -15,6 +15,7 @@ and evaluation are computed by code (ADR-050); the agent never decides (INV-1).
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 from typing import Annotated, Any, Literal, cast
@@ -95,6 +96,13 @@ class PostIssuanceCaseOut(BaseModel):
     decision: Annotated[DecisionOption | None, Internal] = None
     decided_by_user_id: Annotated[UUID | None, Internal] = None
     decided_at: Annotated[datetime | None, Internal] = None
+    # Q-05-T24 (AUD-30 a, d): the case's KV rows, its timeline and PI-02's resolution.
+    source_name: Annotated[str | None, Field(max_length=300), Confidential] = None
+    raised_by_name: Annotated[str | None, Field(max_length=200), Internal] = None
+    opened_at: Annotated[datetime | None, Internal] = None
+    report_released_at: Annotated[datetime | None, Internal] = None
+    decided_by_name: Annotated[str | None, Field(max_length=200), Internal] = None
+    rationale: Annotated[str | None, Field(max_length=4000), Confidential] = None
 
 
 class PostIssuanceCaseListOut(BaseModel):
@@ -134,6 +142,8 @@ class PostIssuanceDecisionIn(BaseModel):
 
     decision: Annotated[DecisionOption, Internal]
     rationale: Annotated[str, Field(min_length=1, max_length=4000), Confidential]
+    # Q-05-T24: the archive addition's description (AUD-30 b); the case's own words when absent.
+    addition_description: Annotated[str | None, Field(max_length=2000), Confidential] = None
 
 
 class PostIssuanceRunOut(BaseModel):
@@ -159,6 +169,8 @@ class PostIssuanceAnalysisOut(BaseModel):
     blocks: Annotated[dict[str, object], Confidential]
     recommendation: Annotated[DecisionOption | None, Internal] = None
     citation_ids: Annotated[list[UUID], Internal] = []
+    # Q-05-T24 (AUD-30 a): the run's number, as "Accrued Agent · run #4511" names it.
+    run_number: Annotated[int | None, Internal] = None
 
 
 class PostIssuanceReissueOut(BaseModel):
@@ -206,10 +218,43 @@ def _status(found: object) -> CaseStatus:
     )  # type: ignore[return-value]  # the three literal words
 
 
-def _case_out(found: object, actions: list[str]) -> PostIssuanceCaseOut:
+@dataclass(frozen=True)
+class _Facts:
+    """What the case rows name outside the case: people, source documents, the release."""
+
+    names: dict[UUID, str] = field(default_factory=dict[UUID, str])
+    sources: dict[UUID, str] = field(default_factory=dict[UUID, str])
+    released_at: datetime | None = None
+
+
+async def _facts(ctx: AuthContext, work_item_id: UUID, found: list[object]) -> _Facts:
+    from abacus.modules.assurance import post_issuance as pi
+    from abacus.modules.evidence.api import version_display_name
+    from abacus.modules.identity.api import names_of
+
+    rows = [cast(pi.Case, c) for c in found]
+    people = {u for c in rows for u in (c.created_by, c.decided_by) if u is not None}
+    sources: dict[UUID, str] = {}
+    for c in rows:
+        v = c.source_evidence_version_id
+        if v is not None and v not in sources:
+            name = await version_display_name(ctx.tenant, v)
+            if name is not None:
+                sources[v] = name
+    return _Facts(
+        names=await names_of(sorted(people, key=str)) if people else {},
+        sources=sources,
+        released_at=await pi.report_released_at(ctx.tenant, work_item_id),
+    )
+
+
+def _case_out(
+    found: object, actions: list[str], facts: _Facts | None = None
+) -> PostIssuanceCaseOut:
     from abacus.modules.assurance.post_issuance import Case
 
     c = cast(Case, found)
+    f = facts or _Facts()
     ev = c.evaluation
     return PostIssuanceCaseOut(
         case_id=c.case_id,
@@ -248,6 +293,14 @@ def _case_out(found: object, actions: list[str]) -> PostIssuanceCaseOut:
         decision=cast(DecisionOption | None, c.decision),
         decided_by_user_id=c.decided_by,
         decided_at=c.decided_at,
+        source_name=None
+        if c.source_evidence_version_id is None
+        else f.sources.get(c.source_evidence_version_id),
+        raised_by_name=None if c.created_by is None else f.names.get(c.created_by),
+        opened_at=c.created_at,
+        report_released_at=f.released_at,
+        decided_by_name=None if c.decided_by is None else f.names.get(c.decided_by),
+        rationale=c.rationale,
     )
 
 
@@ -277,8 +330,9 @@ async def post_issuance_cases_route(work_item_id: UUID, ctx: Ctx) -> PostIssuanc
     locked = (
         None if engagement_id is None else await pi.archive_locked_at(ctx.tenant, engagement_id)
     )
+    facts = await _facts(ctx, work_item_id, list(found))
     return PostIssuanceCaseListOut(
-        items=[_case_out(c, actions) for c in found], archive_locked_at=locked
+        items=[_case_out(c, actions, facts) for c in found], archive_locked_at=locked
     )
 
 
@@ -295,7 +349,9 @@ async def post_issuance_case_route(
     from abacus.modules.assurance import post_issuance as pi
 
     found = await pi.case(ctx, work_item_id, case_id)
-    return _case_out(found, await _actions(ctx, work_item_id))
+    return _case_out(
+        found, await _actions(ctx, work_item_id), await _facts(ctx, work_item_id, [found])
+    )
 
 
 @post_issuance_router.post(
@@ -321,7 +377,9 @@ async def post_issuance_case_create_route(
         description=body.description,
         source_evidence_version_id=body.source_evidence_version_id,
     )
-    return _case_out(found, await _actions(ctx, work_item_id))
+    return _case_out(
+        found, await _actions(ctx, work_item_id), await _facts(ctx, work_item_id, [found])
+    )
 
 
 @post_issuance_router.post(
@@ -362,9 +420,13 @@ async def post_issuance_analysis_read_route(
     kept = await pia.read_analysis(ctx, case_id)
     if kept is None:
         raise NotFound("post_issuance_analysis")
+    from abacus.modules.agents.api import run_numbers
+
+    run_id = cast(UUID, kept["run_id"])
     return PostIssuanceAnalysisOut(
+        run_number=(await run_numbers(ctx.tenant, [run_id])).get(run_id),
         case_id=case_id,
-        run_id=cast(UUID, kept["run_id"]),
+        run_id=run_id,
         blocks=cast("dict[str, object]", kept["blocks"]),
         recommendation=cast(Any, kept["recommendation"]),
         citation_ids=cast("list[UUID]", kept["citation_ids"]),
@@ -397,7 +459,9 @@ async def post_issuance_comparison_route(
         body.corrected,
         disclosure_affected=body.disclosure_affected,
     )
-    return _case_out(found, await _actions(ctx, work_item_id))
+    return _case_out(
+        found, await _actions(ctx, work_item_id), await _facts(ctx, work_item_id, [found])
+    )
 
 
 @post_issuance_router.post(
@@ -418,9 +482,16 @@ async def post_issuance_decision_route(
     from abacus.modules.assurance import post_issuance as pi
 
     found = await pi.record_case_decision(
-        ctx, work_item_id, case_id, decision=body.decision, rationale=body.rationale
+        ctx,
+        work_item_id,
+        case_id,
+        decision=body.decision,
+        rationale=body.rationale,
+        addition=body.addition_description,
     )
-    return _case_out(found, await _actions(ctx, work_item_id))
+    return _case_out(
+        found, await _actions(ctx, work_item_id), await _facts(ctx, work_item_id, [found])
+    )
 
 
 @post_issuance_router.post(
@@ -439,5 +510,8 @@ async def post_issuance_reissue_route(
     del key
     release_id, _ = await post_issuance_reissue.reopen_for_reissue(ctx, work_item_id, case_id)
     return PostIssuanceReissueOut(
-        case_id=case_id, report_release_id=release_id, href=f"/audits/{work_item_id}/report"
+        case_id=case_id,
+        report_release_id=release_id,
+        # Q-05-T24: AUD-23 is the cockpit's Auditor's report section (A-07's `auditors_report`).
+        href=f"/audits/{work_item_id}?section=auditors_report",
     )

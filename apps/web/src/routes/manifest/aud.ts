@@ -142,7 +142,12 @@ export const audScreens = {
   },
   "AUD-28": { name: "Consultations log", status: "planned", path: null },
   "AUD-29": { name: "Engagement activity log · cockpit", status: "planned", path: null },
-  "AUD-30": { name: "Post-issuance & subsequent discovery", status: "planned", path: null },
+  // Q-05-T24 (DEC-5936): a–f live over the post-issuance reads behind `audit.post_issuance`.
+  "AUD-30": {
+    name: "Post-issuance & subsequent discovery",
+    status: "fixture",
+    path: "/audits/$auditId/post-issuance",
+  },
   "AUD-31": {
     name: "Trial balance mapping — Harlow & Pike interim 8/31/2026",
     status: "fixture",

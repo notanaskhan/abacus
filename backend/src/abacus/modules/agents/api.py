@@ -69,6 +69,7 @@ from abacus.modules.agents.engagement_runs import (
     ActiveRun,
     active_engagement_runs,
     register_engagement_run_agent,
+    run_numbers,
 )
 from abacus.modules.agents.entry_assess import ASSESSOR, ask, check
 from abacus.modules.agents.events import FollowUpSent
@@ -836,6 +837,7 @@ __all__ = [
     "router",
     "run_initiators",
     "run_log_count",
+    "run_numbers",
     "run_outcome",
     "run_record_hashes",
     "run_session_turn",
