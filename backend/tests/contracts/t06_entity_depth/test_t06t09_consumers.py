@@ -121,6 +121,16 @@ LIVE_PREFIXES = (
     # T-06-T35: the §754 card's raise and its send to the client.
     "/v1/tax-returns/{return_id}/decision-cards",
     "/v1/decision-cards/{card_id}/send-to-client",
+    # S53 T-06-T42 (DEC-5913): the other entities' workpapers (AAA, the provision, functional
+    # expenses and their allocation runs, K-1 previews).
+    "/v1/tax-returns/{return_id}/schedules/aaa",
+    "/v1/tax-returns/{return_id}/provision",
+    "/v1/tax-returns/{return_id}/functional-expenses",
+    "/v1/tax-returns/{return_id}/k1-previews",
+    # S53 T-06-T43/T44 (DEC-5914, DEC-5915): the form faces, their fields, traces and diagnostics.
+    "/v1/tax-returns/{return_id}/form-pages",
+    "/v1/tax-returns/{return_id}/fields/",
+    "/v1/tax-returns/{return_id}/diagnostics",
 )
 
 

@@ -51,6 +51,10 @@ TIN_ROUTES = {
     ("GET", "/v1/client-entities/{client_entity_id}/information-returns"): "masked",
     ("GET", "/v1/vendors/{vendor_id}"): "masked",
     ("PATCH", "/v1/vendors/{vendor_id}"): "masked",
+    (
+        "PUT",
+        "/v1/vendors/{vendor_id}/w9",
+    ): "masked",  # C-02-T33 (DEC-5907): answers the masked vendor row
     ("POST", "/v1/vendors/{vendor_id}/tin:reveal"): "refused",
     ("GET", "/v1/clients/{client_id}"): "masked",
     ("PATCH", "/v1/clients/{client_id}"): "masked",

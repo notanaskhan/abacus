@@ -1884,6 +1884,20 @@ export const STATUS_REGISTRY = {
       "contextLabels": {
         "by": "Posting paused · write access revoked by {name}"
       }
+    },
+    "offered": {
+      "label": "Posting not allowed",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true,
+      "clientLabel": "Your accountant can't post entries yet"
+    },
+    "read_only": {
+      "label": "Read only",
+      "variant": "muted",
+      "terminal": false,
+      "derived": true,
+      "clientLabel": "Read-only access"
     }
   },
   "close_deliverable": {
@@ -3495,6 +3509,26 @@ export const STATUS_REGISTRY = {
       "label": "Consent to disclose — named third party",
       "variant": "tag",
       "terminal": false,
+      "derived": false
+    }
+  },
+  "capability_run_outcome": {
+    "succeeded": {
+      "label": "Ready for review",
+      "variant": "state",
+      "terminal": true,
+      "derived": false
+    },
+    "escalated": {
+      "label": "Escalated",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "shadow": {
+      "label": "Shadow (nothing shown)",
+      "variant": "muted",
+      "terminal": true,
       "derived": false
     }
   },
