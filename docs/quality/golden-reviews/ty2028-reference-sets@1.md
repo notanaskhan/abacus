@@ -12,8 +12,8 @@
 
 ## 1. Due-date rules (TY2028)
 - Rolled from the TY2027 set in effect (`refdata_rollover --kind due_date_rules --key us-due-date-rules-ty2027 --to-year 2028`), rows unchanged: offsets from the period end.
-- With Sun Apr 15, 2029 and Mon Apr 16 DC Emancipation Day, a calendar-year **Form 1040 is due Tue Apr 17, 2029** (IRC § 7503); 1065 and 1120-S Thu Mar 15, 2029, extended Mon Sep 17, 2029; 1041 extended Mon Oct 1, 2029; Q4 1040-ES Tue Jan 16, 2029 (Mon Jan 15 MLK Day); a 990 for FYE Jun 30, 2028 Wed Nov 15, 2028, extended Tue May 15, 2029; a calendar-2028 Form 5500 Tue Jul 31, 2029, Form 5558 to Mon Oct 15, 2029 (AC2.12; T-08-T25 transcribes the goldens).
-- CPA: ☐ no form's original or extended rule changed in law for TY2028; ☐ the installment months.
+- With Sun Apr 15, 2029 and Mon Apr 16 DC Emancipation Day, a calendar-year **Form 1040 is due Tue Apr 17, 2029** (IRC § 7503); 1065 and 1120-S Thu Mar 15, 2029, extended Mon Sep 17, 2029; 1041 extended Mon Oct 1, 2029; Q4 1040-ES Tue Jan 16, 2029 (Mon Jan 15 MLK Day); a 990 for FYE Jun 30, 2028 Wed Nov 15, 2028, extended Tue May 15, 2029; a calendar-2028 Form 5500 Tue Jul 31, 2029, Form 5558 to Mon Oct 15, 2029 (AC2.12). The goldens are `backend/tests/golden/calendar/i_clocks_ty2028.yaml` (T-08-T25), each case with its source, with the HOME-03 seed's Mar 16, 2026 (1065, Sun Mar 15) and Nov 16, 2026 (990 FYE Jun 30, Sun Nov 15; 8868 to May 17, 2027).
+- CPA: ☐ no form's original or extended rule changed in law for TY2028; ☐ the installment months; ☐ each case in `i_clocks_ty2028.yaml` (TY2028 and the seed dates).
 
 ## 2. The 8879 set and Pub 1345 tolerances (TY2028)
 - Rolled from TY2027 (`--kind form_8879_set --key us-form-8879-set-ty2027 --to-year 2028`): each row to tax year 2028 with its TY2027 form and revision; the tolerances carry over **only to be re-verified** (DEC-85).
