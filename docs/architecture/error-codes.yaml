@@ -303,6 +303,11 @@ codes:
     - abacus.modules.identity.walls.ApproverNotPartner
     summary: The named approver must be an active partner-level member other than the walled person and
       the wall's creator, who can see the client (not walled from it).
+  approver_of_record_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.adjustments.attest_path.ApproverOfRecordMissing
+    summary: 'The client has no approver of record on this engagement: name one in its contacts first.'
   approver_required:
     status: 422
     raised_by:
@@ -584,9 +589,10 @@ codes:
   client_approval_required:
     status: 409
     raised_by:
+    - abacus.modules.adjustments.attest_path.ClientApprovalRequired
     - abacus.modules.closes.delivery_errors.ClientApprovalRequired
     - abacus.modules.closes.release.ClientApprovalRequired
-    summary: The close locks only after the client approves its package.
+    summary: An attest client's entry is recorded only after the client approved it in the portal.
   client_contact:
     status: 409
     raised_by:
@@ -2150,6 +2156,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.connections.ledger_import.ImportOff
+  ledger_match_not_found:
+    status: 409
+    raised_by:
+    - abacus.modules.adjustments.attest_path.LedgerMatchNotFound
+    summary: No journal in the client's ledger carries this entry's accounts and amounts under that reference.
   ledger_not_connected:
     status: 409
     raised_by:
@@ -2550,6 +2561,11 @@ codes:
     raised_by:
     - abacus.modules.reporting.statements.NotAnswered
     summary: Only an answered or adopted item can be reviewed (`facts.item_key`).
+  not_approver_of_record:
+    status: 409
+    raised_by:
+    - abacus.modules.adjustments.attest_path.NotApproverOfRecord
+    summary: An attest client's entries go to its approver of record only (DEC-63).
   not_awaiting_approval:
     status: 409
     raised_by:

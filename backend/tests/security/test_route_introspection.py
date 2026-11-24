@@ -793,6 +793,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/posting-batches/{batch_id}", "ledger_connection.read"),
     ("GET", "/v1/presence", "presence.read"),
     ("GET", "/v1/proposals/{ref}", "proposal.read"),
+    ("GET", "/v1/proposed-entries/{entry_id}/ledger-matches", "proposed_entry.record_external"),
     ("GET", "/v1/quality/accuracy", "quality.read"),
     ("GET", "/v1/quality/agent-overrides", "quality.read"),
     ("GET", "/v1/quality/agent-overrides/{agent_key}/reasons", "quality.read"),

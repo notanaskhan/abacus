@@ -704,6 +704,9 @@ async def record_external(
 
     if evidence_version_id is None and not match_ref:
         raise DomainConflict(facts={"reason": "evidence_or_match_required"})
+    from abacus.modules.adjustments.attest_path import check_record
+
+    await check_record(ctx, entry_id, match_ref=match_ref)  # C-02-T32: attest and sync match
     return await mark_recorded_externally(
         ctx, entry_id, evidence_version_id=evidence_version_id, match_ref=match_ref
     )
