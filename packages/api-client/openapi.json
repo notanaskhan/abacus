@@ -93232,6 +93232,17 @@
             "minimum": 0.0,
             "title": "Version",
             "type": "integer"
+          },
+          "write": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PortalWriteScopeOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
           }
         },
         "required": [
@@ -93270,6 +93281,16 @@
             },
             "maxItems": 5,
             "title": "Recent Syncs",
+            "type": "array"
+          },
+          "writes": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/PortalWriteRowOut"
+            },
+            "maxItems": 50,
+            "title": "Writes",
             "type": "array"
           }
         },
@@ -96227,6 +96248,183 @@
           "shown_on_portal"
         ],
         "title": "PortalVisibilityOut",
+        "type": "object"
+      },
+      "PortalWriteConsentOut": {
+        "description": "C-02-T40 (DEC-5926): the posting consent sheet's copy (catalogue content, consent copy v2):\nwhat the firm will and won't do, the authorization sentence and the button.",
+        "properties": {
+          "authorization": {
+            "cls": "public",
+            "title": "Authorization",
+            "type": "string"
+          },
+          "continue_label": {
+            "cls": "public",
+            "title": "Continue Label",
+            "type": "string"
+          },
+          "title": {
+            "cls": "public",
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "string"
+          },
+          "will": {
+            "cls": "public",
+            "items": {
+              "type": "string"
+            },
+            "title": "Will",
+            "type": "array"
+          },
+          "wont": {
+            "cls": "public",
+            "items": {
+              "type": "string"
+            },
+            "title": "Wont",
+            "type": "array"
+          }
+        },
+        "required": [
+          "version",
+          "title",
+          "will",
+          "wont",
+          "authorization",
+          "continue_label"
+        ],
+        "title": "PortalWriteConsentOut",
+        "type": "object"
+      },
+      "PortalWriteRowOut": {
+        "description": "C-02-T40: one write the firm made to the client's books, client-visible (ADR-040):\n\"Posted 6 journal entries \u00b7 batch 2026-08-A\" or \"Closing date set to Aug 31, 2026\".",
+        "properties": {
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "batch_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Batch Code"
+          },
+          "closing_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Closing Date"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Count"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "posted_entries",
+              "closing_date"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "at",
+          "kind"
+        ],
+        "title": "PortalWriteRowOut",
+        "type": "object"
+      },
+      "PortalWriteScopeOut": {
+        "description": "C-02-T40 (DF-19, ADR-344 \u00a76): the posting scope on a ledger card. Present only when the firm\nholds W1 and the connection is live: `read_only` for an attest client (no consent, no grant\ncontrol, read-only copy), `offered` with the consent v2 sheet, `granted` with who granted it\nand when. `can_change`: this person may grant or revoke (the entity's owner).",
+        "properties": {
+          "can_change": {
+            "cls": "internal",
+            "default": false,
+            "title": "Can Change",
+            "type": "boolean"
+          },
+          "consent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PortalWriteConsentOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public"
+          },
+          "granted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Granted At"
+          },
+          "granted_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Granted By"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "offered",
+              "granted",
+              "read_only"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "PortalWriteScopeOut",
         "type": "object"
       },
       "PostIssuanceAnalysisOut": {

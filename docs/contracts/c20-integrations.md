@@ -240,3 +240,9 @@ The connection stays read-only (CONN-001): a grant is a consent record. **Write 
 - `W1ActivityOut.entry_ref`; `provider_code` now carries a failed run's code. Sync events read the connection's finished runs on the person's readable engagements.
 - The tiles count batches, not entries.
 - `GET /v1/connections/{connection_id}/reconnect-requests/preview` → `ReconnectPreviewOut` (`recipients`, `template_missing`, `subject`, `html`, `text`, `from_display`): `connection.reconnect_request`, the request's own authorisation, reads only.
+
+## C-02-T40 additive fields (DEC-5926)
+
+- `PortalConnectionCardOut.write`: `PortalWriteScopeOut` (`state` offered · granted · read_only, `consent` `PortalWriteConsentOut` with the string `version`, `granted_at`, `granted_by`, `can_change`); present only when the catalogue declares a write consent and the firm holds W1.
+- `PortalConnectionDetailOut.writes`: `PortalWriteRowOut` rows (`at`, `kind` posted_entries · closing_date, `count`, `batch_code`, `closing_date`), newest first, the entity's own ledger only.
+- Catalogue v2 document: `detail_copy.write_consent` (`write`, `version`, `title`, `will`, `wont`, `authorization`, `continue_label`).

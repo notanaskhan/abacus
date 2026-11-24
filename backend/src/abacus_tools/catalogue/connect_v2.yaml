@@ -133,6 +133,25 @@ rows:
     from the portal.
   auth_line: Firm app · client-authorized
   published_at: '2026-01-01T00:00:00-06:00'
+  # C-02-T40 (DEC-5926): the posting consent v2 a client owner reads in POR-16 before granting
+  # W1 (ADR-344 §6). Content for counsel's review (C-02-T11); shown only when the firm holds W1
+  # for a non-attest client.
+  writes:
+  - ledger_post_journal_entries
+  detail_copy:
+    write_consent:
+      write: ledger_post_journal_entries
+      version: por16.qbo.post_entries.v2
+      title: Allow posting to QuickBooks Online
+      will:
+      - Post journal entries your accountant approves, and set the closing date after posting
+      - List every entry it posts in this connection's details
+      wont:
+      - Change or delete existing transactions
+      - See your password
+      authorization: I authorize Brightwater Hale LLP to post the journal entries a person at the firm
+        approves, and to set the closing date after posting, for the services in our engagement letter
+      continue_label: Allow posting
 - key: netsuite
   name: NetSuite
   categories:

@@ -13,6 +13,7 @@ import type {
   ConsentCopyOut,
   PortalConnectionCardOut,
   PortalConnectionsOut,
+  PortalWriteConsentOut,
 } from "@abacus/api-client";
 import { SCOPE_IDS } from "./portal-home";
 import { stableId } from "./prng";
@@ -57,6 +58,21 @@ export const QUICKBOOKS_CONSENT: ConsentCopyOut = {
   authorization: AUTHORIZATION,
   continue_label: "Continue to QuickBooks Online",
   helper: null,
+};
+
+/** C-02-T40: the posting consent v2 as the catalogue holds it (connect_v2.yaml, quickbooks_online
+ * `detail_copy.write_consent`; counsel's review is C-02-T11's). */
+export const QUICKBOOKS_WRITE_CONSENT: PortalWriteConsentOut = {
+  version: "por16.qbo.post_entries.v2",
+  title: "Allow posting to QuickBooks Online",
+  will: [
+    "Post journal entries your accountant approves, and set the closing date after posting",
+    "List every entry it posts in this connection's details",
+  ],
+  wont: ["Change or delete existing transactions", "See your password"],
+  authorization:
+    "I authorize Brightwater Hale LLP to post the journal entries a person at the firm approves, and to set the closing date after posting, for the services in our engagement letter",
+  continue_label: "Allow posting",
 };
 
 export const IDS = {

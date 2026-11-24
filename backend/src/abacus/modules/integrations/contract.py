@@ -110,6 +110,48 @@ class ExportInsteadOut(BaseModel):
     binder_id: Annotated[UUID | None, classified("internal")] = None
 
 
+class PortalWriteConsentOut(BaseModel):
+    """C-02-T40 (DEC-5926): the posting consent sheet's copy (catalogue content, consent copy v2):
+    what the firm will and won't do, the authorization sentence and the button."""
+
+    model_config = ConfigDict(frozen=True)
+
+    version: Annotated[str, classified("internal")]  # "por16.qbo.post_entries.v2"
+    title: Annotated[str, classified("public")]
+    will: Annotated[list[str], classified("public")]
+    wont: Annotated[list[str], classified("public")]
+    authorization: Annotated[str, classified("public")]
+    continue_label: Annotated[str, classified("public")]
+
+
+class PortalWriteScopeOut(BaseModel):
+    """C-02-T40 (DF-19, ADR-344 §6): the posting scope on a ledger card. Present only when the firm
+    holds W1 and the connection is live: `read_only` for an attest client (no consent, no grant
+    control, read-only copy), `offered` with the consent v2 sheet, `granted` with who granted it
+    and when. `can_change`: this person may grant or revoke (the entity's owner)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    state: Annotated[Literal["offered", "granted", "read_only"], classified("internal")]
+    consent: Annotated[PortalWriteConsentOut | None, classified("public")] = None
+    granted_at: Annotated[datetime | None, classified("internal")] = None
+    granted_by: Annotated[str | None, classified("confidential")] = None
+    can_change: Annotated[bool, classified("internal")] = False
+
+
+class PortalWriteRowOut(BaseModel):
+    """C-02-T40: one write the firm made to the client's books, client-visible (ADR-040):
+    "Posted 6 journal entries · batch 2026-08-A" or "Closing date set to Aug 31, 2026"."""
+
+    model_config = ConfigDict(frozen=True)
+
+    at: Annotated[datetime, classified("internal")]
+    kind: Annotated[Literal["posted_entries", "closing_date"], classified("internal")]
+    count: Annotated[int | None, Field(ge=0), classified("internal")] = None
+    batch_code: Annotated[str | None, classified("internal")] = None
+    closing_date: Annotated[date | None, classified("internal")] = None
+
+
 class PortalConnectionCardOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -137,6 +179,7 @@ class PortalConnectionCardOut(BaseModel):
     export_instead: Annotated[ExportInsteadOut | None, classified("internal")] = None
     version: Annotated[int, Field(ge=0), classified("internal")] = 0
     allowed_actions: Annotated[list[CardAction], classified("internal")] = []
+    write: Annotated[PortalWriteScopeOut | None, classified("internal")] = None  # C-02-T40
 
 
 class PortalEntityOut(BaseModel):
@@ -204,6 +247,8 @@ class PortalConnectionDetailOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     card: Annotated[PortalConnectionCardOut, classified("confidential")]
+    # C-02-T40: the client-visible write log for this entity's ledger, newest first.
+    writes: Annotated[list[PortalWriteRowOut], Field(max_length=50), classified("internal")] = []
     recent_syncs: Annotated[
         list[SyncRunSummaryOut], Field(max_length=5), classified("internal")
     ] = []

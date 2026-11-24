@@ -314,6 +314,31 @@ async def _grant(ctx: AuthContext, connection_id: UUID, *, event: str, consent: 
     return Grant(connection_id, event, at, consent)
 
 
+@dataclass(frozen=True)
+class LatestGrant:
+    event: str  # granted | revoked
+    at: datetime
+    by: UUID | None  # the client user who granted or revoked
+
+
+async def latest_grant(tenant: TenantContext, connection_id: UUID) -> LatestGrant | None:
+    """C-02-T40: the connection's latest write-grant event (POR-16's posting scope)."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT event, at, granted_by_client_user_id FROM connection_write_grants "
+                    "WHERE connection_id = :c AND capability_id = :cap "
+                    "ORDER BY at DESC, id DESC LIMIT 1"
+                ),
+                {"c": connection_id, "cap": W1_CAPABILITY},
+            )
+        ).first()
+    return (
+        None if row is None else LatestGrant(str(row.event), row.at, row.granted_by_client_user_id)
+    )
+
+
 async def grant_write(ctx: AuthContext, connection_id: UUID, consent: str) -> Grant:
     return await _grant(ctx, connection_id, event="granted", consent=consent)
 
@@ -398,6 +423,7 @@ __all__ = [
     "EngagementLedger",
     "GlSettings",
     "Grant",
+    "LatestGrant",
     "MfaRequired",
     "NotReleased",
     "Switch",
@@ -407,6 +433,7 @@ __all__ = [
     "firm_switch",
     "gl_settings",
     "grant_write",
+    "latest_grant",
     "memo_prefix_of",
     "released",
     "revoke_write",

@@ -46,4 +46,24 @@ export const COPY = {
   recent: "Recent syncs",
   activity: "Activity",
   noSyncs: "No syncs yet",
+  // C-02-T40 (DF-19 lifted for W1; DEC-5926): the posting scope appears only when the firm holds
+  // W1 for a non-attest client; the design's posting words return with it.
+  relationshipPosting: (firm: string): string =>
+    `${firm} reads your books and posts only the entries you approve.`,
+  postTag: "Post entries you approve",
+  allowPosting: "Allow posting…",
+  postingAllowedBy: (who: string, day: string): string => `Posting allowed by ${who} · ${day}`,
+  turnOff: "Turn off posting…",
+  turnOffTitle: (name: string): string => `Turn off posting to ${name}?`,
+  turnOffBody: (firm: string): string =>
+    `${firm} stops posting entries. Entries it already posted stay in your books, and the ones it hasn’t posted wait with your accountant.`,
+  turnOffConfirm: "Turn off posting",
+  postingOn: "Posting allowed",
+  postingOff: "Posting turned off",
+  disconnectBodyPosting: (firm: string): string =>
+    `${firm} won’t be able to read your books or post accepted entries. What it already received stays in your client file.`,
+  writes: "Changes in your books",
+  postedEntries: (n: number, batch: string): string =>
+    `Posted ${String(n)} journal entries · batch ${batch}`,
+  closingDateSet: (on: string): string => `Closing date set to ${on}`,
 } as const;

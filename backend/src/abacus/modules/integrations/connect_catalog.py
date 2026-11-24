@@ -184,6 +184,18 @@ async def workbench_rows(session: AsyncSession) -> list[WorkbenchRow]:
     ]
 
 
+async def write_consent_of(
+    session: AsyncSession, provider: str
+) -> dict[str, Any] | None:  # Any: JSON
+    """C-02-T40: the write-grant consent the catalogue holds for a provider's row (POR-16 v2),
+    as the import stored it (JSON content); None when the row declares none."""
+    for row in await workbench_rows(session):
+        if row.connector_provider == provider:
+            found = (row.detail_copy or {}).get("write_consent")
+            return cast(dict[str, Any], found) if isinstance(found, dict) else None
+    return None
+
+
 def published(rows: Sequence[WorkbenchRow], at: datetime) -> list[WorkbenchRow]:
     """The tiles listed at `at`: not hidden, and published by then."""
     return [
