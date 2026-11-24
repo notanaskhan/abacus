@@ -111,6 +111,7 @@ import { scenarios as txp10 } from "./scenarios/TXP-10";
 import { TXP03_OPENS, scenarios as t06txp03 } from "./scenarios/TXP-03";
 import { scenarios as adm12 } from "./scenarios/ADM-12";
 import { scenarios as aud30 } from "./scenarios/AUD-30";
+import { scenarios as tax10 } from "./scenarios/TAX-10";
 import { scenarios as adm14 } from "./scenarios/ADM-14";
 import { scenarios as fil02 } from "./scenarios/FIL-02";
 import { scenarios as aud28 } from "./scenarios/AUD-28";
@@ -471,6 +472,14 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
     scenarios: tax09,
     opens: {},
     ids: Object.fromEntries(Object.keys(tax09).map((s) => [s, { returnId: FELD_RETURN_ID }])),
+  },
+  // T-08-T22 (TASK-8936): TAX-10 a–e and x1 on the Feld 1040's review 2-Year sheet.
+  "TAX-10": {
+    scenarios: tax10,
+    opens: {},
+    ids: Object.fromEntries(
+      Object.keys(tax10).map((s) => [s, { returnId: FELD_RETURN_ID, section: "two-year" }]),
+    ),
   },
   // Q-05-T24 (TASK-8934): AUD-30 a–f on the archived Northwind audit
   // (`/audits/_auditId_/post-issuance`); the case, the tab and the sheet in the URL.

@@ -676,6 +676,7 @@ def scenario_files() -> dict[str, str]:
     from abacus_tools.synthetic.scenarios.brightwater_hale.quality_slice import aud30_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import hub_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.tb_handoff_slice import aud38_rows
+    from abacus_tools.synthetic.scenarios.brightwater_hale.two_year_slice import tax10_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.usage_slice import adm14_rows
 
     body = {"scenario": SCENARIO_VERSION, "slice": "signatures", "snapshot": "E0", **hub_rows()}
@@ -716,6 +717,13 @@ def scenario_files() -> dict[str, str]:
                 "snapshot": "E0",
                 **cls11_console(),
             },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        # T-08-T22 (DEC-5938): TAX-10 a-e and x1, the Feld two-year comparison.
+        "scenario.tax10.json": json.dumps(
+            {"scenario": SCENARIO_VERSION, "slice": "two_year", "snapshot": "E0", **tax10_rows()},
             indent=2,
             ensure_ascii=False,
         )

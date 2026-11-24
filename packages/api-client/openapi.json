@@ -141215,6 +141215,23 @@
             "title": "Flagged",
             "type": "boolean"
           },
+          "group": {
+            "anyOf": [
+              {
+                "enum": [
+                  "income",
+                  "deductions",
+                  "tax_and_payments"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Group"
+          },
           "label": {
             "cls": "internal",
             "maxLength": 200,
@@ -141226,6 +141243,19 @@
             "maxLength": 40,
             "title": "Line Key",
             "type": "string"
+          },
+          "line_ref": {
+            "anyOf": [
+              {
+                "maxLength": 24,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Line Ref"
           },
           "prior": {
             "cls": "restricted",
@@ -141251,6 +141281,22 @@
             ],
             "cls": "internal",
             "title": "State"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "enum": [
+                  "total",
+                  "grand"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Total"
           },
           "values_hash": {
             "cls": "internal",
@@ -141320,6 +141366,28 @@
           "explain_available": {
             "cls": "internal",
             "title": "Explain Available",
+            "type": "boolean"
+          },
+          "explain_unavailable_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "agents_off_for_taxpayer",
+                  "ai_unavailable"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Explain Unavailable Reason"
+          },
+          "explaining": {
+            "cls": "internal",
+            "default": false,
+            "title": "Explaining",
             "type": "boolean"
           },
           "filter": {

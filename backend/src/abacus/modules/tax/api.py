@@ -701,6 +701,9 @@ from abacus.modules.communications.api import (  # noqa: E402
 from abacus.modules.tax import entity_depth_contract as entity_depth_contract  # noqa: E402
 from abacus.modules.tax import entity_depth_errors as entity_depth_errors  # noqa: E402
 
+# T-08-T22: the two-year contract, for the synthetic slice that types its fixtures by it.
+from abacus.modules.tax import practice_tools_contract as practice_tools_contract  # noqa: E402
+
 # T-08-T03 (DEC-5602): tax practice tools error codes declared before their services.
 from abacus.modules.tax import practice_tools_errors as practice_tools_errors  # noqa: E402
 from abacus.modules.tax import tb_handoff_contract as tb_handoff_contract  # noqa: E402
@@ -719,6 +722,7 @@ from abacus.modules.tax.allocation_structure import versions as allocation_versi
 # T-06-T28 (DEC-5717): the E10 and E11 engines, for the seed's other-entity slice.
 from abacus.modules.tax.compute import provision as provision_engine  # noqa: E402
 from abacus.modules.tax.compute import s_corp as s_corp_engine  # noqa: E402
+from abacus.modules.tax.compute import two_year_lines as two_year_lines  # noqa: E402
 from abacus.modules.tax.entity_run_plan import DEPTH as ENTITY_RUN_DEPTH  # noqa: E402
 from abacus.modules.tax.entity_run_plan import STEPS as ENTITY_RUN_STEPS  # noqa: E402
 from abacus.modules.tax.planning import service as planning_service  # noqa: E402

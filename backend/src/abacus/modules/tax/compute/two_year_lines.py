@@ -32,8 +32,34 @@ LINE_MAPS: Final[dict[str, tuple[tuple[str, str], ...]]] = {
         ("1040.34", "34 Overpaid / refund"),
     ),
 }
+# T-08-T22 (TAX-10's statement grammar): each line's group band, its printed reference, and the
+# totals (a stroke rule) and grand total (a double rule).
+_GROUP_OF_1040: Final = {
+    **dict.fromkeys(
+        ("1040.1a", "1040.2a", "1040.2b", "1040.3a", "1040.3b", "sch1.5", "1040.9", "1040.11"),
+        "income",
+    ),
+    **dict.fromkeys(
+        ("scha.5e", "scha.8a", "scha.11", "1040.12", "1040.13", "1040.15"), "deductions"
+    ),
+    **dict.fromkeys(
+        ("1040.16", "1040.23", "1040.24", "1040.25d", "1040.26", "sch3.10", "1040.33", "1040.34"),
+        "tax_and_payments",
+    ),
+}
+LINE_GROUPS: Final[dict[str, str]] = _GROUP_OF_1040
+LINE_TOTALS: Final[dict[str, str]] = {
+    **dict.fromkeys(("1040.9", "1040.11", "1040.12", "1040.15", "1040.24", "1040.33"), "total"),
+    "1040.34": "grand",
+}
+LINE_REFS: Final[dict[str, str]] = {
+    code: label.split(" ", 3)[0]
+    if not label.startswith("Sch ")
+    else " ".join(label.split(" ")[: (4 if label.split(" ")[2] == "line" else 3)])
+    for code, label in LINE_MAPS["1040"]
+}
 AGI: Final = "1040.11"
 TOTAL_TAX: Final = "1040.24"
 REFUND: Final = "1040.34"
 
-__all__ = ["AGI", "LINE_MAPS", "REFUND", "TOTAL_TAX"]
+__all__ = ["AGI", "LINE_GROUPS", "LINE_MAPS", "LINE_REFS", "LINE_TOTALS", "REFUND", "TOTAL_TAX"]

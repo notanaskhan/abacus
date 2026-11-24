@@ -519,7 +519,15 @@ function Issues({ overview }: { overview: TaxReturnOverviewOut }): JSX.Element {
   );
 }
 
-function TwoYear({ overview }: { overview: TaxReturnOverviewOut }): JSX.Element | null {
+function TwoYear({
+  overview,
+  returnId,
+}: {
+  overview: TaxReturnOverviewOut;
+  returnId: string;
+}): JSX.Element | null {
+  const open = useOpenHref();
+  const live = useFlag("tax.two_year") === true;
   const rows = overview.two_year ?? [];
   if (rows.length === 0) return null;
   return (
@@ -545,11 +553,24 @@ function TwoYear({ overview }: { overview: TaxReturnOverviewOut }): JSX.Element 
         </div>
       ))}
       <div className="px-[14px] py-[10px]">
-        <Planned hint={COPY.hints.twoYear}>
-          <span className="text-dense font-medium">
+        {live ? (
+          // T-08-T22 (DEC-5938): TAX-10 is built; its link opens the review's 2-Year sheet.
+          <button
+            type="button"
+            className="text-dense font-medium hover:underline"
+            onClick={() => {
+              open(hrefOf(to.TAX10({ returnId, section: "two-year" })));
+            }}
+          >
             {COPY.openTwoYear} <span className="text-ink-3">→</span>
-          </span>
-        </Planned>
+          </button>
+        ) : (
+          <Planned hint={COPY.hints.twoYear}>
+            <span className="text-dense font-medium">
+              {COPY.openTwoYear} <span className="text-ink-3">→</span>
+            </span>
+          </Planned>
+        )}
       </div>
     </section>
   );
@@ -615,7 +636,7 @@ function Body({
     );
   }
   const plan = <Plan overview={overview} />;
-  const twoYear = <TwoYear overview={overview} />;
+  const twoYear = <TwoYear overview={overview} returnId={record.row.id} />;
   return (
     <div className="grid grid-cols-[minmax(0,612fr)_minmax(0,388fr)] content-start gap-[12px]">
       <Banner overview={overview} now={now} />

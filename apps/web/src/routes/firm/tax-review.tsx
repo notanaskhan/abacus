@@ -82,10 +82,13 @@ function useEngagementOf(returnId: string): string | undefined {
   return useQuery(returnRecordOptions({ path: { return_id: returnId } })).data?.engagement_id;
 }
 
+// T-08-T22 (DEC-5938): TAX-10, the review's 2-Year Comparison sheet, behind `tax.two_year`.
+const TwoYear = lazyScreen(async () => (await import("../../screens/TAX-10")).TAX10);
+
 function LiveSection({
   section,
 }: {
-  section: "review" | "worksheets" | "issues" | "activity";
+  section: "review" | "worksheets" | "issues" | "activity" | "two-year";
 }): JSX.Element {
   const returnId = useParam("returnId");
   const engagementId = useEngagementOf(returnId);
@@ -93,6 +96,9 @@ function LiveSection({
   if (section === "issues") return <IssuesLive returnId={returnId} engagementId={engagementId} />;
   if (section === "activity") {
     return <ActivityLive returnId={returnId} engagementId={engagementId} />;
+  }
+  if (section === "two-year") {
+    return <TwoYearSection returnId={returnId} />;
   }
   if (section === "worksheets") {
     return (
@@ -104,6 +110,33 @@ function LiveSection({
     );
   }
   return <ReviewLive returnId={returnId} engagementId={engagementId} />;
+}
+
+function TwoYearSection({ returnId }: { returnId: string }): JSX.Element {
+  const navigate = useNavigate();
+  return (
+    <FeatureGate
+      flag="tax.two_year"
+      fallback={<FlagOffState flag="tax.two_year" label="2-Year Comparison" />}
+    >
+      <TwoYear
+        returnId={returnId}
+        onSheet={(sheet) => {
+          if (sheet === "Worksheets") {
+            void navigate({
+              to: "/tax-returns/$returnId/review/$section",
+              params: { returnId, section: "worksheets" },
+            });
+          } else if (sheet === "Leadsheets") {
+            void navigate({
+              to: "/tax-returns/$returnId/review/$section",
+              params: { returnId, section: "leadsheets" },
+            });
+          }
+        }}
+      />
+    </FeatureGate>
+  );
 }
 
 function Workspace({
@@ -370,7 +403,15 @@ export const taxReviewRoute = createRoute({
         review={section}
         fallback={
           <Workspace tab="review" title="Review">
-            <LiveSection section={section === "worksheets" ? "worksheets" : "review"} />
+            <LiveSection
+              section={
+                section === "worksheets"
+                  ? "worksheets"
+                  : section === "two-year"
+                    ? "two-year"
+                    : "review"
+              }
+            />
           </Workspace>
         }
       />

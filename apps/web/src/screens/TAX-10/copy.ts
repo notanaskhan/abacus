@@ -1,0 +1,48 @@
+// TAX-10's words, verbatim from the handoff (screens/TAX-10 spec.md) and the screen contract's
+// DF-04 composition; figures and explanations are the server's.
+export const COPY = {
+  sheetsLabel: "Review sheets",
+  sheets: ["Worksheets", "Leadsheets", "2-Year Comparison"] as const,
+  active: "2-Year Comparison",
+  filterLabel: "Lines",
+  all: "All lines",
+  over: "Over threshold",
+  title: "2-Year Comparison · Form 1040",
+  openInExcel: "Open in Excel",
+  threshold: "Threshold",
+  thresholdValue: (amount: string, pct: string) => `> ${amount} and ${pct}%`,
+  thresholdPopover: (source: string, amount: string, pct: string) =>
+    `Firm threshold from ${source}: both > ${amount} and > ${pct}%`,
+  tally: "Two-year comparison",
+  agi: "AGI",
+  totalTax: "Total tax",
+  refund: "Refund",
+  refundPrior: (v: string) => `(2024: ${v})`,
+  overThreshold: "Over threshold",
+  accepted: "Accepted",
+  acceptedValue: (n: number, of: number) => `${String(n)} of ${String(of)}`,
+  pane: "Form 1040 · 2024 vs 2025",
+  columns: ["Line", "2024", "2025", "Δ", "Δ%", "Explanation", ""],
+  groups: {
+    income: "Income",
+    deductions: "Deductions",
+    tax_and_payments: "Tax and payments",
+  } as Record<string, string>,
+  belowAmount: "below $1,000",
+  acceptedBy: (who: string, at: string | null) =>
+    at === null ? `Accepted · ${who}` : `Accepted · ${who} ${at}`,
+  accept: "Accept",
+  edit: "Edit",
+  save: "Save",
+  cancel: "Cancel",
+  explain: "Explain…",
+  explaining: "Explaining…",
+  editLabel: (line: string) => `Explanation for ${line}`,
+  agentsOff: {
+    agents_off_for_taxpayer: "The agent is off for this taxpayer. Type the explanation.",
+    ai_unavailable: "AI is not available for this firm. Type the explanation.",
+  } as Record<string, string>,
+  unexplained: "Needs an explanation",
+  failed: "The comparison could not load.",
+  retry: "Retry",
+};
