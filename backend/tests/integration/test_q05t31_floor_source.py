@@ -33,5 +33,16 @@ async def test_ac_the_switch_waits_for_equal_floors(migrated_db: MigratedDatabas
             "'rowan', 'Q-05-T31 switch rehearsal')",
             json.dumps({"source": "retention_minimums"}),
         )
-        assert version == 1
-        assert await seed.value("SELECT retention_floor_source()") == "retention_minimums"
+        try:
+            assert version == 1
+            assert await seed.value("SELECT retention_floor_source()") == "retention_minimums"
+        finally:
+            # The source is platform-wide: switch back, or every retention test that runs after
+            # this one on the same database reads no floors (S53 main CI, test_retention_policies).
+            await seed.value(
+                "SELECT platform_setting_put('retention_floor_source', $1::jsonb, $2, "
+                "'rowan', 'Q-05-T31 switch rehearsal undone')",
+                json.dumps({"source": "retention_floors"}),
+                version,
+            )
+        assert await seed.value("SELECT retention_floor_source()") == "retention_floors"
