@@ -49,6 +49,9 @@ ALLOWLIST = {
     # S52 (DEC-5862): Q-05-T15's tombstones and Q-05-T17's reissue and intake source.
     "src/abacus/modules/evidence/destruction_execute.py",
     "src/abacus/modules/assurance/post_issuance_reissue.py",
+    # S53 (DEC-5940): Q-05-T22's post-issuance analysis records its run on the archived audit
+    # (the gate's ARCHIVE-001 allowlist names it too).
+    "src/abacus/modules/assurance/post_issuance_analysis.py",
 }
 
 
