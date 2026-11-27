@@ -17245,6 +17245,10 @@ export type DeliveryVendorPatchIn = {
      * Is Attorney
      */
     is_attorney?: boolean | null;
+    /**
+     * Paid Rents
+     */
+    paid_rents?: boolean | null;
 };
 
 /**
@@ -91564,9 +91568,9 @@ export type InformationReturnsErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Service unavailable
      */
-    501: ErrorOut;
+    503: ErrorOut;
 };
 
 export type InformationReturnsError = InformationReturnsErrors[keyof InformationReturnsErrors];
@@ -177840,9 +177844,9 @@ export type VendorPatchErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Service unavailable
      */
-    501: ErrorOut;
+    503: ErrorOut;
 };
 
 export type VendorPatchError = VendorPatchErrors[keyof VendorPatchErrors];

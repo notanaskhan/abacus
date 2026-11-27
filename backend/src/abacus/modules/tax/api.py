@@ -53,6 +53,7 @@ from abacus.modules.tax.board import KIND as SEARCH_TYPE
 from abacus.modules.tax.board import return_search_document, returns_by_office
 from abacus.modules.tax.due_dates import (
     FORM_FOR_RULES,
+    due_dates_for,
     on_reference_set_published,
     recompute_unfiled,
     register_due_dates_source,
@@ -400,6 +401,7 @@ __all__ = [
     "approve_allocation",
     "create_estimate_schedule",
     "drafter_workflow_id",
+    "due_dates_for",
     "estimates_for",
     "explain_workflow_id",
     "extension_for",

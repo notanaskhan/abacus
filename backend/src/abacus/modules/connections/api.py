@@ -147,6 +147,7 @@ from abacus.modules.connections.service import (
     start_retrieval,
 )
 from abacus.modules.connections.synthetic import SyntheticSeedRefused, seed_synthetic_connection
+from abacus.modules.connections.vendor_datasets import VendorDatasets, vendor_datasets_of
 from abacus.modules.connections.workflow_types import (
     FailInput,
     GlImportInput,
@@ -285,6 +286,7 @@ __all__ = [
     "SyncNowSignal",
     "SyntheticSeedRefused",
     "Unavailable",
+    "VendorDatasets",
     "WorkflowUnavailable",
     "authorised_engagement",
     "auto_retrieve",
@@ -331,6 +333,7 @@ __all__ = [
     "sync_facts",
     "trigger_retrieval",
     "validate_run",
+    "vendor_datasets_of",
     "workflow_id",
 ]
 

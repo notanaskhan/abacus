@@ -294,6 +294,8 @@ class DeliveryVendorPatchIn(BaseModel):
     entity_type: Annotated[EntityType | None, Internal] = None
     is_attorney: Annotated[bool | None, Internal] = None
     exempt_reason: Annotated[str | None, Field(max_length=200), Internal] = None
+    # C-02-T45 (additive, DEC-6009): the vendor's payments are rents (1099-MISC box 1).
+    paid_rents: Annotated[bool | None, Internal] = None
     expected_version: Annotated[int, Field(ge=1), Internal]
 
 
@@ -416,12 +418,6 @@ async def _human(ctx: AuthContext, flag: Flag, action: str) -> None:
     await _on(ctx, flag)
     if ctx.tenant.actor_kind != "human" or ctx.is_support:
         raise Forbidden(action, "role")
-
-
-def _not_built[M: BaseModel](model: type[M]) -> M:
-    """The stub's answer until its row builds it (501); the route already masks what it returns,
-    so the built body keeps the offshore masking (review 6)."""
-    raise NotImplementedYet
 
 
 @delivery_router.get(
@@ -639,7 +635,7 @@ async def close_tax_handoff_publish_route(
     "/client-entities/{client_entity_id}/information-returns",
     action="information_returns.read",
     response_model=DeliveryInformationReturnsOut,
-    errors=(501,),
+    errors=(503,),
 )
 async def information_returns_route(
     client_entity_id: UUID, ctx: Ctx, tax_year: int, w9: W9Status | None = None
@@ -647,7 +643,11 @@ async def information_returns_route(
     """CLS-13 tiles, rule text from C21 rows, vendor rows (C-02-T45). Each row's TIN last four is
     masked for an offshore reader (review 6)."""
     await _on(ctx, CLOSES_INFORMATION_RETURNS)
-    return await mask_tins_for(ctx, _not_built(DeliveryInformationReturnsOut))
+    from abacus.modules.closes import vendor_rollups
+
+    return await mask_tins_for(
+        ctx, await vendor_rollups.tracker(ctx, client_entity_id, tax_year, w9)
+    )
 
 
 @delivery_router.get(
@@ -681,13 +681,16 @@ async def vendor_w9_route(
 
 @delivery_router.patch(
     "/vendors/{vendor_id}", action="vendor_1099.update", response_model=DeliveryVendorRowOut,
-    errors=(409, 501),
+    errors=(409, 503),
 )  # fmt: skip
 async def vendor_patch_route(
     vendor_id: UUID, body: DeliveryVendorPatchIn, ctx: Ctx
 ) -> DeliveryVendorRowOut:
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "vendor_1099.update")
-    return await mask_tins_for(ctx, _not_built(DeliveryVendorRowOut))
+    from abacus.modules.closes import vendor_rollups, vendor_tins
+
+    await vendor_rollups.update_vendor(ctx, vendor_id, body)
+    return await mask_tins_for(ctx, await vendor_tins.get_vendor(ctx, vendor_id))
 
 
 @delivery_router.post(
