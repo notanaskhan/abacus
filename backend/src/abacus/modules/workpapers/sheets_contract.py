@@ -36,6 +36,10 @@ ColumnType = Literal[
     "linked_request", "linked_risk", "sign_off", "agent",
 ]  # fmt: skip
 CellState = Literal["empty", "human", "suggested", "adopted", "edited"]
+# K-03-T23 (DEC-6034): a date column's display, its range check, and the four ADR-031 levels.
+ColumnDisplay = Literal["date", "month"]
+ColumnValidation = Literal["end_on_or_after_start"]
+Classification = Literal["restricted", "confidential", "internal", "public"]
 RunScope = Literal["all", "empty_only", "selected"]
 RunRowState = Literal[
     "queued", "running", "waiting_on_inputs", "succeeded", "failed", "cancelled", "skipped_adopted"
@@ -69,6 +73,15 @@ class SheetColumnOut(BaseModel):
         None
     )
     options: Annotated[list[SheetColumnOptionOut], Internal] = []
+    # K-03-T23 (DEC-6034), additive: the configuration SHT-02 edits (the columns service is
+    # K-03-T24; these are stub fields until then).
+    description: Annotated[str | None, Field(max_length=300), Internal] = None
+    date_range: Annotated[bool, Internal] = False
+    display: Annotated[ColumnDisplay | None, Internal] = None
+    required: Annotated[bool, Internal] = False
+    validation: Annotated[ColumnValidation | None, Internal] = None
+    classification: Annotated[Classification, Internal] = "restricted"
+    visible_to_client: Annotated[bool, Internal] = False
 
 
 class SheetSectionOut(BaseModel):
@@ -102,12 +115,17 @@ class SheetVmOut(BaseModel):
 
     sheet_id: Annotated[UUID, Internal]
     work_item_id: Annotated[UUID, Internal]
+    # K-03-T23 (DEC-6034), additive: the engagement SHT-02's suggestion thread posts in.
+    engagement_id: Annotated[UUID | None, Internal] = None
     title: Annotated[str, Field(max_length=200), Internal]
     columns: Annotated[list[SheetColumnOut], Internal]
     sections: Annotated[list[SheetSectionOut], Internal]
     status: Annotated[SheetStatusOut, Internal]
     signed_off: Annotated[bool, Internal] = False
     allowed_actions: Annotated[list[str], Internal] = []
+    # K-03-T23 (DEC-6034), additive: who may change columns here (the engagement's manager), for
+    # SHT-02 f's "Suggest to <name>…"; the columns service (K-03-T24) fills it.
+    configurer: Annotated[str | None, Field(max_length=120), Confidential] = None
 
 
 class SheetCellOut(BaseModel):
@@ -257,6 +275,15 @@ class SheetColumnIn(BaseModel):
     label: Annotated[str, Field(min_length=1, max_length=120), Internal]
     width: Annotated[int, Field(ge=40, le=800), Internal] = 160
     classification_reason: Annotated[str | None, Field(max_length=300), Internal] = None
+    # K-03-T23 (DEC-6034), additive: SHT-02's fields. A level below Restricted on a client-data
+    # column needs `classification_reason` (K-03-T24 enforces it with 422).
+    description: Annotated[str | None, Field(max_length=300), Internal] = None
+    after_key: Annotated[str | None, Field(pattern=r"^[a-z][a-z0-9_]{0,59}$"), Internal] = None
+    date_range: Annotated[bool, Internal] = False
+    display: Annotated[ColumnDisplay | None, Internal] = None
+    required: Annotated[bool, Internal] = False
+    validation: Annotated[ColumnValidation | None, Internal] = None
+    classification: Annotated[Classification, Internal] = "restricted"
 
 
 class ColumnUsageOut(BaseModel):
@@ -265,6 +292,10 @@ class ColumnUsageOut(BaseModel):
     filled_rows: Count
     views: Count
     in_use: Annotated[bool, Internal]
+    # K-03-T23 (DEC-6034), additive: what SHT-02's "Used in" line and blocked delete name.
+    view_names: Annotated[list[str], Internal] = []
+    rules: Count = 0
+    agent_columns: Annotated[list[str], Internal] = []
 
 
 class AgentColumnOut(BaseModel):
@@ -378,6 +409,7 @@ def _vm_out(vm: object) -> SheetVmOut:
     found = cast(sh.SheetVm, vm)
     return SheetVmOut(
         sheet_id=found.id, work_item_id=found.work_item_id, title=found.title,
+        engagement_id=found.engagement_id,
         columns=[
             SheetColumnOut(column_id=c.id, key=c.key, type=cast(ColumnType, c.type), label=c.name,
                            width=c.width, frozen=c.frozen)

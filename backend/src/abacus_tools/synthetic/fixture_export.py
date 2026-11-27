@@ -676,7 +676,10 @@ def scenario_files() -> dict[str, str]:
         cls13_tracker,
     )
     from abacus_tools.synthetic.scenarios.brightwater_hale.quality_slice import aud30_rows
-    from abacus_tools.synthetic.scenarios.brightwater_hale.sheets_slice import sht01_row_drawer
+    from abacus_tools.synthetic.scenarios.brightwater_hale.sheets_slice import (
+        sht01_row_drawer,
+        sht02_column,
+    )
     from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import hub_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.tb_handoff_slice import aud38_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.two_year_slice import tax10_rows
@@ -755,6 +758,18 @@ def scenario_files() -> dict[str, str]:
                 "slice": "sheets",
                 "snapshot": "2026-09-30T10:15",
                 **sht01_row_drawer(),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        # K-03-T23 (DEC-6034): SHT-02's Service period column and its usage.
+        "scenario.sht02-column.json": json.dumps(
+            {
+                "scenario": SCENARIO_VERSION,
+                "slice": "sheets",
+                "snapshot": "2026-09-24T11:20",
+                **sht02_column(),
             },
             indent=2,
             ensure_ascii=False,

@@ -129,6 +129,11 @@ function HeaderCell({
     { label: "Sort descending", intent: { kind: "sort", dir: "desc" } },
     { label: "Filter", intent: { kind: "filter" } },
     { label: "Hide column", intent: { kind: "hide" } },
+    // SHT-02 (K-03-T23): add a column after this one, or change this one.
+    { label: "Add column…", intent: { kind: "add_column" } },
+    ...(column.type === "agent"
+      ? []
+      : [{ label: "Edit column…", intent: { kind: "edit_column" } as const }]),
     ...(column.type === "agent" && column.agent?.unavailable === undefined
       ? [
           { label: "Edit agent column…", intent: { kind: "edit_agent_column" } as const },

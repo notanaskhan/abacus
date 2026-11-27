@@ -112,6 +112,14 @@ export function SHT01({ auditId, sheetId }: SHT01Props): JSX.Element {
       viewer: { kind: "human", name },
       height: 600,
       selected,
+      onColumnIntent: (key, intent) => {
+        // K-03-T23: "Add column…" after this column, "Edit column…" on it (SHT-02).
+        if (intent.kind === "add_column") openOverlay(ov.SHT02("new", key));
+        const column = sheet.data?.columns.find((c) => c.key === key);
+        if (intent.kind === "edit_column" && column !== undefined) {
+          openOverlay(ov.SHT02(column.column_id));
+        }
+      },
       onOpenRow: (key) => {
         openOverlay(ov.SHT01Row(key));
       },

@@ -112,3 +112,41 @@ def sht01_row_drawer() -> dict[str, object]:
             "linked_at": datetime(2026, 9, 26, 11, 0, tzinfo=CDT).isoformat(),
         },
     }
+
+
+# --- SHT-02: the Service period column (K-03-T23, DEC-6034) ---------------------------------
+
+# Hannah Leclerc adds it at Thu Sep 24, 11:20 AM (SHT-01 c has no Service period before then) and
+# edits it on Wed Sep 30, 9:50 AM, when the Default and Exceptions views and the Conclusion agent
+# column (`@Service period`) use it and every one of the 40 rows has a value.
+MANAGER: Final = "Hannah Leclerc"
+SHEET_CODE: Final = "BH-FS-430"
+
+
+def sht02_column() -> dict[str, object]:
+    """SHT-02's column in the sheets contract's column shape, and its usage once in use."""
+    return {
+        "sheet_code": SHEET_CODE,
+        "manager": MANAGER,
+        "column": {
+            "key": "service_period",
+            "type": "date",
+            "label": "Service period",
+            "description": "When the goods or services were received",
+            "after_key": "invoice_on",
+            "date_range": True,
+            "display": "month",
+            "required": True,
+            "validation": "end_on_or_after_start",
+            "classification": "restricted",
+            "visible_to_client": False,
+        },
+        "usage_in_use": {
+            "filled_rows": len(SURL),
+            "views": 2,
+            "view_names": ["Default", "Exceptions"],
+            "rules": 0,
+            "agent_columns": ["Conclusion"],
+            "in_use": True,
+        },
+    }

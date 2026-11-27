@@ -19,6 +19,7 @@ from typing import cast
 
 import pytest
 
+from .p05_support import FLAG as COLLAB_FLAG
 from .support import Net, Person, Seeder, Site
 
 pytestmark = pytest.mark.asyncio
@@ -286,7 +287,7 @@ async def test_k03t22_row_drawer_reads_facts_reason_and_links(net: Net, seed: Se
     the agent's reason for its suggested cell (the agents module's own read, walls and all), and
     its links; a row on another sheet answers 404, and a person outside the walls sees nothing."""
     tenant = await seed.firm()
-    for flag in ("sheets.enabled", "templates_v2.enabled"):
+    for flag in ("sheets.enabled", "templates_v2.enabled", COLLAB_FLAG):
         await seed.run(
             "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
             "VALUES ($1, $2, 'true', 'test-seed', 'K-03-T22')",
@@ -412,9 +413,33 @@ async def test_k03t22_row_drawer_reads_facts_reason_and_links(net: Net, seed: Se
     assert full["row"]["cells"]["result"]["state"] == "suggested"
     assert [(k["kind"], k["target_id"]) for k in full["links"]] == [("evidence", str(target))]
 
+    # K-03-T23 (DEC-6034): the VM names its engagement, and threads open on the row (the drawer's
+    # Comments tab) and on the sheet (SHT-02's "Suggest to <name>…"), labelled by code.
+    vm = (await net.call("GET", f"/v1/sheets/{sheet_id}", manager)).json()
+    assert vm["engagement_id"] == str(granite.engagement_id)
+    for kind, anchor_id, words in (
+        ("sheet_row", row_id, fifth["key"]),
+        ("sheet", sheet_id, "Disbursements testing"),
+    ):
+        opened = await net.call(
+            "POST",
+            "/v1/comment-threads",
+            manager,
+            body={"anchor": {"anchor_kind": kind, "anchor_id": anchor_id}, "body": "Check this."},
+        )
+        assert opened.status_code == 201, opened.text
+        assert words in str(opened.json())
+
     # Another sheet's row, and a person outside the walls.
     stranger = await net.call("GET", f"/v1/sheets/{sheet_id}/rows/{uuid.uuid4()}", manager)
     assert stranger.status_code == 404, stranger.text
     outsider = await seed.person(tenant)
     walled = await net.call("GET", f"/v1/sheets/{sheet_id}/rows/{row_id}", outsider)
     assert walled.status_code in (403, 404), walled.text
+    hidden = await net.call(
+        "POST",
+        "/v1/comment-threads",
+        outsider,
+        body={"anchor": {"anchor_kind": "sheet_row", "anchor_id": row_id}, "body": "x"},
+    )
+    assert hidden.status_code in (403, 404), hidden.text

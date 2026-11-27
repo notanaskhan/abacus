@@ -41,3 +41,5 @@ registerOverlay("sampling", { layer: "modal", render });
 registerOverlay("integration", { layer: "drawer", render });
 // K-03-T22: SHT-01 e `?ov=row:<rowKey>`, a sheet row's drawer over its sheet.
 registerOverlay("row", { layer: "drawer", render });
+// K-03-T23: SHT-02 `?ov=column:new[:<afterKey>]` or `?ov=column:<columnId>`, the column drawer.
+registerOverlay("column", { layer: "drawer", render });

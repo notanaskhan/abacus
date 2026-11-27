@@ -11355,6 +11355,10 @@ export type CodeVerifyIn = {
  */
 export type ColumnUsageOut = {
     /**
+     * Agent Columns
+     */
+    agent_columns?: Array<string>;
+    /**
      * Filled Rows
      */
     filled_rows: number;
@@ -11362,6 +11366,14 @@ export type ColumnUsageOut = {
      * In Use
      */
     in_use: boolean;
+    /**
+     * Rules
+     */
+    rules?: number;
+    /**
+     * View Names
+     */
+    view_names?: Array<string>;
     /**
      * Views
      */
@@ -59571,9 +59583,29 @@ export type SheetCellOut = {
  */
 export type SheetColumnIn = {
     /**
+     * After Key
+     */
+    after_key?: string | null;
+    /**
+     * Classification
+     */
+    classification?: 'restricted' | 'confidential' | 'internal' | 'public';
+    /**
      * Classification Reason
      */
     classification_reason?: string | null;
+    /**
+     * Date Range
+     */
+    date_range?: boolean;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Display
+     */
+    display?: 'date' | 'month' | null;
     /**
      * Key
      */
@@ -59583,9 +59615,17 @@ export type SheetColumnIn = {
      */
     label: string;
     /**
+     * Required
+     */
+    required?: boolean;
+    /**
      * Type
      */
     type: 'text' | 'number' | 'currency' | 'date' | 'single_select' | 'person' | 'linked_evidence' | 'linked_request' | 'linked_risk' | 'sign_off' | 'agent';
+    /**
+     * Validation
+     */
+    validation?: 'end_on_or_after_start' | null;
     /**
      * Width
      */
@@ -59621,9 +59661,25 @@ export type SheetColumnOut = {
      */
     agent_unavailable?: 'real_client_data' | 'consent_7216' | null;
     /**
+     * Classification
+     */
+    classification?: 'restricted' | 'confidential' | 'internal' | 'public';
+    /**
      * Column Id
      */
     column_id: string;
+    /**
+     * Date Range
+     */
+    date_range?: boolean;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Display
+     */
+    display?: 'date' | 'month' | null;
     /**
      * Frozen
      */
@@ -59641,9 +59697,21 @@ export type SheetColumnOut = {
      */
     options?: Array<SheetColumnOptionOut>;
     /**
+     * Required
+     */
+    required?: boolean;
+    /**
      * Type
      */
     type: 'text' | 'number' | 'currency' | 'date' | 'single_select' | 'person' | 'linked_evidence' | 'linked_request' | 'linked_risk' | 'sign_off' | 'agent';
+    /**
+     * Validation
+     */
+    validation?: 'end_on_or_after_start' | null;
+    /**
+     * Visible To Client
+     */
+    visible_to_client?: boolean;
     /**
      * Width
      */
@@ -60044,6 +60112,14 @@ export type SheetVmOut = {
      * Columns
      */
     columns: Array<SheetColumnOut>;
+    /**
+     * Configurer
+     */
+    configurer?: string | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id?: string | null;
     /**
      * Sections
      */

@@ -119,6 +119,15 @@ export const ov = {
   }),
   /** AUD-38, the tax hand-off sheet over AUD-06 (`?ov=tax-handoff:<auditWorkItemId>`; T-06-T45). */
   AUD38: (workItemId: string): OverlayRef => ({ key: "tax-handoff", args: [workItemId] }),
+  /** SHT-02, the column drawer over its sheet (`?ov=column:new[:<afterKey>]` or
+   * `?ov=column:<columnId>`; K-03-T23). */
+  SHT02: (columnId: string, afterKey?: string): OverlayRef => ({
+    key: "column",
+    args: afterKey === undefined ? [columnId] : [columnId, afterKey],
+  }),
+  /** SHT-04, the agent-column editor over its sheet (`?ov=agent-column:<id|new>`; its screen is
+   * K-03-T31, so until then the key is unregistered and opening it does nothing). */
+  SHT04: (columnId: string): OverlayRef => ({ key: "agent-column", args: [columnId] }),
   /** SHT-01 e, a sheet row's drawer over its sheet (`?ov=row:<rowKey>`; K-03-T22). */
   SHT01Row: (rowKey: string): OverlayRef => ({ key: "row", args: [rowKey] }),
   /** SHL-09, one field's provenance tray as a drawer (`?ov=provenance:<type>:<id>:<fieldKey>`;
