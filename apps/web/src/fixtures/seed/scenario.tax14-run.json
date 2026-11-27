@@ -1,0 +1,162 @@
+{
+  "scenario": "bh-2026.10.3",
+  "slice": "standards_run",
+  "snapshot": "E0",
+  "standard": "1065 Review Checklist",
+  "version_no": 4,
+  "checks_count": 42,
+  "started_at": "2026-09-14T09:18:00-05:00",
+  "completed_at": "2026-09-14T09:26:00-05:00",
+  "started_by": "Samuel Ito",
+  "open_1065s": 8,
+  "rows": [
+    {
+      "client_name": "Ridgeline Property Partners, LP",
+      "office": "New York",
+      "preparer": "OB",
+      "reviewer": "SI",
+      "return_status": "in_review",
+      "review_level": "partner",
+      "status": "exceptions",
+      "checks_passed": 40,
+      "exceptions": 2,
+      "linked_issues": 2,
+      "created_issues": 0,
+      "completed_at": "2026-09-14T09:19:00-05:00"
+    },
+    {
+      "client_name": "Northgate Medical Partners, LLP",
+      "office": "Chicago",
+      "preparer": "BN",
+      "reviewer": "NA",
+      "return_status": "in_review",
+      "review_level": "manager",
+      "status": "running",
+      "checks_passed": 31,
+      "exceptions": 0,
+      "linked_issues": 0,
+      "created_issues": 0,
+      "completed_at": null
+    },
+    {
+      "client_name": "Marlowe Street Holdings, LP",
+      "office": "New York",
+      "preparer": "DS",
+      "reviewer": "TR",
+      "return_status": "action_required",
+      "review_level": null,
+      "status": "exceptions",
+      "checks_passed": 39,
+      "exceptions": 3,
+      "linked_issues": 0,
+      "created_issues": 3,
+      "completed_at": "2026-09-14T09:20:00-05:00"
+    },
+    {
+      "client_name": "Kestrel Ventures Fund I, LP",
+      "office": "New York",
+      "preparer": "NP",
+      "reviewer": "TR",
+      "return_status": "awaiting_signature",
+      "review_level": null,
+      "status": "passed",
+      "checks_passed": 42,
+      "exceptions": 0,
+      "linked_issues": 0,
+      "created_issues": 0,
+      "completed_at": "2026-09-14T09:20:00-05:00"
+    },
+    {
+      "client_name": "Bramble & Finch Design, LLC",
+      "office": "Chicago",
+      "preparer": "GT",
+      "reviewer": "YK",
+      "return_status": "prepared",
+      "review_level": null,
+      "status": "passed",
+      "checks_passed": 42,
+      "exceptions": 0,
+      "linked_issues": 0,
+      "created_issues": 0,
+      "completed_at": "2026-09-14T09:21:00-05:00"
+    },
+    {
+      "client_name": "Harborview Dental Properties, LP",
+      "office": "New York",
+      "preparer": "OB",
+      "reviewer": "SI",
+      "return_status": "ready",
+      "review_level": null,
+      "status": "passed",
+      "checks_passed": 42,
+      "exceptions": 0,
+      "linked_issues": 0,
+      "created_issues": 0,
+      "completed_at": "2026-09-14T09:21:00-05:00"
+    }
+  ],
+  "ridgeline_checks": [
+    {
+      "code": "C-04",
+      "title": "K-1 count equals Item I",
+      "outcome": "pass",
+      "linked": null
+    },
+    {
+      "code": "C-09",
+      "title": "Schedule K equals Σ K-1s",
+      "outcome": "pass",
+      "linked": null
+    },
+    {
+      "code": "C-12",
+      "title": "Schedule M-3 required test applied",
+      "outcome": "pass",
+      "linked": null
+    },
+    {
+      "code": "C-15",
+      "title": "TB balanced and Unmapped 0",
+      "outcome": "pass",
+      "linked": null
+    },
+    {
+      "code": "C-17",
+      "title": "Schedule M-2 line 9 equals Schedule L line 21",
+      "outcome": "exception",
+      "linked": "Tax-exempt interest 6,200 omitted from the capital rollforward"
+    },
+    {
+      "code": "C-22",
+      "title": "Partnership representative designated",
+      "outcome": "pass",
+      "linked": null
+    },
+    {
+      "code": "C-31",
+      "title": "Transfer of interest: §743(b)/§754 position documented",
+      "outcome": "exception",
+      "linked": "§743(b) placeholder 28,595 pending the §754 decision"
+    },
+    {
+      "code": "C-38",
+      "title": "PTET elections and payments recorded",
+      "outcome": "pass",
+      "linked": null
+    }
+  ],
+  "other_versions": [
+    {
+      "label": "1065 Review Checklist v3",
+      "state": "superseded"
+    },
+    {
+      "label": "1120-S Review Checklist v3",
+      "state": "current"
+    },
+    {
+      "label": "1041 Review Checklist v2",
+      "state": "current"
+    }
+  ]
+}

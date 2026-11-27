@@ -683,6 +683,7 @@ def scenario_files() -> dict[str, str]:
         sht02_column,
     )
     from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import hub_rows
+    from abacus_tools.synthetic.scenarios.brightwater_hale.standards_run_slice import tax14_run
     from abacus_tools.synthetic.scenarios.brightwater_hale.tb_handoff_slice import aud38_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.two_year_slice import tax10_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.usage_slice import adm14_rows
@@ -760,6 +761,18 @@ def scenario_files() -> dict[str, str]:
                 "slice": "sheets",
                 "snapshot": "2026-09-30T10:15",
                 **sht01_row_drawer(),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        # T-08-T31 (DEC-6037): TAX-14's run of the 1065 Review Checklist v4.
+        "scenario.tax14-run.json": json.dumps(
+            {
+                "scenario": SCENARIO_VERSION,
+                "slice": "standards_run",
+                "snapshot": "E0",
+                **tax14_run(),
             },
             indent=2,
             ensure_ascii=False,

@@ -37,6 +37,7 @@ import {
   useKnowledgeItems,
   useReviewQueue,
 } from "../../domain/knowledge";
+import { hrefOf, to } from "../../routes/to";
 import { COPY } from "./copy";
 
 // KNW-01 · Knowledge library (K-01-T04). T5 CatalogLayout: the tabsbar (Library · Review queue n ·
@@ -167,7 +168,14 @@ function KnowledgeCard({ item, now }: { item: KnowledgeItemOut; now: Date }): JS
       {usage !== null && (
         <p className="mt-[6px] flex items-center gap-[6px] text-cell text-ink-2">
           <Icon name="link-2" size={12} className="text-ink-3" />
-          {usage}
+          {item.usage_kind === "returns" ? (
+            // T-08-T31: "Applied to 38 returns" opens TAX-14 with that checklist.
+            <a href={hrefOf(to.TAX14())} className="hover:underline">
+              {usage}
+            </a>
+          ) : (
+            usage
+          )}
         </p>
       )}
       {PLANNED_VISIBLE && (

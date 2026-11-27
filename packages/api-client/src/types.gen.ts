@@ -66714,6 +66714,10 @@ export type TaxPracticeRunItemOut = {
      */
     client_name: string;
     /**
+     * Completed At
+     */
+    completed_at?: string | null;
+    /**
      * Created Issues
      */
     created_issues: number;
@@ -66729,6 +66733,20 @@ export type TaxPracticeRunItemOut = {
      * Linked Issues
      */
     linked_issues: number;
+    /**
+     * Office Id
+     */
+    office_id?: string | null;
+    preparer?: PersonChipOut | null;
+    /**
+     * Return Status
+     */
+    return_status?: string | null;
+    /**
+     * Review Level
+     */
+    review_level?: string | null;
+    reviewer?: PersonChipOut | null;
     /**
      * Status
      */
@@ -66764,6 +66782,10 @@ export type TaxPracticeRunOut = {
      */
     allowed_actions?: Array<string>;
     /**
+     * Checks Count
+     */
+    checks_count?: number | null;
+    /**
      * Completed At
      */
     completed_at?: string | null;
@@ -66792,10 +66814,18 @@ export type TaxPracticeRunOut = {
      */
     started_at: string;
     /**
+     * Started By
+     */
+    started_by?: string | null;
+    /**
      * Status
      */
     status: 'queued' | 'running' | 'complete' | 'failed';
     tiles: TaxPracticeRunTilesOut;
+    /**
+     * Version No
+     */
+    version_no?: number | null;
 };
 
 /**

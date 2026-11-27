@@ -22,7 +22,7 @@ DEC-5840). Amber. No model is called anywhere in TAX-14 (OQ-3).
 from __future__ import annotations
 
 import re
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from datetime import timedelta
 from decimal import Decimal
@@ -468,6 +468,13 @@ class RunItemView:
     exceptions: int
     linked: int
     created: int
+    # T-08-T31 (DEC-6037): TAX-14's row facts.
+    office_id: UUID | None = None
+    preparer: tuple[UUID, str] | None = None
+    reviewer: tuple[UUID, str] | None = None
+    return_status: str | None = None
+    review_level: str | None = None
+    completed_at: object | None = None
 
 
 @dataclass(frozen=True)
@@ -480,20 +487,38 @@ class RunView:
     started_at: object
     completed_at: object | None
     items: tuple[RunItemView, ...]
+    # T-08-T31 (DEC-6037): the version, its check count and who started the run.
+    version_no: int | None = None
+    checks_count: int | None = None
+    started_by: str | None = None
 
 
 _RUN: Final = text(
-    "SELECT r.id, r.standard_version_id, r.form, r.status, r.started_at, r.completed_at "
-    "FROM standards_runs r WHERE (:r IS NULL OR r.id = :r) AND (:f IS NULL OR r.form = :f) "
-    "AND (:s IS NULL OR r.status = :s) ORDER BY r.started_at DESC LIMIT 50"
+    "SELECT r.id, r.standard_version_id, r.form, r.status, r.started_at, r.completed_at, "
+    "r.started_by "
+    "FROM standards_runs r WHERE (CAST(:r AS uuid) IS NULL OR r.id = CAST(:r AS uuid)) "
+    "AND (CAST(:f AS text) IS NULL OR r.form = CAST(:f AS text)) "
+    "AND (CAST(:s AS text) IS NULL OR r.status = CAST(:s AS text)) "
+    "ORDER BY r.started_at DESC LIMIT 50"
 )
 _ITEMS: Final = text(
     "SELECT i.run_id, i.work_item_id, i.status, i.checks_total, i.checks_passed, "
+    "i.completed_at, "
     "count(c.id) FILTER (WHERE c.outcome = 'exception') AS exceptions, "
     "count(c.linked_issue_id) AS linked, count(c.created_issue_id) AS created "
     "FROM standards_run_items i LEFT JOIN standards_check_results c ON c.run_item_id = i.id "
     "WHERE i.run_id = ANY(:runs) GROUP BY i.id ORDER BY i.id"
 )
+_RETURNS: Final = text(
+    "SELECT work_item_id, status, review_level FROM tax_returns WHERE work_item_id = ANY(:w)"
+)
+# The functions that make a return's preparer and its reviewer (TAX-01's own order).
+_PREPARER: Final = ("preparer",)
+_REVIEWER: Final = ("detail_reviewer", "first_level_reviewer", "manager_reviewer")
+
+
+def _first(assignees: Mapping[str, tuple[UUID, ...]], functions: tuple[str, ...]) -> UUID | None:
+    return next((u for f in functions for u in assignees.get(f, ())), None)
 
 
 async def runs(
@@ -519,39 +544,87 @@ async def runs(
             if found
             else []
         )
+        returns = {
+            UUID(str(r.work_item_id)): r
+            for r in (
+                await session.execute(_RETURNS, {"w": [i.work_item_id for i in items]})
+            ).all()
+        } if items else {}  # fmt: skip
+    from abacus.modules.identity.api import names_of
+
+    people = {
+        u
+        for f in visible.values()
+        for u in (_first(f.assignees, _PREPARER), _first(f.assignees, _REVIEWER))
+        if u is not None
+    } | {UUID(str(r.started_by)) for r in found}
+    names = await names_of(sorted(people)) if people else {}
+
+    def named(u: UUID | None) -> tuple[UUID, str] | None:
+        return None if u is None else (u, names.get(u, ""))
+
     by_run: dict[UUID, list[RunItemView]] = {}
     for i in items:
         w = UUID(str(i.work_item_id))
         if w not in visible:
             continue
+        facts = visible[w]
+        ret = returns.get(w)
         by_run.setdefault(UUID(str(i.run_id)), []).append(
             RunItemView(
                 w,
-                visible[w].client_name,
+                facts.client_name,
                 str(i.status),
                 int(i.checks_total),
                 int(i.checks_passed),
                 int(i.exceptions),
                 int(i.linked),
                 int(i.created),
+                facts.office_id,
+                named(_first(facts.assignees, _PREPARER)),
+                named(_first(facts.assignees, _REVIEWER)),
+                None if ret is None else str(ret.status),
+                None if ret is None or ret.review_level is None else str(ret.review_level),
+                i.completed_at,
             )
         )
     out: list[RunView] = []
     for r in found:
         rid = UUID(str(r.id))
+        version = await _version(_tenant(ctx), UUID(str(r.standard_version_id)))
+        label = f"{str(r.form).upper()} Review Checklist"
         out.append(
             RunView(
                 rid,
                 UUID(str(r.standard_version_id)),
-                f"{str(r.form).upper()} Review Checklist",
+                label if version is None else f"{label} v{version[0]}",
                 str(r.form),
                 str(r.status),
                 r.started_at,
                 r.completed_at,
                 tuple(by_run.get(rid, [])),
+                None if version is None else version[0],
+                None if version is None else len(version[1]),
+                names.get(UUID(str(r.started_by))) or None,
             )
         )
     return out
+
+
+async def _version(tenant: TenantContext, version_id: UUID) -> tuple[int, dict[str, str]] | None:
+    """The checklist version's number and its items' words by key (TAX-14's check titles)."""
+    from abacus.modules.methodology.api import checklist_version
+
+    found = await checklist_version(tenant, version_id)
+    if found is None:
+        return None
+    form, version_no, payload = found
+    words: dict[str, str] = {}
+    for item in cast(list[dict[str, object]], payload.get("items") or []):
+        key = check_key(form, version_no, str(item.get("key", "")))
+        if key is not None:
+            words[key] = str(item.get("text") or item.get("key") or "")
+    return version_no, words
 
 
 async def checks(ctx: object, run_id: UUID, work_item_id: UUID) -> list[dict[str, object]]:
@@ -577,4 +650,7 @@ async def checks(ctx: object, run_id: UUID, work_item_id: UUID) -> list[dict[str
             .mappings()
             .all()
         )
-    return [dict(r) for r in rows]
+    words = await _version(_tenant(ctx), found[0].version_id)
+    titles = {} if words is None else words[1]
+    # T-08-T31 (DEC-6037): each check's words are the checklist item's (firm content).
+    return [{**dict(r), "title": titles.get(str(r["check_key"]))} for r in rows]
