@@ -6,8 +6,9 @@ Code computes; nothing here reads a database, the clock or a model.
   payments are the processor's to report (Form 1099-K), so they never count; a corporation (C, S
   or an LLC taxed as one) is exempt unless it is an attorney; a recorded exemption reason exempts;
   below the year's threshold is `below_threshold`; otherwise `reportable` on 1099-NEC box 1
-  (fees, attorneys' fees included). The 1099-MISC boxes (rents, gross proceeds to an attorney)
-  need the payment's ledger category, which CLS-13's tracker reads (C-02-T45).
+  (fees, attorneys' fees included), or on 1099-MISC box 1 when the vendor's payments are rents
+  (`paid_rents`, a person's classification: the ledger feed carries no expense category;
+  C-02-T45, DEC-6009). Attorney fees stay on NEC box 1.
 - `w9_status_after_match`: a TIN Matching result's effect on the W-9 status.
 - `backup_state_after`: the backup-withholding state an event leads to, or None when the event
   does not follow (a second `started`, a `stopped` with nothing running).
@@ -47,6 +48,7 @@ class VendorFacts:
     entity_type: str
     is_attorney: bool
     exempt_reason: str | None
+    paid_rents: bool = False
 
 
 @dataclass(frozen=True)
@@ -78,6 +80,8 @@ def classify(
         return Classification("exempt_corporation", amount, None, None)
     if threshold is None or amount < threshold.threshold_usd:
         return Classification("below_threshold", amount, None, None)
+    if vendor.paid_rents and not vendor.is_attorney:
+        return Classification("reportable", amount, "misc", "1")
     return Classification("reportable", amount, "nec", "1")
 
 

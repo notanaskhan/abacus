@@ -126,10 +126,20 @@ async def _on_close_created(event: OutboxEvent) -> None:
         await on_close_for_reversals(event)  # C-02-T24: last month's reversals carry here
 
 
+async def _on_ledger_snapshot(event: OutboxEvent) -> None:
+    """A synced month recomputes the reconciliations (C-01-T23) and rolls up the vendor pages
+    it pulled for CLS-13 (C-02-T45)."""
+    from abacus.modules.closes import vendor_rollups
+
+    await RECONCILIATION_SUBSCRIPTIONS["ledger_snapshot.recorded"](event)
+    await vendor_rollups.on_ledger_snapshot_recorded(event)
+
+
 SUBSCRIPTIONS: dict[str, Handler] = {
     "close.created": _on_close_created,
     **RECONCILIATION_SUBSCRIPTIONS,  # C-01-T23
     **REGISTRATION_SUBSCRIPTIONS,  # C-01-T26: close runs and answered questions (C16)
+    "ledger_snapshot.recorded": _on_ledger_snapshot,  # C-01-T23 and C-02-T45
 }
 from abacus.modules.closes import vendor_tins as vendor_tins  # noqa: E402  # registrations
 from abacus.modules.closes.package_render import ACTIVITIES as _PACKAGE_ACTIVITIES  # noqa: E402
