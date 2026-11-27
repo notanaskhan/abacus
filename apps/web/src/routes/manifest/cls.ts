@@ -35,7 +35,8 @@ export const clsScreens = {
   "CLS-07": {
     name: "Adjustments & thresholds · Copperleaf August 2026",
     status: "planned",
-    path: null,
+    // C-02-T44: the close's adjustments tab route (closes.tsx), the CLS-11 drawer's footer link.
+    path: "/closes/$closeId/adjustments",
   },
   "CLS-08": {
     name: "Close › Deliverables · Copperleaf August 2026 statements",
@@ -55,7 +56,7 @@ export const clsScreens = {
   },
   "CLS-11": {
     name: "GL sync console · Copperleaf · QuickBooks Online",
-    status: "live", // C-02-T35: a, a2, c, d, d2 on the C20 W1 reads (b, b2, e with C-02's later rows)
+    status: "live", // C-02-T35: a, a2, c, d, d2; C-02-T44: b, b2, e (drawer and conflicts)
     path: "/clients/$clientId/entities/$entityId/ledger",
   },
   "CLS-12": {

@@ -72776,6 +72776,43 @@ export type W1ActivityOut = {
 };
 
 /**
+ * W1BatchEntryOut
+ *
+ * CLS-11 b2 (C-02-T44): one entry in the batch drawer; `deep_link` opens the QuickBooks
+ * transaction (in a new tab, rel noopener), built server-side from QuickBooks' numeric id.
+ */
+export type W1BatchEntryOut = {
+    /**
+     * Amount
+     */
+    amount?: string | null;
+    /**
+     * Deep Link
+     */
+    deep_link?: string | null;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Entry Id
+     */
+    entry_id: string;
+    /**
+     * External Txn Ref
+     */
+    external_txn_ref?: string | null;
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
  * W1CapabilitySwitchIn
  */
 export type W1CapabilitySwitchIn = {
@@ -72811,6 +72848,39 @@ export type W1CapabilitySwitchOut = {
      * Released
      */
     released: boolean;
+};
+
+/**
+ * W1ClosingConflictOut
+ *
+ * CLS-11 e (C-02-T44): "AJE-06 dated Aug 31 cannot post — the QuickBooks closing date is
+ * Aug 31, 2026"; its actions are C8's ask-client and redate routes on `conflict_id`.
+ */
+export type W1ClosingConflictOut = {
+    /**
+     * Batch Code
+     */
+    batch_code: string;
+    /**
+     * Conflict Id
+     */
+    conflict_id: string;
+    /**
+     * Entry Date
+     */
+    entry_date: string;
+    /**
+     * Entry Ref
+     */
+    entry_ref: string;
+    /**
+     * Ledger Closing Date
+     */
+    ledger_closing_date: string;
+    /**
+     * Status
+     */
+    status: 'open' | 'client_asked';
 };
 
 /**
@@ -73029,6 +73099,10 @@ export type W1LedgerConsoleOut = {
      * Client Entity Name
      */
     client_entity_name: string;
+    /**
+     * Conflicts
+     */
+    conflicts?: Array<W1ClosingConflictOut>;
     connection?: W1ConnectionPaneOut | null;
     /**
      * Failures
@@ -73119,6 +73193,10 @@ export type W1PostingLogRowOut = {
      * Batch Id
      */
     batch_id: string;
+    /**
+     * Entries
+     */
+    entries?: Array<W1BatchEntryOut>;
     /**
      * Entry Count
      */

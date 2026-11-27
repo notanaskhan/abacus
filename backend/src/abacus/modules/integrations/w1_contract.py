@@ -119,6 +119,35 @@ class W1PostingFailureOut(BaseModel):
     resolved_by: Annotated[str | None, Field(max_length=200), Confidential] = None
 
 
+class W1ClosingConflictOut(BaseModel):
+    """CLS-11 e (C-02-T44): "AJE-06 dated Aug 31 cannot post — the QuickBooks closing date is
+    Aug 31, 2026"; its actions are C8's ask-client and redate routes on `conflict_id`."""
+
+    model_config = _cfg()
+
+    conflict_id: Annotated[UUID, Internal]
+    batch_code: Annotated[str, Field(pattern=r"^[0-9]{4}-[0-9]{2}-[A-Z]$"), Internal]
+    entry_ref: Annotated[str, Field(max_length=12), Internal]
+    entry_date: Annotated[date, Internal]
+    ledger_closing_date: Annotated[date, Internal]
+    status: Annotated[Literal["open", "client_asked"], Internal]
+
+
+class W1BatchEntryOut(BaseModel):
+    """CLS-11 b2 (C-02-T44): one entry in the batch drawer; `deep_link` opens the QuickBooks
+    transaction (in a new tab, rel noopener), built server-side from QuickBooks' numeric id."""
+
+    model_config = _cfg()
+
+    entry_id: Annotated[UUID, Internal]
+    ref: Annotated[str, Field(max_length=12), Internal]
+    status: Annotated[str, Field(max_length=30), Internal]
+    external_txn_ref: Annotated[str | None, Field(max_length=64), Internal] = None
+    deep_link: Annotated[str | None, Field(max_length=500), Internal] = None
+    description: Annotated[str | None, Field(max_length=500), Confidential] = None
+    amount: Annotated[Decimal | None, Confidential] = None
+
+
 class W1LedgerConsoleOut(BaseModel):
     model_config = _cfg()
 
@@ -129,6 +158,8 @@ class W1LedgerConsoleOut(BaseModel):
     connection: Annotated[W1ConnectionPaneOut | None, Internal] = None
     posting_paused_by: Annotated[str | None, Field(max_length=200), Confidential] = None
     failures: Annotated[list[W1PostingFailureOut], Internal] = []
+    # C-02-T44 (additive): the open closing-date conflicts (CLS-11 e).
+    conflicts: Annotated[list[W1ClosingConflictOut], Internal] = []
 
 
 class W1PostingLogRowOut(BaseModel):
@@ -153,6 +184,8 @@ class W1PostingLogRowOut(BaseModel):
     amount: Annotated[Decimal | None, Confidential] = None
     posted_at: Annotated[datetime | None, Internal] = None
     posted_by: Annotated[str | None, Field(max_length=200), Confidential] = None
+    # C-02-T44 (additive): the batch drawer's entries; only `GET /posting-batches/{id}` fills it.
+    entries: Annotated[list[W1BatchEntryOut], Internal] = []
 
 
 class W1PostingLogOut(BaseModel):
@@ -346,6 +379,17 @@ async def ledger_console_route(client_entity_id: UUID, ctx: Ctx) -> W1LedgerCons
         if found.connection is None
         else W1ConnectionPaneOut.model_validate(found.connection),
         failures=[W1PostingFailureOut.model_validate(f) for f in found.failures],
+        conflicts=[
+            W1ClosingConflictOut(
+                conflict_id=c.conflict_id,
+                batch_code=c.batch_code,
+                entry_ref=c.entry_ref,
+                entry_date=c.entry_date,
+                ledger_closing_date=c.ledger_closing_date,
+                status=cast(Literal["open", "client_asked"], c.status),
+            )
+            for c in found.conflicts
+        ],
     )
 
 
@@ -432,7 +476,19 @@ async def posting_batch_route(batch_id: UUID, ctx: Ctx) -> W1PostingLogRowOut:
 
     await _console_on(ctx)
     row = await lc.posting_batch(ctx, batch_id)
-    return _log_row(row, await _log_names([row]))
+    entries = [
+        W1BatchEntryOut(
+            entry_id=e.entry_id,
+            ref=e.ref,
+            status=e.status,
+            external_txn_ref=e.external_txn_ref,
+            deep_link=lc.qbo_deep_link(e.external_txn_ref),
+            description=e.description,
+            amount=e.amount,
+        )
+        for e in await lc.batch_entries(ctx, batch_id)
+    ]
+    return _log_row(row, await _log_names([row])).model_copy(update={"entries": entries})
 
 
 @w1_router.post(

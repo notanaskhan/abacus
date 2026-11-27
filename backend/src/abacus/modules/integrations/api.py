@@ -75,11 +75,14 @@ from abacus.modules.integrations.esign_install import (
     rotate_esign_secret,
 )
 from abacus.modules.integrations.ledger_console import (
+    BatchEntry,
+    ClosingConflict,
     ClosingDate,
     LogRow,
     PostingFacts,
     PostingFailure,
     register_batch_entity,
+    register_batch_entries,
     register_posting_log,
 )
 from abacus.modules.integrations.ports import (
@@ -152,10 +155,12 @@ __all__ = [
     "ROUTERS",
     "W1_CAPABILITY",  # C-02-T18 (ADR-344): the W1 path and its switches
     "AdapterRefused",
+    "BatchEntry",  # C-02-T44: a batch drawer's entries, from adjustments
     "CatalogDocument",
     "CatalogDocumentV2",
     "CatalogEntry",
     "CatalogRow",
+    "ClosingConflict",  # C-02-T44: CLS-11 e's open closing-date conflicts
     "ClosingDate",  # C-02-T20: the ledger console's posting provider
     "EngineFieldProfile",
     "EsignInstallExists",
@@ -223,6 +228,7 @@ __all__ = [
     "policy_refusal",
     "register_adapter",
     "register_batch_entity",
+    "register_batch_entries",
     "register_engine_file_check",
     "register_last_engine_sync",
     "register_posting_log",

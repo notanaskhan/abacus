@@ -10,6 +10,7 @@
 import type {
   LedgerSyncStatusOut,
   W1ActivityOut,
+  W1ClosingConflictOut,
   W1ConnectionPaneOut,
   W1LedgerConsoleOut,
   W1PostingFailureOut,
@@ -17,6 +18,7 @@ import type {
 } from "@abacus/api-client";
 import { postingLogCsv } from "@abacus/api-client";
 import {
+  askClientMutation,
   closeSummaryOptions,
   ledgerActivityOptions,
   ledgerConsoleOptions,
@@ -24,16 +26,21 @@ import {
   ledgerSyncNowMutation,
   ledgerSyncStatusOptions,
   ledgerSyncStatusQueryKey,
+  postingBatchOptions,
   postingLogOptions,
+  postingLogQueryKey,
   reconnectPreviewOptions,
   reconnectRequestMutation,
+  redateMutation,
 } from "@abacus/api-client/query";
 import {
   Button,
   DASH,
   Dialog,
+  Drawer,
   FilterChip,
   Icon,
+  Label,
   Pane,
   Pill,
   RegistryStatus,
@@ -72,6 +79,9 @@ export interface CLS11Props {
   onLog?: (log: Cls11Log) => void;
   /** d2: the reconnect confirm opens with the page. */
   reconnectOpen?: boolean;
+  /** b2 (C-02-T44): the batch whose drawer is open (`?batch=`; null: none, from the route). */
+  batchId?: string | null | undefined;
+  onBatch?: (batchId: string | null) => void;
 }
 
 const TH = "h-[30px] px-[10px] text-left text-[12px] font-normal text-ink-2";
@@ -238,13 +248,29 @@ function ConnectionPane({
           {next.text}
         </Kv>
         <Kv k={C.connection.closingDate}>
-          {c.closing_date
-            ? C.connection.closingDateValue(
+          {c.closing_date ? (
+            !c.closing_date_set_by && c.closing_date_set_at ? (
+              // C-02-T44 (CLS-11 e): set in QuickBooks itself and found by a sync.
+              <Warn>
+                {C.connection.closingDateFound(
+                  longDateShort(c.closing_date),
+                  time(c.closing_date_set_at),
+                )}
+              </Warn>
+            ) : (
+              C.connection.closingDateValue(
                 longDateShort(c.closing_date),
                 c.closing_date_set_by ?? null,
-                c.closing_date_set_at ? stamp(c.closing_date_set_at, now) : null,
+                c.closing_date_set_at
+                  ? sameDay(c.closing_date_set_at, now)
+                    ? time(c.closing_date_set_at) // CLS-11 b: "set by Raj Malhotra, 10:22 AM"
+                    : stamp(c.closing_date_set_at, now)
+                  : null,
               )
-            : DASH}
+            )
+          ) : (
+            DASH
+          )}
         </Kv>
         <Kv k={C.connection.writeScope}>
           {c.write_granted ? C.connection.writeScopeValue : C.connection.readOnly}
@@ -265,15 +291,26 @@ function longDateShort(v: string): string {
 function LogRow({
   r,
   paused,
+  held,
+  open,
+  onOpen,
   now,
 }: {
   r: W1PostingLogRowOut;
   paused: boolean;
+  /** C-02-T44 (CLS-11 e): a closing-date conflict holds the batch. */
+  held: boolean;
+  open: boolean;
+  onOpen: (batchId: string) => void;
   now: Date;
 }): JSX.Element {
   const sub =
     r.status === "proposed"
-      ? [C.log.approved(r.approved_count, r.entry_count), paused ? C.log.postingPaused : null]
+      ? [
+          C.log.approved(r.approved_count, r.entry_count),
+          paused ? C.log.postingPaused : null,
+          held ? C.log.cantPost : null,
+        ]
           .filter((p) => p !== null)
           .join(" · ")
       : (r.resolved_failures ?? 0) > 0
@@ -284,8 +321,26 @@ function LogRow({
       ? C.log.qbo(r.first_external_ref, r.last_external_ref)
       : DASH;
   return (
-    <tr className="h-[40px] hairline-b" data-batch={r.batch_code}>
-      <td className={cn(TD, "font-medium")}>{r.batch_code}</td>
+    <tr
+      className={cn("h-[40px] cursor-pointer hairline-b hover:bg-hover", open && "bg-selected")}
+      data-batch={r.batch_code}
+      aria-selected={open}
+      onClick={() => {
+        onOpen(r.batch_id);
+      }}
+    >
+      <td className={cn(TD, "font-medium")}>
+        <button
+          type="button"
+          className="font-medium"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpen(r.batch_id);
+          }}
+        >
+          {r.batch_code}
+        </button>
+      </td>
       <td className={TD}>{monthYear(r.period)}</td>
       <td className={cn(TD, "text-right tabular-nums")}>{r.entry_count}</td>
       <td className={cn(TD, "text-right tabular-nums")}>
@@ -301,6 +356,190 @@ function LogRow({
       <td className={TD}>{ids}</td>
       <td className={TD}>{r.posted_by ?? DASH}</td>
     </tr>
+  );
+}
+
+/** CLS-11 b2 (C-02-T44): one batch, its entries and their QuickBooks transactions. */
+function BatchDrawer({
+  batchId,
+  closeId,
+  now,
+  onClose,
+}: {
+  batchId: string;
+  closeId: string | undefined;
+  now: Date;
+  onClose: () => void;
+}): JSX.Element {
+  const q = useQuery(postingBatchOptions({ path: { batch_id: batchId } }));
+  const b = q.data;
+  const entries = b?.entries ?? [];
+  return (
+    <Drawer
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      title={b === undefined ? C.log.title : C.drawer.title(b.batch_code, monthYear(b.period))}
+      footer={
+        closeId === undefined ? undefined : (
+          <Link
+            {...to.CLS07({ closeId })}
+            className="flex h-[32px] w-full items-center justify-center rounded-control bg-card text-[13px] shadow-e1"
+          >
+            {C.drawer.openAdjustments}
+          </Link>
+        )
+      }
+    >
+      {q.isPending ? (
+        <Skeleton className="m-[14px] h-[200px]" />
+      ) : b === undefined ? (
+        <p role="alert" className="p-[14px] text-[13px]">
+          {C.drawer.failed}
+        </p>
+      ) : (
+        <div data-cls11="drawer" className="flex flex-col gap-[10px]">
+          <dl className="rounded-nested bg-card">
+            <Kv k={C.drawer.status}>
+              <RegistryStatus object="posting_batch" code={b.status} />
+            </Kv>
+            <Kv k={C.drawer.amount}>
+              {b.amount === null || b.amount === undefined ? DASH : amount(b.amount, "money").text}
+            </Kv>
+            <Kv k={C.drawer.posted}>
+              {b.posted_at
+                ? C.drawer.postedValue(stamp(b.posted_at, now), b.posted_by ?? null)
+                : DASH}
+            </Kv>
+            <Kv k={C.drawer.ids}>
+              {b.first_external_ref && b.last_external_ref
+                ? C.log.qbo(b.first_external_ref, b.last_external_ref)
+                : DASH}
+            </Kv>
+          </dl>
+          <section aria-label={C.drawer.entries} className="rounded-nested bg-card">
+            <div className="flex h-[36px] items-center justify-between px-[14px] hairline-b">
+              <h3 className="text-[13px] font-medium">{C.drawer.entries}</h3>
+              <span className="text-[12px] text-ink-3">{C.drawer.entryCount(entries.length)}</span>
+            </div>
+            <ul>
+              {entries.map((e) => (
+                <li
+                  key={e.entry_id}
+                  data-entry={e.ref}
+                  className="flex min-h-[44px] items-center gap-[10px] px-[14px] text-[13px] hairline-b"
+                >
+                  <span className="w-[46px] text-ink-3">{e.ref}</span>
+                  <span className="flex-1">{e.description ?? DASH}</span>
+                  <span className="tabular-nums">
+                    {e.amount === null || e.amount === undefined
+                      ? DASH
+                      : amount(e.amount, "money").text}
+                  </span>
+                  {e.external_txn_ref && e.deep_link ? (
+                    <a
+                      href={e.deep_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-qbo={e.external_txn_ref}
+                      className="flex items-center gap-[4px] font-medium"
+                    >
+                      {C.drawer.qbo(e.external_txn_ref)}
+                      <Icon name="external-link" size={12} />
+                    </a>
+                  ) : (
+                    <span className="text-ink-3">
+                      {e.external_txn_ref ? C.drawer.qbo(e.external_txn_ref) : DASH}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+          <p className="px-[2px] text-[11.5px] text-ink-3">{C.drawer.opensInTab}</p>
+        </div>
+      )}
+    </Drawer>
+  );
+}
+
+/** "Sep 1": the day after a closing date, as Re-date offers it. */
+function dayAfter(v: string): string {
+  const d = new Date(`${v}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+/** CLS-11 e (C-02-T44): the open closing-date conflicts, one row per batch and entry date. */
+function Conflicts({
+  conflicts,
+  now,
+  onAsk,
+  onRedate,
+}: {
+  conflicts: readonly W1ClosingConflictOut[];
+  now: Date;
+  onAsk: (group: readonly W1ClosingConflictOut[]) => void;
+  onRedate: (group: readonly W1ClosingConflictOut[]) => void;
+}): JSX.Element | null {
+  if (conflicts.length === 0) return null;
+  const groups = new Map<string, W1ClosingConflictOut[]>();
+  for (const c of conflicts) {
+    const key = `${c.batch_code}|${c.entry_date}|${c.ledger_closing_date}`;
+    groups.set(key, [...(groups.get(key) ?? []), c]);
+  }
+  return (
+    <section aria-label={C.log.conflicts} data-cls11="conflicts">
+      <div className="flex h-[31px] items-center justify-between bg-nested px-[14px] hairline-b">
+        <h3 className="text-[13px] font-medium">{C.log.conflicts}</h3>
+        <span className="text-[12px] text-ink-3">{C.log.conflictsOpen(groups.size)}</span>
+      </div>
+      <ul>
+        {[...groups.values()].map((group) => {
+          const first = group[0];
+          if (first === undefined) return null;
+          const day = date(first.entry_date, { now });
+          return (
+            <li
+              key={`${first.batch_code}-${first.entry_date}`}
+              data-conflict={first.batch_code}
+              className="flex items-center gap-[10px] px-[14px] py-[8px] hairline-b"
+            >
+              <Icon name="triangle-alert" size={14} className="text-warn" />
+              <span className="flex flex-1 flex-col">
+                <span className="text-[13px]">
+                  {C.log.conflictTitle(day, longDateShort(first.ledger_closing_date))}
+                </span>
+                <span className="text-[11.5px] text-ink-3">
+                  {C.log.conflictSub(first.batch_code, group.length, day)}
+                </span>
+              </span>
+              <Button
+                variant="secondary"
+                size="sm"
+                opensDialog
+                onClick={() => {
+                  onAsk(group);
+                }}
+              >
+                {C.log.askClient}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                opensDialog
+                onClick={() => {
+                  onRedate(group);
+                }}
+              >
+                {C.log.redate(date(dayAfter(first.ledger_closing_date), { now }))}
+              </Button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
@@ -579,6 +818,104 @@ function ReconnectDialog({
   );
 }
 
+type ConflictAction = { kind: "ask" | "redate"; group: readonly W1ClosingConflictOut[] };
+
+/** Ask the client to lift the date, or re-date the held entries (C8; a person's acts). */
+function ConflictDialog({
+  action,
+  owner,
+  onDone,
+  onClose,
+}: {
+  action: ConflictAction;
+  owner: string;
+  onDone: () => void;
+  onClose: () => void;
+}): JSX.Element {
+  const now = useNow();
+  const [reason, setReason] = useState("");
+  const ask = useMutation(askClientMutation());
+  const redate = useMutation(redateMutation());
+  const first = action.group[0];
+  const closed = first === undefined ? "" : longDateShort(first.ledger_closing_date);
+  const next = first === undefined ? "" : dayAfter(first.ledger_closing_date);
+  const day = next === "" ? "" : date(next, { now });
+  const busy = ask.isPending || redate.isPending;
+  const run = async (): Promise<void> => {
+    try {
+      for (const c of action.group) {
+        if (action.kind === "ask") {
+          await ask.mutateAsync({
+            path: { conflict_id: c.conflict_id },
+            headers: idempotency(`cls11-ask-${c.conflict_id}`),
+          });
+        } else {
+          await redate.mutateAsync({
+            path: { conflict_id: c.conflict_id },
+            body: { new_date: next, reason: reason.trim() },
+          });
+        }
+      }
+      toast.show({
+        kind: "success",
+        text:
+          action.kind === "ask"
+            ? C.askDialog.sent(owner)
+            : C.redateDialog.done(action.group.length, day),
+      });
+      onDone();
+    } catch {
+      toast.show({ kind: "error", text: C.failedToLoad });
+    }
+  };
+  const ready = action.kind === "ask" || reason.trim() !== "";
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      title={action.kind === "ask" ? C.askDialog.title : C.redateDialog.title(day)}
+    >
+      <div className="flex flex-col gap-[12px]" data-cls11={`${action.kind}-dialog`}>
+        <p className="text-[13px] text-ink-2">
+          {action.kind === "ask"
+            ? C.askDialog.body(owner, closed)
+            : C.redateDialog.body(action.group.length, day)}
+        </p>
+        {action.kind === "redate" ? (
+          <span className="flex flex-col gap-[4px]">
+            <Label htmlFor="cls11-redate-reason">{C.redateDialog.reason}</Label>
+            <textarea
+              id="cls11-redate-reason"
+              rows={2}
+              value={reason}
+              onChange={(e) => {
+                setReason(e.target.value);
+              }}
+              className="w-full rounded-control border border-stroke bg-card p-2 text-body text-ink"
+            />
+          </span>
+        ) : null}
+        <div className="flex justify-end gap-[8px]">
+          <Button variant="secondary" onClick={onClose}>
+            {action.kind === "ask" ? C.askDialog.cancel : C.redateDialog.cancel}
+          </Button>
+          <Button
+            variant="primary"
+            disabled={!ready || busy}
+            onClick={() => {
+              void run();
+            }}
+          >
+            {action.kind === "ask" ? C.askDialog.send : C.redateDialog.confirm}
+          </Button>
+        </div>
+      </div>
+    </Dialog>
+  );
+}
+
 async function exportCsv(clientEntityId: string): Promise<void> {
   try {
     const { data } = await postingLogCsv({
@@ -603,6 +940,8 @@ export function CLS11({
   log: logProp,
   onLog,
   reconnectOpen = false,
+  batchId: batchProp,
+  onBatch,
 }: CLS11Props): JSX.Element {
   const openOverlay = useOpenOverlay();
   const now = useNow();
@@ -615,6 +954,13 @@ export function CLS11({
   const [dialog, setDialog] = useState(reconnectOpen);
   const [sentAt, setSentAt] = useState<string | null>(null);
   const [kicked, setKicked] = useState(false);
+  const [ownBatch, setOwnBatch] = useState<string | null>(batchProp ?? null);
+  const openBatch = onBatch !== undefined && batchProp !== undefined ? batchProp : ownBatch;
+  const [conflictAction, setConflictAction] = useState<ConflictAction | null>(null);
+  const chooseBatch = (next: string | null): void => {
+    setOwnBatch(next);
+    onBatch?.(next);
+  };
 
   const consoleQ = useQuery(ledgerConsoleOptions({ path }));
   const allQ = useQuery(postingLogOptions({ path }));
@@ -695,6 +1041,7 @@ export function CLS11({
     .at(-1);
   const company = conn?.company_name ?? view.client_entity_name;
   const shortCompany = company.split(" ")[0] ?? company;
+  const held = new Set((view.conflicts ?? []).map((c) => c.batch_code));
   const toggleStatus = (s: StatusFilter): void => {
     setStatusFilter((cur) => (cur === s ? null : s));
     chooseLog("batches");
@@ -898,18 +1245,60 @@ export function CLS11({
                 </thead>
                 <tbody>
                   {rows.map((r) => (
-                    <LogRow key={r.batch_id} r={r} paused={reauth} now={now} />
+                    <LogRow
+                      key={r.batch_id}
+                      r={r}
+                      paused={reauth}
+                      held={held.has(r.batch_code)}
+                      open={openBatch === r.batch_id}
+                      onOpen={chooseBatch}
+                      now={now}
+                    />
                   ))}
                 </tbody>
               </table>
               {rows.length === 0 && !allQ.isPending ? (
                 <p className="px-[14px] py-[12px] text-[13px] text-ink-2">{C.log.empty}</p>
               ) : null}
+              <Conflicts
+                conflicts={view.conflicts ?? []}
+                now={now}
+                onAsk={(group) => {
+                  setConflictAction({ kind: "ask", group });
+                }}
+                onRedate={(group) => {
+                  setConflictAction({ kind: "redate", group });
+                }}
+              />
               <Failures failures={view.failures ?? []} now={now} />
             </>
           )}
         </Pane>
       </div>
+      {openBatch !== null ? (
+        <BatchDrawer
+          batchId={openBatch}
+          closeId={closeId}
+          now={now}
+          onClose={() => {
+            chooseBatch(null);
+          }}
+        />
+      ) : null}
+      {conflictAction !== null ? (
+        <ConflictDialog
+          action={conflictAction}
+          owner={owner}
+          onClose={() => {
+            setConflictAction(null);
+          }}
+          onDone={() => {
+            setConflictAction(null);
+            void queries.invalidateQueries({ queryKey: ledgerConsoleQueryKey({ path }) });
+            void queries.invalidateQueries({ queryKey: postingLogQueryKey({ path }) });
+          }}
+        />
+      ) : null}
       {conn ? (
         <ReconnectDialog
           open={dialog}

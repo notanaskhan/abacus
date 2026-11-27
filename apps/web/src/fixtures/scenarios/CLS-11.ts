@@ -5,14 +5,19 @@
 // what the artboard changes: c the 10:02 AM rate limit retrying at 10:07 AM, d the expired
 // authorization (the 9:02 AM sync failed; Request reconnect… sends at 9:14 AM), d2 the same data with
 // the confirm dialog open (`?reconnect=1`). a2 is a's data on the Sync events segment
-// (`?log=events`). b, b2 and e are C-02's later rows; they serve a's data until then.
+// (`?log=events`). C-02-T44 (DEC-6029): b is August posted at 10:20 AM (QBO 48213–48218, the
+// closing date moved to Aug 31 at 10:22 AM), b2 b's data with 2026-08-A's drawer open
+// (`?batch=`), and e the 10:21 AM variant where QuickBooks was closed through Aug 31 before the
+// approved August batch could post (its six entries each an open conflict).
 import type {
   LedgerSyncStatusOut,
   ReconnectPreviewOut,
   W1ActivityListOut,
+  W1ClosingConflictOut,
   W1ConnectionPaneOut,
   W1LedgerConsoleOut,
   W1PostingLogOut,
+  W1PostingLogRowOut,
 } from "@abacus/api-client";
 import {
   type FixtureRequest,
@@ -45,6 +50,16 @@ const row = (b: Row): W1PostingLogOut["items"][number] => ({
   status: b.status as W1PostingLogOut["items"][number]["status"],
 });
 
+/** b, b2 and e: the 10:02 AM sync read 0 errors; the next is 11:02 AM. */
+const AFTER_TEN = {
+  last_sync_at: "2026-09-14T10:02:00-05:00",
+  last_sync_errors: 0,
+  next_sync_at: "2026-09-14T11:02:00-05:00",
+};
+export const CLS11_AUGUST_BATCH_ID = batchId("2026-08-A");
+const entryId = (ref: string): string => stableId(`proposed-entry:${SLUG}:${ref}`);
+const SANDBOX_QBO = "https://app.sandbox.qbo.intuit.com/app/journal?txnId=";
+
 /** What each state changes in the connection pane (the clock is the artboard's). */
 function pane(state: string): W1ConnectionPaneOut {
   const base: W1ConnectionPaneOut = {
@@ -61,6 +76,24 @@ function pane(state: string): W1ConnectionPaneOut {
         last_failed_at: "2026-09-14T10:02:00-05:00",
         retry_at: "2026-09-14T10:07:00-05:00",
       };
+    case "b":
+    case "b2":
+      return {
+        ...base,
+        ...AFTER_TEN,
+        closing_date: "2026-08-31",
+        closing_date_set_by: "Raj Malhotra",
+        closing_date_set_at: "2026-09-14T10:22:00-05:00",
+      };
+    case "e":
+      // Closed through Aug 31 in QuickBooks itself: found by the 10:02 AM sync, set by no one here.
+      return {
+        ...base,
+        ...AFTER_TEN,
+        closing_date: "2026-08-31",
+        closing_date_set_by: null,
+        closing_date_set_at: "2026-09-14T10:02:00-05:00",
+      };
     case "d":
     case "d2":
       return {
@@ -76,26 +109,88 @@ function pane(state: string): W1ConnectionPaneOut {
   }
 }
 
+function tiles(state: string): W1LedgerConsoleOut["tiles"] {
+  if (state === "b" || state === "b2") {
+    return {
+      ...exported.tiles,
+      posted: exported.tiles.posted + 1,
+      proposed: 0,
+      closing_date: "2026-08-31",
+    };
+  }
+  if (state === "e") return { ...exported.tiles, closing_date: "2026-08-31" };
+  return exported.tiles;
+}
+
+/** e: each of August's six approved entries, dated Aug 31, is an open conflict. */
+function conflicts(state: string): W1ClosingConflictOut[] {
+  if (state !== "e") return [];
+  return exported.august_entries.map((e) => ({
+    conflict_id: stableId(`closing-date-conflict:${SLUG}:${e.ref}`),
+    batch_code: "2026-08-A",
+    entry_ref: e.ref,
+    entry_date: "2026-08-31",
+    ledger_closing_date: "2026-08-31",
+    status: "open" as const,
+  }));
+}
+
 export function cls11Console(state: string): W1LedgerConsoleOut {
   return {
     client_entity_id: CLS11_ENTITY_ID,
     client_entity_name: exported.client,
     ledger_label: "QuickBooks Online",
-    tiles: exported.tiles,
+    tiles: tiles(state),
     connection: pane(state),
     failures: exported.failures,
+    conflicts: conflicts(state),
+  };
+}
+
+/** The log's batches in a state: b and b2 with August posted, e with it approved and held. */
+function batches(state: string): W1PostingLogOut["items"] {
+  const rows = exported.batches.map(row);
+  const august = row(exported.august_posted);
+  if (state === "b" || state === "b2") return [august, ...rows.slice(1)];
+  if (state === "e") {
+    return [
+      {
+        ...august,
+        status: "proposed",
+        first_external_ref: null,
+        last_external_ref: null,
+        posted_at: null,
+        posted_by: null,
+      },
+      ...rows.slice(1),
+    ];
+  }
+  return rows;
+}
+
+/** b2's drawer: 2026-08-A with its six entries, each linking to its QuickBooks transaction. */
+export function cls11Batch(): W1PostingLogRowOut {
+  return {
+    ...row(exported.august_posted),
+    entries: exported.august_entries.map((e) => ({
+      entry_id: entryId(e.ref),
+      ref: e.ref,
+      status: "posted",
+      external_txn_ref: e.external_txn_ref,
+      deep_link: `${SANDBOX_QBO}${e.external_txn_ref}`,
+      description: e.description,
+      amount: e.amount,
+    })),
   };
 }
 
 /** The posting log, filtered as the server filters it (`period`, `status`). */
-export function cls11Log(query?: URLSearchParams): W1PostingLogOut {
+export function cls11Log(query?: URLSearchParams, state = "a"): W1PostingLogOut {
   const period = query?.get("period") ?? null;
   const status = query?.get("status") ?? null;
-  const items = exported.batches
-    .map(row)
-    .filter(
-      (b) => (period === null || b.period === period) && (status === null || b.status === status),
-    );
+  const items = batches(state).filter(
+    (b) => (period === null || b.period === period) && (status === null || b.status === status),
+  );
   return { items, total: items.length };
 }
 
@@ -175,7 +270,25 @@ function at(state: string, persona: string, clock: string): Scenario {
           json(cls11Console(state)),
         "GET /v1/client-entities/{client_entity_id}/posting-batches": ({
           query,
-        }: FixtureRequest) => json(cls11Log(query)),
+        }: FixtureRequest) => json(cls11Log(query, state)),
+        "GET /v1/posting-batches/{batch_id}": () => json(cls11Batch()),
+        "POST /v1/closing-date-conflicts/{conflict_id}/ask-client": ({ params }: FixtureRequest) =>
+          json({
+            conflict_id: params["conflict_id"],
+            entry_id: stableId(`proposed-entry:${SLUG}:asked`),
+            entry_date: "2026-08-31",
+            ledger_closing_date: "2026-08-31",
+            status: "client_asked",
+            client_asked_at: "2026-09-14T10:21:00-05:00",
+          }),
+        "POST /v1/closing-date-conflicts/{conflict_id}/redate": ({ params }: FixtureRequest) =>
+          json({
+            conflict_id: params["conflict_id"],
+            entry_id: stableId(`proposed-entry:${SLUG}:redated`),
+            entry_date: "2026-09-01",
+            ledger_closing_date: "2026-08-31",
+            status: "redated",
+          }),
         "GET /v1/client-entities/{client_entity_id}/ledger-activity": () => json(cls11Activity()),
         "GET /v1/client-entities/{client_entity_id}/ledger-pull": () => json(syncStatus(state)),
         "POST /v1/client-entities/{client_entity_id}/ledger-pull": () =>

@@ -145,9 +145,47 @@
     "last_external_ref": "48218",
     "resolved_failures": 0,
     "amount": "35300.00",
-    "posted_at": "2026-09-14T10:22:00-05:00",
+    "posted_at": "2026-09-14T10:20:00-05:00",
     "posted_by": "Raj Malhotra"
   },
+  "august_entries": [
+    {
+      "ref": "AJE-01",
+      "description": "Payroll accrual",
+      "amount": "11860.00",
+      "external_txn_ref": "48213"
+    },
+    {
+      "ref": "AJE-02",
+      "description": "Prepaid insurance",
+      "amount": "700.00",
+      "external_txn_ref": "48214"
+    },
+    {
+      "ref": "AJE-03",
+      "description": "Depreciation",
+      "amount": "2140.00",
+      "external_txn_ref": "48215"
+    },
+    {
+      "ref": "AJE-04",
+      "description": "Deferred revenue (subscriptions)",
+      "amount": "5320.00",
+      "external_txn_ref": "48216"
+    },
+    {
+      "ref": "AJE-05",
+      "description": "Accrued expenses",
+      "amount": "14900.00",
+      "external_txn_ref": "48217"
+    },
+    {
+      "ref": "AJE-06",
+      "description": "Vendor refund — Rocky Ridge Dairy Co.",
+      "amount": "380.00",
+      "external_txn_ref": "48218"
+    }
+  ],
   "failures": [
     {
       "at": "2026-08-11T14:38:00-05:00",

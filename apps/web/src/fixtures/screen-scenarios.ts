@@ -33,6 +33,7 @@ import { scenarios as cls06 } from "./scenarios/CLS-06";
 import { scenarios as cls09 } from "./scenarios/CLS-09";
 import { scenarios as cls10 } from "./scenarios/CLS-10";
 import {
+  CLS11_AUGUST_BATCH_ID,
   CLS11_CLIENT_ID,
   CLS11_CLOSE_ID,
   CLS11_ENTITY_ID,
@@ -378,6 +379,10 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
       c: `?close=${CLS11_CLOSE_ID}`,
       d: `?close=${CLS11_CLOSE_ID}`,
       d2: `?close=${CLS11_CLOSE_ID}&reconnect=1`,
+      // C-02-T44: August posted (b), its drawer open (b2), and the closing-date conflict (e).
+      b: `?close=${CLS11_CLOSE_ID}`,
+      b2: `?close=${CLS11_CLOSE_ID}&batch=${CLS11_AUGUST_BATCH_ID}`,
+      e: `?close=${CLS11_CLOSE_ID}`,
     },
     ids: idsOf(cls11, () => ({ clientId: CLS11_CLIENT_ID, entityId: CLS11_ENTITY_ID })),
   },

@@ -57,6 +57,9 @@ export const COPY = {
     closingDate: "Closing date",
     closingDateValue: (on: string, by: string | null, at: string | null) =>
       by === null || at === null ? on : `${on} · set by ${by}, ${at}`,
+    // C-02-T44 (CLS-11 e): a closing date set in QuickBooks itself, as a sync found it.
+    closingDateFound: (on: string, syncAt: string) =>
+      `${on} · changed in QuickBooks Online · found by the ${syncAt} sync`,
     writeScope: "Write scope",
     writeScopeValue: "Journal entries · closing date",
     readOnly: "Read only",
@@ -80,6 +83,15 @@ export const COPY = {
     empty: "No batches match these filters.",
     failures: "Failures",
     failuresResolved: (n: number) => `${String(n)} resolved`,
+    cantPost: "can't post",
+    conflicts: "Conflicts",
+    conflictsOpen: (n: number) => `${String(n)} open`,
+    conflictTitle: (day: string, closed: string) =>
+      `AJE dated ${day} cannot post — the QuickBooks closing date is ${closed}`,
+    conflictSub: (batch: string, n: number, day: string) =>
+      `${batch} · ${String(n)} approved ${n === 1 ? "entry" : "entries"} dated ${day} · nothing posted`,
+    askClient: "Ask the client to lift the date…",
+    redate: (day: string) => `Re-date to ${day}…`,
     resolvedBy: (name: string | null, at: string) =>
       name === null ? `resolved: retried ${at}` : `resolved: retried by ${name}, ${at}`,
   },
@@ -97,6 +109,38 @@ export const COPY = {
     failedPost: (ref: string) => `Failed post ${ref}`,
     closingDate: (on: string) => `Closing date set to ${on}`,
     empty: "No sync events yet.",
+  },
+  drawer: {
+    title: (code: string, period: string) => `${code} · ${period}`,
+    status: "Status",
+    amount: "Amount",
+    posted: "Posted",
+    postedValue: (at: string, by: string | null) => (by === null ? at : `${at} · ${by}`),
+    ids: "QuickBooks ids",
+    entries: "Entries",
+    entryCount: (n: number) => `${String(n)} ${n === 1 ? "entry" : "entries"}`,
+    qbo: (id: string) => `QBO ${id}`,
+    opensInTab: "Each QuickBooks id opens the transaction in QuickBooks Online in a new tab.",
+    openAdjustments: "Open in Adjustments (CLS-07)",
+    failed: "The batch could not load.",
+  },
+  askDialog: {
+    title: "Ask the client to lift the closing date",
+    body: (owner: string, closed: string) =>
+      `${owner} is asked to move the QuickBooks closing date before ${closed}, so the approved entries can post. Nothing posts until the date moves.`,
+    send: "Send request",
+    cancel: "Cancel",
+    sent: (owner: string) => `Asked ${owner} to lift the closing date`,
+  },
+  redateDialog: {
+    title: (day: string) => `Re-date the entries to ${day}`,
+    body: (n: number, day: string) =>
+      `${String(n)} approved ${n === 1 ? "entry is" : "entries are"} re-dated to ${day} and go back for approval before they post.`,
+    reason: "Reason",
+    confirm: "Re-date",
+    cancel: "Cancel",
+    done: (n: number, day: string) =>
+      `Re-dated ${String(n)} ${n === 1 ? "entry" : "entries"} to ${day}`,
   },
   dialog: {
     title: "Request reconnect",
