@@ -44,7 +44,7 @@ _REC = rec.Inputs(
     register_lines=_REGISTER,
     prior_items=_PRIOR,
 )
-REC_DIGEST = "f3e6980bc182cdc89cf1e24b5a09d3baa9523d8980eaaa7cf36ff2b80b0469b2"
+REC_DIGEST = "7660dda295f18de72668dd541c3c29e38486e1ead2129d8e0fd4844f3b1f0f98"
 
 
 def test_the_reconciliation_inputs_hash_is_pinned() -> None:
@@ -112,10 +112,10 @@ def test_every_reconciliation_input_moves_the_hash(changed: rec.Inputs) -> None:
 
 def test_the_reconciliation_result_hashes_are_pinned() -> None:
     result = rec.reconcile(_REC)
-    assert result.engine_version == "closes.reconciliation/1"
+    assert result.engine_version == "closes.reconciliation/2"
     assert result.inputs_hash == REC_DIGEST
     assert (
-        result.content_hash == "9115a440b5ab1f714d3d62cdd7c734c114b180df394e8a344552a6033d45cad2"
+        result.content_hash == "12fce7e9d401819f2e5c07e7cc0cb0d0cdabbfd4ea7be1e3e2279bb3772e7473"
     )
 
 

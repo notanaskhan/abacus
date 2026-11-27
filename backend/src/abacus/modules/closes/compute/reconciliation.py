@@ -15,7 +15,9 @@ reconciliation; nothing here asks a model for a figure.
   unrecorded deposit and an unmatched statement withdrawal an unrecorded withdrawal (book side).
   Amounts are positive; the kind gives the sign.
 - **Carry-forward.** The prior period's open bank-side items are matched against this period's
-  statement first; what still has not cleared carries forward with `carried_from` set. A prior
+  statement first; what still has not cleared carries forward with `carried_from` set (a bank
+  error is never a match candidate and always carries until a person resolves it; version 2,
+  ED-331). A prior
   book-side item clears once a register line in this period records it (`recorded_prior`).
 - **Aging** is in days at period end; an item is stale when older than the plan's rule (over 90
   days, C-01 §3 US-7.1).
@@ -39,7 +41,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Final, Literal, cast
 
 ENGINE_NAME: Final = "closes.reconciliation"
-ENGINE_VERSION: Final = "1"
+ENGINE_VERSION: Final = "2"  # 2: a prior bank-side bank_error carries (ED-331, DEC-6008)
 ENGINE_STAMP: Final = f"{ENGINE_NAME}/{ENGINE_VERSION}"  # reconciliations.engine_version
 
 CENT: Final = Decimal("0.01")
@@ -580,6 +582,21 @@ def reconcile(inputs: Inputs) -> Result:
         items.append(
             item("bank", kind, reg.txn_date, reg.amount, ref=ref, register_line_ref=reg.ref)
         )
+    # ED-331 (version 2): a prior bank-side item that is no statement-match candidate (a bank
+    # error) stays open until a person resolves it, so it carries like a book-side item.
+    for prior in inputs.prior_items:
+        if prior.side == "bank" and prior.kind not in ("deposit_in_transit", "outstanding_check"):
+            items.append(
+                item(
+                    "bank",
+                    prior.kind,
+                    prior.txn_date,
+                    prior.amount,
+                    ref=prior.ref,
+                    register_line_ref=prior.register_line_ref,
+                    carried_from=prior.id,
+                )
+            )
     for prior in inputs.prior_items:
         if prior.side == "book" and prior.id not in cleared_prior:
             items.append(
