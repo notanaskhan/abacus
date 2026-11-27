@@ -30,7 +30,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, ClassVar, Final, Literal, cast
+from typing import Annotated, Any, ClassVar, Final, Literal, cast
 from uuid import UUID
 
 from pydantic import Field
@@ -119,6 +119,12 @@ class Availability:
     superseded_on_next: bool
     version: int
     balanced: bool | None = None
+    # C-02-T48 (CLS-12 Target): the return's form, year, engine and tax team; and the latest
+    # hand-off's person and time (c2's provenance banner).
+    target: Any = None
+    handed_off_by: UUID | None = None
+    handed_off_at: datetime | None = None
+    reopened_at: datetime | None = None  # CLS-12 d: "reopened on Jan 20"
 
 
 # --- pure ----------------------------------------------------------------------------------------
@@ -203,7 +209,7 @@ def tb_version(prior_count: int) -> str:
 # --- reads ---------------------------------------------------------------------------------------
 
 _HANDOFFS: Final = text(
-    "SELECT id, version_no, handed_off_at, superseded_by_id, target_tax_return_id "
+    "SELECT id, version_no, handed_off_at, superseded_by_id, target_tax_return_id, handed_off_by "
     "FROM tax_handoffs WHERE close_id = :c ORDER BY handed_off_at, id"
 )
 _REOPENED: Final = text("SELECT max(at) FROM close_reopenings WHERE close_id = :c")
@@ -320,7 +326,10 @@ async def availability(ctx: AuthContext, close_id: UUID) -> Availability:
     balanced = None if tb is None else sum((b for *_r, b in tb.accounts), ZERO) == ZERO
     return Availability(
         status, None, shown, locked, target.return_id if target else None, found,
-        await _items(ctx, close_id), reopened_since, close.row_version, balanced,
+        await _items(ctx, close_id), reopened_since, close.row_version, balanced, target,
+        None if latest is None else latest.handed_off_by,
+        None if latest is None else latest.handed_off_at,
+        cast(datetime, reopened) if reopened_since else None,
     )  # fmt: skip
 
 

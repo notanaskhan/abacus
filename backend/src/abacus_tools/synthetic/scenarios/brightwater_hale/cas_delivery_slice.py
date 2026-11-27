@@ -278,6 +278,52 @@ FIXED_ASSET_COST: Final = D("278400.00")
 PREPAID_INSURANCE_YEAR: Final = D("8400.00")
 MONTHLY_DISTRIBUTION: Final = D("12000.00")
 TAX_ISSUES_CREATED: Final = 3
+# C-02-T48 (DEC-6031): CLS-12's open tax-relevant items, the close's CLS-06 notes as the sheet
+# lists them (each with "Create tax issue" on).
+HANDOFF_ITEMS: Final = (
+    "Accrued payroll at Dec 31 includes wages of Tess Moreno, a shareholder-employee; deductible "
+    "only when paid (§267(a)(2) and §267(e)).",
+    "Sound Electric $3,200.00 repair (Aug 18): keep the repair analysis in the tax file (Treas. "
+    "Reg. §1.263(a)-3).",
+    "Square and Shopify 2026 Forms 1099-K: reconcile gross amounts to gross receipts.",
+)
+ENGINE: Final = "CCH Axcess Tax"
+
+
+def cls12_handoff() -> dict[str, object]:
+    """CLS-12 in C-02-T39's read shape with C-02-T48's additive target and provenance fields.
+    `make fixtures` writes it to `apps/web/src/fixtures/seed/scenario.cls12-handoff.json`. Figures
+    are code's over the seed (ADR-050): accumulated depreciation at Dec 31 is July's 64,200.00
+    plus five months at 2,140.00; the year's book depreciation twelve months; distributions
+    twelve months at 12,000.00; the prepaid policy fully amortized."""
+    accumulated = ACCUMULATED_DEPRECIATION_JUL_31 + 5 * MONTHLY_DEPRECIATION
+    return {
+        "client": COPPERLEAF,
+        "locked_on": DECEMBER_LOCKED_ON.isoformat(),
+        "handed_off_at": HANDED_OFF_AT.isoformat(),
+        "handed_off_by": "Priya Raman",
+        "reopened_on": REOPENED_ON.isoformat(),
+        "tb_version": TB_VERSION,
+        "target_form": TARGET_RETURN.split(" ", 1)[1].removeprefix("Form "),
+        "target_tax_year": int(TARGET_RETURN.split(" ", 1)[0]),
+        "engine": ENGINE,
+        "tax_team": TAX_TEAM,
+        "tax_issues_created": TAX_ISSUES_CREATED,
+        "schedules": [
+            {"key": "fixed_assets", "figures": {
+                "cost": f"{FIXED_ASSET_COST:.2f}",
+                "accumulated_depreciation": f"{accumulated:.2f}",
+                "book_depreciation": f"{12 * MONTHLY_DEPRECIATION:.2f}"}},
+            {"key": "prepaid_expenses", "figures": {
+                "amortized": f"{PREPAID_INSURANCE_YEAR:.2f}", "ending_balance": "0.00"}},
+            {"key": "deferred_revenue", "figures": {}},
+            {"key": "shareholder_distributions", "figures": {
+                "total": f"{12 * MONTHLY_DISTRIBUTION:.2f}"}},
+            {"key": "accrued_liabilities", "figures": {}},
+        ],
+        "items": list(HANDOFF_ITEMS),
+    }  # fmt: skip
+
 
 # --- CLS-13 1099 / W-9 tracker (payments Jan 1 - Aug 31, 2026) -----------------------------------
 

@@ -122,6 +122,8 @@ async def test_cls12_hands_off_tb_v1_and_supersedes_after_a_reopen(firm: _Firm) 
 
     ready = await th.availability(ctx, december)
     assert (ready.status, ready.tb_version, ready.target_return_id) == ("ready", "TB v1", target)
+    # C-02-T48 (CLS-12 Target): the return's form and year ride along for the sheet.
+    assert ready.target is not None and ready.target.tax_year == 2026
     assert {i.issue_id for i in ready.items} == set(notes)
     assert [s.key for s in ready.schedules] == ["shareholder_distributions"]
 
@@ -136,7 +138,9 @@ async def test_cls12_hands_off_tb_v1_and_supersedes_after_a_reopen(firm: _Firm) 
         firm.tenant,
     )
     assert {r["event_type"] for r in rows} == {"tax_handoff.published", "tb_handoff.created"}
-    assert (await th.availability(ctx, december)).status == "handed_off"
+    done = await th.availability(ctx, december)
+    assert done.status == "handed_off"
+    assert done.handed_off_by is not None and done.handed_off_at is not None  # C-02-T48 (c2)
 
     async with firm.seed.held() as conn:
         await conn.execute("SELECT set_config('app.actor_kind', 'human', false)")
@@ -147,6 +151,7 @@ async def test_cls12_hands_off_tb_v1_and_supersedes_after_a_reopen(firm: _Firm) 
         )  # fmt: skip
     await _lock(firm, december)
     again = await th.availability(ctx, december)
+    assert again.reopened_at is not None  # C-02-T48 (CLS-12 d)
     assert (again.status, again.tb_version, again.superseded_on_next) == ("ready", "TB v2", True)
     second = await th.publish(
         ctx, december, schedules_on=[], items_on=[], seen_version=again.version

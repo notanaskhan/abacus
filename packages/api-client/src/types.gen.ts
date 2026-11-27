@@ -16677,6 +16677,14 @@ export type DeliveryHandoffOut = {
      */
     balanced?: boolean | null;
     /**
+     * Handed Off At
+     */
+    handed_off_at?: string | null;
+    /**
+     * Handed Off By
+     */
+    handed_off_by?: string | null;
+    /**
      * Items
      */
     items?: Array<DeliveryHandoffItemOut>;
@@ -16688,6 +16696,10 @@ export type DeliveryHandoffOut = {
      * Reason
      */
     reason?: string | null;
+    /**
+     * Reopened At
+     */
+    reopened_at?: string | null;
     /**
      * Schedules
      */
@@ -16701,9 +16713,29 @@ export type DeliveryHandoffOut = {
      */
     superseded_on_next?: boolean;
     /**
+     * Target Engine
+     */
+    target_engine?: string | null;
+    /**
+     * Target Form
+     */
+    target_form?: string | null;
+    /**
+     * Target Preparer
+     */
+    target_preparer?: string | null;
+    /**
      * Target Return Id
      */
     target_return_id?: string | null;
+    /**
+     * Target Reviewer
+     */
+    target_reviewer?: string | null;
+    /**
+     * Target Tax Year
+     */
+    target_tax_year?: number | null;
     /**
      * Tb Version
      */

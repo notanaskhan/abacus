@@ -672,6 +672,7 @@ def scenario_files() -> dict[str, str]:
         cls07_rows,
         cls08_package,
         cls11_console,
+        cls12_handoff,
         cls13_tracker,
     )
     from abacus_tools.synthetic.scenarios.brightwater_hale.quality_slice import aud30_rows
@@ -717,6 +718,18 @@ def scenario_files() -> dict[str, str]:
                 "slice": "cas_delivery",
                 "snapshot": "E0",
                 **cls11_console(),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        # C-02-T48 (DEC-6031): CLS-12's December hand-off sheet.
+        "scenario.cls12-handoff.json": json.dumps(
+            {
+                "scenario": SCENARIO_VERSION,
+                "slice": "cas_delivery",
+                "snapshot": "E0",
+                **cls12_handoff(),
             },
             indent=2,
             ensure_ascii=False,
