@@ -19,6 +19,7 @@ from pydantic import SecretStr
 from abacus_tools import tenants as t
 
 Call = tuple[str, tuple[Any, ...], dict[str, Any]]  # Any: a recorded call's arguments
+REQUEST_ID = "provision-1"  # the provision request's idempotency id
 
 FIRM = uuid.UUID("5b2f6a3e-1d2c-4e5f-8a9b-0c1d2e3f4a5b")
 MODULE = t._MODULES[0]  # pyright: ignore[reportPrivateUsage] -- the CLI's module choices
@@ -317,7 +318,7 @@ GOOD = t.ProvisionRequest(
     synthetic=True,
     plan="pilot",
     admins=("a@sink.example.test",),
-    idempotency_key="provision-1",
+    idempotency_key=REQUEST_ID,
     operator="rowan",
 )
 

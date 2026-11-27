@@ -48,6 +48,7 @@ from abacus.modules.engagements.models import Engagement
 from abacus.modules.engagements.repository import insert_engagement
 from abacus.modules.engagements.roll_forward import RollForwardUnavailable, TeamMemberUnavailable
 from abacus.modules.engagements.service import EngagementRef, get_ref, pin_methodology
+from abacus.modules.engagements.template_links import pinned_version
 from abacus.modules.engagements.type_catalogue import BY_CODE
 from abacus.modules.identity.api import (
     Actor,
@@ -297,7 +298,9 @@ async def _catalogue(ctx: AuthContext, ref: EngagementRef, row: Engagement) -> C
     ]
     return Catalogue(
         team=team,
-        template=await _template(ctx, row.methodology_version_id),
+        template=await _template(
+            ctx, await pinned_version(ctx.tenant, row.id, row.methodology_version_id)
+        ),  # K-03-T19: the link's version when the engagement follows one
         request_count=await _requests[0](ctx, row.id),
     )
 

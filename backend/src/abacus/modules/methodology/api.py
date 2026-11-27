@@ -506,3 +506,12 @@ from abacus.modules.methodology import scoping as scoping  # noqa: E402
 from abacus.modules.methodology import scoping_rules as scoping_rules  # noqa: E402
 
 __all__ += ["scoping", "scoping_rules"]
+# K-03-T19 (DEC-6019): the template wrapper reads engagements' link uses.
+from abacus.modules.methodology.template_wrappers import (  # noqa: E402
+    template_wrapper_of as template_wrapper_of,
+)
+from abacus.modules.methodology.template_wrappers import (  # noqa: E402
+    wrapped_methodology_version as wrapped_methodology_version,
+)
+
+__all__ += ["template_wrapper_of", "wrapped_methodology_version"]
