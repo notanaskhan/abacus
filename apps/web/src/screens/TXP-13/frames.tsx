@@ -301,6 +301,9 @@ export function ProvisionFrame({
   const explain = useMutation({
     ...provisionExplainMutation(),
     onSuccess: (out) => {
+      // T-06-T54: no run means the issue was prepared without the agent (agents off, or the
+      // taxpayer's §7216 consents missing): the person explains it themselves (zero calls).
+      if (out.run_id == null) toast.show({ kind: "info", text: F.b.withoutAgents });
       if (out.issue_id) openOverlay(ov.SHL15(out.issue_id));
     },
     onError: () => {

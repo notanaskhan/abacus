@@ -138,6 +138,7 @@ export const FRAMES = {
     unclassified: (amount: string) => `Unclassified difference ${amount}`,
     explain: "Explain…",
     explainFailed: "The issue could not be opened.",
+    withoutAgents: "Issue opened · Prepared without agents",
   },
   c: {
     tabs: ["Summary", "Financials", "Functional Expenses", "Public Support", "Schedules"],

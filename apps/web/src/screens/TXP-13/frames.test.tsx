@@ -2,6 +2,7 @@
 // are the exported Python scenario's. Row acceptance: "No partnership vocabulary appears on 1120
 // or 990 frames, and the 990 title reads '2025 Form 990 (FYE Jun 30, 2026)'."
 import { client } from "@abacus/api-client/client";
+import { toastStore } from "@abacus/ui";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { installFixtureMode } from "../../app-core/fixture-mode";
@@ -30,6 +31,7 @@ afterEach(() => {
   restore?.();
   restore = null;
   opened.length = 0;
+  toastStore.clear();
 });
 
 function show(frame: Frame): void {
@@ -90,6 +92,8 @@ describe("TXP-13 frames a–c3", () => {
     await waitFor(() => {
       expect(opened.some((o) => o.key === "issue")).toBe(true);
     });
+    // T-06-T54: the explain ran without the agent (no run id): the screen says so.
+    expect(toastStore.list().map((t) => t.text)).toContain(F.b.withoutAgents);
   });
 
   it("TXP-13 acceptance: the 990 title reads '2025 Form 990 (FYE Jun 30, 2026)'", async () => {
