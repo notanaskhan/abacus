@@ -1,0 +1,117 @@
+{
+  "scenario": "bh-2026.10.3",
+  "slice": "tax_planning",
+  "snapshot": "E0",
+  "tax_year": 2025,
+  "summary": {
+    "clients_to_contact": 58,
+    "est_savings": "1200000",
+    "talking_points": "drafted",
+    "consent_blocked": 1,
+    "opportunities": 71,
+    "clients": 58
+  },
+  "rows": [
+    {
+      "title": "Bunch 2026–2027 gifts through a donor-advised fund",
+      "client": "Jonah & Claire Feld",
+      "sub": "est. 1,810 over 2 years",
+      "status": "open",
+      "est_savings": "1810",
+      "rule_key": "charitable.daf_bunching",
+      "category": "Charitable giving"
+    },
+    {
+      "title": "Solo 401(k) for the consulting practice",
+      "client": "Meera Shah",
+      "sub": "est. 8,225",
+      "status": "open",
+      "est_savings": "8225",
+      "rule_key": "retirement.solo_401k",
+      "category": "Retirement"
+    },
+    {
+      "title": "Dependent care FSA at the new 7,500 limit (2026)",
+      "client": "Marcus & Dana Whitley",
+      "sub": "est. 1,650",
+      "status": "open",
+      "est_savings": "1650",
+      "rule_key": "benefits.dcfsa_limit",
+      "category": "Benefits"
+    },
+    {
+      "title": "Reasonable compensation review for the owner",
+      "client": "Copperleaf Coffee Roasters, Inc.",
+      "sub": "risk reduction",
+      "status": "open",
+      "est_savings": null,
+      "rule_key": "scorp.reasonable_comp",
+      "category": "Compensation"
+    },
+    {
+      "title": "Section 754 election for the Pell Street II transfer",
+      "client": "Ridgeline Property Partners, LP",
+      "sub": "§743(b) step-up 28,595 · waiting on Owen Calder",
+      "status": "raised",
+      "est_savings": null,
+      "rule_key": "partnership.section_754",
+      "category": "Elections"
+    },
+    {
+      "title": "Cost segregation study — Elm Street building (method change)",
+      "client": "Ridgeline Property Partners, LP",
+      "sub": "project Scoping",
+      "status": "accepted",
+      "est_savings": null,
+      "rule_key": "depreciation.cost_seg",
+      "category": "Depreciation"
+    },
+    {
+      "title": "Amend 2025 for the missed Unit 3B mortgage interest and roof depreciation",
+      "client": "Daniel & Ruth Okafor",
+      "sub": "3,203 (federal 2,708 + IL 495)",
+      "status": "accepted",
+      "est_savings": "3203",
+      "rule_key": "amendment.missed_items",
+      "category": "Amendments"
+    },
+    {
+      "title": "Qualified charitable distributions from the IRA",
+      "client": "Elena Varga",
+      "sub": "not eligible until age 70½ (she is 68)",
+      "status": "declined",
+      "est_savings": null,
+      "rule_key": "retirement.qcd",
+      "category": "Charitable giving"
+    },
+    {
+      "title": "Roth conversion window",
+      "client": "Morgan & Kai Ferris",
+      "sub": "§7216 consents (use · AI disclosure) half-signed — agents cannot use return information yet",
+      "status": "not_screened",
+      "est_savings": null,
+      "rule_key": "retirement.roth_window",
+      "category": "Retirement"
+    }
+  ],
+  "feld": {
+    "rationale": "The Felds give about 12,500 a year. Without gifts their itemized deductions would be 28,831 (SALT 10,591 + mortgage interest 18,240), below the 31,500 standard deduction. From 2026, itemizers also lose the first 0.5% of AGI in gifts — about 2,990 at this year's AGI of 598,030. Giving two years of gifts (25,000) to a donor-advised fund in 2026 and taking the standard deduction in 2027 adds about 5,659 of deductions over the two years (the 2,990 floor is paid once, not twice, plus 2,669 more from the 2027 standard deduction): about 1,810 of federal tax at 32%.",
+    "sources": [
+      {
+        "title": "2025 Charitable Contributions Summary — Feld",
+        "loc": "6 receipts"
+      },
+      {
+        "title": "Knowledge › Research: 'OBBBA individual changes for TY2026'",
+        "loc": "Brightwater Hale tax research memo v2"
+      }
+    ],
+    "talking_points": [
+      "Your gifts stay the same; only the timing of the deduction changes.",
+      "One contribution in 2026 covers 2026 and 2027 grants.",
+      "We'll confirm the amount after your 2026 estimates in January."
+    ]
+  },
+  "ferris_envelope": "E17",
+  "ridgeline_project": "Ridgeline cost segregation & §754 analysis"
+}

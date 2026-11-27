@@ -19,6 +19,7 @@ const K1Package = lazyScreen(async () => (await import("../../screens/TXP-12")).
 const ReturnDelivery = lazyScreen(async () => (await import("../../screens/TAX-12")).TAX12);
 const FormPreview = lazyScreen(async () => (await import("../../screens/TAX-11")).TAX11);
 const StandardsRun = lazyScreen(async () => (await import("../../screens/TAX-14")).TAX14);
+const Planning = lazyScreen(async () => (await import("../../screens/TAX-15")).TAX15);
 
 function gated(children: JSX.Element): JSX.Element {
   return (
@@ -246,9 +247,26 @@ export const taxStandardsRoute = createRoute({
   },
 });
 
+// TAX-15 (T-08-T32): planning opportunities, `/tax-returns/planning`, behind `tax.planning`.
+export const taxPlanningRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/planning",
+  component: function TaxPlanningPage(): JSX.Element {
+    return gated(
+      <FeatureGate
+        flag="tax.planning"
+        fallback={<FlagOffState flag="tax.planning" label="Planning opportunities" />}
+      >
+        <Planning />
+      </FeatureGate>,
+    );
+  },
+});
+
 export const taxReturnRoutes = [
   taxExtensionsRoute,
   taxStandardsRoute,
+  taxPlanningRoute,
   taxReturnsRoute,
   taxReturnRoute,
   entityWorkpaperRoute,
