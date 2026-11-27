@@ -27,7 +27,7 @@ from pydantic.config import JsonDict
 
 from abacus.kernel._flags import CLOSES_DELIVERY, CLOSES_INFORMATION_RETURNS, CLOSES_TAX_HANDOFF
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -734,14 +734,17 @@ async def tin_reveal_route(
 
 @delivery_router.post(
     "/client-entities/{client_entity_id}/w9-requests", action="w9.request",
-    response_model=DeliveryW9RequestOut, status_code=201, errors=(409, 501),
+    response_model=DeliveryW9RequestOut, status_code=201, errors=(409,),
 )  # fmt: skip
 async def w9_request_route(
     client_entity_id: UUID, body: DeliveryW9RequestIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> DeliveryW9RequestOut:
     """Portal requests through C5, sent by a person (DEC-74)."""
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "w9.request")
-    raise NotImplementedYet
+    from abacus.modules.closes import information_return_batches as irb
+
+    del idempotency_key  # each request is its own act; the client sees one item per vendor
+    return await irb.request_w9s(ctx, client_entity_id, body)
 
 
 @delivery_router.post(
@@ -772,39 +775,56 @@ async def backup_withholding_route(
 
 @delivery_router.post(
     "/information-return-batches", action="information_return_batch.approve",
-    response_model=DeliveryReturnBatchOut, status_code=201, errors=(409, 501),
+    response_model=DeliveryReturnBatchOut, status_code=201, errors=(409, 503),
 )  # fmt: skip
 async def return_batch_route(body: DeliveryReturnBatchIn, ctx: Ctx) -> DeliveryReturnBatchOut:
     """After the December close locks (`close_not_locked`); human only."""
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "information_return_batch.approve")
-    raise NotImplementedYet
+    from abacus.modules.closes import information_return_batches as irb
+
+    return await irb.approve_batch(ctx, body)
 
 
 @delivery_router.get(
     "/information-return-batches/{batch_id}/iris.csv",
-    action="information_return_batch.export", response_model=bytes, errors=(409, 501),
+    action="information_return_batch.export", response_model=bytes, errors=(409,),
 )  # fmt: skip
-async def iris_csv_route(batch_id: UUID, ctx: Ctx) -> bytes:
+async def iris_csv_route(batch_id: UUID, ctx: Ctx) -> Response:
     """A deterministic IRIS CSV a person uploads; Accrued never transmits."""
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "information_return_batch.export")
-    raise NotImplementedYet
+    from abacus.modules.closes import information_return_batches as irb
+
+    found = await irb.iris_csv(ctx, batch_id)
+    return Response(
+        content=found.content,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": 'attachment; filename="iris-1099.csv"',
+            "Cache-Control": "no-store",  # recipients' TINs (Restricted)
+            "X-Content-SHA256": found.sha256,
+        },
+    )
 
 
 @delivery_router.post(
     "/information-return-batches/{batch_id}/filed",
     action="information_return_batch.record_filing", response_model=DeliveryReturnBatchOut,
-    errors=(409, 501),
+    errors=(409,),
 )  # fmt: skip
 async def filed_route(batch_id: UUID, body: DeliveryFiledIn, ctx: Ctx) -> DeliveryReturnBatchOut:
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "information_return_batch.record_filing")
-    raise NotImplementedYet
+    from abacus.modules.closes import information_return_batches as irb
+
+    return await irb.record_filing(ctx, batch_id, body)
 
 
 @delivery_router.post(
     "/information-return-batches/{batch_id}/acknowledgement",
     action="information_return_batch.record_ack", response_model=DeliveryReturnBatchOut,
-    errors=(409, 501),
+    errors=(409,),
 )  # fmt: skip
 async def ack_route(batch_id: UUID, body: DeliveryAckIn, ctx: Ctx) -> DeliveryReturnBatchOut:
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "information_return_batch.record_ack")
-    raise NotImplementedYet
+    from abacus.modules.closes import information_return_batches as irb
+
+    return await irb.record_ack(ctx, batch_id, body)
