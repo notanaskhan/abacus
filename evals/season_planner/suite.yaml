@@ -1,0 +1,129 @@
+# engagements.season_planner (T-08-T28; TASK-9035; T-08 §6.4; DEC-6040). PROTECTED (thresholds,
+# ADR-079): frozen before prompt tuning; must match `abacus_tools.evals.tax_practice.FROZEN`.
+# Labelled synthetic manifests (Brightwater Hale's TY2026 roll-forward): every ask code code can
+# detect, reassignment for each role, ineligible-assignee traps (a departed, walled or seasonal
+# person not yet started is never listed), seeded ambiguities a person must decide, and a TRI-leak
+# property over the model's input (metadata only: no figure, count or TIN). Labels pending_cpa.
+suite: season_planner
+version: 1
+thresholds:
+  ask_accuracy: 0.95
+  asks_only_detected: 1.0
+  assignee_eligible: 1.0
+  phrase_closed: 1.0
+  ambiguity_left_open: 1.0
+  tri_leak_absent: 1.0
+cases:
+- id: binder_two_newer
+  category: pass
+  rows: [{row_id: r1, codes: [binder_ambiguous], office: Chicago, segment: 1040 individuals}]
+  asks: [{ask_code: binder_choice, row_ids: [r1], options: [use_newer, use_both, ask_client]}]
+  label: {binder_choice: use_newer}
+  answer: {asks: [{ask_code: binder_choice, recommended_option: use_newer, phrase_key: two_binders}]}
+- id: contact_bounced_portal
+  category: pass
+  rows: [{row_id: r2, codes: [contact_bounced], office: Chicago, segment: 1040 individuals}]
+  asks: [{ask_code: contact_update, row_ids: [r2], options: [ask_client, use_portal_only]}]
+  label: {contact_update: ask_client}
+  answer: {asks: [{ask_code: contact_update, recommended_option: ask_client, phrase_key: contact_bounced}]}
+- id: confirmation_again
+  category: pass
+  rows: [{row_id: r3, codes: [confirmation_missing], office: Denver, segment: Partnerships}]
+  asks: [{ask_code: confirmation, row_ids: [r3], options: [request_again, exclude_row]}]
+  label: {confirmation: request_again}
+  answer: {asks: [{ask_code: confirmation, recommended_option: request_again, phrase_key: confirmation_missing}]}
+- id: continuance_rerun
+  category: pass
+  rows: [{row_id: r4, codes: [continuance_changed], office: Denver, segment: Partnerships}]
+  asks: [{ask_code: continuance, row_ids: [r4], options: [rerun_continuance, exclude_row]}]
+  label: {continuance: rerun_continuance}
+  answer: {asks: [{ask_code: continuance, recommended_option: rerun_continuance, phrase_key: continuance_changed}]}
+- id: signer_named
+  category: pass
+  rows:
+  - row_id: r5
+    codes: [signer_missing]
+    office: Chicago
+    segment: Trusts
+    role: signer
+    eligible: [{user_ref: u1, name: Daniel Reyes}]
+  asks: [{ask_code: signer, row_ids: [r5], options: [name_signer, exclude_row]}]
+  label: {signer: name_signer}
+  answer:
+    asks: [{ask_code: signer, recommended_option: name_signer, phrase_key: signer_missing}]
+    reassignments: [{row_id: r5, role: signer, user_ref: u1}]
+- id: preparer_departed_trap
+  category: trap
+  rows:
+  - row_id: r6
+    codes: [assignee_walled_or_departed]
+    office: Chicago
+    segment: 1040 individuals
+    role: preparer
+    eligible: [{user_ref: u2, name: Olivia Brandt}, {user_ref: u3, name: Leo Wong}]
+  answer: {reassignments: [{row_id: r6, role: preparer, user_ref: u3}]}
+- id: seasonal_not_started_trap
+  category: trap
+  rows:
+  - row_id: r7
+    codes: [assignee_seasonal_not_started]
+    office: Denver
+    segment: 1040 individuals
+    role: preparer
+    eligible: [{user_ref: u2, name: Olivia Brandt}]
+  answer: {reassignments: [{row_id: r7, role: preparer, user_ref: u2}]}
+- id: binder_ambiguity_open
+  category: ambiguity
+  rows: [{row_id: r8, codes: [binder_ambiguous], office: Chicago, segment: 1040 individuals}]
+  asks: [{ask_code: binder_choice, row_ids: [r8], options: [use_newer, use_both, ask_client]}]
+  label: {binder_choice: null}
+  answer: {asks: [{ask_code: binder_choice, recommended_option: null, phrase_key: two_binders}]}
+- id: seeded_wrong_pick
+  category: seeded
+  rows: [{row_id: r9, codes: [confirmation_missing], office: Denver, segment: Partnerships}]
+  asks: [{ask_code: confirmation, row_ids: [r9], options: [request_again, exclude_row]}]
+  label: {confirmation: request_again}
+  answer: {asks: [{ask_code: confirmation, recommended_option: exclude_row, phrase_key: confirmation_missing}]}
+  seeded_failures: [ask_accuracy]
+- id: seeded_undetected_ask
+  category: seeded
+  rows: [{row_id: r10, codes: [contact_bounced], office: Chicago, segment: 1040 individuals}]
+  asks: [{ask_code: contact_update, row_ids: [r10], options: [ask_client, use_portal_only]}]
+  label: {contact_update: ask_client}
+  answer:
+    asks:
+    - {ask_code: contact_update, recommended_option: ask_client, phrase_key: contact_bounced}
+    - {ask_code: fee_increase, recommended_option: null, phrase_key: contact_bounced}
+  seeded_failures: [asks_only_detected]
+- id: seeded_ineligible_assignee
+  category: seeded
+  rows:
+  - row_id: r11
+    codes: [assignee_walled_or_departed]
+    office: Chicago
+    segment: 1040 individuals
+    role: preparer
+    eligible: [{user_ref: u2, name: Olivia Brandt}]
+  answer: {reassignments: [{row_id: r11, role: preparer, user_ref: u9}]}
+  seeded_failures: [assignee_eligible]
+- id: seeded_open_phrase
+  category: seeded
+  rows: [{row_id: r12, codes: [continuance_changed], office: Denver, segment: Partnerships}]
+  asks: [{ask_code: continuance, row_ids: [r12], options: [rerun_continuance, exclude_row]}]
+  label: {continuance: rerun_continuance}
+  answer: {asks: [{ask_code: continuance, recommended_option: rerun_continuance, phrase_key: free_text_reply}]}
+  seeded_failures: [phrase_closed]
+- id: seeded_ambiguity_picked
+  category: seeded
+  rows: [{row_id: r13, codes: [binder_ambiguous], office: Chicago, segment: 1040 individuals}]
+  asks: [{ask_code: binder_choice, row_ids: [r13], options: [use_newer, use_both, ask_client]}]
+  label: {binder_choice: null}
+  answer: {asks: [{ask_code: binder_choice, recommended_option: use_both, phrase_key: two_binders}]}
+  seeded_failures: [ask_accuracy, ambiguity_left_open]
+- id: seeded_tri_in_input
+  category: seeded
+  rows: [{row_id: r14, codes: [binder_ambiguous], office: "Chicago — refund 12,400", segment: 1040 individuals}]
+  asks: [{ask_code: binder_choice, row_ids: [r14], options: [use_newer, use_both, ask_client]}]
+  label: {binder_choice: use_newer}
+  answer: {asks: [{ask_code: binder_choice, recommended_option: use_newer, phrase_key: two_binders}]}
+  seeded_failures: [tri_leak_absent]
