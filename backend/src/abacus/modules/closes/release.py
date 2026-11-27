@@ -132,9 +132,13 @@ async def release(ctx: AuthContext, close_id: UUID, *, seen_version: int) -> Rel
         raise NotFound("close")
     ref = await get_ref(ctx, close.engagement_id)
     await authorise(ctx, ACTION, ref.resource())
-    blockers = [p.blocker for p in package.preconditions if not p.done]
+    # The package's preconditions are its unmet reasons (CLS-08c); `done` is a count ("9 of 21"),
+    # so any listed reason blocks (C-02-T42 found the old `if not p.done` let 9 of 21 through).
+    blockers = [p.blocker for p in package.preconditions]
     if blockers:
-        raise PreconditionsUnmet(facts={"blockers": ",".join(blockers)})
+        # One fact per unmet reason (facts are identifiers only: a joined list raised
+        # FactsNotIdentifiers and answered 500; C-02-T42).
+        raise PreconditionsUnmet(facts=dict.fromkeys(blockers, True))
     if package.version != seen_version:
         raise DomainConflict(facts={"reason": "stale_version"})
     document = await package_render.document_of(ctx.tenant, close_id)
