@@ -227,9 +227,9 @@ function withAgentsOff(states: Readonly<Record<string, Scenario>>): ScreenScenar
   );
   const scenarios = { ...states, ...off };
   return {
-    // The E0 shell under each state, with the entity and review workspaces on (T-05-T28's
-    // dispatch; T-04's review routes).
-    scenarios: onE0(scenarios, ["tax.entity_workspace", "tax.review_workspace"]),
+    // The E0 shell under each state; the seed's `tax_entity_returns` and `tax_returns`
+    // entitlements open the entity and review workspaces (T-06-T69 retired their flags).
+    scenarios: onE0(scenarios, []),
     opens: {},
     ids: Object.fromEntries(
       Object.keys(scenarios).map((st) => [st, { returnId: RIDGELINE_RETURN_ID }]),
@@ -507,29 +507,17 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "ADM-11": { scenarios: adm11, opens: {} }, // S52
   // T-06-T23 (DEC-5636): the eight T-06 screens, one state per contract artboard (44).
   "TXP-03": {
-    scenarios: onE0(t06txp03, [
-      "tax.entity_workspace",
-      "tax.review_workspace",
-      "tax.entity_depth",
-    ]),
+    scenarios: onE0(t06txp03, ["tax.entity_depth"]),
     opens: TXP03_OPENS,
     ids: idsOf(t06txp03, () => ({ returnId: RIDGELINE_RETURN_ID, assetId: PARKING_ID })),
   },
   "TXP-04": {
-    scenarios: onE0(t06txp04, [
-      "tax.entity_workspace",
-      "tax.review_workspace",
-      "tax.entity_depth",
-    ]),
+    scenarios: onE0(t06txp04, ["tax.entity_depth"]),
     opens: TXP04_OPENS,
     ids: idsOf(t06txp04, () => ({ returnId: RIDGELINE_RETURN_ID })),
   },
   "TXP-08": {
-    scenarios: onE0(t06txp08, [
-      "tax.entity_workspace",
-      "tax.review_workspace",
-      "tax.entity_depth",
-    ]),
+    scenarios: onE0(t06txp08, ["tax.entity_depth"]),
     opens: TXP08_OPENS,
     ids: idsOf(t06txp08, () => ({
       returnId: RIDGELINE_RETURN_ID,
@@ -538,41 +526,25 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
     })),
   },
   "TXP-09": {
-    scenarios: onE0(t06txp09, [
-      "tax.entity_workspace",
-      "tax.review_workspace",
-      "tax.entity_depth",
-    ]),
+    scenarios: onE0(t06txp09, ["tax.entity_depth"]),
     opens: TXP09_OPENS,
     ids: idsOf(t06txp09, () => ({ returnId: RIDGELINE_RETURN_ID })),
   },
   "TXP-13": {
-    scenarios: onE0(t06txp13, [
-      "tax.entity_workspace",
-      "tax.review_workspace",
-      "tax.other_entity_workpapers",
-    ]),
+    scenarios: onE0(t06txp13, ["tax.other_entity_workpapers"]),
     opens: {},
   },
   "TAX-11": {
-    scenarios: onE0(t06tax11, [
-      "tax.entity_workspace",
-      "tax.review_workspace",
-      "tax.form_preview",
-    ]),
+    scenarios: onE0(t06tax11, ["tax.form_preview"]),
     opens: {},
     ids: idsOf(t06tax11, () => ({ returnId: RIDGELINE_RETURN_ID })),
   },
   "CLI-03": {
-    scenarios: onE0(t06cli03, [
-      "tax.entity_workspace",
-      "tax.review_workspace",
-      "clients.relationship_map",
-    ]),
+    scenarios: onE0(t06cli03, ["clients.relationship_map"]),
     opens: {},
   },
   "AUD-38": {
-    scenarios: onE0(t06aud38, ["tax.entity_workspace", "tax.review_workspace", "tax.tb_handoff"]),
+    scenarios: onE0(t06aud38, ["tax.tb_handoff"]),
     opens: {},
   },
   // T-05-T68 (J08 P0 core): the eight entity-return screens over the Ridgeline 2025 Form 1065

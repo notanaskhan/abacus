@@ -1,8 +1,9 @@
 // T-05-T66 steps 3–8 (TASK-8073; T-05 §F13; SPEC-651 AC-13.1 to AC-13.3): with agents off every
 // model-backed control on the entity screens is disabled with its reason (never hidden behind an
 // error), the person's way stays open, a run waiting on §7216 consent names it, a firm without the
-// entity returns entitlement keeps the coordination view locked, and with `tax.entity_workspace`
-// off every entity route draws its own screen.
+// entity returns entitlement keeps the coordination view locked, and a return that is not an
+// entity form draws the route's own screen on every entity route (T-06-T69: `tax.entity_workspace`
+// retired into the entitlement, so its flag-off case is the entitlement-off case above).
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { JSX, ReactNode } from "react";
@@ -24,10 +25,10 @@ import { TXP10 } from "../TXP-10";
 import { COPY } from "./copy";
 import { waitingLine } from "./index";
 
-const flags = vi.hoisted(() => ({ entity: true, entitled: true }));
+const flags = vi.hoisted(() => ({ entitled: true }));
 vi.mock("../../app-core/flags", async (actual) => ({
   ...(await actual<typeof import("../../app-core/flags")>()),
-  useFlag: (name: string) => (name === "tax.entity_workspace" ? flags.entity : undefined),
+  useFlag: () => undefined,
   useEntitlement: (module: string) => (module === "tax_entity_returns" ? flags.entitled : true),
 }));
 vi.mock("@tanstack/react-router", async (actual) => ({
@@ -40,7 +41,6 @@ const { EntityReturn } = await import("./EntityReturn");
 
 afterEach(() => {
   cleanup();
-  flags.entity = true;
   flags.entitled = true;
 });
 
@@ -146,9 +146,8 @@ describe("T-05-T66 entitlement and flag (AC-13.2, AC-13.3)", () => {
   });
 
   it.each(["agent", "issues", "workpaper", "activity", "review"] as const)(
-    "with tax.entity_workspace off, %s draws the route's own screen, never a blank pane",
+    "for a 1040, %s draws the route's own screen, never a blank pane",
     (slug) => {
-      flags.entity = false;
       render(
         <EntityReturn
           returnId="r1"
@@ -157,7 +156,7 @@ describe("T-05-T66 entitlement and flag (AC-13.2, AC-13.3)", () => {
           onOpen={() => undefined}
           onComposer={() => undefined}
         />,
-        { wrapper: withRecord("1065") },
+        { wrapper: withRecord("1040") },
       );
       expect(document.querySelector("[data-overview]")).not.toBeNull();
     },

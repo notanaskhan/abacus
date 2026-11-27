@@ -1,11 +1,11 @@
 // T-04-T12: the review workspace frame over T-02's components. The tabs and chips read one
-// workspace request; the routes are new files behind `tax.review_workspace`.
+// workspace request; the routes are new files behind the `tax_returns` entitlement.
 import { client } from "@abacus/api-client/client";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { type FixtureHandler, installFixtureMode } from "../../app-core/fixture-mode";
-import { REVIEW_FLAG, taxReviewRoutes } from "../../routes/firm/tax-review";
+import { REVIEW_ENTITLEMENT, taxReviewRoutes } from "../../routes/firm/tax-review";
 import { newQueryClient } from "../../testing/support";
 import { OPENS, scenarios } from "../TAX-02/scenarios";
 import { WORKSPACE_COPY, WorkspaceFrame } from "./frame";
@@ -84,15 +84,16 @@ describe("T-04-T12 review workspace frame", () => {
     expect(screen.queryByText("Assistant")).toBeNull();
   });
 
-  it("the new routes are the workspace's, behind tax.review_workspace", () => {
-    expect(REVIEW_FLAG).toBe("tax.review_workspace");
+  it("the new routes are the workspace's, behind the tax_returns entitlement", () => {
+    // T-06-T69 (DEC-6024): `tax.review_workspace` retired into the entitlement.
+    expect(REVIEW_ENTITLEMENT).toBe("tax_returns");
     expect(taxReviewRoutes.map((r) => (r.options as { path: string }).path)).toEqual([
       // S47 (TASK-8352, TASK-8353): TXT-04 and TXT-03 live, static paths before $section.
       "/tax-returns/$returnId/review/estate",
       "/tax-returns/$returnId/review/beneficiaries",
-      // T-07-T15: TXT-01, behind its own flag; first, so the static path wins over $section.
+      // T-07-T15: TXT-01; first, so the static path wins over $section.
       "/tax-returns/$returnId/review/instrument",
-      // T-07-T17: TXT-02, behind tax.fiduciary_workpapers; static, so before $section too.
+      // T-07-T17: TXT-02; static, so before $section too.
       "/tax-returns/$returnId/review/trust-calculation",
       // T-06-T45 (DEC-5937): TXP-13 d, the 1120 workpapers fed by a hand-off (static, before $section).
       "/tax-returns/$returnId/review/workpapers",

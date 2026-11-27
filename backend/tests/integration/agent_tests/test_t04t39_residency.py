@@ -75,7 +75,8 @@ async def _return(seed: Seeder, world: World, who: Person) -> uuid.UUID:
         world.entity_id,
     )
     # The workspace, and SHL-10's approval (off: the decision routes answer 404).
-    for flag in ("tax.review_workspace", "review.approve_agent_output"):
+    await _entitle(seed, world.tenant_id)  # T-06-T69: `tax_returns` replaced the workspace flag
+    for flag in ("review.approve_agent_output",):
         await seed.run(
             "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
             "VALUES ($1, $2, 'true', 't04-t39', 'T-04-T39') ON CONFLICT DO NOTHING",
@@ -282,3 +283,12 @@ async def test_a_part_year_confirmation_activates_it360_and_flags_the_reimport(
         is True
     )
     assert "tax_return.engine_reimport_needed" in await seed.actions(world.tenant_id)
+
+
+async def _entitle(seed: Seeder, tenant: uuid.UUID) -> None:
+    """The firm's `tax_returns` module, as the operator console sets it."""
+    await seed.run(
+        "INSERT INTO tenant_entitlements (tenant_id, module, valid_from, set_by) "
+        "VALUES ($1, 'tax_returns', DATE '2000-01-01', 'test') ON CONFLICT DO NOTHING",
+        tenant,
+    )

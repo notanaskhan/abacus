@@ -8,8 +8,8 @@
 // are T-06's screens and stay `test.fixme` naming their owner.
 //
 // The fixture project walks each step through the real route on its screen's own scenario
-// (`?screen=TXP-xx&st=…`, screen-scenarios.ts), with `tax.entity_workspace` and
-// `tax.review_workspace` on; `_returnId_` resolves to the Ridgeline return. The full stack and
+// (`?screen=TXP-xx&st=…`, screen-scenarios.ts), with the seed's `tax_entity_returns` and
+// `tax_returns` entitlements; `_returnId_` resolves to the Ridgeline return. The full stack and
 // staging walk the same routes against the seeded tenant once T-05's slices are on that stack and
 // staging's URL is set; until then they are fixme, never skipped.
 import { expect, test } from "../harness";
@@ -25,7 +25,8 @@ const LIVE =
   "T-05-T68: full stack once T-05's slices and the fake QBO and CCH are seeded on the stack; staging once ABACUS_STAGING_URL is set (J08 P0 on staging by Fri Jul 7, 2028)";
 const K1_OWNER = "T-02-T32: T-02's screens live on staging and the canary, Thu Aug 12, 2027";
 const T06 = "T-06: the P1 review sections (TXP-03, TXP-04, TXP-08, TXP-09), S47–S50";
-const FLAGS = ["tax.entity_workspace", "tax.review_workspace"];
+// T-06-T69: both workspaces are the seed's entitlements now; no flag to turn on.
+const FLAGS: string[] = [];
 const RETURN = "/tax-returns/_returnId_";
 const REVIEW = (section: string): string => `${RETURN}/review/${section}`;
 

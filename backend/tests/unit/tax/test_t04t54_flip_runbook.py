@@ -10,14 +10,19 @@ from abacus.kernel._flags import FLAGS
 
 RUNBOOK = Path(__file__).resolve().parents[4] / "docs" / "runbooks" / "tax-workspace-flip.md"
 FLAG_ORDER = ("tax.individual_workpapers", "tax.review_workspace", "tax_agents.enabled")
+RETIRED = ("tax.individual_workpapers", "tax.review_workspace")  # T-06-T69 (DEC-6024)
 
 
 def test_the_runbook_names_the_flags_in_order() -> None:
     text = RUNBOOK.read_text(encoding="utf-8")
     positions = [text.index(f"`{flag}`") for flag in FLAG_ORDER]
     assert positions == sorted(positions)
-    for flag in FLAG_ORDER:
-        assert flag in FLAGS, flag
+    # The two workspace flags retired into the `tax_returns` entitlement after the M17 flip; the
+    # runbook says so, and the agents flag is still the registry's.
+    assert "tax_agents.enabled" in FLAGS
+    for flag in RETIRED:
+        assert flag not in FLAGS, flag
+    assert "T-06-T69" in text and "`tax_returns` entitlement" in text
 
 
 def test_the_rollback_keeps_data_and_cch_authoritative() -> None:

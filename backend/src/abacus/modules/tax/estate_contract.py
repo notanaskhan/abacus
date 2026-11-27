@@ -18,7 +18,6 @@ from uuid import UUID
 from fastapi import Depends, Path
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import TAX_ESTATE_WORKPAPERS
 from abacus.kernel._statuses import (
     EstateComputationLabelStatus,
     EstateDeductionElectionStatus,
@@ -28,8 +27,8 @@ from abacus.kernel._statuses import (
 )
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.platform.api import entitlement
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 Internal = classified("internal")
@@ -55,8 +54,9 @@ def _strict() -> ConfigDict:
 
 
 async def _flag_on(ctx: AuthContext) -> None:
-    if ctx.client or not await flag_enabled(ctx.tenant, TAX_ESTATE_WORKPAPERS):
-        raise NotFound(TAX_ESTATE_WORKPAPERS.name)
+    """T-06-T69 (DEC-6024): the `tax_returns` entitlement replaced `tax.estate_workpapers`."""
+    if ctx.client or await entitlement(ctx.tenant, "tax_returns") is None:
+        raise NotFound("tax_returns")
 
 
 class EstateDueChipOut(BaseModel):

@@ -147,7 +147,7 @@ test.describe("J13 · P-02 search", () => {
     test.fixme(journey.project !== "fixture", "T-05-T68: TXP-01 on the full stack and staging");
     await journey.as("daniel-reyes", "/tax-returns/_returnId_/review/summary", {
       scenario: "TXP-01:a",
-      flags: ["tax.entity_workspace", "tax.review_workspace"],
+      flags: [], // T-06-T69: the workspaces are the seed's entitlements
     });
     await journey.step("J13 step 4: the Ridgeline memo (TXP-01 a)", async (page) => {
       await expect(

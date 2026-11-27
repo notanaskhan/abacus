@@ -9,7 +9,8 @@ import type { Page } from "@playwright/test";
 
 const LIVE =
   "T-05-T68: full stack once T-05's slices are seeded on the stack with tax.entity_agents off";
-const FLAGS = ["tax.entity_workspace", "tax.review_workspace"];
+// T-06-T69: both workspaces are the seed's entitlements now; no flag to turn on.
+const FLAGS: string[] = [];
 const RETURN = "/tax-returns/_returnId_";
 const OFF = "Prepared without agents · Accrued Agent is off for this firm. Prepare this by hand.";
 

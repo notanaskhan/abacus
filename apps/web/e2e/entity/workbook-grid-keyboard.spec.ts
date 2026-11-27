@@ -5,7 +5,8 @@
 // routes on each screen's scenario, with axe and INV-1 to INV-5 after every step (harness).
 import { expect, test } from "../harness";
 
-const FLAGS = ["tax.entity_workspace", "tax.review_workspace"];
+// T-06-T69: both workspaces are the seed's entitlements now; no flag to turn on.
+const FLAGS: string[] = [];
 const RETURN = "/tax-returns/_returnId_";
 const LIVE = "T-05-T69: full stack once T-05's slices are seeded on the stack";
 

@@ -1,5 +1,7 @@
 # WS-1 · Tax worksheets, K-1 treatments and residency
 
+> **T-06-T69 (DEC-6024):** the worksheet routes answer 404 without the firm's `tax_returns` entitlement, which replaced `tax.individual_workpapers`.
+
 | Field | Value |
 |---|---|
 | Version | v1 |

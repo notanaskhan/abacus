@@ -1,5 +1,7 @@
 # Estate workpapers · EW-1 (v1)
 
+> **T-06-T69 (DEC-6024):** the routes answer 404 without the firm's `tax_returns` entitlement, which replaced `tax.estate_workpapers`.
+
 | Field | Value |
 |---|---|
 | Version | v1 |

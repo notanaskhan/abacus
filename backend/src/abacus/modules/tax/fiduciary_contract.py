@@ -23,7 +23,6 @@ from uuid import UUID
 from fastapi import Depends, Header, Path, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import TAX_FIDUCIARY_K1_RELEASE, TAX_FIDUCIARY_WORKPAPERS
 from abacus.kernel._statuses import (
     InstrumentInterpretationStatus,
     InstrumentSegmentationStatus,
@@ -33,7 +32,6 @@ from abacus.kernel._statuses import (
 )
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import DomainConflict, NotFound, NotImplementedYet
-from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -41,6 +39,7 @@ from abacus.modules.identity.api import (
     mask_tins_for,
 )
 from abacus.modules.organisations.api import MaskedTinOut
+from abacus.modules.platform.api import entitlement
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -133,10 +132,12 @@ def _strict() -> ConfigDict:
     return ConfigDict(frozen=True, extra="forbid")
 
 
-async def _flag_on(ctx: AuthContext, flag: Flag) -> None:
-    """Off for the firm, the route is absent (404); a client principal never reaches it."""
-    if ctx.client or not await flag_enabled(ctx.tenant, flag):
-        raise NotFound(flag.name)
+async def _entitled(ctx: AuthContext) -> None:
+    """Without the firm's `tax_returns` entitlement the route is absent (404); a client principal
+    never reaches it. T-06-T69 (DEC-6024): the entitlement replaced the retired
+    `tax.fiduciary_workpapers` and `tax.fiduciary_k1_release` flags."""
+    if ctx.client or await entitlement(ctx.tenant, "tax_returns") is None:
+        raise NotFound("tax_returns")
 
 
 def _stub(route: str) -> NotImplementedYet:
@@ -707,7 +708,7 @@ _R = "/returns/{return_id}"
 async def instrument_route(return_id: UUID, ctx: Ctx) -> InstrumentOut:
     """TXT-01: profile, instrument, segmentation, determinations, cited-by, reader (T-07-T12).
     The profile's EIN is TIN-tagged: the read goes through the one central mask (AC9.4)."""
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     return await mask_tins_for(ctx, await _instrument_read(ctx, return_id))
 
 
@@ -723,7 +724,7 @@ async def instrument_attach_route(
 ) -> InstrumentOut:
     """Attach a client-level file as the governing instrument (AC-1.2; T-07-T12); answers the
     read, masked for an offshore reader (AC9.4)."""
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     await _instrument_attach(ctx, return_id, body)
     return await mask_tins_for(ctx, await _instrument_read(ctx, return_id))
 
@@ -738,7 +739,7 @@ async def instrument_clauses_route(instrument_id: UUID, ctx: Ctx) -> InstrumentC
     """The clause tree: labels, headings, pages, regions, hashes; no text (AC-1.3, AC-15.3)."""
     from abacus.modules.tax.instruments import service
 
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     return await service.clauses(ctx, instrument_id)
 
 
@@ -755,7 +756,7 @@ async def instrument_clause_mark_route(
     """Manual clause marking while segmentation `needs_review` (AC-1.3; T-07-T12)."""
     from abacus.modules.tax.instruments import service
 
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     return await service.mark_clause(ctx, instrument_id, body)
 
 
@@ -773,7 +774,7 @@ async def instrument_read_route(
     `not_segmented` before any model call (AC-1.4, AC-1.5; T-07-T13)."""
     from abacus.modules.tax.instrument_reader import start_read
 
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     return ReaderRunAcceptedOut(run_id=await start_read(ctx, return_id))
 
 
@@ -790,7 +791,7 @@ async def determination_record_route(
     """The agents-off path (AC-1.6): 422 `uncited_change` for a governed key without a clause."""
     from abacus.modules.tax.instruments import service
 
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     return await service.record_determination(ctx, return_id, body)
 
 
@@ -806,7 +807,7 @@ async def determination_edit_route(
     """A new version: 422 `uncited_change`; 409 `version_conflict`, `interpretation_locked`."""
     from abacus.modules.tax.instruments import service
 
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     return await service.edit_determination(ctx, determination_id, body)
 
 
@@ -822,7 +823,7 @@ async def interpretation_reopen_route(
     """Unlock after L3; stales the TXT-02 sign-off (AC-5.2; T-07-T12)."""
     from abacus.modules.tax.instruments import service
 
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     return await service.reopen(ctx, interpretation_id, body)
 
 
@@ -836,7 +837,7 @@ async def instrument_cited_by_route(return_id: UUID, ctx: Ctx) -> list[Instrumen
     """Computation rows and return fields citing each clause (AC-2.4)."""
     from abacus.modules.tax.instruments import service
 
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     return (await service.instrument_read(ctx, return_id)).cited_by
 
 
@@ -853,7 +854,7 @@ async def fiduciary_computation_route(
     version: Annotated[int | None, Query(ge=1)] = None,
 ) -> FiduciaryComputationOut:
     """TXT-02's read model; 409 `interpretation_not_approved` before an approved reading (f1)."""
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     from abacus.modules.tax import (
         fiduciary_service as fs,
     )
@@ -871,7 +872,7 @@ async def fiduciary_recompute_route(
     return_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> FiduciaryRecomputeOut:
     """Idempotent by `inputs_hash` (AC-6.4); 409 `interpretation_not_approved` (T-07-T16)."""
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     from abacus.modules.tax import (
         fiduciary_service as fs,
     )
@@ -889,7 +890,7 @@ async def fiduciary_export_route(
     return_id: UUID, ctx: Ctx, version: Annotated[int | None, Query(ge=1)] = None
 ) -> Response:
     """The deterministic XLSX of a version, byte-identical per version (AC-8.1; T-07-T16)."""
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     from abacus.modules.tax import (
         fiduciary_service as fs,
     )
@@ -908,7 +909,7 @@ async def fiduciary_export_route(
     errors=(),
 )
 async def fai_lines_route(return_id: UUID, ctx: Ctx) -> FaiLinesOut:
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     from abacus.modules.tax import (
         fiduciary_service as fs,
     )
@@ -925,7 +926,7 @@ async def fai_lines_route(return_id: UUID, ctx: Ctx) -> FaiLinesOut:
 )
 async def fai_line_add_route(return_id: UUID, body: FaiLineIn, ctx: Ctx) -> FaiLineOut:
     """A cited FAI line; a qualified line never exceeds its ordinary parent (service-enforced)."""
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     from abacus.modules.tax import (
         fiduciary_service as fs,
     )
@@ -941,7 +942,7 @@ async def fai_line_add_route(return_id: UUID, body: FaiLineIn, ctx: Ctx) -> FaiL
 )
 async def fai_lines_import_route(return_id: UUID, body: FaiImportIn, ctx: Ctx) -> FaiLinesOut:
     """Lines from P-11's extracted tables on the custodial statement (code, no model)."""
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     from abacus.modules.tax import (
         fiduciary_service as fs,
     )
@@ -956,7 +957,7 @@ async def fai_lines_import_route(return_id: UUID, body: FaiImportIn, ctx: Ctx) -
     errors=(409,),
 )
 async def fai_line_edit_route(line_id: UUID, body: FaiLineEditIn, ctx: Ctx) -> FaiLineOut:
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     from abacus.modules.tax import (
         fiduciary_service as fs,
     )
@@ -971,7 +972,7 @@ async def fai_line_edit_route(line_id: UUID, body: FaiLineEditIn, ctx: Ctx) -> F
     errors=(),
 )
 async def trust_expenses_route(return_id: UUID, ctx: Ctx) -> TrustExpensesOut:
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     from abacus.modules.tax import (
         fiduciary_service as fs,
     )
@@ -989,7 +990,7 @@ async def trust_expenses_route(return_id: UUID, ctx: Ctx) -> TrustExpensesOut:
 async def trust_expense_add_route(
     return_id: UUID, body: TrustExpenseIn, ctx: Ctx
 ) -> TrustExpenseOut:
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     from abacus.modules.tax import (
         fiduciary_service as fs,
     )
@@ -1006,7 +1007,7 @@ async def trust_expense_add_route(
 async def trust_expense_edit_route(
     expense_id: UUID, body: TrustExpenseEditIn, ctx: Ctx
 ) -> TrustExpenseOut:
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     from abacus.modules.tax import (
         fiduciary_service as fs,
     )
@@ -1021,7 +1022,7 @@ async def trust_expense_edit_route(
     errors=(),
 )
 async def trust_distributions_route(return_id: UUID, ctx: Ctx) -> TrustDistributionsOut:
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     from abacus.modules.tax import (
         fiduciary_service as fs,
     )
@@ -1039,7 +1040,7 @@ async def trust_distributions_route(return_id: UUID, ctx: Ctx) -> TrustDistribut
 async def trust_distribution_add_route(
     return_id: UUID, body: TrustDistributionIn, ctx: Ctx
 ) -> TrustDistributionOut:
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     from abacus.modules.tax import (
         fiduciary_service as fs,
     )
@@ -1057,7 +1058,7 @@ async def trust_distribution_edit_route(
     distribution_id: UUID, body: TrustDistributionEditIn, ctx: Ctx
 ) -> TrustDistributionOut:
     """A new version with a reason; the L2 sign-off goes stale (AC-7.1; T-07-T16)."""
-    await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
+    await _entitled(ctx)
     from abacus.modules.tax import (
         fiduciary_service as fs,
     )
@@ -1073,7 +1074,7 @@ async def trust_distribution_edit_route(
 )
 async def beneficiaries_route(return_id: UUID, ctx: Ctx) -> BeneficiariesOut:
     """TXT-03: allocation, tie-out, delivery, election card, release steps (T-07-T23)."""
-    await _flag_on(ctx, TAX_FIDUCIARY_K1_RELEASE)
+    await _entitled(ctx)
     from abacus.modules.tax import fiduciary_beneficiaries as fb
 
     return cast(BeneficiariesOut, await fb.beneficiaries(ctx, return_id))
@@ -1092,7 +1093,7 @@ async def sixty_five_day_election_route(
     ctx: Ctx,
 ) -> SixtyFiveDayElectionOut:
     """Inserts a new row (latest wins); human-only by DB CHECK too (AC-11.2; T-07-T23)."""
-    await _flag_on(ctx, TAX_FIDUCIARY_K1_RELEASE)
+    await _entitled(ctx)
     from abacus.modules.identity.api import names_of
     from abacus.modules.tax import fiduciary_beneficiaries as fb
 
@@ -1131,5 +1132,5 @@ async def trustee_question_route(
     return_id: UUID, body: TrusteeQuestionIn, ctx: Ctx
 ) -> TrusteeQuestionDraftOut:
     """A C5 question draft from the firm template; a person sends it (AC-11.3; T-07-T23)."""
-    await _flag_on(ctx, TAX_FIDUCIARY_K1_RELEASE)
+    await _entitled(ctx)
     raise _stub("trustee_question")

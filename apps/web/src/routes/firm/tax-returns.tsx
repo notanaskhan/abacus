@@ -82,7 +82,7 @@ export const taxReturnsRoute = createRoute({
 });
 
 // T-05-T28 (DEC-4520): `/tax-returns/$returnId` dispatches by form family (TXP-00's
-// EntityReturn); TAX-02 stays the overview for a 1040 or 1041, or with `tax.entity_workspace` off.
+// EntityReturn); TAX-02 stays the overview for a 1040 or 1041 (T-06-T69: no entity flag).
 const EntityReturn = lazyScreen(
   async () => (await import("../../screens/TXP-00/EntityReturn")).EntityReturn,
 );

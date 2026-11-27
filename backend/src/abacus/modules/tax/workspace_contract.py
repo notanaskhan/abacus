@@ -22,8 +22,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import (
     TAX_AGENTS_ENABLED,
-    TAX_INDIVIDUAL_WORKPAPERS,
-    TAX_REVIEW_WORKSPACE,
 )
 from abacus.kernel._statuses import (
     K1ActivityStatus,
@@ -35,6 +33,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.platform.api import entitlement
 from abacus.modules.tax.k1_treatments import ActivityView, TreatmentView
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -71,10 +70,18 @@ def _strict() -> ConfigDict:
 
 
 async def _flag_on(ctx: AuthContext, flag: Flag) -> None:
-    """T-04-T09 (DEC-3111): off for the firm, the route is absent (404); a client principal never
-    reaches the workspace."""
+    """Off for the firm, the route is absent (404); a client principal never reaches it (the
+    model-backed `tax_agents.enabled` stays a flag)."""
     if ctx.client or not await flag_enabled(ctx.tenant, flag):
         raise NotFound(flag.name)
+
+
+async def _entitled(ctx: AuthContext) -> None:
+    """T-04-T09 (DEC-3111): without the firm's `tax_returns` entitlement the route is absent
+    (404); a client principal never reaches the workspace. T-06-T69 (DEC-6024): the entitlement
+    replaced the retired `tax.review_workspace` and `tax.individual_workpapers` flags."""
+    if ctx.client or await entitlement(ctx.tenant, "tax_returns") is None:
+        raise NotFound("tax_returns")
 
 
 # --- RW-1 models ---------------------------------------------------------------------------------
@@ -418,7 +425,7 @@ async def workspace_route(return_id: UUID, ctx: Ctx) -> WorkspaceSummaryOut:
     from abacus.modules.tax.return_issues import checkpoint_chip, issue_counts
     from abacus.modules.tax.review_tree import summary
 
-    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    await _entitled(ctx)
     found = await summary(ctx, return_id)
     issues = await issue_counts(ctx, return_id)  # T-04-T23: TAX-06's open count
     chip = await checkpoint_chip(ctx, return_id)  # T-04-T23: TAX-07's "☰ n proposed"
@@ -450,7 +457,7 @@ async def review_tree_route(
     """The documents at a level, "Review n" (T-04-T17)."""
     from abacus.modules.tax.review_tree import tree
 
-    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    await _entitled(ctx)
     docs, review, _ = await tree(ctx, return_id, level=level, q=q, category=category)
     return ReviewTreeOut(
         items=[
@@ -484,7 +491,7 @@ async def document_approval_route(
     """409 `mismatch` (`facts.field_key`), 403 `level_not_permitted`, 409 `version_superseded`."""
     from abacus.modules.tax.review_tree import approve
 
-    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    await _entitled(ctx)
     return _approval_out(
         await approve(
             ctx,
@@ -512,7 +519,7 @@ async def document_approval_reverse_route(
     """Unapprove as a reversing row, own level only; nothing is deleted."""
     from abacus.modules.tax.review_tree import reverse
 
-    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    await _entitled(ctx)
     return _approval_out(await reverse(ctx, approval_id, body.reason))
 
 
@@ -522,7 +529,7 @@ async def document_approval_reverse_route(
 async def return_leadsheets_route(
     return_id: UUID, ctx: Ctx, form: Annotated[str, Query(max_length=20)] = "1040"
 ) -> LeadsheetsOut:
-    await _flag_on(ctx, TAX_INDIVIDUAL_WORKPAPERS)
+    await _entitled(ctx)
     from abacus.modules.tax.leadsheets import leadsheets
 
     return LeadsheetsOut(
@@ -553,7 +560,7 @@ async def return_leadsheets_route(
     errors=(501,),
 )
 async def sch_e_k1_matrix_route(return_id: UUID, ctx: Ctx) -> K1MatrixOut:
-    await _flag_on(ctx, TAX_INDIVIDUAL_WORKPAPERS)
+    await _entitled(ctx)
     from abacus.modules.tax.leadsheets import k1_matrix
 
     found = await k1_matrix(ctx, return_id)
@@ -579,7 +586,7 @@ async def sch_e_k1_matrix_route(return_id: UUID, ctx: Ctx) -> K1MatrixOut:
 async def field_links_route(
     return_id: UUID, ctx: Ctx, evidence_version_id: Annotated[UUID | None, Query()] = None
 ) -> FieldLinksOut:
-    await _flag_on(ctx, TAX_INDIVIDUAL_WORKPAPERS)
+    await _entitled(ctx)
     from abacus.modules.tax.leadsheets import field_links
 
     return FieldLinksOut(
@@ -610,7 +617,7 @@ async def final_approval_request_route(
     """409 `{blockers: draft_k1 | blocking_issues | unapproved_documents}`."""
     from abacus.modules.tax.review_tree import request_final_approval
 
-    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    await _entitled(ctx)
     gate_id, at = await request_final_approval(ctx, return_id, body.assignee_user_id)
     return FinalApprovalRequestOut(gate_id=gate_id, requested_at=at)
 
@@ -628,7 +635,7 @@ async def draft_run_route(return_id: UUID, ctx: Ctx) -> ReturnRunAcceptedOut:
     from abacus.modules.tax.draft_entry import run_draft
 
     await _flag_on(ctx, TAX_AGENTS_ENABLED)
-    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    await _entitled(ctx)
     return ReturnRunAcceptedOut(agent_run_id=await run_draft(ctx, return_id))
 
 
@@ -639,7 +646,7 @@ async def worksheets_route(return_id: UUID, ctx: Ctx) -> WorksheetsOut:
     """TAX-05's tree (T-04-T16)."""
     from abacus.modules.tax.worksheets import tree
 
-    await _flag_on(ctx, TAX_INDIVIDUAL_WORKPAPERS)
+    await _entitled(ctx)
     return WorksheetsOut(
         items=[
             WorksheetNodeOut(
@@ -668,7 +675,7 @@ async def worksheet_fields_route(
     """TAX-05's fields with their provenance (T-04-T16); edits go through `PUT /v1/fields/…`."""
     from abacus.modules.tax.worksheets import fields
 
-    await _flag_on(ctx, TAX_INDIVIDUAL_WORKPAPERS)
+    await _entitled(ctx)
     return WorksheetFieldsOut(
         worksheet_id=worksheet_id,
         sections=[
@@ -704,7 +711,7 @@ async def worksheet_fields_route(
 async def k1_activities_route(return_id: UUID, ctx: Ctx) -> K1ActivitiesOut:
     from abacus.modules.tax.k1_treatments import list_k1_activities
 
-    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    await _entitled(ctx)
     return K1ActivitiesOut(items=[_k1_out(a) for a in await list_k1_activities(ctx, return_id)])
 
 
@@ -717,7 +724,7 @@ async def k1_activities_route(return_id: UUID, ctx: Ctx) -> K1ActivitiesOut:
 async def k1_activity_route(activity_id: UUID, ctx: Ctx) -> K1ActivityOut:
     from abacus.modules.tax.k1_treatments import get_k1_activity
 
-    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    await _entitled(ctx)
     return _k1_out(await get_k1_activity(ctx, activity_id))
 
 
@@ -734,7 +741,7 @@ async def k1_treatment_run_route(activity_id: UUID, ctx: Ctx) -> ReturnRunAccept
     from abacus.modules.tax.analyst_modes import activity_return, return_facts, start_mode
 
     await _flag_on(ctx, TAX_AGENTS_ENABLED)
-    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    await _entitled(ctx)
     return_id = await activity_return(ctx, activity_id)
     engagement, entity, year = await return_facts(ctx, return_id)
     run = await start_mode(ctx, "k1_treatments", return_id, entity, year, engagement)
@@ -751,7 +758,7 @@ async def k1_override_route(treatment_id: UUID, body: K1OverrideIn, ctx: Ctx) ->
     """422 `reason_required` when the reason is blank (the model enforces 1+ characters)."""
     from abacus.modules.tax.k1_treatments import get_k1_activity, override_treatment
 
-    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    await _entitled(ctx)
     await override_treatment(ctx, treatment_id, body.value, body.reason, body.seen_version)
     from abacus.modules.tax.k1_treatments import activity_of_treatment
 
@@ -768,7 +775,7 @@ async def residency_route(return_id: UUID, ctx: Ctx) -> ReturnResidencyOut:
     status and the review point. 404 before a determination is opened."""
     from abacus.modules.tax.residency_service import residency_view
 
-    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    await _entitled(ctx)
     view = await residency_view(ctx, return_id)
     return ReturnResidencyOut(
         status=ResidencyDeterminationStatus(view.status),
@@ -821,7 +828,7 @@ async def residency_proposal_route(return_id: UUID, ctx: Ctx) -> ReturnRunAccept
     from abacus.modules.tax.analyst_modes import return_facts, start_mode
 
     await _flag_on(ctx, TAX_AGENTS_ENABLED)
-    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    await _entitled(ctx)
     engagement, entity, year = await return_facts(ctx, return_id)
     run = await start_mode(ctx, "residency", return_id, entity, year, engagement)
     return ReturnRunAcceptedOut(agent_run_id=run)
@@ -838,7 +845,7 @@ async def state_allocation_route(return_id: UUID, ctx: Ctx) -> StateAllocationOu
     add-backs, computed by code from the return's fields."""
     from abacus.modules.tax.residency_service import allocation_view
 
-    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    await _entitled(ctx)
     view = await allocation_view(ctx, return_id)
     return StateAllocationOut(
         rows=[
@@ -866,7 +873,7 @@ async def state_allocation_xlsx_route(return_id: UUID, ctx: Ctx) -> Response:
     """T-04-T39: the allocation as a deterministic xlsx; `export.create` needs a fresh MFA."""
     from abacus.modules.tax.residency_service import allocation_view, allocation_xlsx
 
-    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    await _entitled(ctx)
     content = allocation_xlsx(await allocation_view(ctx, return_id))
     return Response(
         content=content,
@@ -887,7 +894,7 @@ async def return_issues_export_route(return_id: UUID, ctx: Ctx) -> Response:
     the row count."""
     from abacus.modules.tax.return_issues import issues_csv
 
-    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    await _entitled(ctx)
     content = await issues_csv(ctx, return_id)
     return Response(
         content=content.encode("utf-8"),

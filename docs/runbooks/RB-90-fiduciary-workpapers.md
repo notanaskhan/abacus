@@ -9,6 +9,8 @@ rehearse_by: 2028-06-20
 ---
 # RB-90 · Fiduciary workpapers (T-07-T32)
 
+> **Retired (T-06-T69, DEC-6024).** `tax.fiduciary_workpapers`, `tax.fiduciary_k1_release` and `tax.estate_workpapers` were retired into the `tax_returns` entitlement. Migration 1034 writes it for every firm that had any of them on. The flip steps below are history.
+
 Who: the tax lead on call. Surfaces: TXT-01 to TXT-04, the 1041 K-1 release, the estate
 workpapers. Flags: `tax.fiduciary_workpapers`, `tax.fiduciary_k1_release`,
 `tax.estate_workpapers` (per firm, default off).

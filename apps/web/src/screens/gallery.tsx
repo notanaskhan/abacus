@@ -4215,7 +4215,7 @@ registerScreen("AUD-29", {
 });
 
 // T-04-T32 (DEC-4319): the 1040 review artboards on the gallery for J06's slice (fixture mode);
-// the routes keep them behind `tax.review_workspace` until T-04-T29's live hosts.
+// the routes keep them behind the `tax_returns` entitlement (T-06-T69) until T-04-T29's live hosts.
 const TAX04_FRAMES = ["a", "b", "c", "d", "e"] as const;
 registerScreen("TAX-04", {
   title: "Return › Review, prepare preset",

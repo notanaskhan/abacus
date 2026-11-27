@@ -1,5 +1,7 @@
 # RW-1 · Tax return review workspace
 
+> **T-06-T69 (DEC-6024):** the routes answer 404 without the firm's `tax_returns` entitlement, which replaced `tax.review_workspace` and `tax.individual_workpapers`.
+
 | Field | Value |
 |---|---|
 | Version | v1 |

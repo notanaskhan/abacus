@@ -46,7 +46,9 @@ NEEDS: Final = ("tax_board",)
 RIDGELINE: Final = "ridgeline-property-partners-lp"
 HARBORVIEW: Final = "harborview-dental-properties-lp"
 D = Decimal
-FLAGS: Final = ("tax.entity_workspace", "tax.workbook_run", "tax.entity_agents")
+# T-06-T69 (DEC-6024): `tax.entity_workspace` and `tax.workbook_run` retired into the
+# `tax_entity_returns` entitlement (tax_board grants it); the model-backed flag stays.
+FLAGS: Final = ("tax.entity_agents",)
 REPLAY_FROM: Final = datetime(2026, 9, 1, 8, 2, tzinfo=CT)
 H1, H2 = (date(2025, 1, 1), date(2025, 6, 30)), (date(2025, 7, 1), date(2025, 12, 31))
 

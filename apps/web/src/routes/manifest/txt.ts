@@ -20,7 +20,7 @@ export const txtScreens = {
     path: "/tax-returns/$returnId/review/beneficiaries", // S47: live (TASK-8352)
     entry: true,
   },
-  // T-07-T26: A to E on fixtures (the gallery), behind tax.estate_workpapers when live.
+  // T-07-T26: A to E on fixtures (the gallery), behind the tax_returns entitlement when live (T-06-T69).
   "TXT-04": {
     name: "Gift & estate workpapers (706 / 709)",
     status: "fixture",

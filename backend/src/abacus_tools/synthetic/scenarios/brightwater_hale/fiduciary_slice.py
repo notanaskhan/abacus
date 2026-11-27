@@ -29,7 +29,8 @@ THORNBURY_ESTATE: Final = "Estate of Walter Thornbury"
 AGREEMENT_FILE: Final = "Calloway_Family_Trust_Agreement_2011.pdf"
 AGREEMENT_PAGES: Final = 11
 SCANNED_PAGE: Final = 4
-FLAGS: Final = ("tax.fiduciary_workpapers", "tax.fiduciary_k1_release", "tax.estate_workpapers")
+# T-06-T69 (DEC-6024): T-07's three flags retired into the `tax_returns` entitlement (tax_board).
+FLAGS: Final[tuple[str, ...]] = ()
 
 # Named snapshots (T-07 §5.3): E0, the release days, the estate day and the election day.
 E0: Final = datetime(2026, 9, 14, 9, 24, tzinfo=CT)
