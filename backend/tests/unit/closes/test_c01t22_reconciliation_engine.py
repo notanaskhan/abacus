@@ -122,7 +122,7 @@ def test_ac_recomputing_the_same_inputs_yields_the_same_hash() -> None:
     assert rec.reconcile(shuffled).inputs_hash == a.inputs_hash
     changed = rec.reconcile(_inputs(book_balance=bh.BOOK_BALANCE + D("1.00")))
     assert changed.inputs_hash != a.inputs_hash and changed.content_hash != a.content_hash
-    assert a.engine_version == "closes.reconciliation/1"
+    assert a.engine_version == "closes.reconciliation/2"
 
 
 def test_run_1_before_the_refund_reads_off_380() -> None:

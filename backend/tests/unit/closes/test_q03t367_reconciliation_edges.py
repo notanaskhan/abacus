@@ -469,7 +469,7 @@ def test_one_period_whole() -> None:
         "over_90": D("20.00"),
     }
     assert (r.period_end, r.stale_count) == (END, 1)
-    assert r.content_hash == "ecd798b18cef786299293db68bc249a2a5dfcd6bba9d9a84fa66e121781b70db"
+    assert r.content_hash == "f4527e642cc3382817ed7d3565e291cd265f86a5d7c0ae9b82a04ff1cc90a57c"
 
 
 def test_the_same_period_before_its_statement() -> None:
