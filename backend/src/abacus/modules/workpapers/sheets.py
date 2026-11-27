@@ -142,6 +142,7 @@ class SheetVm:
     exceptions: int
     view: str
     sample_seed: int | None
+    engagement_id: UUID | None = None  # K-03-T23: the comment threads' engagement
 
 
 # --- authorisation -------------------------------------------------------------------------------
@@ -716,7 +717,7 @@ async def sheet_vm(ctx: AuthContext, sheet_id: UUID, view_id: UUID | None = None
         sheet.id, sheet.work_item_id, sheet.title, tuple(columns),
         tuple(totals(sections, found, columns)), len(found),
         sum(1 for r in found if any(c.exception for c in r.cells.values())),
-        "Default" if view is None else view.name, seed,
+        "Default" if view is None else view.name, seed, sheet.engagement_id,
     )  # fmt: skip
 
 
@@ -804,6 +805,18 @@ async def link_row(ctx: AuthContext, sheet_id: UUID, row_id: UUID, kind: LinkKin
             after=Ref(target=target_id),  # the link kind is the row link's own column
             scope=Scope(engagement_id=sheet.engagement_id, work_item_id=sheet.work_item_id),
         )
+
+
+@dataclass(frozen=True)
+class SheetScope:
+    engagement_id: UUID
+    work_item_id: UUID
+
+
+async def sheet_scope(ctx: AuthContext, sheet_id: UUID) -> SheetScope:
+    """A sheet's engagement and work item, after `sheet.read` (the comment anchors' check)."""
+    found = await _sheet(ctx, sheet_id, "sheet.read")
+    return SheetScope(found.engagement_id, found.work_item_id)
 
 
 # --- K-03-T22: SHT-01's row drawer --------------------------------------------------------------
@@ -923,6 +936,7 @@ __all__ = [
     "row_detail",
     "rows",
     "save_view",
+    "sheet_scope",
     "sheet_vm",
     "status_line",
     "totals",

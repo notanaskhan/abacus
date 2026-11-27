@@ -1,0 +1,33 @@
+{
+  "scenario": "bh-2026.10.3",
+  "slice": "sheets",
+  "snapshot": "2026-09-24T11:20",
+  "sheet_code": "BH-FS-430",
+  "manager": "Hannah Leclerc",
+  "column": {
+    "key": "service_period",
+    "type": "date",
+    "label": "Service period",
+    "description": "When the goods or services were received",
+    "after_key": "invoice_on",
+    "date_range": true,
+    "display": "month",
+    "required": true,
+    "validation": "end_on_or_after_start",
+    "classification": "restricted",
+    "visible_to_client": false
+  },
+  "usage_in_use": {
+    "filled_rows": 40,
+    "views": 2,
+    "view_names": [
+      "Default",
+      "Exceptions"
+    ],
+    "rules": 0,
+    "agent_columns": [
+      "Conclusion"
+    ],
+    "in_use": true
+  }
+}

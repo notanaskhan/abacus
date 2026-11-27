@@ -24529,6 +24529,15 @@
       "ColumnUsageOut": {
         "additionalProperties": false,
         "properties": {
+          "agent_columns": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Agent Columns",
+            "type": "array"
+          },
           "filled_rows": {
             "cls": "internal",
             "minimum": 0.0,
@@ -24539,6 +24548,22 @@
             "cls": "internal",
             "title": "In Use",
             "type": "boolean"
+          },
+          "rules": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Rules",
+            "type": "integer"
+          },
+          "view_names": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "View Names",
+            "type": "array"
           },
           "views": {
             "cls": "internal",
@@ -126943,6 +126968,31 @@
       "SheetColumnIn": {
         "additionalProperties": false,
         "properties": {
+          "after_key": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z][a-z0-9_]{0,59}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "After Key"
+          },
+          "classification": {
+            "cls": "internal",
+            "default": "restricted",
+            "enum": [
+              "restricted",
+              "confidential",
+              "internal",
+              "public"
+            ],
+            "title": "Classification",
+            "type": "string"
+          },
           "classification_reason": {
             "anyOf": [
               {
@@ -126956,6 +127006,41 @@
             "cls": "internal",
             "title": "Classification Reason"
           },
+          "date_range": {
+            "cls": "internal",
+            "default": false,
+            "title": "Date Range",
+            "type": "boolean"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Description"
+          },
+          "display": {
+            "anyOf": [
+              {
+                "enum": [
+                  "date",
+                  "month"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Display"
+          },
           "key": {
             "cls": "internal",
             "pattern": "^[a-z][a-z0-9_]{0,59}$",
@@ -126968,6 +127053,12 @@
             "minLength": 1,
             "title": "Label",
             "type": "string"
+          },
+          "required": {
+            "cls": "internal",
+            "default": false,
+            "title": "Required",
+            "type": "boolean"
           },
           "type": {
             "cls": "internal",
@@ -126986,6 +127077,19 @@
             ],
             "title": "Type",
             "type": "string"
+          },
+          "validation": {
+            "anyOf": [
+              {
+                "const": "end_on_or_after_start",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Validation"
           },
           "width": {
             "cls": "internal",
@@ -127060,11 +127164,58 @@
             "cls": "internal",
             "title": "Agent Unavailable"
           },
+          "classification": {
+            "cls": "internal",
+            "default": "restricted",
+            "enum": [
+              "restricted",
+              "confidential",
+              "internal",
+              "public"
+            ],
+            "title": "Classification",
+            "type": "string"
+          },
           "column_id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Column Id",
             "type": "string"
+          },
+          "date_range": {
+            "cls": "internal",
+            "default": false,
+            "title": "Date Range",
+            "type": "boolean"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Description"
+          },
+          "display": {
+            "anyOf": [
+              {
+                "enum": [
+                  "date",
+                  "month"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Display"
           },
           "frozen": {
             "cls": "internal",
@@ -127093,6 +127244,12 @@
             "title": "Options",
             "type": "array"
           },
+          "required": {
+            "cls": "internal",
+            "default": false,
+            "title": "Required",
+            "type": "boolean"
+          },
           "type": {
             "cls": "internal",
             "enum": [
@@ -127110,6 +127267,25 @@
             ],
             "title": "Type",
             "type": "string"
+          },
+          "validation": {
+            "anyOf": [
+              {
+                "const": "end_on_or_after_start",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Validation"
+          },
+          "visible_to_client": {
+            "cls": "internal",
+            "default": false,
+            "title": "Visible To Client",
+            "type": "boolean"
           },
           "width": {
             "cls": "internal",
@@ -127862,6 +128038,32 @@
             },
             "title": "Columns",
             "type": "array"
+          },
+          "configurer": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Configurer"
+          },
+          "engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Id"
           },
           "sections": {
             "cls": "internal",

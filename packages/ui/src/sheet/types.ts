@@ -120,7 +120,10 @@ export type SheetColumnIntent =
   | { kind: "filter" }
   | { kind: "hide" }
   | { kind: "edit_agent_column" }
-  | { kind: "run_on_empty_rows" };
+  | { kind: "run_on_empty_rows" }
+  // K-03-T22/T23: SHT-02's column drawer, new (after this column) or editing this one.
+  | { kind: "add_column" }
+  | { kind: "edit_column" };
 
 export interface SheetGridProps {
   columns: readonly SheetGridColumn[];

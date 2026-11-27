@@ -120,6 +120,11 @@ register_anchor(WORKPAPER_KIND, WORKPAPER_ANCHORS)
 from abacus.modules.workpapers import template_anchor as _template_anchor  # noqa: E402
 
 register_anchor(_template_anchor.KIND, _template_anchor.ANCHORS)
+# K-03-T22/T23 (DEC-6034): SHT-01's row threads and SHT-02's suggestion thread.
+from abacus.modules.workpapers import sheet_anchor as _sheet_anchor  # noqa: E402
+
+register_anchor(_sheet_anchor.SHEET, _sheet_anchor.SHEET_ANCHORS)
+register_anchor(_sheet_anchor.ROW, _sheet_anchor.ROW_ANCHORS)
 # SPEC-313 (TASK-331): papers appear in the sign-off matrix and count toward G5.
 register_reviewable("workpaper", workpaper_reviewables)
 # A-05-T22 (DEC-2212): an attribute test is adopted by its C3 sign-off (SHL-12).

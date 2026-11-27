@@ -44,6 +44,9 @@ const IntegrationLayer = lazy(async () => ({
 const RowDrawerLayer = lazy(async () => ({
   default: (await import("../../screens/SHT-01/RowDrawer")).RowDrawerLayer,
 }));
+const ColumnLayer = lazy(async () => ({
+  default: (await import("../../screens/SHT-02")).ColumnLayer,
+}));
 const SamplingLayer = lazy(async () => ({
   default: (await import("../../screens/AUD-11/SamplingLayer")).SamplingLayer,
 }));
@@ -75,6 +78,14 @@ export default function SheetsHost(props: OverlayRenderProps): JSX.Element | nul
     return (
       <Suspense fallback={null}>
         <SamplingLayer {...props} />
+      </Suspense>
+    );
+  }
+  if (ref.key === "column") {
+    // K-03-T23: the column writes answer 501 until the columns service (K-03-T24).
+    return (
+      <Suspense fallback={null}>
+        <ColumnLayer {...props} />
       </Suspense>
     );
   }

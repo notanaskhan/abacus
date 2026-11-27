@@ -19,7 +19,7 @@
 | `PATCH …/rows/{rid} {cells, version}` | `sheet.edit` | through `record_value`: 412 stale; 423 `row_locked` |
 | `GET …/rows/{rid}` | `sheet.read` | K-03-T22 (DEC-6033), SHT-01 e's drawer: `{engagement_id, row, facts[{label, type, value}], why[{column_key, suggestion_id, status, version, rationale, citation_count, agent_run_id}], links[{kind, target_id, linked_at, label}]}`; sources are `GET /v1/citations?anchor_type=sheet_row&anchor_id=<rid>&anchor_ref=<column>` |
 | `GET` · `POST` · `PATCH …/views[/{vid}]` | `sheet.read` · `sheet.edit` | saved views |
-| `POST …/columns` · `PATCH …/columns/{cid}` · `GET …/columns/{cid}/usage` · `DELETE …/columns/{cid}` | `sheet.configure` · `sheet.read` | 409 `column_in_use`; 422 classification reason |
+| `POST …/columns` · `PATCH …/columns/{cid}` · `GET …/columns/{cid}/usage` · `DELETE …/columns/{cid}` | `sheet.configure` · `sheet.read` | 409 `column_in_use`; 422 classification reason. K-03-T23 (DEC-6034) additive stub fields: the column's `description`, `after_key` (in), `date_range`, `display` (`date`, `month`), `required`, `validation` (`end_on_or_after_start`), `classification` (the four ADR-031 levels, default `restricted`) and `visible_to_client` (out); the usage's `view_names`, `rules` and `agent_columns`; the VM's `engagement_id` and `configurer` (filled by K-03-T24) |
 | `GET` · `PUT …/columns/{cid}/agent` | `sheet.read` · `sheet.configure` | 422 `missing_reference`; 409 `preview_required` on save |
 | `POST …/agent/preview {row_ids?}` · `POST …/agent/estimate {scope}` | `agent_column.run` | preview on 3 rows writes nothing; estimate in agent-minutes |
 | `POST …/agent/runs {scope, row_ids?}` · `POST …/agent/runs/{run_id}/stop` | `agent_column.run` | 409 `preview_required`, `over_budget` |
