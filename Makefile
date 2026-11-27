@@ -102,6 +102,8 @@ check-fast:
 	cd backend && uv run python -m abacus_tools.quality.fakes
 	cd backend && uv run python -m abacus_tools.quality.mutation_floors
 	cd backend && uv run python -m abacus_tools.quality.coverage_floors
+	# CV-1 (DEC-6005): the recorded total coverage is never lowered or removed.
+	cd backend && uv run python -m abacus_tools.ci.coverage_ratchet
 	cd backend && uv run python -m abacus_tools.release_windows check
 	$(MAKE) check-generated check-heads
 	cd backend && uv run python -m abacus_tools.quality.secrets_scan
@@ -222,7 +224,10 @@ ci-integration:
 
 # The floor (95) with DEC-10's dated exception, if any: backend/coverage-exception.toml.
 ci-coverage:
-	cd backend && uv run coverage combine && uv run python -m abacus_tools.ci.coverage_floor
+	cd backend && uv run coverage combine
+	# CV-1 (DEC-6005): a change never lowers the total main recorded, even while it is under the floor.
+	cd backend && uv run python -m abacus_tools.ci.coverage_ratchet --measure
+	cd backend && uv run python -m abacus_tools.ci.coverage_floor
 	cd backend && uv run python -m abacus_tools.quality.coverage_floors --measure
 
 ci-contracts:

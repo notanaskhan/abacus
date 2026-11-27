@@ -1,0 +1,15 @@
+# PROTECTED (CV-1; DEC-6005; F-01-T05): the total coverage main last recorded.
+#
+# `make ci-coverage` refuses a change whose combined unit and integration total, to two decimals,
+# is under `total` (`python -m abacus_tools.ci.coverage_ratchet --measure`), and `make check-fast`
+# refuses a change that lowers `total` or removes this file. Raise it, with the commit and run that
+# measured it, whenever a change lifts the total; the guard says so when the total is more than
+# half a point above. The floor (`fail_under` 95 and DEC-10's dated steps) is judged separately.
+#
+# Start: main CI run 45518852575 on df6b9c15f reported 81% (rounded, no decimals). 80.50 is the
+# lowest figure that rounds to 81, so it never refuses main as measured; the first two-decimal
+# measurement raises it.
+decision = "DEC-6005"
+measured_on = "df6b9c15f"
+run = "45518852575"
+total = 80.50
