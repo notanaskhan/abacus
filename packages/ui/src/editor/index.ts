@@ -18,3 +18,15 @@ export {
   type LinkedValueAttrs,
   type LinkedValueHandlers,
 } from "./linked";
+export {
+  AGENT_META,
+  ChangeActions,
+  agentDraftAllowed,
+  changeTitle,
+  commentThreads,
+  insertAgentDraft,
+  openChanges,
+  signOffBlockedBy,
+  type ChangeAttrs,
+  type OpenChange,
+} from "./changes";
