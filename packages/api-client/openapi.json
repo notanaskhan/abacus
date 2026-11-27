@@ -221148,7 +221148,7 @@
     },
     "/v1/engagement-templates/{template_id}/versions": {
       "post": {
-        "description": "409 `draft_exists` when the template already has a draft.",
+        "description": "409 `draft_exists` when the template already has a draft (K-03-T17).",
         "operationId": "new_version",
         "parameters": [
           {
@@ -221254,6 +221254,16 @@
               }
             },
             "description": "Conflict with the resource's state"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Precondition failed: the version moved"
           },
           "422": {
             "content": {
@@ -352934,6 +352944,16 @@
             },
             "description": "Conflict with the resource's state"
           },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Precondition failed: the version moved"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -381571,6 +381591,16 @@
             },
             "description": "Conflict with the resource's state"
           },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Precondition failed: the version moved"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -381707,6 +381737,16 @@
               }
             },
             "description": "Conflict with the resource's state"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Precondition failed: the version moved"
           },
           "422": {
             "content": {
@@ -381983,6 +382023,16 @@
             },
             "description": "Conflict with the resource's state"
           },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Precondition failed: the version moved"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -382246,6 +382296,16 @@
             },
             "description": "Conflict with the resource's state"
           },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Precondition failed: the version moved"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -382382,6 +382442,16 @@
               }
             },
             "description": "Conflict with the resource's state"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Precondition failed: the version moved"
           },
           "422": {
             "content": {
@@ -382644,6 +382714,16 @@
               }
             },
             "description": "Conflict with the resource's state"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Precondition failed: the version moved"
           },
           "422": {
             "content": {

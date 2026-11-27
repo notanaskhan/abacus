@@ -5377,7 +5377,7 @@ export const template = <ThrowOnError extends boolean = false>(options: Options<
 /**
  * New Version Route
  *
- * 409 `draft_exists` when the template already has a draft.
+ * 409 `draft_exists` when the template already has a draft (K-03-T17).
  */
 export const newVersion = <ThrowOnError extends boolean = false>(options: Options<NewVersionData, ThrowOnError>): RequestResult<NewVersionResponses, NewVersionErrors, ThrowOnError> => (options.client ?? client).post<NewVersionResponses, NewVersionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

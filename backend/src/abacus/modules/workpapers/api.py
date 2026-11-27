@@ -116,6 +116,10 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 
 # P-05-T09: a paper's sheets, rows and cells carry comment threads and to-dos (AUD-09).
 register_anchor(WORKPAPER_KIND, WORKPAPER_ANCHORS)
+# K-03-T17 (DEC-6016): KNW-06 threads on a template version (methodology imports no host).
+from abacus.modules.workpapers import template_anchor as _template_anchor  # noqa: E402
+
+register_anchor(_template_anchor.KIND, _template_anchor.ANCHORS)
 # SPEC-313 (TASK-331): papers appear in the sign-off matrix and count toward G5.
 register_reviewable("workpaper", workpaper_reviewables)
 # A-05-T22 (DEC-2212): an attribute test is adopted by its C3 sign-off (SHL-12).

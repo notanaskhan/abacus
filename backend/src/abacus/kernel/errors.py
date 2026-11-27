@@ -108,6 +108,13 @@ class DomainGone(_Coded):
     code: ClassVar[str] = "destroyed"
 
 
+class DomainPreconditionFailed(_Coded):
+    """A conditional write's `If-Match` names a version that moved (K-03-T17, DEC-6016): 412 with
+    the class's fixed `code` and the current version in `facts`."""
+
+    code: ClassVar[str] = "precondition_failed"
+
+
 class ServiceUnavailable(Exception):
     """A dependency isn't reachable right now: 503."""
 

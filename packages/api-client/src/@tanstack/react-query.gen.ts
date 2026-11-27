@@ -8883,7 +8883,7 @@ export const templateOptions = (options: Options<TemplateData>) => queryOptions<
 /**
  * New Version Route
  *
- * 409 `draft_exists` when the template already has a draft.
+ * 409 `draft_exists` when the template already has a draft (K-03-T17).
  */
 export const newVersionMutation = (options?: Partial<Options<NewVersionData>>): UseMutationOptions<NewVersionResponse, NewVersionError, Options<NewVersionData>> => {
     const mutationOptions: UseMutationOptions<NewVersionResponse, NewVersionError, Options<NewVersionData>> = {

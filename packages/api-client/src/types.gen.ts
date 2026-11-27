@@ -102887,6 +102887,10 @@ export type NewVersionErrors = {
      */
     409: ErrorOut;
     /**
+     * Precondition failed: the version moved
+     */
+    412: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -162758,6 +162762,10 @@ export type SkillsImportErrors = {
      */
     409: ErrorOut;
     /**
+     * Precondition failed: the version moved
+     */
+    412: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -175748,6 +175756,10 @@ export type ComponentPutErrors = {
      */
     409: ErrorOut;
     /**
+     * Precondition failed: the version moved
+     */
+    412: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -175811,6 +175823,10 @@ export type DeprecateErrors = {
      * Conflict with the resource's state
      */
     409: ErrorOut;
+    /**
+     * Precondition failed: the version moved
+     */
+    412: ErrorOut;
     /**
      * Invalid request
      */
@@ -175932,6 +175948,10 @@ export type PublishErrors = {
      */
     409: ErrorOut;
     /**
+     * Precondition failed: the version moved
+     */
+    412: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -176052,6 +176072,10 @@ export type RolloutActionErrors = {
      */
     409: ErrorOut;
     /**
+     * Precondition failed: the version moved
+     */
+    412: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -176115,6 +176139,10 @@ export type RolloutStartErrors = {
      * Conflict with the resource's state
      */
     409: ErrorOut;
+    /**
+     * Precondition failed: the version moved
+     */
+    412: ErrorOut;
     /**
      * Invalid request
      */
@@ -176235,6 +176263,10 @@ export type ScopingRulesPutErrors = {
      * Conflict with the resource's state
      */
     409: ErrorOut;
+    /**
+     * Precondition failed: the version moved
+     */
+    412: ErrorOut;
     /**
      * Invalid request
      */
