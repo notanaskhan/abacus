@@ -107,7 +107,8 @@ class ModeInput(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    mode: Annotated[Literal["two_year", "planning_screen"], Int]
+    # T-08-T34 (additive): the drafter's amendment mode shares the input and the settling.
+    mode: Annotated[Literal["two_year", "planning_screen", "amendment"], Int]
     subjects: Annotated[list[SubjectIn], Field(min_length=1, max_length=40), Int]
     facts: Annotated[list[FactIn], Field(min_length=1, max_length=200), Int]
     sources: Annotated[list[SourceIn], Field(min_length=1, max_length=MAX_SOURCES), Int]
@@ -166,7 +167,7 @@ def settle(given: ModeInput, answer: ModeOutput) -> tuple[SettledSubject, ...]:
         raise OutputRefused(facts={"reason": "subjects_not_answered"})
     out: list[SettledSubject] = []
     for s in answer.subjects:
-        if given.mode == "two_year" and s.talking_points is not None:
+        if given.mode in ("two_year", "amendment") and s.talking_points is not None:
             raise OutputRefused(facts={"reason": "talking_points_not_offered"})
         try:
             blocks = _dump(validate_blocks(s.blocks, facts, frozenset()), s.blocks)

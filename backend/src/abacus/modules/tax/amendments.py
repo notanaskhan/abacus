@@ -247,6 +247,28 @@ async def view(ctx: AuthContext, amendment_id: UUID, jurisdiction: str) -> Amend
     )
 
 
+async def engagement_of(tenant: TenantContext, amendment_id: UUID) -> UUID:
+    """The amendment's engagement (a suggestion target's `engagement_of`)."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text("SELECT engagement_id FROM amendments WHERE id = :a"), {"a": amendment_id}
+        )
+    if found is None:
+        raise NotFound(TARGET)
+    return cast(UUID, found)
+
+
+async def authorise_edit(
+    ctx: AuthContext, amendment_id: UUID, *, action: str = "amendment.edit"
+) -> None:
+    """`action` on the amendment's return (a walled one answers 404)."""
+    async with tenant_session(ctx.tenant) as session:
+        row = (await session.execute(_AMENDMENT, {"a": amendment_id})).first()
+    if row is None:
+        raise NotFound(TARGET)
+    await _authorised(ctx, row.work_item_id, action)
+
+
 # --- Part II -------------------------------------------------------------------------------------
 
 _NEXT: Final = text(
@@ -379,7 +401,9 @@ __all__ = [
     "NotAccepted",
     "VersionConflict",
     "amounts",
+    "authorise_edit",
     "create",
+    "engagement_of",
     "explain",
     "on_filing_acknowledged",
     "route_for_approval",

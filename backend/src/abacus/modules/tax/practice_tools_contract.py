@@ -1131,8 +1131,13 @@ async def amendment_route_for_approval_route(
 async def amendment_draft_route(
     amendment_id: UUID, ctx: Ctx, key: IdempotencyKey
 ) -> TaxPracticeRunStartedOut:
+    """T-08-T34: "Draft with Agent…" (Part II and a proposed checkpoint; synthetic firms only)."""
     await _human(ctx, _A, "amendment.edit")
-    raise NotImplementedYet
+    from abacus.modules.tax import amendment_agent
+
+    del key  # each draft is its own run
+    found = await amendment_agent.draft_amendment(ctx, amendment_id)
+    return TaxPracticeRunStartedOut(run_id=found.run_id, started_at=found.started_at)
 
 
 @practice_tools_router.post(
@@ -1167,6 +1172,14 @@ async def aar_route(aar_id: UUID, ctx: Ctx) -> TaxPracticeAarOut:
 async def aar_recommendation_route(
     aar_id: UUID, ctx: Ctx, key: IdempotencyKey
 ) -> TaxPracticeRunStartedOut:
-    """The recommendation is advisory; only the signer's `decision.decide` records the route."""
+    """The recommendation is advisory; only the signer's `decision.decide` records the route.
+    T-08-T34: the AAR is its amendment (kind `bba_aar`); the run is the recommender's, or the
+    card's raise alone when no model is available (the card then carries no tag)."""
     await _human(ctx, _A, "aar.create")
-    raise NotImplementedYet
+    from abacus.modules.tax import amendment_agent
+
+    del key
+    found = await amendment_agent.recommend_bba_route(ctx, aar_id)
+    return TaxPracticeRunStartedOut(
+        run_id=found.run_id or found.card_id, started_at=found.started_at
+    )

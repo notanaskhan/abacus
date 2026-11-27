@@ -82,4 +82,24 @@ def section_754_facts(
     )
 
 
-__all__ = ["convention_facts", "section_754_facts"]
+def bba_route_facts(adjustments: Decimal, imputed_underpayment: Decimal) -> RecommendModeFacts:
+    """T-08-T34 (DEC-6013): the BBA AAR's two routes; facts are the reviewed-year adjustments'
+    total and the engine's imputed underpayment (code never applies a rate here)."""
+    return RecommendModeFacts(
+        mode="bba_route",
+        options=(
+            RecommendModeOption("pay_imputed_underpayment", "Pay the imputed underpayment"),
+            RecommendModeOption("push_out", "Push out to the reviewed-year partners"),
+        ),
+        facts=(
+            RecommendModeFact(
+                "fact:adjustments", "Adjustments (reviewed year)", _money(adjustments)
+            ),
+            RecommendModeFact(
+                "fact:imputed_underpayment", "Imputed underpayment", _money(imputed_underpayment)
+            ),
+        ),
+    )
+
+
+__all__ = ["bba_route_facts", "convention_facts", "section_754_facts"]

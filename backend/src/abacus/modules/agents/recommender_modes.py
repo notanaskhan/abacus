@@ -37,8 +37,9 @@ from abacus.modules.agents.decision_recommend import (
 from abacus.modules.agents.handoff import DecisionSuggestion
 from abacus.modules.agents.spec import spec
 
-Mode = Literal["convention_706d", "section_754"]
-MODES: Final[tuple[Mode, ...]] = ("convention_706d", "section_754")
+# T-08-T34 (DEC-6013): `bba_route`, the BBA AAR's two routes for the signer's card.
+Mode = Literal["convention_706d", "section_754", "bba_route"]
+MODES: Final[tuple[Mode, ...]] = ("convention_706d", "section_754", "bba_route")
 MISSING_CITATION: Final = "agreement_not_cited"
 _RESERVED: Final = re.compile(
     r"\b(?:elected|filed|decided|approved|signed(?: off)?|agreed)\b", re.IGNORECASE
