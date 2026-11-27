@@ -1,0 +1,55 @@
+{
+  "scenario": "bh-2026.10.3",
+  "slice": "cas_delivery",
+  "snapshot": "E0",
+  "client": "Copperleaf Coffee Roasters, Inc.",
+  "locked_on": "2027-01-11",
+  "handed_off_at": "2027-01-12T14:15:00-06:00",
+  "handed_off_by": "Priya Raman",
+  "reopened_on": "2027-01-20",
+  "tb_version": "TB v1",
+  "target_form": "1120-S",
+  "target_tax_year": 2026,
+  "engine": "CCH Axcess Tax",
+  "tax_team": {
+    "preparer": "Olivia Brandt",
+    "reviewer": "Samuel Ito"
+  },
+  "tax_issues_created": 3,
+  "schedules": [
+    {
+      "key": "fixed_assets",
+      "figures": {
+        "cost": "278400.00",
+        "accumulated_depreciation": "74900.00",
+        "book_depreciation": "25680.00"
+      }
+    },
+    {
+      "key": "prepaid_expenses",
+      "figures": {
+        "amortized": "8400.00",
+        "ending_balance": "0.00"
+      }
+    },
+    {
+      "key": "deferred_revenue",
+      "figures": {}
+    },
+    {
+      "key": "shareholder_distributions",
+      "figures": {
+        "total": "144000.00"
+      }
+    },
+    {
+      "key": "accrued_liabilities",
+      "figures": {}
+    }
+  ],
+  "items": [
+    "Accrued payroll at Dec 31 includes wages of Tess Moreno, a shareholder-employee; deductible only when paid (§267(a)(2) and §267(e)).",
+    "Sound Electric $3,200.00 repair (Aug 18): keep the repair analysis in the tax file (Treas. Reg. §1.263(a)-3).",
+    "Square and Shopify 2026 Forms 1099-K: reconcile gross amounts to gross receipts."
+  ]
+}

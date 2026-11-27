@@ -6,6 +6,7 @@ import type { JSX } from "react";
 import { useFlag } from "../../app-core/flags";
 import { useParam } from "../params";
 import { appRoute, lazyScreen } from "../root";
+import { to } from "../to";
 
 // The close shell's route subtree (C-01-T12; C-01 §5; SPEC-655 AC-54). Lazy: the close screens
 // load with their route, never in the initial bundle. One static route per close tab, so each
@@ -284,6 +285,36 @@ export const closeReviewRoute = createRoute({
   },
 });
 
+// C-02-T48: CLS-12, the tax hand-off sheet (O3) over CLS-02; ✕ and Escape return to the overview.
+const TaxHandoffSheet = lazyScreen(async () => (await import("../../screens/CLS-12")).CLS12);
+
+export const closeTaxHandoffRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/closes/$closeId/tax-handoff",
+  component: function CloseTaxHandoffPage(): JSX.Element {
+    const closeId = useParam("closeId");
+    const navigate = useNavigate();
+    const summary = useQuery(closeSummaryOptions({ path: { close_id: closeId } }));
+    const back = (): void => {
+      void navigate(to.CLS02({ closeId }));
+    };
+    return (
+      <>
+        <CloseTabPage tab="overview" screen="CLS-02" />
+        <TaxHandoffSheet
+          closeId={closeId}
+          client={summary.data?.client_name ?? ""}
+          open
+          onOpenChange={(open) => {
+            if (!open) back();
+          }}
+          onViewClose={back}
+        />
+      </>
+    );
+  },
+});
+
 export const closeAdjustmentsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/closes/$closeId/adjustments",
@@ -489,6 +520,7 @@ export const closeRoutes = [
   closeReconciliationRoute,
   closeReviewRoute,
   closeAdjustmentsRoute,
+  closeTaxHandoffRoute,
   closeFluxRoute,
   closeDeliverablesRoute,
   closeUnknownTabRoute,

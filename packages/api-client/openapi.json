@@ -35638,6 +35638,32 @@
             "cls": "internal",
             "title": "Balanced"
           },
+          "handed_off_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Handed Off At"
+          },
+          "handed_off_by": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Handed Off By"
+          },
           "items": {
             "cls": "internal",
             "default": [],
@@ -35673,6 +35699,19 @@
             "cls": "internal",
             "title": "Reason"
           },
+          "reopened_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reopened At"
+          },
           "schedules": {
             "cls": "internal",
             "default": [],
@@ -35699,6 +35738,45 @@
             "title": "Superseded On Next",
             "type": "boolean"
           },
+          "target_engine": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Target Engine"
+          },
+          "target_form": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Target Form"
+          },
+          "target_preparer": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Target Preparer"
+          },
           "target_return_id": {
             "anyOf": [
               {
@@ -35711,6 +35789,31 @@
             ],
             "cls": "internal",
             "title": "Target Return Id"
+          },
+          "target_reviewer": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Target Reviewer"
+          },
+          "target_tax_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Target Tax Year"
           },
           "tb_version": {
             "anyOf": [

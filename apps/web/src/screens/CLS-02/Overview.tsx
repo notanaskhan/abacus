@@ -20,6 +20,7 @@ import {
   closeSummaryOptions,
   retryCloseProcedureMutation,
   startCloseRunMutation,
+  closeTaxHandoffOptions,
 } from "@abacus/api-client/query";
 import {
   Button,
@@ -85,6 +86,9 @@ export function groupProgress(g: CloseTaskGroupOut): {
 export function statusItems(
   summary: CloseSummaryOut,
   onMove: (to: "in_review" | "on_hold") => void,
+  /** C-02-T48 (CLS-12 b): the hand-off's availability from its read; without it the item stays
+   * disabled with the generic hint. */
+  handoff?: { reason: string | null; onOpen: () => void },
 ): MenuItem[] {
   const allReconciled =
     summary.accounts_total > 0 && summary.accounts_reconciled === summary.accounts_total;
@@ -103,12 +107,14 @@ export function statusItems(
         onMove("on_hold");
       },
     },
-    {
-      label: OVERVIEW.handoffToTax,
-      disabled: true,
-      hint: OVERVIEW.handoffDisabled,
-      onSelect: () => undefined,
-    },
+    handoff !== undefined && handoff.reason === null
+      ? { label: OVERVIEW.handoffToTax, onSelect: handoff.onOpen }
+      : {
+          label: OVERVIEW.handoffToTax,
+          disabled: true,
+          hint: handoff?.reason ?? OVERVIEW.handoffDisabled,
+          onSelect: () => undefined,
+        },
   ];
 }
 
@@ -225,6 +231,12 @@ function Rail({
       ? 0
       : Math.round((summary.accounts_reconciled * 100) / summary.accounts_total);
   const pastDue = summary.days_past_due ?? null;
+  // C-02-T48: the hand-off's availability, read when the firm has `closes.tax_handoff`.
+  const handoffOn = useFlag("closes.tax_handoff") === true;
+  const handoff = useQuery({
+    ...closeTaxHandoffOptions({ path: { close_id: props.closeId } }),
+    enabled: handoffOn,
+  });
   return (
     <aside
       aria-label={OVERVIEW.rail}
@@ -248,7 +260,23 @@ function Rail({
               <Icon name="chevron-down" size={12} className="opacity-55" />
             </button>
           }
-          sections={[statusItems(summary, (to) => props.onStatus?.(to))]}
+          sections={[
+            statusItems(
+              summary,
+              (to) => props.onStatus?.(to),
+              handoffOn && handoff.data !== undefined
+                ? {
+                    reason:
+                      handoff.data.status === "not_available"
+                        ? (handoff.data.reason ?? null)
+                        : null,
+                    onOpen: () => {
+                      void navigate(to.CLS12({ closeId: props.closeId }));
+                    },
+                  }
+                : undefined,
+            ),
+          ]}
         />
       </div>
       <StatRow

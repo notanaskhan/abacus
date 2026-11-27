@@ -228,6 +228,16 @@ class DeliveryHandoffOut(BaseModel):
     # source TB's tie.
     items: Annotated[list[DeliveryHandoffItemOut], Internal] = []
     balanced: Annotated[bool | None, Internal] = None
+    # C-02-T48 (additive, CLS-12 Target): the return's form and year, its engine and its tax team.
+    target_form: Annotated[str | None, Field(max_length=20), Internal] = None
+    target_tax_year: Annotated[int | None, Internal] = None
+    target_engine: Annotated[str | None, Field(max_length=40), Internal] = None
+    target_preparer: Annotated[str | None, Field(max_length=200), Confidential] = None
+    target_reviewer: Annotated[str | None, Field(max_length=200), Confidential] = None
+    # The latest hand-off: who and when (TXP-02's provenance banner, CLS-12 c2).
+    handed_off_by: Annotated[str | None, Field(max_length=200), Confidential] = None
+    handed_off_at: Annotated[datetime | None, Internal] = None
+    reopened_at: Annotated[datetime | None, Internal] = None  # set when superseded_on_next
 
 
 class DeliveryHandoffIn(BaseModel):
@@ -617,6 +627,13 @@ async def close_tax_handoff_route(close_id: UUID, ctx: Ctx) -> DeliveryHandoffOu
     from abacus.modules.closes import tax_handoff
 
     found = await tax_handoff.availability(ctx, close_id)
+    target = found.target
+    team = [u for u in (getattr(target, "preparer_user_id", None),
+                        getattr(target, "reviewer_user_id", None), found.handed_off_by)
+            if u is not None]  # fmt: skip
+    from abacus.modules.identity.api import names_of
+
+    names = await names_of(team) if team else {}
     return DeliveryHandoffOut(
         status=found.status,
         reason=found.reason,
@@ -635,6 +652,16 @@ async def close_tax_handoff_route(close_id: UUID, ctx: Ctx) -> DeliveryHandoffOu
             for i in found.items
         ],
         balanced=found.balanced,
+        target_form=None if target is None else target.form,
+        target_tax_year=None if target is None else target.tax_year,
+        target_engine=None if target is None else target.engine,
+        target_preparer=None if target is None or target.preparer_user_id is None
+        else names.get(target.preparer_user_id),
+        target_reviewer=None if target is None or target.reviewer_user_id is None
+        else names.get(target.reviewer_user_id),
+        handed_off_by=None if found.handed_off_by is None else names.get(found.handed_off_by),
+        handed_off_at=found.handed_off_at,
+        reopened_at=found.reopened_at,
     )  # fmt: skip
 
 

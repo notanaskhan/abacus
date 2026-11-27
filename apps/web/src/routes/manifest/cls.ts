@@ -61,8 +61,8 @@ export const clsScreens = {
   },
   "CLS-12": {
     name: "Handoff to tax · Copperleaf December 2026 close → 2026 Form 1120-S",
-    status: "planned",
-    path: null,
+    status: "live", // C-02-T48: a, c, c2, d on C-02-T39's read; b is CLS-02's menu item
+    path: "/closes/$closeId/tax-handoff",
   },
   "CLS-13": {
     name: "1099 / W-9 tracker · Copperleaf 2026",
