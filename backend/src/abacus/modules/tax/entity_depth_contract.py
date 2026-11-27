@@ -1083,11 +1083,14 @@ async def field_trace_route(
     errors=(409,),
 )
 async def diagnostics_route(return_id: UUID, ctx: Ctx) -> TaxDepthDiagnosticsOut:
-    """The current approved checkpoint's form diagnostics."""
+    """The current approved checkpoint's form diagnostics (T-06-T50: computed on read, as the
+    preview caches its pages; a failing rule links the open issue already raised for it)."""
     await _on(ctx, _F)
+    from abacus.modules.tax import form_diagnostics_run
     from abacus.modules.tax import form_pages_service as fp
 
     found = await fp.preview(ctx, return_id, None)
+    await form_diagnostics_run.refresh(ctx.tenant, return_id)
     items = await fp.diagnostics(ctx.tenant, return_id, found.checkpoint_id)
     return TaxDepthDiagnosticsOut(
         items=[
