@@ -202098,7 +202098,7 @@
     },
     "/v1/clients/{client_id}/relationship-graph": {
       "get": {
-        "description": "CLI-03 a-f: nodes, edges, the banner and the viewer's saved positions; walled nodes\nabsent, no count.",
+        "description": "CLI-03 a-f: nodes, edges, the banner and the viewer's saved positions; walled nodes\nabsent, no count. T-06-T51 (DEC-6015): the client's entities, external parties and live\nrelationships, plus the K-1 flows the viewer may see (each edge only when both returns'\nengagements are readable, DEC-88; the banner counts visible edges only).",
         "operationId": "relationship_graph",
         "parameters": [
           {
@@ -202194,16 +202194,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Relationship Graph Route",
@@ -361143,7 +361133,7 @@
     },
     "/v1/tax-returns/{return_id}/diagnostics": {
       "get": {
-        "description": "The current approved checkpoint's form diagnostics.",
+        "description": "The current approved checkpoint's form diagnostics (T-06-T50: computed on read, as the\npreview caches its pages; a failing rule links the open issue already raised for it).",
         "operationId": "diagnostics",
         "parameters": [
           {

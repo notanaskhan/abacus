@@ -62,6 +62,51 @@ def relationship_annotators() -> tuple[str, ...]:
     return tuple(sorted(_ANNOTATORS))
 
 
+# T-06-T51 (DEC-6015): the K-1 flows a viewer may see (tax registers the provider; DEC-88: a K-1
+# edge shows only when the viewer reads both returns' engagements, and it is never counted when
+# hidden). The provider gets the viewer, so visibility is the owner's own authorisation.
+@dataclass(frozen=True)
+class ReturnNode:
+    id: UUID
+    entity_id: UUID | None
+    label: str
+    sublabel: str | None
+    state: str | None
+
+
+@dataclass(frozen=True)
+class K1Edge:
+    id: UUID
+    from_return_id: UUID
+    to_return_id: UUID
+    state: Literal["draft", "released"]
+    label: str
+
+
+@dataclass(frozen=True)
+class K1Flows:
+    returns: tuple[ReturnNode, ...] = ()
+    edges: tuple[K1Edge, ...] = ()
+    banner: tuple[Literal["amber", "green"], str] | None = None
+
+
+FlowProvider = Callable[
+    [object, UUID, date], Awaitable[K1Flows]
+]  # (viewer AuthContext, client, as of)
+_FLOWS: list[FlowProvider] = []
+
+
+def register_k1_flow_provider(provider: FlowProvider) -> None:
+    if _FLOWS and _FLOWS[0] is not provider:
+        raise ValueError("a K-1 flow provider is already registered")
+    _FLOWS[:] = [provider]
+
+
+async def k1_flows(viewer: object, client_id: UUID, as_of: date) -> K1Flows:
+    """Fail closed: with no provider there are no K-1 flows."""
+    return K1Flows() if not _FLOWS else await _FLOWS[0](viewer, client_id, as_of)
+
+
 @dataclass(frozen=True)
 class Edge:
     to_entity_id: UUID | None
@@ -362,22 +407,25 @@ def projection(nodes: Sequence[GraphNode], edges: Sequence[GraphEdge], as_of: da
 
 async def graph(tenant: TenantContext, client_id: UUID, as_of: date) -> Graph:
     """Reads one client's entities, external parties and live edges (the caller has authorised
-    the client), then lays on each registered annotator's node facts."""
-    async with uow(tenant) as tx:
+    the client), then lays on each registered annotator's node facts. A read: a session, never
+    a unit of work (which refuses to commit without an audit event; ED-349)."""
+    from abacus.kernel.db import tenant_session
+
+    async with tenant_session(tenant) as session:
         entity_rows = (
-            await tx.session.execute(
+            await session.execute(
                 text("SELECT id, name FROM client_entities WHERE client_id = :c"), {"c": client_id}
             )
         ).all()
         party_rows = (
-            await tx.session.execute(
+            await session.execute(
                 text("SELECT id, display_name FROM external_parties WHERE client_id = :c"),
                 {"c": client_id},
             )
         ).all()
         ids = [r[0] for r in entity_rows] + [r[0] for r in party_rows]
         edge_rows = (
-            await tx.session.execute(
+            await session.execute(
                 text(
                     "SELECT id, COALESCE(from_entity_id, from_external_party_id), "
                     "COALESCE(to_entity_id, to_external_party_id), kind, percent, effective_from, "

@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends
@@ -168,13 +168,59 @@ async def _human(ctx: AuthContext, action: str) -> None:
     "/clients/{client_id}/relationship-graph",
     action="client.read",
     response_model=RelationshipGraphOut,
-    errors=(501,),
 )
 async def relationship_graph_route(client_id: UUID, ctx: Ctx) -> RelationshipGraphOut:
     """CLI-03 a-f: nodes, edges, the banner and the viewer's saved positions; walled nodes
-    absent, no count."""
+    absent, no count. T-06-T51 (DEC-6015): the client's entities, external parties and live
+    relationships, plus the K-1 flows the viewer may see (each edge only when both returns'
+    engagements are readable, DEC-88; the banner counts visible edges only)."""
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.kernel.clock import today
+    from abacus.modules.organisations import relationships as rel
+    from abacus.modules.organisations.live import readable_client
+
+    await readable_client(ctx, client_id)
+    as_of = await today(ctx.tenant)
+    found = await rel.graph(ctx.tenant, client_id, as_of)
+    flows = await rel.k1_flows(ctx, client_id, as_of)
+    nodes = [
+        RelationshipNodeOut(
+            node_id=n.id, kind="external_party" if n.kind == "external_party" else "entity",
+            label=n.label[:200], external=n.kind == "external_party",
+        )
+        for n in found.nodes
+    ] + [
+        RelationshipNodeOut(
+            node_id=r.id, kind="return", label=r.label[:200], sublabel=r.sublabel,
+            return_state=r.state,
+        )
+        for r in flows.returns
+    ]  # fmt: skip
+    edges = [
+        RelationshipEdgeOut(
+            edge_id=e.id, kind="relationship",
+            relationship_kind=cast(RelationshipKind, e.kind), from_node_id=e.from_id,
+            to_node_id=e.to_id, percent=e.percent,
+            label=(f"{e.percent:g}% {e.kind.removesuffix('_of').upper()}" if e.percent
+                   else e.kind.replace("_", " "))[:60],
+            since=e.effective_from, source="person",
+        )
+        for e in found.edges
+    ] + [
+        RelationshipEdgeOut(
+            edge_id=k.id, kind="k1", from_node_id=k.from_return_id, to_node_id=k.to_return_id,
+            label=k.label, state=k.state, source="k1_package",
+        )
+        for k in flows.edges
+    ]  # fmt: skip
+    return RelationshipGraphOut(
+        client_id=client_id,
+        nodes=nodes,
+        edges=edges,
+        banner=None
+        if flows.banner is None
+        else RelationshipBannerOut(tone=flows.banner[0], text=flows.banner[1]),
+    )
 
 
 @relationships_router.post(

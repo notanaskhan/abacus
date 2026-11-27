@@ -5897,7 +5897,9 @@ export const relationshipGraphQueryKey = (options: Options<RelationshipGraphData
  * Relationship Graph Route
  *
  * CLI-03 a-f: nodes, edges, the banner and the viewer's saved positions; walled nodes
- * absent, no count.
+ * absent, no count. T-06-T51 (DEC-6015): the client's entities, external parties and live
+ * relationships, plus the K-1 flows the viewer may see (each edge only when both returns'
+ * engagements are readable, DEC-88; the banner counts visible edges only).
  */
 export const relationshipGraphOptions = (options: Options<RelationshipGraphData>) => queryOptions<RelationshipGraphResponse, RelationshipGraphError, RelationshipGraphResponse, ReturnType<typeof relationshipGraphQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -31689,7 +31691,8 @@ export const diagnosticsQueryKey = (options: Options<DiagnosticsData>) => create
 /**
  * Diagnostics Route
  *
- * The current approved checkpoint's form diagnostics.
+ * The current approved checkpoint's form diagnostics (T-06-T50: computed on read, as the
+ * preview caches its pages; a failing rule links the open issue already raised for it).
  */
 export const diagnosticsOptions = (options: Options<DiagnosticsData>) => queryOptions<DiagnosticsResponse, DiagnosticsError, DiagnosticsResponse, ReturnType<typeof diagnosticsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
