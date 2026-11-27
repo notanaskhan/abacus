@@ -5,6 +5,7 @@
 import { Node, ReactNodeViewRenderer, mergeAttributes } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import type { Extensions } from "@tiptap/react";
+import { CommentAnchor, TrackDelete, TrackInsert } from "./changes";
 import { LinkedValueView } from "./linked";
 import { StatementTableView } from "./StatementTable";
 
@@ -96,6 +97,9 @@ export function documentExtensions(): Extensions {
     SectionNode,
     StatementTableNode,
     LinkedValueNode,
+    TrackInsert,
+    TrackDelete,
+    CommentAnchor,
     StarterKit.configure({
       document: false,
       heading: { levels: [1, 2, 3] },

@@ -7,6 +7,7 @@ import { EditorContent, useEditor, type JSONContent } from "@tiptap/react";
 import { type JSX, useEffect, useMemo, useRef, useState } from "react";
 import { SectionEditingBanner } from "../collab/presence";
 import { MatchScope } from "../tracing/match";
+import { agentDraftPlugin, changeBarPlugin } from "./changes";
 import { type LinkedValueHandlers, LinkedValueProvider } from "./linked";
 import { plainDrop, plainPaste } from "./paste";
 import { protectPlugin } from "./protect";
@@ -26,6 +27,8 @@ export interface DocumentEditorProps {
   onChange?: (doc: JSONContent) => void;
   /** F-08-T29: each linked value's lineage and the Relink / open-lineage intents. */
   linked?: LinkedValueHandlers;
+  /** F-08-T30: a comment anchor's thread opens in the dock (C-29). */
+  onOpenComment?: (thread: string) => void;
 }
 
 const NO_LINEAGE: LinkedValueHandlers = { lineage: () => undefined };
@@ -56,7 +59,10 @@ export function DocumentEditor({
   locks = [],
   onChange,
   linked = NO_LINEAGE,
+  onOpenComment,
 }: DocumentEditorProps): JSX.Element {
+  const openComment = useRef(onOpenComment);
+  openComment.current = onOpenComment;
   const holding = usePen(editable);
   const locked = useRef<ReadonlySet<string>>(new Set());
   locked.current = useMemo(() => new Set(locks.map((l) => l.section)), [locks]);
@@ -64,7 +70,11 @@ export function DocumentEditor({
     () =>
       Extension.create({
         name: "abacusProtect",
-        addProseMirrorPlugins: () => [protectPlugin(() => locked.current)],
+        addProseMirrorPlugins: () => [
+          protectPlugin(() => locked.current),
+          agentDraftPlugin(),
+          changeBarPlugin(),
+        ],
       }),
     [],
   );
@@ -78,6 +88,18 @@ export function DocumentEditor({
       attributes: { "aria-label": label, "aria-multiline": "true", role: "textbox" },
       handlePaste: (view, event) => plainPaste(view, event),
       handleDrop: (view, event) => plainDrop(view, event),
+      handleClick: (view, pos) => {
+        const anchor = view.state.doc
+          .resolve(pos)
+          .marks()
+          .find((m) => m.type.name === "commentAnchor");
+        const thread: unknown = anchor?.attrs["thread"];
+        if (typeof thread === "string" && thread !== "") {
+          openComment.current?.(thread);
+          return true;
+        }
+        return false;
+      },
     },
     onUpdate: ({ editor: e }) => onChange?.(e.getJSON()),
   });
