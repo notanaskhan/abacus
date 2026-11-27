@@ -19,6 +19,15 @@ page, never a layer. Pages carry the "Draft — not for filing" watermark; nothi
 transmitted from here. The PDF is drawn by C11's form-face renderer and is byte-stable for the
 same checkpoint and template version (dates from the checkpoint, identifier from the content
 hash); `form_page_renders` keeps one row per (checkpoint, template version, page) with its hash.
+
+**Attached forms** (T-06-T49; DEC-6023): TAX-11's page list is the return's face pages, then its
+attached forms in the handoff's order (`ATTACHED`: for a 1065, Form 8825, Form 4562, Schedule
+M-3, Schedule C (M-3 filers) and Form 8916-A once total assets reach 10,000,000, the section 199A
+statement, and the section 754 statement once an interest was transferred). Each attached form
+is the firm's own published `tax_form_face` template for that form and year (content, loaded
+through the import endpoint), its page and field keys prefixed with the form (`f8825_p1`). An
+attached form with no published template is still listed, as a placeholder page with no fields:
+TAX-11 shows the placeholder, never a blank; it is never rendered, cached or downloaded.
 """
 
 from __future__ import annotations
@@ -27,7 +36,7 @@ import asyncio
 import hashlib
 import json
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from typing import Final, cast
@@ -67,23 +76,69 @@ class Field:
 
 
 @dataclass(frozen=True)
+class Attached:
+    """One form TAX-11 lists after the face: its manifest form key, TAX-11's caption for its
+    placeholder, and when the return carries it (`always`, `m3`: total assets reach M-3's
+    threshold, `transfer`: an interest was transferred this year)."""
+
+    form: str
+    caption: str
+    when: str = "always"
+
+    @property
+    def prefix(self) -> str:
+        return "f" + self.form.replace("-", "_").replace(".", "_") + "_"
+
+
+# The handoff's order (TAX-11 spec a: "Form 8825" · "Form 4562" · "Sch. M-3" · "Sch. C (M-3
+# filers)" · "Form 8916-A" · "§199A stmt"), then the §754 statement a transfer needs (C31).
+ATTACHED: Final[Mapping[str, tuple[Attached, ...]]] = {
+    "1065": (
+        Attached("8825", "Form 8825"),
+        Attached("4562", "Form 4562"),
+        Attached("1065-m3", "Sch. M-3", "m3"),
+        Attached("1065-m3-c", "Sch. C (M-3 filers)", "m3"),
+        Attached("8916-a", "Form 8916-A", "m3"),
+        Attached("1065-199a", "§199A stmt"),
+        Attached("1065-754", "§754 stmt", "transfer"),
+    ),
+}
+
+
+@dataclass(frozen=True)
 class Preview:
     return_id: UUID
     engagement_id: UUID
     checkpoint_id: UUID
     recorded_at: datetime
-    template_version_id: UUID
+    template_version_id: UUID  # the face's
     title: str
     pages: tuple[tuple[str, str], ...]  # (page_key, title)
     fields: tuple[Field, ...]
+    # T-06-T49: each attached form's pages and their template version (None: a placeholder).
+    attached: tuple[tuple[str, UUID | None], ...] = ()
+
+    def version_of(self, page_key: str) -> UUID | None:
+        return dict(self.attached).get(page_key, self.template_version_id)
+
+    def placeholder(self, page_key: str) -> bool:
+        return self.version_of(page_key) is None
+
+    @property
+    def drawn(self) -> tuple[tuple[str, str], ...]:
+        """The pages with a template: what the PDF carries, in order."""
+        return tuple(p for p in self.pages if not self.placeholder(p[0]))
 
     @property
     def content_hash(self) -> str:
-        body = {
+        body: dict[str, object] = {
             "checkpoint": str(self.checkpoint_id),
             "template_version": str(self.template_version_id),
             "fields": [[f.key, f.value] for f in self.fields],
         }
+        versions = sorted({str(v) for _, v in self.attached if v is not None})
+        if versions:  # T-06-T49: a face alone hashes as before
+            body["attached"] = versions
         return hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
 
 
@@ -362,36 +417,96 @@ async def preview(ctx: AuthContext, return_id: UUID, checkpoint_id: UUID | None)
         ctx, return_id, cast(UUID, ret.client_entity_id), form, state.values, state.recorded_at
     )
     manifest = face.field_manifest
-    pages = tuple(
-        (str(p["page_key"]), str(p["title"]))
+    pages = _pages(manifest)
+    fields = list(resolve(manifest, state.values, await _sides(form, year), facts))
+    versions: list[tuple[str, UUID | None]] = []
+    for att in await carried(ctx.tenant, form, return_id, state.values):
+        attached = await published_form_face(ctx.tenant, att.form, year)
+        if attached is None or attached.field_manifest is None:
+            pages.append((f"{att.prefix}p1", att.caption))
+            versions.append((f"{att.prefix}p1", None))
+            continue
+        mine = _pages(attached.field_manifest, att.prefix)
+        pages += mine
+        versions += [(key, attached.version_id) for key, _ in mine]
+        fields += [
+            replace(f, key=att.prefix + f.key, page_key=att.prefix + f.page_key)
+            for f in resolve(
+                attached.field_manifest, state.values, await _sides(att.form, year), facts
+            )
+        ]
+    return Preview(
+        return_id, loaded.facts.engagement_id, state.checkpoint_id, state.recorded_at,
+        face.version_id, face.template_name or f"Form {form} (TY{year})", tuple(pages),
+        tuple(fields), tuple(versions),
+    )  # fmt: skip
+
+
+def _pages(manifest: Mapping[str, object], prefix: str = "") -> list[tuple[str, str]]:
+    return [
+        (prefix + str(p["page_key"]), str(p["title"]))
         for p in sorted(
             cast("list[dict[str, object]]", manifest.get("pages") or []),
             key=lambda p: int(cast(int, p["page_no"])),
         )
-    )
-    return Preview(
-        return_id, loaded.facts.engagement_id, state.checkpoint_id, state.recorded_at,
-        face.version_id, face.template_name or f"Form {form} (TY{year})", pages,
-        resolve(manifest, state.values, await _sides(form, year), facts),
-    )  # fmt: skip
+    ]
+
+
+_TRANSFERS: Final = text("SELECT count(*) FROM interest_transfers WHERE work_item_id = :r")
+
+
+async def carried(
+    tenant: TenantContext, form: str, return_id: UUID, values: Values
+) -> list[Attached]:
+    """The attached forms this return carries, in TAX-11's order (module docstring)."""
+    from abacus.modules.tax.standards_checks import M3_ASSETS, total_assets
+
+    found = ATTACHED.get(form, ())
+    if not found:
+        return []
+    assets = total_assets(values)
+    async with tenant_session(tenant) as session:
+        transfers = int(await session.scalar(_TRANSFERS, {"r": return_id}) or 0)
+    when = {"always": True, "m3": assets is not None and assets >= M3_ASSETS,
+            "transfer": transfers > 0}  # fmt: skip
+    return [a for a in found if when[a.when]]
+
+
+class _Cached(Exception):
+    """Every page of the preview was rendered already: nothing to write."""
 
 
 async def _cache(ctx: AuthContext, found: Preview) -> None:
-    """One `form_page_renders` row per page for the (checkpoint, template version) pair, with
-    the render hash; a pair already rendered is left as it is."""
-    async with uow(ctx.tenant) as tx:
-        for page_key, _ in found.pages:
-            await tx.session.execute(
-                text(
-                    "INSERT INTO form_page_renders (tenant_id, engagement_id, work_item_id, "
-                    "checkpoint_id, template_version_id, page_key, render_hash, status) VALUES "
-                    "(:t, :e, :r, :c, :v, :p, :h, 'ready') ON CONFLICT (work_item_id, "
-                    "checkpoint_id, template_version_id, page_key) DO NOTHING"
-                ),
-                {"t": ctx.tenant_id, "e": found.engagement_id, "r": found.return_id,
-                 "c": found.checkpoint_id, "v": found.template_version_id, "p": page_key,
-                 "h": found.content_hash},
-            )  # fmt: skip
+    """One `form_page_renders` row per drawn page for the (checkpoint, template version) pair,
+    with the render hash; a pair already rendered is left as it is. The first render of any page
+    records `form_preview.rendered` (T-06-T49: before, a first read wrote rows with no audit event
+    and failed on the database; a read of rendered pages writes nothing)."""
+    try:
+        async with uow(ctx.tenant) as tx:
+            written = 0
+            for key, _ in found.drawn:
+                row = await tx.session.execute(
+                    text(
+                        "INSERT INTO form_page_renders (tenant_id, engagement_id, work_item_id, "
+                        "checkpoint_id, template_version_id, page_key, render_hash, status) "
+                        "VALUES (:t, :e, :r, :c, :v, :p, :h, 'ready') ON CONFLICT (work_item_id, "
+                        "checkpoint_id, template_version_id, page_key) DO NOTHING RETURNING id"
+                    ),
+                    {"t": ctx.tenant_id, "e": found.engagement_id, "r": found.return_id,
+                     "c": found.checkpoint_id, "v": found.version_of(key), "p": key,
+                     "h": found.content_hash},
+                )  # fmt: skip
+                written += 1 if row.first() is not None else 0
+            if not written:
+                raise _Cached
+            tx.record(
+                "form_preview.rendered",
+                target=Target("tax_return", found.return_id),
+                after=Ref(checkpoint=found.checkpoint_id, pages=written),
+                scope=Scope(engagement_id=found.engagement_id, work_item_id=found.return_id),
+            )
+    except _Cached:
+        return
 
 
 def render(found: Preview) -> bytes:
@@ -399,7 +514,7 @@ def render(found: Preview) -> bytes:
 
     return render_face_isolated(
         found.title,
-        [FacePage(k, t) for k, t in found.pages],
+        [FacePage(k, t) for k, t in found.drawn],
         [FaceField(f.page_key, f.label, f.box, f.value or "") for f in found.fields],
         as_of=found.recorded_at,
         content_hash=found.content_hash,
@@ -439,7 +554,7 @@ async def page_png(ctx: AuthContext, return_id: UUID, page_key: str) -> bytes:
     from abacus.kernel.pdf_pages import render_page_isolated
 
     found = await preview(ctx, return_id, None)
-    keys = [k for k, _ in found.pages]
+    keys = [k for k, _ in found.drawn]  # a placeholder has no image (TAX-11 draws it)
     if page_key not in keys:
         raise NotFound("form_page")
     pdf = await asyncio.to_thread(render, found)
@@ -506,16 +621,19 @@ async def diagnostics(
 
 
 async def rendered_pages(tenant: TenantContext, found: Preview) -> frozenset[str]:
-    """The pages already rendered for the preview's (checkpoint, template version)."""
+    """The pages already rendered for the preview's checkpoint, each at its template version."""
     async with tenant_session(tenant) as session:
-        keys = await session.scalars(
+        keys = await session.execute(
             text(
-                "SELECT page_key FROM form_page_renders WHERE work_item_id = :r AND "
-                "checkpoint_id = :c AND template_version_id = :v AND status = 'ready'"
+                "SELECT page_key, template_version_id FROM form_page_renders WHERE "
+                "work_item_id = :r AND checkpoint_id = :c AND template_version_id = ANY(:v) "
+                "AND status = 'ready'"
             ),
-            {"r": found.return_id, "c": found.checkpoint_id, "v": found.template_version_id},
-        )
-        return frozenset(str(k) for k in keys)
+            {"r": found.return_id, "c": found.checkpoint_id,
+             "v": sorted({cast(UUID, found.version_of(k)) for k, _ in found.drawn}, key=str)},
+        )  # fmt: skip
+        mine = {(k, found.version_of(k)) for k, _ in found.drawn}
+        return frozenset(str(k[0]) for k in keys.all() if (k[0], k[1]) in mine)
 
 
 @dataclass(frozen=True)

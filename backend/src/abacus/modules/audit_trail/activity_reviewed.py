@@ -1223,6 +1223,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         # narration; Q-05-T22's post-issuance analysis; T-08-T44's postponement application;
         # C-02-T39's hand-off publish; T-08-T26's two-year variance explanation proposal.
         "form_preview.downloaded",
+        "form_preview.rendered",
         "planning_message.sent",
         "planning_opportunity.accepted",
         "planning_opportunity.created",

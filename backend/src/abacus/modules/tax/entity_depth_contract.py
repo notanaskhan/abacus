@@ -384,6 +384,9 @@ class TaxDepthFormPageOut(BaseModel):
     caption: Annotated[str, Field(max_length=120), Internal]
     blocking: Annotated[int, Field(ge=0), Internal]
     rendered: Annotated[bool, Internal]
+    # T-06-T49 (additive): an attached form with no published template; TAX-11 shows the
+    # placeholder thumbnail and page, never a blank (no fields, no image).
+    placeholder: Annotated[bool, Internal] = False
 
 
 class TaxDepthFormPagesOut(BaseModel):
@@ -1010,6 +1013,7 @@ async def form_pages_route(
                     1 for d in found_diagnostics if d.severity == "blocking" and d.page_key == key
                 ),
                 rendered=key in rendered,
+                placeholder=found.placeholder(key),
             )
             for key, title in found.pages
         ],
