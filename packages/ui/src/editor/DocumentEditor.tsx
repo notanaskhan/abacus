@@ -6,6 +6,8 @@
 import { EditorContent, useEditor, type JSONContent } from "@tiptap/react";
 import { type JSX, useEffect, useMemo, useRef, useState } from "react";
 import { SectionEditingBanner } from "../collab/presence";
+import { MatchScope } from "../tracing/match";
+import { type LinkedValueHandlers, LinkedValueProvider } from "./linked";
 import { plainDrop, plainPaste } from "./paste";
 import { protectPlugin } from "./protect";
 import { documentExtensions } from "./schema";
@@ -22,7 +24,11 @@ export interface DocumentEditorProps {
   locks?: readonly SectionLock[];
   /** Every accepted change, as the document after it (the consumer sends steps; T31). */
   onChange?: (doc: JSONContent) => void;
+  /** F-08-T29: each linked value's lineage and the Relink / open-lineage intents. */
+  linked?: LinkedValueHandlers;
 }
+
+const NO_LINEAGE: LinkedValueHandlers = { lineage: () => undefined };
 
 // One editable editor per page (ADR P-59): the first to mount holds the pen.
 let pen: symbol | null = null;
@@ -49,6 +55,7 @@ export function DocumentEditor({
   editable = true,
   locks = [],
   onChange,
+  linked = NO_LINEAGE,
 }: DocumentEditorProps): JSX.Element {
   const holding = usePen(editable);
   const locked = useRef<ReadonlySet<string>>(new Set());
@@ -86,7 +93,14 @@ export function DocumentEditor({
       {locks.map((lock) => (
         <SectionEditingBanner key={lock.section} peer={lock.peer} section={lock.label} />
       ))}
-      <EditorContent editor={editor} className="font-doc text-[9.5px] text-doc-ink outline-none" />
+      <MatchScope>
+        <LinkedValueProvider value={linked}>
+          <EditorContent
+            editor={editor}
+            className="font-doc text-[9.5px] text-doc-ink outline-none"
+          />
+        </LinkedValueProvider>
+      </MatchScope>
     </div>
   );
 }

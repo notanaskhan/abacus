@@ -7,3 +7,14 @@ export { PROTECTED_NODES, protectPlugin, touchesLocked } from "./protect";
 export { documentExtensions } from "./schema";
 export { paperAmount } from "./format";
 export type { SectionLock, StatementRow, StatementTableAttrs } from "./types";
+export {
+  LINKED_UNDERLINE,
+  LineagePopover,
+  LinkedValueProvider,
+  OverrideForm,
+  type Lineage,
+  type LineageGroup,
+  type LinkedSource,
+  type LinkedValueAttrs,
+  type LinkedValueHandlers,
+} from "./linked";

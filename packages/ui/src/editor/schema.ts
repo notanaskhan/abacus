@@ -5,6 +5,7 @@
 import { Node, ReactNodeViewRenderer, mergeAttributes } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import type { Extensions } from "@tiptap/react";
+import { LinkedValueView } from "./linked";
 import { StatementTableView } from "./StatementTable";
 
 export const DocNode = Node.create({
@@ -61,11 +62,40 @@ export const StatementTableNode = Node.create({
   },
 });
 
+/** F-08-T29 (C-37): a linked figure, an inline atom drawn by its React node view. */
+export const LinkedValueNode = Node.create({
+  name: "linkedValue",
+  group: "inline",
+  inline: true,
+  atom: true,
+  selectable: false,
+  draggable: false,
+  addAttributes() {
+    return {
+      id: { default: "", renderHTML: () => ({}) },
+      value: { default: 0, renderHTML: () => ({}) },
+      source: { default: "tb_linked", renderHTML: () => ({}) },
+      stale: { default: false, renderHTML: () => ({}) },
+      dollar: { default: false, renderHTML: () => ({}) },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "span[data-linked]" }];
+  },
+  renderHTML({ node }) {
+    return ["span", { "data-linked": String(node.attrs["id"]) }];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(LinkedValueView, { as: "span" });
+  },
+});
+
 export function documentExtensions(): Extensions {
   return [
     DocNode,
     SectionNode,
     StatementTableNode,
+    LinkedValueNode,
     StarterKit.configure({
       document: false,
       heading: { levels: [1, 2, 3] },
