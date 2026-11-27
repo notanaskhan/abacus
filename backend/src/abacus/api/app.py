@@ -40,6 +40,7 @@ from abacus.kernel.errors import (
     DomainForbidden,
     DomainGone,
     DomainInvalid,
+    DomainPreconditionFailed,
     DomainRateLimited,
     DomainTooLarge,
     DomainUnavailable,
@@ -138,7 +139,8 @@ def _coded(
     | DomainRateLimited
     | DomainTooLarge
     | DomainUnsupported
-    | DomainGone,
+    | DomainGone
+    | DomainPreconditionFailed,
 ) -> dict[str, object]:
     # The class's fixed code and its identifier-only facts (ADR-139): nothing from the request or
     # the database is echoed as text.
@@ -178,6 +180,11 @@ async def _domain_invalid(_request: Request, exc: Exception) -> JSONResponse:
 
 async def _gone(_request: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(_coded(cast(DomainGone, exc)), status_code=410)  # Q-05-T15
+
+
+async def _precondition(_request: Request, exc: Exception) -> JSONResponse:
+    # K-03-T17 (DEC-6016): a stale `If-Match` on a conditional write.
+    return JSONResponse(_coded(cast(DomainPreconditionFailed, exc)), status_code=412)
 
 
 async def _too_large(_request: Request, exc: Exception) -> JSONResponse:
@@ -319,6 +326,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(DomainInvalid, _domain_invalid)
     app.add_exception_handler(DomainTooLarge, _too_large)  # R-01-T09
     app.add_exception_handler(DomainGone, _gone)  # Q-05-T15: a destroyed record, 410
+    app.add_exception_handler(DomainPreconditionFailed, _precondition)  # K-03-T17: 412
     app.add_exception_handler(DomainUnsupported, _unsupported)  # R-01-T09
     app.add_exception_handler(ServiceUnavailable, _unavailable)
     app.add_exception_handler(ReadOnlyMode, _read_only)

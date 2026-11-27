@@ -352,7 +352,8 @@ def _route(  # noqa: ANN202 -- the router's own decorator type
     kwargs: dict[str, object] = {
         "action": action,
         "response_model": model,
-        "errors": (501,) if not write else (409, 501),
+        # K-03-T17 (DEC-6016): a write may answer 412 on a stale If-Match.
+        "errors": (501,) if not write else (409, 412, 501),
     }
     if code != 200:
         kwargs["status_code"] = code
@@ -382,9 +383,12 @@ async def template_route(template_id: UUID, ctx: Ctx) -> TemplateOut:
 async def new_version_route(
     template_id: UUID, body: NewVersionIn, ctx: Ctx
 ) -> EngagementTemplateVersionOut:
-    """409 `draft_exists` when the template already has a draft."""
+    """409 `draft_exists` when the template already has a draft (K-03-T17)."""
     await _human(ctx, "template.edit")
-    raise NotImplementedYet
+    from abacus.modules.methodology import template_drafts as td
+
+    draft = await td.create_draft(ctx, template_id, body.from_version_id)
+    return await _version_out(ctx, draft)
 
 
 @_route("get", "/template-versions", "template.read", EngagementTemplateVersionListOut)
@@ -396,13 +400,61 @@ async def versions_route(template_id: UUID, ctx: Ctx) -> EngagementTemplateVersi
 @_route("get", _V, "template.read", EngagementTemplateVersionOut)
 async def version_route(version_id: UUID, ctx: Ctx) -> EngagementTemplateVersionOut:
     await _on(ctx)
-    raise NotImplementedYet
+    return await _version_out(ctx, version_id)
+
+
+async def _version_out(ctx: AuthContext, version_id: UUID) -> EngagementTemplateVersionOut:
+    """KNW-06a's version header and rail counts (code's counts of the version's rows)."""
+    from sqlalchemy import text
+
+    from abacus.kernel.db import tenant_session
+    from abacus.modules.identity.api import Resource, authorise
+
+    await authorise(ctx, "template.read", Resource.firm(ctx.tenant_id))
+    count = "(SELECT count(*) FROM {t} WHERE template_version_id = v.id)"
+    # The table names are code's constants and the id a bound parameter.
+    sql = text(
+        "SELECT v.id, v.template_id, v.seq, v.label, v.status, v.retired_at, v.effective_from, "  # noqa: S608
+        "v.methodology_version_id, v.based_on_version_id, v.draft_etag, v.published_at, "
+        f"{count.format(t='template_sheet_definitions')} AS sheets, "
+        f"{count.format(t='template_forms')} AS forms, "
+        f"{count.format(t='template_requests')} AS requests, "
+        "(SELECT count(*) FROM template_requests r WHERE r.template_version_id = v.id "
+        "AND r.shown_by_rule_id IS NOT NULL) AS requests_by_rule, "
+        f"{count.format(t='template_trigger_defaults')} AS triggers, "
+        f"{count.format(t='template_report_template_refs')} AS report_templates, "
+        f"{count.format(t='template_skill_pins')} AS skills, "
+        f"{count.format(t='scoping_rules')} AS scoping_rules "
+        "FROM template_versions v WHERE v.id = :v"
+    )
+    async with tenant_session(ctx.tenant) as session:
+        row = (await session.execute(sql, {"v": version_id})).mappings().first()
+    if row is None:
+        raise NotFound("template_version")
+    return EngagementTemplateVersionOut(
+        version_id=row["id"], template_id=row["template_id"], seq=row["seq"],
+        label=row["label"], status=row["status"], retired=row["retired_at"] is not None,
+        effective_from=row["effective_from"],
+        methodology_version_id=row["methodology_version_id"],
+        based_on_version_id=row["based_on_version_id"],
+        rail=RailCountsOut(
+            program_steps=0, sheets=row["sheets"], forms=row["forms"],
+            requests=row["requests"], requests_by_rule=row["requests_by_rule"],
+            triggers=row["triggers"], report_templates=row["report_templates"],
+            skills=row["skills"], scoping_rules=row["scoping_rules"],
+        ),
+        draft_etag=row["draft_etag"] if row["status"] == "draft" else None,
+        published_at=row["published_at"],
+    )  # fmt: skip
 
 
 @_route("get", f"{_V}/components/{{kind}}", "template.read", ComponentOut)
 async def component_route(version_id: UUID, kind: ComponentKind, ctx: Ctx) -> ComponentOut:
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.methodology import template_drafts as td
+
+    etag, found = await td.component(ctx, version_id, kind)
+    return ComponentOut(kind=kind, etag=etag, body=found)
 
 
 @_route("put", f"{_V}/components/{{kind}}", "template.edit", ComponentOut, write=True)
@@ -411,7 +463,10 @@ async def component_put_route(
 ) -> ComponentOut:
     """ETag autosave: 412 on a stale ETag; 409 `not_draft` on a published version."""
     await _human(ctx, "template.edit")
-    raise NotImplementedYet
+    from abacus.modules.methodology import template_drafts as td
+
+    etag, found = await td.save_component(ctx, version_id, kind, body.body, if_match)
+    return ComponentOut(kind=kind, etag=etag, body=found)
 
 
 @_route("get", f"{_V}/checks", "template.read", TemplateCheckListOut)

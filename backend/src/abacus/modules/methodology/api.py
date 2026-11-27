@@ -493,3 +493,11 @@ async def disclosure_template_items(
 
 
 # T-08-T13 (DEC-5839): the review checklist's check-code registration slot.
+
+# K-03-T17 (DEC-6016): template drafts and components; the version label the anchor reads.
+from abacus.modules.methodology import template_drafts as template_drafts  # noqa: E402
+from abacus.modules.methodology.template_drafts import (  # noqa: E402
+    version_label as template_version_label,
+)
+
+__all__ += ["template_drafts", "template_version_label"]
