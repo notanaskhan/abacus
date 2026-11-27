@@ -64917,6 +64917,10 @@ export type TaxDepthFormPageOut = {
      */
     page_key: string;
     /**
+     * Placeholder
+     */
+    placeholder?: boolean;
+    /**
      * Rendered
      */
     rendered: boolean;

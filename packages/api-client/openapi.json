@@ -138238,6 +138238,12 @@
             "title": "Page Key",
             "type": "string"
           },
+          "placeholder": {
+            "cls": "internal",
+            "default": false,
+            "title": "Placeholder",
+            "type": "boolean"
+          },
           "rendered": {
             "cls": "internal",
             "title": "Rendered",
@@ -273731,7 +273737,7 @@
         "tags": [
           "practice"
         ],
-        "x-abacus-action": "export.create"
+        "x-abacus-action": "filing_deadline.export"
       }
     },
     "/v1/filing-deadlines/{filing_deadline_id}": {
