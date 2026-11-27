@@ -26,6 +26,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel._flags import CLOSES_ENGINE, CLOSES_PORTAL_REQUESTS
 from abacus.kernel._statuses import (
     IssueStatus,
+    ProposedEntryStatus,
     RequestCloseStatus,
 )
 from abacus.kernel.classification import classified
@@ -286,7 +287,7 @@ class CloseWorkpaperOut(BaseModel):
     # may post it as a batch of one here (approved, not an attest client: C-01 DV-1 keeps attest
     # read-only), and the posted entry's QuickBooks id and time once it posted.
     pending_entry_id: Annotated[UUID | None, Internal] = None
-    pending_entry_status: Annotated[str | None, Field(max_length=30), Internal] = None
+    pending_entry_status: Annotated[ProposedEntryStatus | None, Internal] = None
     pending_entry_version: Annotated[int | None, Field(ge=1), Internal] = None
     posting_open: Annotated[bool, Internal] = False
     posted_entry_number: Annotated[str | None, Field(max_length=12), Internal] = None

@@ -72,11 +72,11 @@ def test_ac_inv1_agents_and_the_system_never_decide_an_opportunity(action: str) 
 )
 def test_ac_inv1_only_a_live_firm_person_raises(actor: object) -> None:
     with pytest.raises(Forbidden):
-        planning._human(actor, "planning.raise")  # type: ignore[arg-type]
+        planning._human(actor, "planning.raise")  # type: ignore[arg-type] -- a stand-in actor
     person = SimpleNamespace(
         tenant=SimpleNamespace(actor_kind="human"), client=False, is_support=False
     )
-    planning._human(person, "planning.raise")  # type: ignore[arg-type]
+    planning._human(person, "planning.raise")  # type: ignore[arg-type] -- a stand-in person
 
 
 def test_ac_a_dismissal_needs_a_reason() -> None:

@@ -45,7 +45,9 @@ export function tax14Run(moment: Moment, offices: readonly FirmOfficeOut[]): Tax
       office_id: office(r.office),
       preparer: chip(r.preparer),
       reviewer: chip(r.reviewer),
-      return_status: r.return_status,
+      return_status: r.return_status as NonNullable<
+        TaxPracticeRunOut["items"][number]["return_status"]
+      > | null,
       review_level: r.review_level,
       completed_at: queued ? null : done ? exported.completed_at : r.completed_at,
     };

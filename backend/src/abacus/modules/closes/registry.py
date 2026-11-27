@@ -349,6 +349,7 @@ UPDATE_COLUMNS["vendors_1099"] = frozenset(
         "w9_evidence_version_id",
         "w9_signed_on",
         "w9_status",
+        "paid_rents",  # C-02-T45 (1032): 1099-MISC box 1
     }
 )
 INSERT_COLUMNS["w9_requests"] = frozenset(

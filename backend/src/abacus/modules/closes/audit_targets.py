@@ -42,6 +42,10 @@ _ENTITY: Final[dict[str, TextClause]] = {
     "arrangement": text("SELECT id, client_entity_id FROM arrangements WHERE id = ANY(:ids)"),
     # C-02-T33: a 1099 vendor belongs to the client entity whose ledger it is read from.
     "vendor": text("SELECT id, client_entity_id FROM vendors_1099 WHERE id = ANY(:ids)"),
+    # C-02-T46 (S54 end pass): a W-9 request belongs to the client entity it asks for.
+    "vendor_document_request": text(
+        "SELECT id, client_entity_id FROM w9_requests WHERE id = ANY(:ids)"
+    ),
 }
 AUDIT_KINDS: Final = frozenset(_ENGAGEMENT)
 ENTITY_KINDS: Final = frozenset(_ENTITY)

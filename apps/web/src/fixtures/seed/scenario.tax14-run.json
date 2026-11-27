@@ -85,7 +85,7 @@
       "office": "New York",
       "preparer": "OB",
       "reviewer": "SI",
-      "return_status": "ready",
+      "return_status": "approved",
       "review_level": null,
       "status": "passed",
       "checks_passed": 42,

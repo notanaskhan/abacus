@@ -11286,10 +11286,7 @@ export type CloseWorkpaperOut = {
      * Pending Entry Number
      */
     pending_entry_number?: string | null;
-    /**
-     * Pending Entry Status
-     */
-    pending_entry_status?: string | null;
+    pending_entry_status?: ProposedEntryStatus | null;
     /**
      * Pending Entry Version
      */
@@ -59960,10 +59957,7 @@ export type SheetRowWhyOut = {
      * Rationale
      */
     rationale?: string | null;
-    /**
-     * Status
-     */
-    status: string;
+    status: SuggestionStatus;
     /**
      * Suggestion Id
      */
@@ -66750,10 +66744,7 @@ export type TaxPracticeRunItemOut = {
      */
     office_id?: string | null;
     preparer?: PersonChipOut | null;
-    /**
-     * Return Status
-     */
-    return_status?: string | null;
+    return_status?: ReturnStatus | null;
     /**
      * Review Level
      */
@@ -73379,10 +73370,7 @@ export type W1BatchEntryOut = {
      * Ref
      */
     ref: string;
-    /**
-     * Status
-     */
-    status: string;
+    status: ProposedEntryStatus;
 };
 
 /**

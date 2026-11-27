@@ -98,7 +98,8 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // standards_run_item, check_result, planning_opportunity, amendment, variance_explanation;
     // qm_finding, inspection, annual_evaluation, destruction_batch, post_issuance_case,
     // quality_import.
-    expect(Object.keys(REGISTRY)).toHaveLength(256); // R-02-T04, P-10-T07; A-05-T42: ebp_participant_loan; S45: A-08 (8), A-09 (3), W-01 (1); S52: F-08-T04 (3), K-03-T07 (6)
+    // +1 (S53 #2532, TASK-8953): capability_run_outcome.
+    expect(Object.keys(REGISTRY)).toHaveLength(257); // R-02-T04, P-10-T07; A-05-T42: ebp_participant_loan; S45: A-08 (8), A-09 (3), W-01 (1); S52: F-08-T04 (3), K-03-T07 (6)
     // +21: decision_card 3, suggestion 6, proposal 5, sign_off_slot 2, field_value 4, checkpoint saved.
     // +27 (P-07-T03): client 4, invitation 5, acceptance_record 5, letter_record 2,
     // conflict_assessment 5, nas_evaluation 3, independence_conclusion 3.
@@ -141,7 +142,9 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // standards_run_item 5, check_result 4, variance_explanation 4, planning_opportunity 6,
     // amendment 3) and Q-05 19 (post_issuance_case 4, inspection 3, qm_finding 3,
     // annual_evaluation 2, destruction_batch 5, quality_import 2).
-    expect(ROWS).toHaveLength(1078); // S53: C-02-T41 close_deliverable.declined_by_client, client_approval_item.posted (DEC-5927); S52: F-08-T04 and K-03-T07 codes (34); DEC-2264: ebp_test_result.agent_tested; A-05-T42: four loan rows; S45: A-08, A-09, W-01 rows (50)
+    // +5 (S53 #2532, TASK-8953): ledger_write_grant offered and read_only (C-02-T40), and
+    // capability_run_outcome 3.
+    expect(ROWS).toHaveLength(1083); // S53: C-02-T41 close_deliverable.declined_by_client, client_approval_item.posted (DEC-5927); S52: F-08-T04 and K-03-T07 codes (34); DEC-2264: ebp_test_result.agent_tested; A-05-T42: four loan rows; S45: A-08, A-09, W-01 rows (50)
   });
 
   it("resolves each code to a word, a kit variant or a line, and never to match", () => {

@@ -124,8 +124,16 @@ def test_ac22_no_schema_carries_a_plain_tin(schema: str) -> None:
             if (schema, name) == W9_ENTRY:
                 continue  # held by the W-9 entry test below
             kinds = set(cast(list[str], prop.get("enum", [])))
+            # An optional kind (`Literal["ssn", "ein"] | None`) is the same enum beside a null.
+            options = cast(list[Json], prop.get("anyOf", []))
+            variants = [v for v in options if v.get("type") != "null"]
+            if not kinds and len(variants) == 1:
+                kinds = set(cast(list[str], variants[0].get("enum", [])))
             if name.endswith("_kind") and kinds and kinds <= TIN_KINDS:
                 continue  # which kind of TIN (`ssn`, `ein`), never a TIN's digits
+            formats = {v.get("format") for v in variants} if variants else {prop.get("format")}
+            if name.endswith(("_on", "_at")) and formats <= {"date", "date-time"}:
+                continue  # C-02-T47: when a TIN check failed, a date, never a TIN's digits
             # A TIN-named field is the masked shape, by reference, and nothing else.
             assert _refs(prop) == {MASKED}, f"{schema}.{name} is not MaskedTinOut"
 

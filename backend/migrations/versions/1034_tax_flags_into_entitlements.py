@@ -16,6 +16,7 @@ Revises: 1033
 
 from __future__ import annotations
 
+import sqlalchemy as sa
 from alembic import op
 
 revision = "1034"
@@ -32,15 +33,17 @@ RETIRED = {
 }  # fmt: skip
 
 
+_GRANT = sa.text(
+    "INSERT INTO tenant_entitlements (tenant_id, module, valid_from, set_by) "
+    "SELECT DISTINCT tenant_id, :module, DATE '2000-01-01', 'T-06-T69' "
+    "FROM feature_flag_states WHERE flag = ANY(:flags) AND value = 'true' "
+    "ON CONFLICT DO NOTHING"
+)
+
+
 def upgrade() -> None:
     for module, flags in RETIRED.items():
-        listed = ", ".join(f"'{f}'" for f in flags)
-        op.execute(
-            "INSERT INTO tenant_entitlements (tenant_id, module, valid_from, set_by) "
-            f"SELECT DISTINCT tenant_id, '{module}', DATE '2000-01-01', 'T-06-T69' "
-            f"FROM feature_flag_states WHERE flag IN ({listed}) AND value = 'true' "
-            "ON CONFLICT DO NOTHING"
-        )
+        op.execute(_GRANT.bindparams(module=module, flags=list(flags)))
 
 
 def downgrade() -> None:

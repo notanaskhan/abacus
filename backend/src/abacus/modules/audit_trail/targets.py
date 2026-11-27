@@ -106,6 +106,7 @@ FIRM_LEVEL: Final = frozenset(
         "qm_register_import",  # Q-05 sweep: an imported register workbook
         "qm_risk_review",  # Q-05 sweep: the firm's risk-assessment review
         "write_capability",  # C-02-T25: the firm's W1 switch (no client data)
+        "agent_skill",  # K-03-T21: a firm's imported skill (firm content, no client)
     }
 )
 # Kinds whose rows may belong to no engagement (a notification about the firm): then firm-level.

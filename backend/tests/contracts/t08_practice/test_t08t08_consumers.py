@@ -115,15 +115,18 @@ def _operations() -> list[tuple[str, str, str]]:
     return found
 
 
-def test_the_three_stubs_declare_42_operations() -> None:
+def test_the_three_stubs_declare_43_operations() -> None:
     # SS-1 10 + FD-1 4 + TP-1 28, as docs/contracts lists them (the build-time count of 41 was
-    # off by one: TP-1's planning family has ten operations, not nine).
-    assert len(_operations()) == 42
+    # off by one: TP-1's planning family has ten operations, not nine), plus S54's additive
+    # "Route for approval…" on an amendment (T-08-T30).
+    assert len(_operations()) == 43
 
 
 # S53: the planning family (T-08-T19, DEC-5916) and the postponement apply (T-08-T44, DEC-5921)
 # are live, so they answer without the stub's 501; every other operation is still a stub.
 LIVE_PREFIXES = ("/v1/planning-", "/v1/postponement-applications")
+# S54 T-08-T30 (DEC-6011): creating an amendment and routing it for approval are live.
+LIVE_PATHS = {"/v1/tax-returns/{return_id}/amendments", "/v1/amendments/{amendment_id}/routing"}
 
 
 @pytest.mark.parametrize(("method", "path", "action"), _operations())
@@ -132,5 +135,5 @@ def test_every_operation_is_declared_with_its_action_and_501(
 ) -> None:
     operation = PATHS[path][method]
     assert operation["x-abacus-action"] == action
-    live = path.startswith(LIVE_PREFIXES)
+    live = path.startswith(LIVE_PREFIXES) or (method == "post" and path in LIVE_PATHS)
     assert ("501" in cast(Json, operation["responses"])) is not live, path

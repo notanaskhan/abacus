@@ -25,6 +25,7 @@ from fastapi import Depends, Header, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import TAX_AMENDMENTS, TAX_PLANNING, TAX_STANDARDS_RUNS, TAX_TWO_YEAR
+from abacus.kernel._statuses import ReturnStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
@@ -196,7 +197,7 @@ class TaxPracticeRunItemOut(BaseModel):
     office_id: Annotated[UUID | None, Internal] = None
     preparer: Annotated[PersonChipOut | None, Internal] = None
     reviewer: Annotated[PersonChipOut | None, Internal] = None
-    return_status: Annotated[str | None, Field(max_length=40), Internal] = None
+    return_status: Annotated[ReturnStatus | None, Internal] = None
     review_level: Annotated[str | None, Field(max_length=20), Internal] = None
     completed_at: Annotated[datetime | None, Internal] = None
 

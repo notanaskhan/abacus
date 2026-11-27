@@ -208,7 +208,11 @@ describe("CLS-13 1099 / W-9 tracker", () => {
   });
 
   it("loading: skeletons while the read is pending", async () => {
-    show("a", {}, { "GET /v1/client-entities/{client_entity_id}/information-returns": () => never() });
+    show(
+      "a",
+      {},
+      { "GET /v1/client-entities/{client_entity_id}/information-returns": () => never() },
+    );
     await waitFor(() => {
       expect(document.querySelector('[data-screen="CLS-13"][aria-busy="true"]')).not.toBeNull();
     });
