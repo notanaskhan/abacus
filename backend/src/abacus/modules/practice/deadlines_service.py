@@ -207,7 +207,8 @@ _ACTIVITY: Final = "practice.filing_deadlines_recompute"
 
 @activity.defn(name=_ACTIVITY)
 async def recompute_activity() -> int:
-    """Every firm with the flag on; one firm's failure is logged by id and the others run."""
+    """Every firm with the flag on: its recompute, then its T-7 and T-1 notices (T-08-T21); one
+    firm's failure is logged by id and the others run."""
     from abacus.kernel._flags import PRACTICE_FILING_DEADLINES
     from abacus.kernel.flags import flag_enabled
     from abacus.modules.identity.api import firm_tenant_ids
@@ -219,6 +220,11 @@ async def recompute_activity() -> int:
             tenant = TenantContext(tenant_id, "system", "practice:filing_deadlines")
             if await flag_enabled(tenant, PRACTICE_FILING_DEADLINES):
                 total += await recompute(tenant_id)
+                # T-08-T21: the T-7 and T-1 notices, after the firm's rows are current.
+                from abacus.modules.practice.deadline_alerts import sweep
+
+                told = await sweep(tenant_id)
+                _log.info("filing_deadlines.told", tenant_id=str(tenant_id), told=told)
         except Exception as exc:
             _log.error(
                 "filing_deadlines.failed", tenant_id=str(tenant_id), error=type(exc).__name__
@@ -315,7 +321,7 @@ async def export_deadlines(
     ctx: AuthContext, fmt: str, window_from: date, window_to: date
 ) -> bytes:
     found = await rows(ctx, window_from, window_to)
-    await authorise(ctx, "export.create", Resource.firm(ctx.tenant_id))
+    await authorise(ctx, "filing_deadline.export", Resource.firm(ctx.tenant_id))
     from abacus.modules.organisations.api import firm_names
 
     names = {n.client_id: n.name for n in await firm_names(ctx.tenant) if n.id == n.client_id}

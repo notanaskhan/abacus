@@ -109,7 +109,6 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "trial_balance.export",
     ),
     ("GET", "/v1/exports/{export_id}/download", "export.download"),
-    ("GET", "/v1/filing-deadlines/export", "export.create"),
     ("GET", "/v1/firm/clients", "wall.create"),
     ("GET", "/v1/firm/data-exports/{export_id}/links/{link_id}", "firm_export.download"),
     ("GET", "/v1/firm/members", "wall.create"),

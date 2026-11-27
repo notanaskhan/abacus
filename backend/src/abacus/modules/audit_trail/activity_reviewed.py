@@ -1323,6 +1323,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "season_row.step_failed",
         "filing_deadline.recomputed",
         "filing_deadline.exported",
+        "filing_deadline.approaching",
         "two_year.exported",
         "variance_explanation.accepted",
         "variance_explanation.edited",
