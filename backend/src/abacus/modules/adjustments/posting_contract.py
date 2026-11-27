@@ -57,6 +57,14 @@ RefusalCode = Literal[
     "write_capability_not_released",
     "posting_not_enabled",
 ]
+# ED-345 (CV-2): an entry's recorded failure is also a provider outcome the writer returns
+# (`WriteError`) or the read-back's `verify_mismatch`; the batch view answered 500 for those.
+FailureCode = Literal[
+    RefusalCode,
+    "rate_limited",
+    "needs_reauth",
+    "verify_mismatch",
+]
 EntryAction = Literal[
     "proposed_entry.approve",
     "proposed_entry.request_approval",
@@ -282,7 +290,7 @@ class PostingBatchEntryOut(BaseModel):
     status: Annotated[EntryStatus, Internal]
     external_txn_ref: Annotated[str | None, Field(max_length=64), Internal] = None
     deep_link: Annotated[str | None, Field(max_length=500), Internal] = None
-    failure: Annotated[RefusalCode | None, Internal] = None
+    failure: Annotated[FailureCode | None, Internal] = None
     provider_message: Annotated[str | None, Field(max_length=500), Confidential] = None
 
 

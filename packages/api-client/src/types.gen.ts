@@ -45810,7 +45810,7 @@ export type PostingBatchEntryOut = {
     /**
      * Failure
      */
-    failure?: 'inactive_account' | 'unmapped_account' | 'closing_date_locked' | 'attest_client_posting_refused' | 'write_grant_missing' | 'write_capability_disabled' | 'write_capability_not_released' | 'posting_not_enabled' | null;
+    failure?: 'inactive_account' | 'unmapped_account' | 'closing_date_locked' | 'attest_client_posting_refused' | 'write_grant_missing' | 'write_capability_disabled' | 'write_capability_not_released' | 'posting_not_enabled' | 'rate_limited' | 'needs_reauth' | 'verify_mismatch' | null;
     /**
      * Provider Message
      */

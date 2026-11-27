@@ -426,7 +426,7 @@ async def finish_if_done(
                 P.SUBJECT, batch_id, "set_closing_date", approver,
                 json.dumps({"closing_date": str(row.closing_date_target)}).encode(),
             ),
-            evidence_of=P._closing_evidence,  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
+            evidence_of=lambda e: P._closing_evidence(e, row.closing_date_target),  # pyright: ignore[reportPrivateUsage] -- the module under test or its own sibling
         )  # fmt: skip
         closed = error is None
     acting = TenantContext(tenant_id, "system", system.actor_id, on_behalf_of_user_id=approver)

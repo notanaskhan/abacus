@@ -437,9 +437,9 @@ async def edit_elimination(
     lines: Sequence[EliminationLine],
     seen_version: int,
 ) -> EliminationView:
-    """A person's edit while Proposed: the old lines are zeroed and the new ones appended (lines
-    are never deleted); 409 `version_stale` on a stale If-Match, `consolidation_locked` once
-    locked."""
+    """A person's edit while Proposed: the lines are replaced (0643 grants the delete while the
+    entry is open, and its lock trigger guards it; the edit is audited with its version); 409
+    `version_stale` on a stale If-Match, `consolidation_locked` once locked."""
     _human(ctx, EDIT)
     async with tenant_session(ctx.tenant) as session:
         head = (
@@ -475,21 +475,12 @@ async def edit_elimination(
         )
         if bumped is None:
             raise EliminationStale(facts={"entry": str(entry_id)})
+        # ED-347 (CV-2): zeroing the old lines broke `pe_line_one_side` (a line is a debit or a
+        # credit, never neither), so every edit failed; they are replaced instead.
         await tx.session.execute(
-            text("UPDATE proposed_entry_lines SET debit = 0, credit = 0 WHERE entry_id = :id"),
-            {"id": entry_id},
+            text("DELETE FROM proposed_entry_lines WHERE entry_id = :id"), {"id": entry_id}
         )
-        last = int(
-            await tx.session.scalar(
-                text(
-                    "SELECT coalesce(max(line_no), 0) FROM proposed_entry_lines "
-                    "WHERE entry_id = :id"
-                ),
-                {"id": entry_id},
-            )
-            or 0
-        )
-        for line_no, ln in enumerate(lines, start=last + 1):
+        for line_no, ln in enumerate(lines, start=1):
             await tx.session.execute(
                 text(
                     "INSERT INTO proposed_entry_lines (tenant_id, engagement_id, work_item_id, "

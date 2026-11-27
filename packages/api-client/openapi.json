@@ -97356,7 +97356,10 @@
                   "write_grant_missing",
                   "write_capability_disabled",
                   "write_capability_not_released",
-                  "posting_not_enabled"
+                  "posting_not_enabled",
+                  "rate_limited",
+                  "needs_reauth",
+                  "verify_mismatch"
                 ],
                 "type": "string"
               },
