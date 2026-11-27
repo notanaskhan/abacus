@@ -41,6 +41,8 @@ export const COPY = {
   proposed: "AJE-06 proposed · Review required",
   carryForward: "Client confirmed lost; reissue in the September close",
   recordedNote: "AJE-06 recorded in QuickBooks · JE 48218",
+  // C-02-T56 (CLS-05 d for a non-attest W1 client): posted, not recorded by hand.
+  postedNote: "AJE-06 posted (QBO 48218)",
   signedBy: (name: string, at: string) => `Signed off · ${name} · ${at}`,
   unmatched: "Unmatched",
   viewerTitle: "FrontRange_4410_Statement_2026-08.pdf",

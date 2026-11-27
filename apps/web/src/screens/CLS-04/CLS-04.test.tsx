@@ -3,9 +3,9 @@
 // until C-02."
 import { client } from "@abacus/api-client/client";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { installFixtureMode } from "../../app-core/fixture-mode";
+import { installFixtureMode, json } from "../../app-core/fixture-mode";
 import { copperleafAccountTree } from "../../fixtures/seed/close-accounts";
 import { CLOSE_IDS } from "../../fixtures/seed/closes";
 import { newQueryClient } from "../../testing/support";
@@ -58,7 +58,9 @@ describe("CLS-04 Accounts", () => {
     );
   });
 
-  it.each(Object.keys(scenarios) as Cls04State[])(
+  // C-01 DV-1: without W1 posting (attest clients, firms without W1) no state posts. C-02-T56's
+  // W1 states (bpost, b2, c) are tested below.
+  it.each(["a", "a2", "b", "cprime", "d", "e", "f"] as const satisfies readonly Cls04State[])(
     "renders %s with no Post AJE control",
     async (st) => {
       show(st);
@@ -131,5 +133,64 @@ describe("CLS-04 Accounts", () => {
     show("a2");
     await tree();
     expect(document.querySelector("[data-cls04='arrangement']")).not.toBeNull();
+  });
+
+  // --- C-02-T56 (TASK-9027; DEC-6032): posting restored for non-attest W1 clients -----------
+
+  it("CLS-04 b (W1): an approved non-attest entry offers Post AJE…", async () => {
+    show("bpost");
+    await tree();
+    const post = await screen.findByRole("button", { name: "Post AJE…" });
+    expect(post.getAttribute("data-variant")).toBe("primary");
+    expect(document.querySelector("[data-cls04='read-only']")).toBeNull();
+  });
+
+  it("CLS-04 b2 acceptance: the confirm posts AJE-02 as a batch of one", async () => {
+    const calls: { path: string; body: unknown }[] = [];
+    const base = scenarios.b2;
+    restore = installFixtureMode({
+      ...base,
+      handlers: {
+        ...base.handlers,
+        "POST /v1/work-items/{work_item_id}/posting-batches": (request) => {
+          calls.push({ path: request.path, body: request.body });
+          return json(
+            {
+              batch_id: "b",
+              batch_code: "2026-08-A",
+              period: "2026-08",
+              status: "proposed",
+              entry_count: 1,
+              total_amount: "700.00",
+              version: 1,
+            },
+            202,
+          );
+        },
+      },
+    });
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <CLS04 closeId={CLOSE_IDS.august} initial={INITIAL.b2} />
+      </QueryClientProvider>,
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: "Post AJE-02 to QuickBooks Online?",
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Post" }));
+    await waitFor(() => {
+      expect(calls).toHaveLength(1);
+    });
+    const body = calls[0]?.body as { entry_ids: string[]; seen_versions: Record<string, number> };
+    expect(body.entry_ids).toHaveLength(1);
+    expect(Object.values(body.seen_versions)).toEqual([2]);
+  });
+
+  it("CLS-04 c acceptance: Posted · QBO 48214, and Post AJE reads Posted", async () => {
+    show("c");
+    await tree();
+    expect(await screen.findByText("Posted · QBO 48214 · 10:20 AM")).toBeTruthy();
+    const posted = screen.getByRole("button", { name: "Posted" });
+    expect(posted.hasAttribute("disabled")).toBe(true);
   });
 });

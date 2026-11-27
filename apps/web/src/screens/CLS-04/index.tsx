@@ -10,28 +10,42 @@ import {
   closeRegisterOptions,
   closeSummaryOptions,
   closeWorkpaperOptions,
+  closeWorkpaperQueryKey,
+  postBatchMutation,
 } from "@abacus/api-client/query";
 import {
   Amount,
   Button,
   DASH,
+  type Actor,
+  Dialog,
   Drawer,
+  HumanAction,
   Segmented,
   Skeleton,
   TallyPill,
   amount,
   cn,
+  time,
+  toast,
 } from "@abacus/ui";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { closeReadFrame } from "../../domain/closes";
 import { COPY as C } from "./copy";
 import { useNavigate } from "@tanstack/react-router";
+import { useFlag } from "../../app-core/flags";
+import { useSession } from "../../app-core/session";
 import { to } from "../../routes/to";
 
 export interface CLS04Props {
   closeId: string;
-  initial?: { account?: string; view?: "detail" | "workpaper"; arrangement?: boolean };
+  initial?: {
+    account?: string;
+    view?: "detail" | "workpaper";
+    arrangement?: boolean;
+    confirm?: boolean;
+  };
   /** A bank or card leaf: CLS-05 on that account. */
   onReconciliation?: (accountRef: string) => void;
   /** The policy citation: SHL-08 on the declarations page. */
@@ -161,19 +175,136 @@ function TieMark({ wp, current }: { wp: CloseWorkpaperOut; current: boolean }): 
   return <TallyPill code="ties_once_posted" />;
 }
 
+/** C-02-T56 (CLS-04 b, b2, c): Post AJE as a batch of one through CLS-07's posting path, for a
+ * firm with `adjustments.posting` and a client that isn't attest (C-01 DV-1 keeps attest and
+ * firms without W1 on the read-only variant). Before approval it opens CLS-07 (the policy needs a
+ * named person's batch approval first); after approval it asks, then posts; once posted it reads
+ * "Posted". */
+function PostAje({
+  wp,
+  closeId,
+  attest,
+  confirmOpen = false,
+}: {
+  wp: CloseWorkpaperOut;
+  closeId: string;
+  attest: boolean;
+  confirmOpen?: boolean;
+}): JSX.Element | null {
+  const navigate = useNavigate();
+  const queries = useQueryClient();
+  const postingOn = useFlag("adjustments.posting") === true;
+  const [confirm, setConfirm] = useState(confirmOpen);
+  const session = useSession();
+  const actor: Actor =
+    session.user === null ? { kind: "system" } : { kind: "human", name: session.user.displayName };
+  const post = useMutation({
+    ...postBatchMutation(),
+    onSuccess: async () => {
+      setConfirm(false);
+      await queries.invalidateQueries({
+        queryKey: closeWorkpaperQueryKey({
+          path: { close_id: closeId, account_ref: wp.account_external_id },
+        }),
+      });
+    },
+    onError: () => {
+      toast.show({ kind: "error", text: C.postFailed });
+    },
+  });
+  if (!postingOn || attest) return null;
+  if (wp.posted_external_ref) {
+    return (
+      <Button variant="secondary" size="xs" disabled data-cls04="posted">
+        {C.posted}
+      </Button>
+    );
+  }
+  const number = wp.pending_entry_number ?? null;
+  const id = wp.pending_entry_id ?? null;
+  if (number === null || id === null) return null;
+  if (!wp.posting_open) {
+    return (
+      <Button
+        variant="secondary"
+        size="xs"
+        data-cls04="post-aje"
+        onClick={() => {
+          void navigate(to.CLS07({ closeId }));
+        }}
+      >
+        {C.postAje}
+      </Button>
+    );
+  }
+  return (
+    <>
+      <Button
+        variant="primary"
+        size="xs"
+        opensDialog
+        data-cls04="post-aje"
+        onClick={() => {
+          setConfirm(true);
+        }}
+      >
+        {C.postAjeDialog}
+      </Button>
+      <Dialog open={confirm} onOpenChange={setConfirm} title={C.confirmTitle(number)}>
+        <div className="flex flex-col gap-[12px]" data-cls04="post-confirm">
+          <p className="text-[13px] text-ink-2">{C.confirmBody(number)}</p>
+          <div className="flex justify-end gap-[8px]">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setConfirm(false);
+              }}
+            >
+              {C.cancel}
+            </Button>
+            <HumanAction
+              verb="Post"
+              actor={actor}
+              variant="primary"
+              disabled={post.isPending}
+              onClick={() => {
+                post.mutate({
+                  path: { work_item_id: closeId },
+                  body: {
+                    entry_ids: [id],
+                    seen_versions: { [id]: wp.pending_entry_version ?? 1 },
+                  },
+                  headers: { "Idempotency-Key": `cls04-post-${id}` },
+                });
+              }}
+            />
+          </div>
+        </div>
+      </Dialog>
+    </>
+  );
+}
+
 function Workpaper({
   wp,
   period,
+  closeId,
+  attest,
+  confirmOpen,
   onCite,
   onAdd,
   onIssue,
 }: {
   wp: CloseWorkpaperOut;
   period: string;
+  closeId: string;
+  attest: boolean;
+  confirmOpen: boolean;
   onCite?: ((id: string) => void) | undefined;
   onAdd: () => void;
   onIssue?: ((id: string) => void) | undefined;
 }): JSX.Element {
+  const postingOn = useFlag("adjustments.posting") === true && !attest;
   const current = wp.lines.find((l) => l.period === period);
   const ajeAmount = current === undefined ? "0" : current.aje.replace(/^-/u, "");
   const arrangement = wp.arrangements[0];
@@ -306,10 +437,14 @@ function Workpaper({
           data-cls04="aje-state"
           className={cn("text-[11.5px]", wp.approval ? "text-green-ink" : "text-amber-ink")}
         >
-          {wp.recording
-            ? C.recorded(wp.recording.entry_number, "10:20")
-            : (wp.approval ?? (wp.pending_entry_number ? C.pending(wp.pending_entry_number) : ""))}
+          {wp.posted_external_ref && wp.posted_at
+            ? C.postedLine(wp.posted_external_ref, time(wp.posted_at))
+            : wp.recording
+              ? C.recorded(wp.recording.entry_number, "10:20")
+              : (wp.approval ??
+                (wp.pending_entry_number ? C.pending(wp.pending_entry_number) : ""))}
         </span>
+        <PostAje wp={wp} closeId={closeId} attest={attest} confirmOpen={confirmOpen} />
       </Band>
       {arrangement !== undefined && (
         <table className="w-full border-collapse" data-cls04="aje">
@@ -341,7 +476,7 @@ function Workpaper({
           </tbody>
         </table>
       )}
-      {wp.approval && (
+      {wp.approval && !postingOn && (
         <p
           data-cls04="read-only"
           className="flex items-center gap-[8px] px-[14px] py-[6px] text-[12.5px] text-ink-2"
@@ -594,6 +729,9 @@ export function CLS04({
             <Workpaper
               wp={workpaper.data}
               period={summary.data.period}
+              closeId={closeId}
+              attest={summary.data.attest === true}
+              confirmOpen={initial.confirm === true}
               onCite={onCite}
               onAdd={() => {
                 setAdding(true);

@@ -35,6 +35,17 @@ export const COPY = {
   ajeColumns: ["Account", "Debit", "Credit"],
   pending: (n: string) => `${n} · Within threshold · ≤ $10,000 prepaids · awaiting batch approval`,
   readOnlyNote: "Record it in QuickBooks; the next sync ties the schedule",
+  // C-02-T56 (CLS-04 b, b2, c): posting restored for non-attest W1 clients.
+  postAje: "Post AJE",
+  postAjeDialog: "Post AJE…",
+  confirmTitle: (n: string) => `Post ${n} to QuickBooks Online?`,
+  confirmBody: (n: string) =>
+    `${n} posts as a batch of one through the posting path; the next sync ties the schedule.`,
+  postConfirm: "Post",
+  cancel: "Cancel",
+  posted: "Posted",
+  postedLine: (qbo: string, at: string) => `Posted · QBO ${qbo} · ${at}`,
+  postFailed: "The entry could not post.",
   exportEntry: "Export entry…",
   recorded: (je: string, at: string) => `Recorded in QuickBooks · JE ${je} · found by sync ${at}`,
   offIssue: "Open the review issue",

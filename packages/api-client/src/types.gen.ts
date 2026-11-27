@@ -11279,9 +11279,37 @@ export type CloseWorkpaperOut = {
      */
     off_by?: string | null;
     /**
+     * Pending Entry Id
+     */
+    pending_entry_id?: string | null;
+    /**
      * Pending Entry Number
      */
     pending_entry_number?: string | null;
+    /**
+     * Pending Entry Status
+     */
+    pending_entry_status?: string | null;
+    /**
+     * Pending Entry Version
+     */
+    pending_entry_version?: number | null;
+    /**
+     * Posted At
+     */
+    posted_at?: string | null;
+    /**
+     * Posted Entry Number
+     */
+    posted_entry_number?: string | null;
+    /**
+     * Posted External Ref
+     */
+    posted_external_ref?: string | null;
+    /**
+     * Posting Open
+     */
+    posting_open?: boolean;
     recording?: EntryRecordingOut | null;
     /**
      * Review Issue Id

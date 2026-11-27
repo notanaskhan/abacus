@@ -5,7 +5,7 @@ import { client } from "@abacus/api-client/client";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { installFixtureMode } from "../../app-core/fixture-mode";
+import { installFixtureMode, json } from "../../app-core/fixture-mode";
 import { CLOSE_IDS } from "../../fixtures/seed/closes";
 import { newQueryClient } from "../../testing/support";
 import { CLS05, type CLS05Props } from "./index";
@@ -136,5 +136,46 @@ describe("CLS-05 Reconciliation", () => {
         "Statement requested Sep 1, 2026",
       );
     });
+  });
+
+  // --- C-02-T56 (TASK-9027; DEC-6032): posted wording for a non-attest W1 client --------------
+
+  function showPosting(attest: boolean): void {
+    const base = scenarios.d;
+    restore = installFixtureMode({
+      ...base,
+      handlers: {
+        ...base.handlers,
+        "GET /v1/me/capabilities": async (request) => {
+          const res = await base.handlers["GET /v1/me/capabilities"]?.(request);
+          const body = (await res?.json()) as { flags: Record<string, unknown> };
+          return json({ ...body, flags: { ...body.flags, "adjustments.posting": true } });
+        },
+        "GET /v1/closes/{close_id}": async (request) => {
+          const res = await base.handlers["GET /v1/closes/{close_id}"]?.(request);
+          const body = (await res?.json()) as Record<string, unknown>;
+          return json({ ...body, attest });
+        },
+      },
+    });
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <CLS05 closeId={CLOSE_IDS.august} accountRef="35" initial={INITIAL.d} />
+      </QueryClientProvider>,
+    );
+  }
+
+  it("CLS-05 d acceptance: a non-attest W1 client reads AJE-06 posted (QBO 48218), its record CLS-07", async () => {
+    showPosting(false);
+    const note = await screen.findByText("AJE-06 posted (QBO 48218)");
+    expect(note.closest("a")?.getAttribute("href")).toBe(
+      `/closes/${CLOSE_IDS.august}/adjustments/AJE-06`,
+    );
+  });
+
+  it("CLS-05 d: an attest client keeps the recorded wording, with no posted link", async () => {
+    showPosting(true);
+    expect(await screen.findByText("AJE-06 recorded in QuickBooks · JE 48218")).toBeTruthy();
+    expect(screen.queryByText("AJE-06 posted (QBO 48218)")).toBeNull();
   });
 });

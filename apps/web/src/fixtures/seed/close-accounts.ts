@@ -64,7 +64,8 @@ function cls(classification: Kind, name: string, balance: string, children: Acco
   };
 }
 
-export type AccountsState = "a" | "a2" | "b" | "cprime" | "d" | "e" | "f";
+// C-02-T56: bpost (b for a non-attest W1 client: Post AJE), b2 (its confirm) and c (posted).
+export type AccountsState = "a" | "a2" | "b" | "bpost" | "b2" | "c" | "cprime" | "d" | "e" | "f";
 
 /** The tree (c′ after the sync read JE 48214: Prepaid 2,800.00, Other Current Asset 49,124.95). */
 export function copperleafAccountTree(state: AccountsState = "a"): AccountTreeOut {
@@ -153,16 +154,25 @@ const SCHEDULE = [
 /** The Prepaid Insurance workpaper: a ties once posted, b approved (read-only), c′ recorded. */
 export function copperleafPrepaidWorkpaper(state: AccountsState = "a"): CloseWorkpaperOut {
   const recorded = state === "cprime";
+  const posted = state === "c";
+  const approved = state === "b" || state === "bpost" || state === "b2";
   return {
+    pending_entry_id: posted || recorded ? null : stableId("proposed-entry:aje-02"),
+    pending_entry_status: posted || recorded ? null : approved ? "approved" : "within_threshold",
+    pending_entry_version: 2,
+    posting_open: state === "bpost" || state === "b2",
+    posted_entry_number: posted ? "AJE-02" : null,
+    posted_external_ref: posted ? "48214" : null,
+    posted_at: posted ? "2026-09-14T10:20:00-05:00" : null,
     account_external_id: PREPAID,
     account_name: "Prepaid Insurance",
-    gl_balance: recorded ? "2800.00" : state === "d" ? "3560.00" : "3500.00",
+    gl_balance: recorded || posted ? "2800.00" : state === "d" ? "3560.00" : "3500.00",
     schedule_balance: "2800.00",
-    tally: recorded ? "recorded" : state === "d" ? "off" : "ties_once_posted",
+    tally: recorded ? "recorded" : posted ? "tie" : state === "d" ? "off" : "ties_once_posted",
     off_by: state === "d" ? "60.00" : null,
     review_issue_id: state === "d" ? stableId("close-issue:prepaid-off") : null,
-    pending_entry_number: recorded ? null : "AJE-02",
-    approval: state === "b" ? "Approved by RM under BH AJE thresholds v2 · 9:31 AM" : null,
+    pending_entry_number: recorded || posted ? null : "AJE-02",
+    approval: approved ? "Approved by RM under BH AJE thresholds v2 · 9:31 AM" : null,
     note: "Paid in full Jan 2, 2026 ($8,400). 7 months amortized through July = $4,900; GL $3,500 = $8,400 − $4,900.",
     recording: recorded
       ? {

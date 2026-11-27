@@ -2,7 +2,8 @@
 // seen by Raj Malhotra. a ties once posted (default), a2 the add-arrangement drawer, b approved
 // 9:31 (read-only: no Post AJE), c′ recorded in QuickBooks (JE 48214 found by the 10:20 sync), d
 // does not tie (off 60.00 to a review issue), e the Detail register, f the bank leaf selected
-// (opens CLS-05). b2 and c are C-02's and never render here. Data: seed/close-accounts.ts.
+// (opens CLS-05). C-02-T56 adds C-02's W1 states: bpost (b with Post AJE), b2 (its confirm) and c
+// (Posted · QBO 48214 · 10:20 AM). Data: seed/close-accounts.ts.
 import {
   type FixtureHandler,
   type Scenario,
@@ -39,7 +40,13 @@ function at(state: AccountsState): Scenario {
         ...E0.handlers,
         "GET /v1/me/capabilities": ({ persona: who }: { persona?: string | undefined }) => {
           const base = capabilitiesFor(getSeed(), who ?? "raj-malhotra");
-          return json({ ...base, flags: { ...base.flags, "closes.engine": true } });
+          // C-02-T56: the W1 posting states run with `adjustments.posting` (Copperleaf is not
+          // an attest client); b and c′ stay C-01's read-only variants (DV-1).
+          const posting = state === "bpost" || state === "b2" || state === "c";
+          return json({
+            ...base,
+            flags: { ...base.flags, "closes.engine": true, "adjustments.posting": posting },
+          });
         },
         ...data,
       };
@@ -51,6 +58,9 @@ export const scenarios = defineScenarios({
   a: at("a"),
   a2: at("a2"),
   b: at("b"),
+  bpost: at("bpost"),
+  b2: at("b2"),
+  c: at("c"),
   cprime: at("cprime"),
   d: at("d"),
   e: at("e"),
@@ -63,12 +73,17 @@ export interface Cls04Initial {
   account?: string;
   view?: "detail" | "workpaper";
   arrangement?: boolean;
+  /** C-02-T56 b2: the Post confirm open. */
+  confirm?: boolean;
 }
 
 export const INITIAL: Record<Cls04State, Cls04Initial> = {
   a: {},
   a2: { arrangement: true },
   b: {},
+  bpost: {},
+  b2: { confirm: true },
+  c: {},
   cprime: {},
   d: {},
   e: { view: "detail" },

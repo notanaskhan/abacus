@@ -24331,6 +24331,19 @@
             "cls": "confidential",
             "title": "Off By"
           },
+          "pending_entry_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Pending Entry Id"
+          },
           "pending_entry_number": {
             "anyOf": [
               {
@@ -24342,6 +24355,77 @@
             ],
             "cls": "confidential",
             "title": "Pending Entry Number"
+          },
+          "pending_entry_status": {
+            "anyOf": [
+              {
+                "maxLength": 30,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Pending Entry Status"
+          },
+          "pending_entry_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Pending Entry Version"
+          },
+          "posted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Posted At"
+          },
+          "posted_entry_number": {
+            "anyOf": [
+              {
+                "maxLength": 12,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Posted Entry Number"
+          },
+          "posted_external_ref": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Posted External Ref"
+          },
+          "posting_open": {
+            "cls": "internal",
+            "default": false,
+            "title": "Posting Open",
+            "type": "boolean"
           },
           "recording": {
             "anyOf": [

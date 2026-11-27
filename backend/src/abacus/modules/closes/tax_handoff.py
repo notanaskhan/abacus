@@ -121,7 +121,7 @@ class Availability:
     balanced: bool | None = None
     # C-02-T48 (CLS-12 Target): the return's form, year, engine and tax team; and the latest
     # hand-off's person and time (c2's provenance banner).
-    target: Any = None
+    target: Any = None  # Any: tax.api.HandoffTarget (closes imports it lazily, never at load)
     handed_off_by: UUID | None = None
     handed_off_at: datetime | None = None
     reopened_at: datetime | None = None  # CLS-12 d: "reopened on Jan 20"

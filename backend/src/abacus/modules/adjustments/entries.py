@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
 from typing import Any, Final, Literal, cast
 from uuid import UUID
@@ -135,6 +136,9 @@ class Entry:
     approval_label: str | None
     version: int
     allowed_actions: tuple[str, ...]
+    # C-02-T56 (CLS-04 c, CLS-05 d): a posted entry's QuickBooks id and its batch's posting time.
+    external_txn_ref: str | None = None
+    posted_at: datetime | None = None
 
 
 def balance(lines: Sequence[NewLine]) -> Decimal:
@@ -301,7 +305,9 @@ async def propose(ctx: AuthContext, work_item_id: UUID, new: NewEntry) -> Entry:
 
 _COLUMNS = (
     "SELECT id, engagement_id, work_item_id, ref, kind, description, amount, status, "
-    "threshold_result, is_attest_client, version FROM proposed_entries "
+    "threshold_result, is_attest_client, version, external_txn_ref, "
+    "(SELECT b.posted_at FROM posting_batches b WHERE b.id = posting_batch_id) AS posted_at "
+    "FROM proposed_entries "
 )
 _ENTRY_BY_ID: Final = _COLUMNS + "WHERE id = :id"
 _ENTRIES_OF: Final = (
@@ -364,6 +370,8 @@ def _entry(r: RowMapping, lines: list[Line], label: str | None, actions: tuple[s
         approval_label=label,
         version=r["version"],
         allowed_actions=actions,
+        external_txn_ref=r["external_txn_ref"],
+        posted_at=r["posted_at"],
     )
 
 
