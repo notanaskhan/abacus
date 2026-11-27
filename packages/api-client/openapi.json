@@ -142209,6 +142209,19 @@
             "type": "string",
             "x-tri": true
           },
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Completed At"
+          },
           "created_issues": {
             "cls": "internal",
             "minimum": 0.0,
@@ -142232,6 +142245,67 @@
             "minimum": 0.0,
             "title": "Linked Issues",
             "type": "integer"
+          },
+          "office_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Office Id"
+          },
+          "preparer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonChipOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "return_status": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Return Status"
+          },
+          "review_level": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Review Level"
+          },
+          "reviewer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonChipOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
           },
           "status": {
             "cls": "internal",
@@ -142309,6 +142383,19 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "checks_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Checks Count"
+          },
           "completed_at": {
             "anyOf": [
               {
@@ -142360,6 +142447,19 @@
             "title": "Started At",
             "type": "string"
           },
+          "started_by": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Started By"
+          },
           "status": {
             "cls": "internal",
             "enum": [
@@ -142374,6 +142474,19 @@
           "tiles": {
             "$ref": "#/components/schemas/TaxPracticeRunTilesOut",
             "cls": "internal"
+          },
+          "version_no": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Version No"
           }
         },
         "required": [

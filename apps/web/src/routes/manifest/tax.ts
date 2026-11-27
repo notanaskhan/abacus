@@ -81,8 +81,9 @@ export const taxScreens = {
   },
   "TAX-14": {
     name: "Firm standards run · 1065 Review Checklist v4",
-    status: "planned",
-    path: null,
+    // T-08-T31: a to e on fixtures (T1), behind `tax.standards_runs`.
+    status: "fixture",
+    path: "/tax-returns/standards",
   },
   "TAX-15": { name: "Planning opportunities · TY2025 portfolio", status: "planned", path: null },
   "TAX-16": {

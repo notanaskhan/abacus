@@ -18,6 +18,7 @@ const ReturnIntake = lazyScreen(async () => (await import("../../screens/TAX-03"
 const K1Package = lazyScreen(async () => (await import("../../screens/TXP-12")).TXP12);
 const ReturnDelivery = lazyScreen(async () => (await import("../../screens/TAX-12")).TAX12);
 const FormPreview = lazyScreen(async () => (await import("../../screens/TAX-11")).TAX11);
+const StandardsRun = lazyScreen(async () => (await import("../../screens/TAX-14")).TAX14);
 
 function gated(children: JSX.Element): JSX.Element {
   return (
@@ -229,8 +230,25 @@ export const taxReturnPreviewRoute = createRoute({
   },
 });
 
+// TAX-14 (T-08-T31): the firm standards run, `/tax-returns/standards`, behind `tax.standards_runs`.
+export const taxStandardsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/standards",
+  component: function TaxStandardsPage(): JSX.Element {
+    return gated(
+      <FeatureGate
+        flag="tax.standards_runs"
+        fallback={<FlagOffState flag="tax.standards_runs" label="Firm standards" />}
+      >
+        <StandardsRun />
+      </FeatureGate>,
+    );
+  },
+});
+
 export const taxReturnRoutes = [
   taxExtensionsRoute,
+  taxStandardsRoute,
   taxReturnsRoute,
   taxReturnRoute,
   entityWorkpaperRoute,

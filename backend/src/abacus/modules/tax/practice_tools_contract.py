@@ -29,6 +29,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
+from abacus.modules.tax.returns_contract import PersonChipOut
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)]
@@ -191,6 +192,13 @@ class TaxPracticeRunItemOut(BaseModel):
     linked_issues: Count
     created_issues: Count
     issue_count: Count
+    # T-08-T31 (DEC-6037), additive: TAX-14's row facts.
+    office_id: Annotated[UUID | None, Internal] = None
+    preparer: Annotated[PersonChipOut | None, Internal] = None
+    reviewer: Annotated[PersonChipOut | None, Internal] = None
+    return_status: Annotated[str | None, Field(max_length=40), Internal] = None
+    review_level: Annotated[str | None, Field(max_length=20), Internal] = None
+    completed_at: Annotated[datetime | None, Internal] = None
 
 
 class TaxPracticeRunOut(BaseModel):
@@ -208,6 +216,10 @@ class TaxPracticeRunOut(BaseModel):
     tiles: Annotated[TaxPracticeRunTilesOut, Internal]
     items: Annotated[list[TaxPracticeRunItemOut], Internal]
     allowed_actions: Annotated[list[str], Internal] = []
+    # T-08-T31 (DEC-6037), additive: the version's checks and who started the run.
+    version_no: Annotated[int | None, Field(ge=1), Internal] = None
+    checks_count: Annotated[int | None, Field(ge=0), Internal] = None
+    started_by: Annotated[str | None, Field(max_length=200), Internal] = None
 
 
 class TaxPracticeRunListOut(BaseModel):
@@ -624,6 +636,14 @@ async def standards_runs_route(
     )
 
 
+def _chip(user_id: UUID, name: str) -> PersonChipOut:
+    """TAX-01's chip: two initials from the name ("Olivia Brandt" is OB)."""
+    parts = [p for p in name.replace("-", " ").split() if p]
+    return PersonChipOut(
+        user_id=user_id, initials="".join(p[0].upper() for p in parts[:2]) or "?", name=name
+    )
+
+
 def _run_out(r: object) -> TaxPracticeRunOut:
     from abacus.modules.tax.standards_runs import RunView
 
@@ -636,6 +656,11 @@ def _run_out(r: object) -> TaxPracticeRunOut:
             checks_total=i.checks_total, checks_passed=i.checks_passed, exceptions=i.exceptions,
             linked_issues=i.linked, created_issues=i.created,
             issue_count=i.linked + i.created,
+            office_id=i.office_id,
+            preparer=None if i.preparer is None else _chip(*i.preparer),
+            reviewer=None if i.reviewer is None else _chip(*i.reviewer),
+            return_status=i.return_status, review_level=i.review_level,
+            completed_at=cast(Any, i.completed_at),  # Any: a row value
         )
         for i in run.items
     ]  # fmt: skip
@@ -653,6 +678,7 @@ def _run_out(r: object) -> TaxPracticeRunOut:
             queued=sum(1 for i in items if i.status == "queued"),
         ),
         items=items, allowed_actions=["rerun"],
+        version_no=run.version_no, checks_count=run.checks_count, started_by=run.started_by,
     )  # fmt: skip
 
 
@@ -690,7 +716,7 @@ async def standards_run_checks_route(
         out.append(
             TaxPracticeCheckOut(
                 result_id=cast(UUID, c["id"]), check_key=key, display_code=key.split("/")[-1],
-                title=key.split("/")[-1],
+                title=str(c.get("title") or key.split("/")[-1])[:200],
                 outcome=cast(Any, c["confirmed"] or c["outcome"]),  # Any: a row value
                 difference=cast(Any, c["difference"]),  # Any: a row value
                 linked_issue_id=cast(Any, c["linked_issue_id"]),  # Any: a row value
