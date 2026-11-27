@@ -33,6 +33,7 @@ from abacus.modules.tax import return_issues as _return_issues
 from abacus.modules.tax import return_tabs as _return_tabs
 from abacus.modules.tax import schedule_jobs as _schedule_jobs
 from abacus.modules.tax import workbook_service as _workbook_service
+from abacus.modules.tax.amendment_gates import register as _register_amendment_gates
 from abacus.modules.tax.analyst_modes import (  # S38: the recorder and replay test (ADR-090)
     AnalystModeWorkflow,
     ModeRunInput,
@@ -141,6 +142,7 @@ register_office_facts("tax_returns", returns_by_office)
 register_search_projection(SEARCH_TYPE, return_search_document)
 # T-01-T18: the return's reviewable facts and the `tax_final_approval` gate kind (C13).
 register_approval()
+_register_amendment_gates()  # T-08-T33: amendment blockers, the gate and bba_election
 # T-02-T20 (DV-4): a K-1 shared to a return as a draft blocks its final approval until released.
 register_final_approval_blocker("draft_k1", draft_k1_blockers)
 # T-02-T21 (DEC-34): a `k1_recipient` grant's `k1_package` scope (own-only in the portal reads).

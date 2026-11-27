@@ -27,11 +27,12 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, replace
 from decimal import Decimal, InvalidOperation
-from typing import Any, ClassVar, Final, cast
+from typing import Annotated, Any, ClassVar, Final, cast
 from uuid import UUID
 
 from sqlalchemy import Row, text
 
+from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, uow
@@ -62,11 +63,13 @@ class VersionConflict(DomainConflict):
 
 
 class AmendmentApprovalRequested(DomainEvent):
+    """C16 `amendment_approval_requested` to the signer (identifiers only)."""
+
     event_type: ClassVar[str] = "amendment.approval_requested"
-    tax_return_id: UUID
-    amendment_id: UUID
-    recipient_user_ids: list[UUID]
-    by_user: UUID
+    tax_return_id: Annotated[UUID, classified("internal")]
+    amendment_id: Annotated[UUID, classified("internal")]
+    recipient_user_ids: Annotated[list[UUID], classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]
 
 
 @dataclass(frozen=True)

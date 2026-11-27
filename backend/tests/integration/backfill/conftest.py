@@ -14,10 +14,12 @@ from abacus.kernel.db import configure_engine, configure_relay_engine, dispose_e
 from abacus.modules.identity.api import configure_verifier, reset_verifier
 from abacus_tools.fakes.identity import FakeIdentityProvider
 
+# Shared fixtures (re-exported): CLS-13's Copperleaf 1099 world and TAX-16's Okafor return.
 from .copperleaf_1099 import bucket_1099 as bucket_1099
 from .copperleaf_1099 import copperleaf as copperleaf
 from .copperleaf_1099 import threshold_1099 as threshold_1099
 from .copperleaf_1099 import wired_1099 as wired_1099
+from .okafor_amendment import okafor as okafor
 from .support import Migrated, Net, Seeder
 
 
