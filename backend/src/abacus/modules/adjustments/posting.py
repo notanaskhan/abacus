@@ -231,9 +231,13 @@ def _posted_evidence(p: Posted) -> W1Evidence:
     )
 
 
-def _closing_evidence(error: WriteError | None) -> W1Evidence:
+def _closing_evidence(error: WriteError | None, on: date) -> W1Evidence:
+    """ED-343 (CV-2): a verified write names what it wrote (the write log's CHECK); for the
+    closing date that is the date QuickBooks now holds."""
     body = json.dumps({"error": error}, sort_keys=True).encode()
-    return W1Evidence(body, body, None, "failed" if error is not None else "verified")
+    if error is not None:
+        return W1Evidence(body, body, None, "failed")
+    return W1Evidence(body, body, f"book_close_date:{on.isoformat()}", "verified")
 
 
 def payload_digest(
@@ -356,6 +360,11 @@ async def create_batch(
     idempotency_key: str,
 ) -> Created:
     """The batch and its grant; the caller starts the workflow after commit (`workflow_id`)."""
+    # A replay is the same person's same act: authorised like the first (ED-341, CV-2: it
+    # answered before any check, so the route guard refused it with a 500).
+    engagement_id = await engagement_of(ctx.tenant, work_item_id)
+    resource = await engagement_resource_of(ctx.tenant, engagement_id)
+    await authorise(ctx, ACTION, resource)
     async with tenant_session(ctx.tenant) as session:
         again = await session.scalar(
             _BATCH_BY_KEY, {"k": idempotency_key, "u": ctx.user_id, "w": work_item_id}
@@ -363,8 +372,6 @@ async def create_batch(
     if again is not None:
         return Created(cast(UUID, again), None, False)
     scope = await _scope(ctx, work_item_id)
-    resource = await engagement_resource_of(ctx.tenant, scope.engagement_id)
-    await authorise(ctx, ACTION, resource)
     entries = await _entries(ctx.tenant, work_item_id, entry_ids)
     if any(e.is_attest_client for e in entries):
         raise AttestClientPostingRefused(facts={"reason": "attest_client"})
@@ -442,7 +449,12 @@ async def undo_batch(ctx: AuthContext, batch_id: UUID) -> None:
     """Inside the hold: the grant is voided, the entries released, nothing written."""
     async with tenant_session(ctx.tenant) as session:
         row = (await session.execute(_BATCH, {"b": batch_id})).first()
-    if row is None or row.posted_by_user_id != ctx.user_id:
+    if row is None:
+        raise NotFound(SUBJECT)
+    # ED-341 (CV-2): undo is `posting_batch.post` on the batch's engagement (the matrix), checked
+    # here; it was never authorised, so the route guard refused every undo with a 500.
+    await authorise(ctx, ACTION, await engagement_resource_of(ctx.tenant, row.engagement_id))
+    if row.posted_by_user_id != ctx.user_id:
         raise NotFound(SUBJECT)
     async with uow(ctx.tenant) as tx:
         if row.approval_grant_id is None or not await void_grant(tx, row.approval_grant_id):
@@ -470,7 +482,10 @@ _ATTEMPTS = text(
 _RESULT = text(
     "INSERT INTO posting_results (tenant_id, posting_batch_id, proposed_entry_id, attempt_no, "
     "outcome, external_txn_id, external_doc_number, provider_code, verified_at) VALUES (:t, :b, "
-    ":e, :n, :o, :ext, :doc, :code, CASE WHEN :ext IS NULL THEN NULL ELSE clock_timestamp() END)"
+    ":e, :n, :o, :ext, :doc, :code, "
+    # ED-342 (CV-2): typed, or Postgres cannot infer `:ext` in the CASE and every run failed after
+    # its write reached the ledger, before the result was recorded.
+    "CASE WHEN CAST(:ext AS text) IS NULL THEN NULL ELSE clock_timestamp() END)"
 )
 _ENTRY_POSTED = text(
     "UPDATE proposed_entries SET status = :s, external_txn_ref = :ext, version = version + 1 "
@@ -616,7 +631,7 @@ async def run_batch(tenant_id: UUID, batch_id: UUID) -> str:
                 SUBJECT, batch_id, "set_closing_date", approver,
                 json.dumps({"closing_date": str(row.closing_date_target)}).encode(),
             ),
-            evidence_of=_closing_evidence,
+            evidence_of=lambda e: _closing_evidence(e, row.closing_date_target),
         )  # fmt: skip
         closed = error is None
     status = "posted" if failed == 0 else "failed_post"

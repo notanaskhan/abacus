@@ -136,8 +136,12 @@ class Console:
 
 
 async def _qbo(ctx: AuthContext, client_entity_id: UUID) -> Any:  # noqa: ANN401 # Any: connections' view
-    from abacus.modules.connections.api import entity_connections
+    from abacus.modules.connections.api import authorised_engagement, entity_connections
 
+    # ED-344 (CV-2): the console's own action, on the entity's engagement (walls: 404). Only
+    # `connection.read` was checked (inside entity_connections), so the route guard answered 500
+    # to every person allowed to read the console, the log, the activity or a batch.
+    await authorised_engagement(ctx, client_entity_id, "ledger_connection.read")
     found = await entity_connections(ctx, client_entity_id)
     return next((c for c in found.connections if c.provider == "quickbooks_online"), None)
 
