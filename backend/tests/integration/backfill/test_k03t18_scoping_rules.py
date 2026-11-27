@@ -263,7 +263,7 @@ async def test_k03t18_acceptance_goldens_conflict_and_no_model(
     assert refused.status_code == 422 and _code(refused) == "unknown_source", refused.text
     events = await seed.rows(
         "SELECT actor_id FROM audit_events WHERE tenant_id = $1 "
-        "AND action = 'scoping_rule.changed'",
+        "AND action = 'scoping_rule.edited'",
         tenant,
     )
     assert [str(e["actor_id"]) for e in events] == [str(owner.user_id)]  # refusals wrote none

@@ -176,7 +176,7 @@ async def world(
     monkeypatch.setattr(posting, "start_posting", start_posting)
     monkeypatch.setattr(posting, "start_retry", start_retry)
     yield World(net, tenant, partner, security, owner, site, item, connection, qbo, started)
-    posting._transports[:] = saved  # pyright: ignore[reportPrivateUsage]
+    posting._transports[:] = saved  # pyright: ignore[reportPrivateUsage] -- restore the slot
 
 
 async def _entry(

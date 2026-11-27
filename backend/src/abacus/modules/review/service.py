@@ -230,6 +230,21 @@ async def checkpoint_recorded_at(tenant: TenantContext, checkpoint_id: UUID) -> 
     return cast(datetime, found)
 
 
+async def approved_checkpoint(
+    tenant: TenantContext, target_type: str, target_id: UUID
+) -> UUID | None:
+    """The newest approved checkpoint of a target (T-06-T50's diagnostics are its rows)."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT id FROM checkpoints WHERE target_type = :t AND target_id = :id "
+                "AND status = 'approved' ORDER BY seq DESC LIMIT 1"
+            ),
+            {"t": target_type, "id": target_id},
+        )
+    return None if found is None else cast(UUID, found)
+
+
 async def current_checkpoint(
     tenant: TenantContext, target_type: str, target_id: UUID
 ) -> tuple[UUID, str] | None:

@@ -47,10 +47,14 @@ _JURISDICTION_TAG: Final = {"federal": "US", "il": "IL"}
 
 
 class AmendmentExists(DomainConflict):
+    """An amended return is already open for this return."""
+
     code = "amendment_exists"
 
 
 class BaselineUnavailable(DomainConflict):
+    """The return has no accepted filing to amend from yet."""
+
     code = "baseline_unavailable"
 
 
@@ -98,7 +102,7 @@ _RETURN: Final = text(
 )
 
 
-async def _authorised(ctx: AuthContext, return_id: UUID, action: str) -> Row[Any]:
+async def _authorised(ctx: AuthContext, return_id: UUID, action: str) -> Row[Any]:  # Any: row
     async with tenant_session(ctx.tenant) as session:
         row = (await session.execute(_RETURN, {"id": return_id})).first()
     if row is None:
@@ -318,15 +322,17 @@ async def route_for_approval(ctx: AuthContext, amendment_id: UUID) -> UUID:
     from abacus.modules.tax.approval import signer_for
 
     _human(ctx, "amendment.edit")
+    from abacus.modules.engagements.api import engagement_resource_of
+
     async with tenant_session(ctx.tenant) as session:
         row = (await session.execute(_AMENDMENT, {"a": amendment_id})).first()
-        client = None if row is None else await session.scalar(
-            text("SELECT client_id FROM engagements WHERE id = :e"), {"e": row.engagement_id}
-        )  # fmt: skip
-    if row is None or client is None:
+    if row is None:
+        raise NotFound(TARGET)
+    client = (await engagement_resource_of(ctx.tenant, row.engagement_id)).client_id
+    if client is None:
         raise NotFound(TARGET)
     await _authorised(ctx, row.work_item_id, "amendment.edit")
-    signer = await signer_for(ctx.tenant_id, cast(UUID, client))
+    signer = await signer_for(ctx.tenant_id, client)
     if signer is None:
         raise NotFound("signer")
     async with uow(ctx.tenant) as tx:

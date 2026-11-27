@@ -125,10 +125,6 @@ def engine_rules(rows: list[tuple[str, str, str | None, UUID]]) -> list[Result]:
     return out
 
 
-_CHECKPOINT: Final = text(
-    "SELECT id FROM checkpoints WHERE target_type = 'tax_return' AND target_id = :r "
-    "AND status = 'approved' ORDER BY seq DESC LIMIT 1"
-)
 _ENGINE: Final = text(
     "SELECT d.code, d.severity, d.field_key, d.sync_event_id FROM engine_diagnostics d "
     "WHERE d.return_id = :r AND d.sync_event_id = (SELECT e.id FROM engine_sync_events e "
@@ -147,11 +143,15 @@ _UPSERT: Final = text(
 
 async def refresh(tenant: TenantContext, return_id: UUID) -> UUID | None:
     """The current approved checkpoint's rows; None when the return has none yet."""
-    from abacus.modules.review.api import open_issue_for_ref, record_self_check_issue
+    from abacus.modules.review.api import (
+        approved_checkpoint,
+        open_issue_for_ref,
+        record_self_check_issue,
+    )
 
     system = TenantContext(tenant.tenant_id, "system", ACTOR)
+    checkpoint = await approved_checkpoint(system, "tax_return", return_id)
     async with tenant_session(system) as session:
-        checkpoint = await session.scalar(_CHECKPOINT, {"r": return_id})
         engagement = await session.scalar(_ENGAGEMENT, {"r": return_id})
         engine = [
             (str(r.code), str(r.severity), r.field_key, r.sync_event_id)

@@ -16,6 +16,12 @@ from uuid import UUID
 from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.vendor_pages import (
+    VendorName,
+    VendorPages,
+    VendorPayment,
+    register_vendor_pages,
+)
 from abacus.modules.connections.qbo_format import (
     QboVendor,
     QboVendorPayment,
@@ -66,3 +72,19 @@ async def vendor_datasets_of(tenant: TenantContext, snapshot_id: UUID) -> Vendor
 
 
 __all__ = ["VendorDatasets", "vendor_datasets_of"]
+
+
+async def vendor_pages(tenant: TenantContext, snapshot_id: UUID) -> VendorPages:
+    """`kernel.vendor_pages`' reader: the parsed pages as the kernel's neutral rows (DEC-6018)."""
+    found = await vendor_datasets_of(tenant, snapshot_id)
+    return VendorPages(
+        tuple(VendorName(v.external_id, v.name) for v in found.vendors),
+        tuple(
+            VendorPayment(p.vendor_external_id, p.txn_date, p.amount, p.method)
+            for p in found.payments
+        ),
+    )
+
+
+def register() -> None:
+    register_vendor_pages(vendor_pages)

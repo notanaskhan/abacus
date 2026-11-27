@@ -385,3 +385,10 @@ from abacus.modules.connections.provider_companies import (  # noqa: E402
 from abacus.modules.connections.provider_companies import (  # noqa: E402
     client_companies as provider_client_companies,
 )
+
+# S54 gate fixes (DEC-6018): closes reads the vendor pages through `kernel.vendor_pages`.
+from abacus.modules.connections.vendor_datasets import (  # noqa: E402
+    register as _register_vendor_pages,
+)
+
+_register_vendor_pages()

@@ -16,7 +16,6 @@ import uuid
 from pathlib import Path
 from typing import Final
 
-import asyncpg
 import pytest
 
 from abacus.modules.closes import information_return_batches as irb
@@ -48,37 +47,31 @@ CLASSES: Final = {
 async def due_rule(migrated_db: Migrated) -> None:
     """C21's 1099-NEC due date: one month after the calendar year, day 31, rolled to the next
     business day (Jan 31, 2027 is a Sunday: due Mon Feb 1, 2027)."""
-    owner = await asyncpg.connect(
-        migrated_db.owner_url.replace("postgresql+asyncpg", "postgresql")
+    owner = Seeder(migrated_db.owner_url.replace("postgresql+asyncpg", "postgresql"))
+    # The owner role publishes reference content (K-02's two-person rule).
+    payload = {
+        "kind": "due_date_rules",
+        "rows": [
+            {
+                "form": "1099-NEC",
+                "fye_rule": "calendar_year",
+                "original": {"months_after_period_end": 1, "day": 31},
+                "extension": None,
+                "authority": "IRC 6071(c) — verify",
+            }
+        ],
+    }
+    digest = "sha256:" + hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    version = await owner.value(
+        "SELECT reference_set_draft($1, 'due_date_rules', '1099 due dates', 'US', $2, NULL, "
+        "2026, '2020-01-01', $3::jsonb, $4, '[{\"label\": \"IRS — verify\"}]'::jsonb, $2, "
+        "'c02t46')",
+        f"c02t46.due.{uuid.uuid4().hex[:8]}",
+        AY,
+        json.dumps(payload),
+        digest,
     )
-    try:
-        payload = {
-            "kind": "due_date_rules",
-            "rows": [
-                {
-                    "form": "1099-NEC",
-                    "fye_rule": "calendar_year",
-                    "original": {"months_after_period_end": 1, "day": 31},
-                    "extension": None,
-                    "authority": "IRC 6071(c) — verify",
-                }
-            ],
-        }
-        digest = (
-            "sha256:" + hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
-        )
-        version = await owner.fetchval(
-            "SELECT reference_set_draft($1, 'due_date_rules', '1099 due dates', 'US', $2, NULL, "
-            "2026, '2020-01-01', $3::jsonb, $4, '[{\"label\": \"IRS — verify\"}]'::jsonb, $2, "
-            "'c02t46')",
-            f"c02t46.due.{uuid.uuid4().hex[:8]}",
-            AY,
-            json.dumps(payload),
-            digest,
-        )
-        await owner.execute("SELECT reference_set_publish($1, $2, 'c02t46')", version, AN)
-    finally:
-        await owner.close()
+    await owner.run("SELECT reference_set_publish($1, $2, 'c02t46')", version, AN)
 
 
 async def _items(w: Copperleaf) -> dict[str, dict[str, object]]:

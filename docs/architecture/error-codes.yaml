@@ -210,6 +210,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.evidence.service.AlreadyTaken
+  amendment_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.amendments.AmendmentExists
+    summary: An amended return is already open for this return.
   amount_in_letter:
     status: 422
     raised_by:
@@ -408,6 +413,11 @@ codes:
     raised_by:
     - abacus.modules.closes.vendor_tins.BackupWithholdingState
     summary: The event does not follow from the vendor's withholding state (`facts.state`).
+  baseline_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.amendments.BaselineUnavailable
+    summary: The return has no accepted filing to amend from yet.
   basis_required:
     status: 422
     raised_by:
@@ -678,6 +688,7 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.assurance.component_auditors.ComponentNotAudited
+    - abacus.modules.methodology.template_drafts.ComponentInvalid
     summary: The component is not this work item's, or a component auditor already covers it.
   component_pm_invalid:
     status: 422
@@ -1080,6 +1091,7 @@ codes:
     - abacus.modules.closes.plans.DraftExists
     - abacus.modules.methodology.drafts.DraftExists
     - abacus.modules.methodology.standards.DraftExists
+    - abacus.modules.methodology.template_drafts.DraftExists
     - abacus.modules.requests.organizer_lifecycle.DraftExists
     summary: The template already has a draft or a version in review.
   draft_incomplete:
@@ -1853,6 +1865,11 @@ codes:
     - abacus.modules.methodology.imports.ImporterNotEnabled
     summary: 'Reading a Word or PDF methodology needs the Methodology importer, which is not on for this
       firm (K-01 AC7.7): import the workbook alone.'
+  imputed_underpayment_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.amendment_gates.ImputedUnderpaymentUnavailable
+    summary: The AAR's imputed underpayment cannot be computed yet.
   in_progress:
     status: 409
     raised_by:
@@ -2613,6 +2630,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.methodology.standards.NotDraft
+    - abacus.modules.methodology.template_drafts.NotDraft
     summary: 'Only a draft changes: this version is published or discarded.'
   not_exported:
     status: 409
@@ -2668,6 +2686,11 @@ codes:
     raised_by:
     - abacus.modules.review.service.NotPrepared
     summary: L2 and above need a current preparer sign-off.
+  not_published:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.template_drafts.NotPublished
+    summary: Only a published version can be the base of a new draft.
   not_ready:
     status: 409
     raised_by:
@@ -3553,6 +3576,7 @@ codes:
   return_not_accepted:
     status: 409
     raised_by:
+    - abacus.modules.tax.amendments.NotAccepted
     - abacus.modules.tax.filed_delivery.ReturnNotAccepted
   return_not_filed:
     status: 409
@@ -3621,6 +3645,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.workpapers.RowsNotReviewed
     summary: 'SPEC-040 AC-10: every row is signed by a reviewer, on its current result, first.'
+  rule_conflict:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.scoping_rules.RuleConflict
+    summary: 'Two scoping rules show and hide the same target: change one to save.'
   run_already_signed_off:
     status: 409
     raised_by:
@@ -4491,6 +4520,11 @@ codes:
     raised_by:
     - abacus.modules.identity.settings_registry.UnknownSetting
     summary: A key no module registered, or one that isn't editable.
+  unknown_source:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.scoping_rules.UnknownSource
+    summary: A scoping condition reads a source no module provides.
   unknown_statement:
     status: 422
     raised_by:
@@ -4586,6 +4620,7 @@ codes:
     - abacus.modules.notices.intake.IntakeMoved
     - abacus.modules.notices.service.VersionConflict
     - abacus.modules.reporting.statements.StaleAnswer
+    - abacus.modules.tax.amendments.VersionConflict
     - abacus.modules.tax.estate_service.VersionConflict
     - abacus.modules.tax.estimates.EstimateMoved
     - abacus.modules.tax.extensions.ExtensionMoved

@@ -10,7 +10,7 @@ ADR-050; DEC-6017; amber).
   and the target). A rule keeps its id across saves, a removed rule is deleted (a request it
   showed keeps its row; 1010's `ON DELETE SET NULL`), and each request in a shown request group
   is re-linked to the first rule showing it (`shown_by_rule_id`, so "41 + 6 by rule" counts).
-  One `scoping_rule.changed` event per save, the person's.
+  One `scoping_rule.edited` event per save, the person's.
 - **Sources** (`sources`): the catalogue the providers registered (`register_scoping_source`:
   engagements, assurance); methodology reads no engagement data itself.
 - **Preview** (`preview`): the rules evaluated by code over one engagement's answers (the
@@ -50,10 +50,14 @@ _IDENT: Final = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$")
 
 
 class RuleConflict(DomainInvalid):
+    """Two scoping rules show and hide the same target: change one to save."""
+
     code = "rule_conflict"
 
 
 class UnknownSource(DomainInvalid):
+    """A scoping condition reads a source no module provides."""
+
     code = "unknown_source"
 
 
@@ -252,7 +256,7 @@ async def save_rules(
             await tx.session.execute(_UPDATE if values["id"] in existing else _INSERT, values)
         await tx.session.execute(RELINK_REQUESTS, {"v": version_id})
         tx.record(
-            "scoping_rule.changed",
+            "scoping_rule.edited",
             target=Target(TARGET, version_id),
             after=Ref(rules=len(items), etag=int(etag)),
         )

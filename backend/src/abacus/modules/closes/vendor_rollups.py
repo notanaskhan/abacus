@@ -2,11 +2,11 @@
 amber).
 
 - **Rollups** (`VendorRollupConsumer`, on `ledger_snapshot.recorded`): the snapshot's vendor pages
-  (connections' `vendor_datasets_of`, read only) give each QuickBooks vendor a `vendors_1099` row
-  for the entity (name from the ledger; a person's classification is never overwritten) and its
-  payments by tax year and method (`vendor_payment_rollups`, recomputed: a method the year's
-  pages no longer show goes to zero). A year's pages are year to date, so each pull replaces the
-  years it covers. The system actor writes; nothing a person decided moves.
+  (connections' reader through `kernel.vendor_pages`, read only) give each QuickBooks vendor a
+  `vendors_1099` row for the entity (name from the ledger; a person's classification is never
+  overwritten) and its payments by tax year and method (`vendor_payment_rollups`, recomputed: a
+  method the year's pages no longer show goes to zero). A year's pages are year to date, so each
+  pull replaces the years it covers. The system actor writes; nothing a person decided moves.
 - **Tracker** (`tracker`, `GET …/information-returns`): the year's vendors with what code makes
   them (`compute.information_returns.classify`, ADR-050), the tiles, and the rule text from C21's
   rows (DEC-76): the year's threshold, the processor exclusion and the IRIS due date. No number
@@ -109,14 +109,14 @@ def roll_up(payments: list[tuple[str, date, Decimal, str]]) -> list[Rolled]:
 
 async def on_ledger_snapshot_recorded(event: OutboxEvent) -> None:
     """VendorRollupConsumer: the snapshot's vendor pages to vendors and rollups."""
-    from abacus.modules.connections.api import vendor_datasets_of
+    from abacus.kernel.vendor_pages import vendor_pages_of
 
     entity, snapshot = event.payload.get("client_entity_id"), event.payload.get("snapshot_id")
     if entity is None or snapshot is None:
         return
     entity_id, snapshot_id = UUID(str(entity)), UUID(str(snapshot))
     tenant = TenantContext(event.tenant_id, "system", ROLLUP_ACTOR)
-    found = await vendor_datasets_of(tenant, snapshot_id)
+    found = await vendor_pages_of(tenant, snapshot_id)
     if found.empty:
         return
     names = {v.external_id: v.name for v in found.vendors}

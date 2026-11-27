@@ -260,10 +260,10 @@ async def recommend_bba_route(ctx: AuthContext, amendment_id: UUID) -> Recommend
     from abacus.modules.agents.api import (
         create_suggestion,
         end_capability_run,
+        recommend_attribution,
         recommend_mode,
         start_capability_run,
     )
-    from abacus.modules.agents.recommender_modes import attribution_for
     from abacus.modules.review.api import CardSubject
     from abacus.modules.tax import amendment_gates, amendments
     from abacus.modules.tax.recommendation_facts import bba_route_facts
@@ -284,7 +284,7 @@ async def recommend_bba_route(ctx: AuthContext, amendment_id: UUID) -> Recommend
         if agent is not None:
             run_id = agent.agent_run_id
             outcome = await recommend_mode(
-                attribution_for(agent.tenant, engagement, agent.agent_run_id),
+                recommend_attribution(agent.tenant, engagement, agent.agent_run_id),
                 bba_route_facts(
                     Decimal(figures["adjustments"]), Decimal(figures["imputed_underpayment"])
                 ),
