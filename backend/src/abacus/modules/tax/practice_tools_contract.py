@@ -1020,14 +1020,57 @@ async def planning_create_route(
     action="amendment.create",
     response_model=TaxPracticeAmendmentOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def amendment_create_route(
     return_id: UUID, body: TaxPracticeAmendmentCreateIn, ctx: Ctx, key: IdempotencyKey
 ) -> TaxPracticeAmendmentOut:
     """A new linked return from an accepted original; the original is never changed (AC-28)."""
     await _human(ctx, _A, "amendment.create")
-    raise NotImplementedYet
+    from abacus.modules.tax import amendments
+
+    del key  # one open amendment per original: a replay answers 409 `amendment_exists`
+    made = await amendments.create(
+        ctx, return_id, kind=body.kind, jurisdictions=list(body.jurisdictions)
+    )
+    return await _amendment(ctx, made, body.jurisdictions[0])
+
+
+async def _amendment(
+    ctx: AuthContext, amendment_id: UUID, jurisdiction: str
+) -> TaxPracticeAmendmentOut:
+    """TAX-16's read: code's lines per jurisdiction (ADR-050), labelled `engine` (DEC-77)."""
+    from abacus.modules.tax import amendments
+
+    found = await amendments.view(ctx, amendment_id, jurisdiction)
+    name = None
+    if found.explanation_author is not None:
+        from abacus.modules.identity.api import display_names
+
+        name = (await display_names([found.explanation_author])).get(found.explanation_author)
+    return TaxPracticeAmendmentOut(
+        amendment_id=found.amendment_id,
+        kind=cast(AmendmentKind, found.kind),
+        work_item_id=found.work_item_id,
+        original_work_item_id=found.original_work_item_id,
+        jurisdiction=cast(Jurisdiction, jurisdiction),
+        jurisdictions=[cast(Jurisdiction, j) for j in found.jurisdictions],
+        lines=[
+            TaxPracticeAmendmentLineOut(
+                line_key=ln.line_key, label=ln.label, as_filed=ln.as_filed,
+                as_amended=ln.as_amended, change=ln.change, value_source="engine",
+            )
+            for ln in found.amended.lines
+        ],
+        total_change=found.amended.total_change,
+        refund_due=found.amended.refund_due,
+        balance_due=found.amended.balance_due,
+        explanation=found.explanation,
+        explanation_author=name,
+        status=cast(Literal["draft", "approved", "filed"], found.status),
+        original_superseded=found.original_superseded,
+        row_version=found.row_version,
+    )  # fmt: skip
 
 
 @practice_tools_router.get(
@@ -1040,7 +1083,7 @@ async def amendment_route(
     amendment_id: UUID, ctx: Ctx, jurisdiction: Jurisdiction = "federal"
 ) -> TaxPracticeAmendmentOut:
     await _on(ctx, _A)
-    raise NotImplementedYet
+    return await _amendment(ctx, amendment_id, jurisdiction)
 
 
 @practice_tools_router.put(
@@ -1053,7 +1096,29 @@ async def amendment_explanation_route(
     amendment_id: UUID, body: TaxPracticeAmendmentExplanationIn, ctx: Ctx, if_match: IfMatch
 ) -> TaxPracticeAmendmentOut:
     await _human(ctx, _A, "amendment.edit")
-    raise NotImplementedYet
+    from abacus.modules.tax import amendments
+
+    seen = int(if_match.strip('"W/')) if if_match.strip('"W/').isdigit() else 0
+    await amendments.explain(ctx, amendment_id, body.text, seen)
+    return await _amendment(ctx, amendment_id, "federal")
+
+
+@practice_tools_router.post(
+    "/amendments/{amendment_id}/routing",
+    action="amendment.edit",
+    response_model=TaxPracticeAmendmentOut,
+    errors=(409,),
+)
+async def amendment_route_for_approval_route(
+    amendment_id: UUID, ctx: Ctx
+) -> TaxPracticeAmendmentOut:
+    """T-08-T30 (additive): "Route for approval…" asks the signer (C16, HOME-02); the approval is
+    the amendment return's final approval (`tax/approval.py`)."""
+    await _human(ctx, _A, "amendment.edit")
+    from abacus.modules.tax import amendments
+
+    await amendments.route_for_approval(ctx, amendment_id)
+    return await _amendment(ctx, amendment_id, "federal")
 
 
 @practice_tools_router.post(

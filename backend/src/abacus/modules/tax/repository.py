@@ -9,14 +9,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 _INSERT = text(
     "INSERT INTO tax_returns (tenant_id, work_item_id, engagement_id, client_entity_id, "
-    "form, tax_year) "
+    "form, tax_year, amends_return_id) "
     "VALUES (:tenant_id, :work_item_id, :engagement_id, :client_entity_id, :form, "
-    ":tax_year)"
+    ":tax_year, CAST(:amends_return_id AS uuid))"
 )
 
 
 async def insert_tax_returns(session: AsyncSession, values: Mapping[str, object]) -> None:
-    await session.execute(_INSERT, dict(values))
+    """T-08-T30: `amends_return_id` is part of the return's frozen identity (0961), so an
+    amendment's return names its original when it is inserted (None for every other return)."""
+    await session.execute(_INSERT, {"amends_return_id": None, **dict(values)})
 
 
 # T-02-T07 (0403): the status machine's reads and writes.

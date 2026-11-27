@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Final, cast
+from typing import Final, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import ColumnElement, func, insert, select, text, update
@@ -307,15 +307,17 @@ async def create_work_item(
     client_entity_id: UUID | None = None,
     due_on: date | None = None,
     details: Mapping[str, str | int | date | None] | None = None,
+    authorised_under: Literal["work_item.create", "amendment.create"] = "work_item.create",
 ) -> UUID:
     """A new work item of `kind` on the engagement, with its kind's subtype row, in one unit of
     work. The kind's owner registered it (an unregistered kind is 409 unknown_work_item_kind);
     its cardinality rule (one assurance item per engagement, one close per period) answers 409
-    `work_item_exists`."""
+    `work_item_exists`. `authorised_under` names the act a caller creates it for (T-08-T30: an
+    amendment's new return is `amendment.create`, which a senior or staff holds)."""
     provider = work_item_provider(kind)
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
-        await authorise(ctx, "work_item.create", ref.resource())
+        await authorise(ctx, authorised_under, ref.resource())
         try:
             async with tx.session.begin_nested():
                 created = await tx.session.execute(

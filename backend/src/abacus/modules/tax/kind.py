@@ -28,6 +28,7 @@ class TaxReturnKind:
                 "client_entity_id": item.client_entity_id,
                 "form": item.details.get("form"),
                 "tax_year": item.details.get("tax_year"),
+                "amends_return_id": item.details.get("amends_return_id"),
             },
         )
         # T-02-T10: the C21 due dates and BH-TAX-02, pinned in the same unit of work.
