@@ -1,6 +1,7 @@
-// T-05-T28/T29 (DEC-4520, DEC-4521): `/tax-returns/$returnId` dispatches by form family. With
-// `tax.entity_workspace` on, a 1065 opens the entity layout on its Agent tab (TXP-00); a 1040 or
-// 1041, or any return with the flag off, keeps TAX-02 (the route's `overview`). The entity
+// T-05-T28/T29 (DEC-4520, DEC-4521): `/tax-returns/$returnId` dispatches by form family. A 1065
+// opens the entity layout on its Agent tab (TXP-00) for a firm with `tax_entity_returns` (which
+// replaced `tax.entity_workspace`, T-06-T69) and the locked coordination view for one without; a
+// 1040 or 1041 keeps TAX-02 (the route's `overview`). The entity
 // sections live at `/issues`, `/workpaper`, `/activity` and `/review/$review`; a review slug that
 // is not the form's goes back to the Agent tab.
 import type { TaxReturnRecordOut } from "@abacus/api-client";
@@ -71,17 +72,13 @@ export function EntityReturn({
   search,
 }: EntityReturnProps): JSX.Element {
   const navigate = useNavigate();
-  const entityOn = useFlag("tax.entity_workspace") === true;
   // T-06 §0: TXP-03/04/08/09 open behind `tax.entity_depth`; off, the tab stays planned.
   const depthOn = useFlag("tax.entity_depth") === true;
   // T-05-T66 (AC-13.2): a firm without `tax_entity_returns` keeps the coordination view, locked.
   const entitled = useEntitlement("tax_entity_returns");
-  // With the flag off nothing is fetched: the route's own screen draws as before.
-  const record = useQuery({
-    ...returnRecordOptions({ path: { return_id: returnId } }),
-    enabled: entityOn,
-  });
-  if (!entityOn) return overview;
+  // T-06-T69 (DEC-6024): `tax.entity_workspace` retired into `tax_entity_returns`; the record
+  // tells an entity form from a 1040 or 1041, which keeps the route's own screen.
+  const record = useQuery(returnRecordOptions({ path: { return_id: returnId } }));
   if (record.data === undefined) {
     return <Spinner label="Loading the return" />;
   }

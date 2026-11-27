@@ -71,9 +71,10 @@ Runbooks: RB-17 (consents), RB-19 (bridge failure).
 - Flip and rollback: `docs/runbooks/tax-workspace-flip.md`.
 
 ## Entity returns (T-05; SPEC-651; T-05-T71)
-The 1065 entity-return workspace (TXP-00, 01, 02, 05, 06, 07, 10, 11), behind `tax.entity_workspace`,
-`tax.workbook_run` and `tax.entity_agents`, and the `tax_entity_returns` entitlement (requires the
-CPA review for a firm that isn't synthetic).
+The 1065 entity-return workspace (TXP-00, 01, 02, 05, 06, 07, 10, 11), behind the
+`tax_entity_returns` entitlement (requires the CPA review for a firm that isn't synthetic; it
+replaced `tax.entity_workspace` and `tax.workbook_run`, T-06-T69) and, for model-backed steps,
+`tax.entity_agents`.
 - **Workbook** (`workbook_service.py`): numbered sheets of review fields on the return; engines
   write `formula`, `engine_import` or `tb_linked` values, a person writes `human` with a citation
   note, an agent never writes a cell. Formulas: workpapers' E13 engine (see its README).

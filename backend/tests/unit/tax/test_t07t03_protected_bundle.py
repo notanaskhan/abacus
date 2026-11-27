@@ -6,10 +6,17 @@ record, release and send action." Held here from the generated files themselves.
 
 from __future__ import annotations
 
+import asyncio
+import uuid
+
 import pytest
 
 from abacus.kernel import _flags
+from abacus.kernel.db import TenantContext
+from abacus.kernel.errors import NotFound
+from abacus.modules.identity.api import AuthContext
 from abacus.modules.identity.authz._matrix import ACTIONS
+from abacus.modules.tax import estate_contract, fiduciary_contract
 
 READS = (
     "instrument.read",
@@ -64,11 +71,36 @@ def test_determination_and_distribution_edits_exclude_the_partner() -> None:
         assert allowed == {"manager", "senior", "staff", "reviewer"}, action
 
 
-def test_the_three_flags_are_registered_off_by_default() -> None:
-    for flag in (
-        _flags.TAX_FIDUCIARY_WORKPAPERS,
-        _flags.TAX_FIDUCIARY_K1_RELEASE,
-        _flags.TAX_ESTATE_WORKPAPERS,
-    ):
-        assert flag.kind == "boolean"
-        assert flag.default == "false"
+def test_the_three_flags_retired_into_the_tax_returns_entitlement() -> None:
+    # T-06-T69 (DEC-6024): gone from the registry; the routes read `tax_returns` instead.
+    retired = {"tax.fiduciary_workpapers", "tax.fiduciary_k1_release", "tax.estate_workpapers"}
+    assert not retired & set(_flags.FLAGS)
+
+
+@pytest.mark.parametrize("gate", ["fiduciary", "estate"])
+@pytest.mark.parametrize("held", [False, True])
+def test_the_t07_routes_answer_404_without_the_entitlement(
+    monkeypatch: pytest.MonkeyPatch, gate: str, held: bool
+) -> None:
+    """T-06-T69: the entitlement-off test that replaces the retired flags' flag-off test."""
+    asked: list[str] = []
+
+    async def entitlement(_tenant: object, module: str) -> object | None:
+        asked.append(module)
+        return object() if held else None
+
+    module = fiduciary_contract if gate == "fiduciary" else estate_contract
+    monkeypatch.setattr(module, "entitlement", entitlement)
+    ctx = AuthContext(TenantContext(uuid.uuid4(), "human", "u"), uuid.uuid4(), uuid.uuid4(),
+                      None, None)  # fmt: skip
+    check = (
+        fiduciary_contract._entitled(ctx)  # pyright: ignore[reportPrivateUsage] -- the gate under test
+        if gate == "fiduciary"
+        else estate_contract._flag_on(ctx)  # pyright: ignore[reportPrivateUsage] -- the gate under test
+    )
+    if held:
+        asyncio.run(check)
+    else:
+        with pytest.raises(NotFound):
+            asyncio.run(check)
+    assert asked == ["tax_returns"]

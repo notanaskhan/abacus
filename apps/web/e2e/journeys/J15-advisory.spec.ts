@@ -34,7 +34,7 @@ test.describe("J15 · opportunities (T-05-T68)", () => {
     test.fixme(journey.project !== "fixture", "T-05-T68: TXP-01 on the full stack and staging");
     await journey.as("samuel-ito", "/tax-returns/_returnId_/review/summary", {
       scenario: "TXP-01:c",
-      flags: ["tax.entity_workspace", "tax.review_workspace"],
+      flags: [], // T-06-T69: the workspaces are the seed's entitlements
     });
     await journey.step(
       "J15 step 1: the approved memo's opportunities (TXP-01 c)",

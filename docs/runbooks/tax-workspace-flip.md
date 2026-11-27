@@ -7,6 +7,8 @@ rehearse_by: 2028-04-28
 ---
 # Tax review workspace flip (M17)
 
+> **Retired (T-06-T69, DEC-6024).** After the M17 flip, `tax.individual_workpapers` and `tax.review_workspace` were retired into the `tax_returns` entitlement. Migration 1034 writes the module for every firm that had either flag on. Steps 1 and 2 below are history; their rollback is the entitlement's `enabled` switch in the operator console. Step 3, `tax_agents.enabled`, is still a flag.
+
 | Field | Value |
 |---|---|
 | Owner | ayushkbhatia operates; notanaskhan approves. Both founders' approvals are on every request (P-29, DEC-809) |

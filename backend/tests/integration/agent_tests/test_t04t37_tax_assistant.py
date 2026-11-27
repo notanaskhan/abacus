@@ -50,7 +50,8 @@ async def _return(seed: Seeder, world: World, who: Person) -> uuid.UUID:
         world.engagement_id,
         world.entity_id,
     )
-    for flag in ("tax.review_workspace", "agent_runtime.v2"):
+    await _entitle(seed, world.tenant_id)  # T-06-T69: `tax_returns` replaced the workspace flag
+    for flag in ("agent_runtime.v2",):
         await seed.run(
             "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
             "VALUES ($1, $2, 'true', 't04-t37', 'T-04-T37') ON CONFLICT DO NOTHING",
@@ -103,3 +104,12 @@ async def test_history_lists_only_the_persons_threads_on_the_return(
     seen = await net.call("GET", f"/v1/workbench/sessions?subject_ref=tax_return:{item}", samuel)
     assert seen.status_code == 200, seen.text
     assert len(cast(list[object], seen.json()["items"])) == 1
+
+
+async def _entitle(seed: Seeder, tenant: uuid.UUID) -> None:
+    """The firm's `tax_returns` module, as the operator console sets it."""
+    await seed.run(
+        "INSERT INTO tenant_entitlements (tenant_id, module, valid_from, set_by) "
+        "VALUES ($1, 'tax_returns', DATE '2000-01-01', 'test') ON CONFLICT DO NOTHING",
+        tenant,
+    )

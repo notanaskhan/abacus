@@ -1,5 +1,7 @@
 # Fiduciary workpapers · FW-1 (v1)
 
+> **T-06-T69 (DEC-6024):** the routes answer 404 without the firm's `tax_returns` entitlement, which replaced `tax.fiduciary_workpapers` and `tax.fiduciary_k1_release`.
+
 | Field | Value |
 |---|---|
 | Version | v1 |

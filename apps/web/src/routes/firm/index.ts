@@ -59,7 +59,7 @@ export const firmRoutes = [
   ...auditRoutes,
   // T-02-T12: TAX-01 behind the `tax_returns` entitlement.
   ...taxReturnRoutes,
-  // T-04-T12: the review workspace behind `tax.review_workspace`.
+  // T-04-T12: the review workspace behind the `tax_returns` entitlement (T-06-T69).
   ...taxReviewRoutes,
   // N-02-T40: SIG-01 behind `signatures.envelopes`.
   ...signatureRoutes,

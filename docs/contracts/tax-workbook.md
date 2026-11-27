@@ -1,5 +1,7 @@
 # Tax workbook · entity returns (v1)
 
+> **T-06-T69 (DEC-6024):** the routes answer 404 without the firm's `tax_entity_returns` entitlement, which replaced `tax.entity_workspace` and `tax.workbook_run`.
+
 | Field | Value |
 |---|---|
 | Version | v1 |

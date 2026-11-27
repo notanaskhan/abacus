@@ -42,7 +42,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useState } from "react";
 import { useNow } from "../../app-core/clock";
-import { useFlag } from "../../app-core/flags";
+import { useEntitlement, useFlag } from "../../app-core/flags";
 import { useOpenHref, useOpenOverlay } from "../../app-core/open";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { hrefOf, ov, to } from "../../routes/to";
@@ -782,7 +782,8 @@ export function TAX02({
   const openOverlay = useOpenOverlay();
   // The Checkpoints chip opens SHL-16 over the return where `review.checkpoints` is on.
   const checkpointsOn = useFlag("review.checkpoints") === true;
-  const reviewOn = useFlag("tax.review_workspace") === true;
+  // T-06-T69 (DEC-6024): the workspace is the `tax_returns` entitlement's (the flag retired).
+  const reviewOn = useEntitlement("tax_returns");
   const record = useQuery(returnRecordOptions({ path: { return_id: returnId } }));
   const overview = useQuery(returnOverviewOptions({ path: { return_id: returnId } }));
   const data = record.data;

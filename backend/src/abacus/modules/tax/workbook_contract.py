@@ -22,10 +22,8 @@ from uuid import UUID
 from fastapi import Depends, Header, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import TAX_ENTITY_WORKSPACE
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import DomainConflict, DomainTooLarge, NotFound, NotImplementedYet
-from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -35,6 +33,7 @@ from abacus.modules.identity.api import (
     current_context,
     mask_tins_for,
 )
+from abacus.modules.platform.api import entitlement
 
 if TYPE_CHECKING:
     from abacus.modules.tax.allocation_structure import Draft
@@ -937,9 +936,10 @@ _R = "/tax-returns/{return_id}"
 
 
 async def _flag_on(ctx: AuthContext) -> None:
-    """A client principal never reaches the workspace; the flag off answers 404."""
-    if ctx.client or not await flag_enabled(ctx.tenant, TAX_ENTITY_WORKSPACE):
-        raise NotFound(TAX_ENTITY_WORKSPACE.name)
+    """A client principal never reaches the workspace; without the `tax_entity_returns`
+    entitlement (which replaced `tax.entity_workspace`, T-06-T69, DEC-6024) it answers 404."""
+    if ctx.client or await entitlement(ctx.tenant, "tax_entity_returns") is None:
+        raise NotFound("tax_entity_returns")
 
 
 async def _workbook_read(ctx: AuthContext, return_id: UUID) -> tuple[str, Resource]:

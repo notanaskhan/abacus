@@ -18,7 +18,7 @@ from .support import Net, Person, Seeder, Site
 
 pytestmark = pytest.mark.asyncio
 READS = ("fixed-assets", "basis", "states", "handoff")
-FLAGS = ("tax.entity_workspace", "tax.entity_depth", "tax.tb_handoff")
+FLAGS = ("tax.entity_depth", "tax.tb_handoff")  # T-06-T69: tax.entity_workspace retired
 
 
 async def _return(seed: Seeder) -> tuple[Person, Site, uuid.UUID]:

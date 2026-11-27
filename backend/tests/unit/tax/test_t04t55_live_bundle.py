@@ -1,7 +1,8 @@
 """T-04-T55 (TASK-7514; T-04 AC-13.2; DEC-4514): the post-window live-path bundle. The return frame
-lists T-04's tabs only with their flag on and only for an individual return; the draft-run entry
-is a person's, checks `tax_return.draft_run` on the return, refuses a return past final approval
-and starts T-04-T25's run; the export's field-profile hook is the engine's validated profile."""
+lists T-04's tabs only with the firm's `tax_returns` entitlement (T-06-T69; was their flag) and
+only for an individual return; the draft-run entry is a person's, checks `tax_return.draft_run`
+on the return, refuses a return past final approval and starts T-04-T25's run; the export's
+field-profile hook is the engine's validated profile."""
 
 from __future__ import annotations
 
@@ -13,10 +14,8 @@ from typing import Any, cast
 
 import pytest
 
-from abacus.kernel._flags import TAX_REVIEW_WORKSPACE
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import Flag
 from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.tax import api as tax_api
 from abacus.modules.tax import draft_entry, export_fields, overview, return_tabs
@@ -43,12 +42,13 @@ def _ctx(*, kind: str = "human", client: bool = False, support: bool = False) ->
 # --- the return frame's tabs ---------------------------------------------------------------------
 
 
-def _flags(on: bool):  # noqa: ANN202 -- a fake flag reader
-    async def enabled(_tenant: object, flag: Flag) -> bool:
-        assert flag is TAX_REVIEW_WORKSPACE
-        return on
+def _entitlement(on: bool):  # noqa: ANN202 -- a fake entitlement reader
+    # T-06-T69 (DEC-6024): the tabs read the `tax_returns` entitlement that replaced the flag.
+    async def held(_tenant: object, module: str) -> object | None:
+        assert module == "tax_returns"
+        return object() if on else None
 
-    return enabled
+    return held
 
 
 @pytest.mark.parametrize(
@@ -59,10 +59,10 @@ def _flags(on: bool):  # noqa: ANN202 -- a fake flag reader
         (True, "1065", ["overview", "intake"]),  # T-05's entity tabs register their own
     ],
 )
-def test_the_frame_lists_t04_tabs_with_the_flag_on_for_individual_returns(
+def test_the_frame_lists_t04_tabs_with_the_entitlement_for_individual_returns(
     monkeypatch: pytest.MonkeyPatch, on: bool, form: str, tabs: list[str]
 ) -> None:
-    monkeypatch.setattr(return_tabs, "flag_enabled", _flags(on))
+    monkeypatch.setattr(return_tabs, "entitlement", _entitlement(on))
     found = asyncio.run(return_tabs.frame_tabs(_ctx().tenant, form))
     assert [t.tab for t in found] == tabs
     assert all(t.count is None for t in found)
@@ -70,12 +70,12 @@ def test_the_frame_lists_t04_tabs_with_the_flag_on_for_individual_returns(
 
 def test_tab_registration_fails_closed() -> None:
     with pytest.raises(ValueError, match="T-02's own"):
-        return_tabs.register_return_tab("overview", TAX_REVIEW_WORKSPACE, order=1)
+        return_tabs.register_return_tab("overview", "tax_returns", order=1)
     with pytest.raises(ValueError, match="already registered"):
-        return_tabs.register_return_tab("review", TAX_REVIEW_WORKSPACE, order=99)
+        return_tabs.register_return_tab("review", "tax_returns", order=99)
     # The same registration again (a reloaded module) is a no-op.
     return_tabs.register_return_tab(
-        "review", TAX_REVIEW_WORKSPACE, order=10, forms=frozenset({"1040", "1040x"})
+        "review", "tax_returns", order=10, forms=frozenset({"1040", "1040x"})
     )
 
 

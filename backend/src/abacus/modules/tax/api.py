@@ -10,7 +10,6 @@ from uuid import UUID
 
 from sqlalchemy import text
 
-from abacus.kernel._flags import TAX_REVIEW_WORKSPACE
 from abacus.kernel.audit_owners import register_engagement_owners, register_entity_owners
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import OutboxEvent
@@ -290,11 +289,10 @@ from abacus.modules.tax.compute.individual.review import (  # noqa: E402
 run_draft = _draft_entry.run_draft
 DraftNotAllowed = _draft_entry.DraftNotAllowed
 register_return_tab = _return_tabs.register_return_tab
-# T-04's workspace tabs on the shared return frame, each behind the flag that gates its screen.
+# T-04's workspace tabs on the shared return frame, behind the `tax_returns` entitlement that
+# replaced `tax.review_workspace` (T-06-T69, DEC-6024).
 for _order, _tab in enumerate(("review", "issues", "activity"), start=10):
-    register_return_tab(
-        _tab, TAX_REVIEW_WORKSPACE, order=_order, forms=frozenset({"1040", "1040x"})
-    )
+    register_return_tab(_tab, "tax_returns", order=_order, forms=frozenset({"1040", "1040x"}))
 # T-04-T25: the history recorder's workflow and its types (abacus_tools reaches tax only here).
 DraftInput = _drafter.DraftInput
 DraftOutcome = _drafter.DraftOutcome

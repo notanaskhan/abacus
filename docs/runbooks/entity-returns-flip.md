@@ -8,6 +8,8 @@ rehearse_by: 2027-04-30
 ---
 # RB-84 · Entity returns flip (M18)
 
+> **Retired (T-06-T69, DEC-6024).** `tax.entity_workspace` and `tax.workbook_run` were retired into the `tax_entity_returns` entitlement (a reviewed module). Migration 1034 writes it for every firm that had either flag on. `tax.entity_agents` is still a flag.
+
 | Field | Value |
 |---|---|
 | Owner | builder |

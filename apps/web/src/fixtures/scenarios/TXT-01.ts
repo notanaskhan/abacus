@@ -65,7 +65,7 @@ function at(state: string, data: InstrumentState, persona: string): Scenario {
         ...E0.handlers,
         "GET /v1/me/capabilities": ({ persona: who }: { persona?: string | undefined }) => {
           const base = capabilitiesFor(getSeed(), who ?? persona);
-          return json({ ...base, flags: { ...base.flags, "tax.fiduciary_workpapers": true } });
+          return json(base); // T-06-T69: the seed's `tax_returns` entitlement opens TXT-01/02
         },
         ...handlers,
       };

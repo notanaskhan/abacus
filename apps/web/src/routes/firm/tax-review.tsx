@@ -11,8 +11,8 @@ import { to } from "../to";
 import { EntitySection } from "./tax-returns";
 
 // The return's review workspace (T-04-T12; T-04 §5): new routes in new files, each behind the
-// `tax_returns` entitlement and `tax.review_workspace`; with the flag off every one shows F-05's
-// flag-off state and T-02's screens are unchanged. The sections' bodies are their screens' own
+// `tax_returns` entitlement (T-06-T69: `tax.review_workspace` retired into it); without it every
+// one shows F-05's off state and T-02's screens are unchanged. The sections' bodies are their screens' own
 // (TAX-04 Review from T-04-T13; TAX-06 Issues, TAX-07 Activity, TXI-02 K-1 resolver and TXI-03
 // residency after it); until then a fixture build draws "Not built yet". `?ov=assistant` opens
 // TAX-08's panel over any section (P-10's dock).
@@ -23,7 +23,10 @@ import { EntitySection } from "./tax-returns";
 //   /tax-returns/$returnId/k1-resolver/$activityId   TXI-02
 //   /tax-returns/$returnId/residency           TXI-03
 
-export const REVIEW_FLAG = "tax.review_workspace";
+// T-06-T69 (DEC-6024): the review workspace and T-07's sections are the `tax_returns`
+// entitlement's (the retired `tax.review_workspace`, `tax.fiduciary_*` and `tax.estate_workpapers`
+// flags); the workspace's one gate below covers every section.
+export const REVIEW_ENTITLEMENT = "tax_returns";
 type WorkspaceTab = "overview" | "intake" | "review" | "issues" | "activity";
 const WorkspaceScreen = lazyScreen(
   async () => (await import("../../screens/TAX-04/workspace")).Workspace,
@@ -169,41 +172,36 @@ function Workspace({
         entitlement="tax_returns"
         fallback={<FlagOffState flag="tax_returns" label="Tax Returns" />}
       >
-        <FeatureGate
-          flag={REVIEW_FLAG}
-          fallback={<FlagOffState flag={REVIEW_FLAG} label="Return review" />}
+        <WorkspaceScreen
+          returnId={returnId}
+          tab={tab}
+          title={title}
+          onTab={go}
+          onAssistant={() => {
+            void navigate({
+              to: ".",
+              search: search.ov === "assistant" ? {} : { ov: "assistant" },
+            });
+          }}
         >
-          <WorkspaceScreen
+          {children ?? (PLANNED_VISIBLE ? <EmptyState title="Not built yet" /> : null)}
+        </WorkspaceScreen>
+        {!FIXTURES && search.ov === "assistant" ? (
+          <AssistantLive
             returnId={returnId}
-            tab={tab}
-            title={title}
-            onTab={go}
-            onAssistant={() => {
-              void navigate({
-                to: ".",
-                search: search.ov === "assistant" ? {} : { ov: "assistant" },
-              });
+            open
+            onClose={() => {
+              void navigate({ to: ".", search: {} });
             }}
-          >
-            {children ?? (PLANNED_VISIBLE ? <EmptyState title="Not built yet" /> : null)}
-          </WorkspaceScreen>
-          {!FIXTURES && search.ov === "assistant" ? (
-            <AssistantLive
-              returnId={returnId}
-              open
-              onClose={() => {
-                void navigate({ to: ".", search: {} });
-              }}
-            />
-          ) : null}
-        </FeatureGate>
+          />
+        ) : null}
       </FeatureGate>
     </div>
   );
 }
 
-// TXT-01 (T-07-T15): the trust's instrument under the 1041's Review, behind
-// `tax.fiduciary_workpapers`; `?ov=signoff` opens SHL-12 at L3 on the interpretation.
+// TXT-01 (T-07-T15): the trust's instrument under the 1041's Review (the workspace's
+// `tax_returns` gate; T-06-T69); `?ov=signoff` opens SHL-12 at L3 on the interpretation.
 const InstrumentScreen = lazyScreen(async () => (await import("../../screens/TXT-01")).TXT01);
 
 export const taxInstrumentRoute = createRoute({
@@ -216,27 +214,22 @@ export const taxInstrumentRoute = createRoute({
     const search: WorkspaceSearch = useSearch({ strict: false });
     return (
       <Workspace tab="review" title="Instrument">
-        <FeatureGate
-          flag="tax.fiduciary_workpapers"
-          fallback={<FlagOffState flag="tax.fiduciary_workpapers" label="Instrument" />}
-        >
-          <InstrumentScreen
-            returnId={returnId}
-            {...(search.clause ? { clause: search.clause } : {})}
-            onApprove={() => {
-              void navigate({ to: ".", search: { ov: "signoff" } });
-            }}
-            onCitedBy={(target, ref) => {
-              if (target === "trust_calculation") {
-                void navigate({
-                  to: "/tax-returns/$returnId/review/trust-calculation",
-                  params: { returnId },
-                  search: { row: ref },
-                });
-              }
-            }}
-          />
-        </FeatureGate>
+        <InstrumentScreen
+          returnId={returnId}
+          {...(search.clause ? { clause: search.clause } : {})}
+          onApprove={() => {
+            void navigate({ to: ".", search: { ov: "signoff" } });
+          }}
+          onCitedBy={(target, ref) => {
+            if (target === "trust_calculation") {
+              void navigate({
+                to: "/tax-returns/$returnId/review/trust-calculation",
+                params: { returnId },
+                search: { row: ref },
+              });
+            }
+          }}
+        />
       </Workspace>
     );
   },
@@ -258,25 +251,20 @@ export const taxTrustCalculationRoute = createRoute({
     const search: WorkspaceSearch = useSearch({ strict: false });
     return (
       <Workspace tab="review" title="Trust Calculation">
-        <FeatureGate
-          flag="tax.fiduciary_workpapers"
-          fallback={<FlagOffState flag="tax.fiduciary_workpapers" label="Trust Calculation" />}
-        >
-          <TrustCalculationScreen
-            returnId={returnId}
-            {...(search.row ? { row: search.row } : {})}
-            onSignOff={() => {
-              void navigate({ to: ".", search: { ov: "signoff" } });
-            }}
-            onClause={(clause) => {
-              void navigate({
-                to: "/tax-returns/$returnId/review/instrument",
-                params: { returnId },
-                search: { clause },
-              });
-            }}
-          />
-        </FeatureGate>
+        <TrustCalculationScreen
+          returnId={returnId}
+          {...(search.row ? { row: search.row } : {})}
+          onSignOff={() => {
+            void navigate({ to: ".", search: { ov: "signoff" } });
+          }}
+          onClause={(clause) => {
+            void navigate({
+              to: "/tax-returns/$returnId/review/instrument",
+              params: { returnId },
+              search: { clause },
+            });
+          }}
+        />
       </Workspace>
     );
   },
@@ -300,12 +288,7 @@ export const taxBeneficiariesRoute = createRoute({
     };
     return (
       <Workspace tab="review" title="Beneficiaries">
-        <FeatureGate
-          flag="tax.fiduciary_k1_release"
-          fallback={<FlagOffState flag="tax.fiduciary_k1_release" label="Beneficiaries" />}
-        >
-          <BeneficiariesScreen returnId={returnId} onRelease={toPackages} onPackage={toPackages} />
-        </FeatureGate>
+        <BeneficiariesScreen returnId={returnId} onRelease={toPackages} onPackage={toPackages} />
       </Workspace>
     );
   },
@@ -322,12 +305,7 @@ export const taxEstateRoute = createRoute({
     const returnId = useParam("returnId");
     return (
       <Workspace tab="review" title="Estate workpapers">
-        <FeatureGate
-          flag="tax.estate_workpapers"
-          fallback={<FlagOffState flag="tax.estate_workpapers" label="Estate workpapers" />}
-        >
-          <EstateScreen returnId={returnId} />
-        </FeatureGate>
+        <EstateScreen returnId={returnId} />
       </Workspace>
     );
   },
@@ -377,18 +355,13 @@ export const taxReviewRoute = createRoute({
             entitlement="tax_returns"
             fallback={<FlagOffState flag="tax_returns" label="Tax Returns" />}
           >
-            <FeatureGate
-              flag={REVIEW_FLAG}
-              fallback={<FlagOffState flag={REVIEW_FLAG} label="Return review" />}
-            >
-              <Suspense fallback={null}>
-                <Prepare
-                  onIssue={() => {
-                    void navigate({ to: "/tax-returns/$returnId/issues", params: { returnId } });
-                  }}
-                />
-              </Suspense>
-            </FeatureGate>
+            <Suspense fallback={null}>
+              <Prepare
+                onIssue={() => {
+                  void navigate({ to: "/tax-returns/$returnId/issues", params: { returnId } });
+                }}
+              />
+            </Suspense>
           </FeatureGate>
         </div>
       );

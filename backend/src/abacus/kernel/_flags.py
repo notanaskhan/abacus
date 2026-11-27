@@ -695,33 +695,8 @@ TAX_ENTITY_DEPTH = Flag(
     kind="boolean",
     default="false",
 )
-TAX_ENTITY_WORKSPACE = Flag(
-    name="tax.entity_workspace",
-    kind="boolean",
-    default="false",
-)
-TAX_ESTATE_WORKPAPERS = Flag(
-    name="tax.estate_workpapers",
-    kind="boolean",
-    default="false",
-)
-TAX_FIDUCIARY_K1_RELEASE = Flag(
-    name="tax.fiduciary_k1_release",
-    kind="boolean",
-    default="false",
-)
-TAX_FIDUCIARY_WORKPAPERS = Flag(
-    name="tax.fiduciary_workpapers",
-    kind="boolean",
-    default="false",
-)
 TAX_FORM_PREVIEW = Flag(
     name="tax.form_preview",
-    kind="boolean",
-    default="false",
-)
-TAX_INDIVIDUAL_WORKPAPERS = Flag(
-    name="tax.individual_workpapers",
     kind="boolean",
     default="false",
 )
@@ -732,11 +707,6 @@ TAX_OTHER_ENTITY_WORKPAPERS = Flag(
 )
 TAX_PLANNING = Flag(
     name="tax.planning",
-    kind="boolean",
-    default="false",
-)
-TAX_REVIEW_WORKSPACE = Flag(
-    name="tax.review_workspace",
     kind="boolean",
     default="false",
 )
@@ -752,11 +722,6 @@ TAX_TB_HANDOFF = Flag(
 )
 TAX_TWO_YEAR = Flag(
     name="tax.two_year",
-    kind="boolean",
-    default="false",
-)
-TAX_WORKBOOK_RUN = Flag(
-    name="tax.workbook_run",
     kind="boolean",
     default="false",
 )
@@ -939,19 +904,12 @@ FLAGS: dict[str, Flag] = {
     "tax.engine_bridge": TAX_ENGINE_BRIDGE,
     "tax.entity_agents": TAX_ENTITY_AGENTS,
     "tax.entity_depth": TAX_ENTITY_DEPTH,
-    "tax.entity_workspace": TAX_ENTITY_WORKSPACE,
-    "tax.estate_workpapers": TAX_ESTATE_WORKPAPERS,
-    "tax.fiduciary_k1_release": TAX_FIDUCIARY_K1_RELEASE,
-    "tax.fiduciary_workpapers": TAX_FIDUCIARY_WORKPAPERS,
     "tax.form_preview": TAX_FORM_PREVIEW,
-    "tax.individual_workpapers": TAX_INDIVIDUAL_WORKPAPERS,
     "tax.other_entity_workpapers": TAX_OTHER_ENTITY_WORKPAPERS,
     "tax.planning": TAX_PLANNING,
-    "tax.review_workspace": TAX_REVIEW_WORKSPACE,
     "tax.standards_runs": TAX_STANDARDS_RUNS,
     "tax.tb_handoff": TAX_TB_HANDOFF,
     "tax.two_year": TAX_TWO_YEAR,
-    "tax.workbook_run": TAX_WORKBOOK_RUN,
     "tax_agents.enabled": TAX_AGENTS_ENABLED,
     "templates_v2.enabled": TEMPLATES_V2_ENABLED,
     "today_brief.enabled": TODAY_BRIEF_ENABLED,

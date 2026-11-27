@@ -5,7 +5,8 @@
 // interactions). Fixture project on pull requests; the nightly trace runs the same spec.
 import { expect, test } from "../harness";
 
-const FLAGS = ["tax.entity_workspace", "tax.review_workspace"];
+// T-06-T69: both workspaces are the seed's entitlements now; no flag to turn on.
+const FLAGS: string[] = [];
 const BUDGET_MS = 200;
 
 test.describe("TXP-11 INP (T-05-T69)", () => {

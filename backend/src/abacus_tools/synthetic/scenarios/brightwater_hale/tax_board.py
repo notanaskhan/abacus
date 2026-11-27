@@ -386,6 +386,15 @@ def _tax_board_slice() -> list[Event]:
             SLICE,
             {"module": "tax_returns"},
         ),
+        # T-06-T69 (DEC-6024): `tax_entity_returns` replaces T-05's retired workspace flags.
+        Event(
+            "tax-entity-entitlement",
+            SETUP_AT,
+            "platform.entitlement_set",
+            "system",
+            SLICE,
+            {"module": "tax_entity_returns"},
+        ),
         *(
             Event(
                 f"tax-return-board:{row.label}",

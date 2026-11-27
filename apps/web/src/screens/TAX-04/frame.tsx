@@ -10,7 +10,7 @@ import { COPY as T02 } from "../TAX-02/copy";
 // return's record (T-02's `GET /v1/tax-returns/{id}`); the tabs' counts, the Checkpoints chip and
 // the Assistant chip read one workspace query (`GET /v1/tax/returns/{id}/workspace`): "Review n"
 // at the viewer's level, "Issues n" open, "1 proposed" or "No changes needed". The routes hold
-// the `tax.review_workspace` flag (routes/firm/tax-review.tsx); every section's body is its own
+// the `tax_returns` entitlement (routes/firm/tax-review.tsx; T-06-T69); every section's body is its own
 // screen's (T-04-T13 onward).
 
 export type WorkspaceTab = "overview" | "intake" | "review" | "issues" | "activity";

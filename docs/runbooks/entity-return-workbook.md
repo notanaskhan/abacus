@@ -7,6 +7,8 @@ rehearse_by: 2028-07-07
 ---
 # Entity-return workbook
 
+> **Retired (T-06-T69, DEC-6024).** `tax.entity_workspace` and `tax.workbook_run` are now the `tax_entity_returns` entitlement.
+
 | Field | Value |
 |---|---|
 | Owner | ayushkbhatia (the workbook and its runs); notanaskhan (the run runtime and the §7216 gateway) |

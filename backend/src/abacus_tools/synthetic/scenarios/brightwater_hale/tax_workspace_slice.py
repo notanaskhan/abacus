@@ -218,7 +218,8 @@ CHECKPOINTS: Final = (
 SEEDED_AT: Final = datetime(2026, 8, 25, 10, 0, tzinfo=CT)
 # TASK-7324 (T-04-T32): the workspace's routes answer 404 with these off, so the full-stack J06
 # slice needs them on for the synthetic firm (the review tree and issues; the worksheets).
-FLAGS: Final = ("tax.review_workspace", "tax.individual_workpapers")
+# T-06-T69 (DEC-6024): both flags retired into the `tax_returns` entitlement (tax_board grants it).
+FLAGS: Final[tuple[str, ...]] = ()
 # TASK-7324: the firm, the Feld engagement and its return are created at the scenario's setup
 # instant (Sep 1, 8:00 AM), and the loader replays by `at`. So an event whose business time is
 # before setup (the Aug 25 to 28 issues, the "Initial draft" checkpoint) replays one second apart
