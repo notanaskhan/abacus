@@ -515,3 +515,15 @@ from abacus.modules.methodology.template_wrappers import (  # noqa: E402
 )
 
 __all__ += ["template_wrapper_of", "wrapped_methodology_version"]
+# K-03-T20 (DEC-6020): a template version's sheet definition, for workpapers' sheets.
+from abacus.modules.methodology.template_wrappers import (  # noqa: E402
+    SheetColumnDef as SheetColumnDef,
+)
+from abacus.modules.methodology.template_wrappers import (  # noqa: E402
+    SheetDefinition as SheetDefinition,
+)
+from abacus.modules.methodology.template_wrappers import (  # noqa: E402
+    sheet_definition_of as sheet_definition_of,
+)
+
+__all__ += ["SheetColumnDef", "SheetDefinition", "sheet_definition_of"]

@@ -18,7 +18,7 @@ one per pinned engagement, state `current`). Behind `templates_v2.enabled`:
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, cast
 from uuid import UUID, uuid4
 
 from sqlalchemy import text
@@ -105,4 +105,18 @@ async def _linked(session: AsyncSession, engagement_id: UUID) -> UUID | None:
     return await wrapped_methodology_version(session, found.template_version_id)
 
 
-__all__ = ["TemplateUpdateRequired", "before_pin", "link_pin", "links_on", "pinned_version"]
+async def linked_template_version(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
+    """The template version the engagement's link names (K-03-T20: its sheets' definitions)."""
+    async with tenant_session(tenant) as session:
+        found = (await session.execute(_LINK, {"e": engagement_id})).first()
+    return None if found is None else cast(UUID, found.template_version_id)
+
+
+__all__ = [
+    "TemplateUpdateRequired",
+    "before_pin",
+    "link_pin",
+    "linked_template_version",
+    "links_on",
+    "pinned_version",
+]

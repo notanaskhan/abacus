@@ -20,12 +20,15 @@ a third-party recipient must also hold a portal sign-in (P-06's `contact_not_por
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Final, cast
 from uuid import UUID, uuid4, uuid5
 
-from abacus.kernel.db import tenant_session
+from sqlalchemy import text
+
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.kernel.uow.idempotency import idempotent
@@ -273,6 +276,69 @@ async def approved_items(
         ),
         key=lambda i: i.position,
     )
+
+
+@dataclass(frozen=True)
+class SampleRow:
+    """One item of the approved sample with its stratum and amount (K-03-T20's sheet rows)."""
+
+    id: UUID
+    position: int
+    record_key: str
+    stratum: int | None
+    amount: Decimal | None
+    display: Mapping[str, object]
+
+
+@dataclass(frozen=True)
+class ApprovedSample:
+    version_no: int
+    seed: int
+    rows: tuple[SampleRow, ...]
+
+
+_NEWEST_APPROVED: Final = text(
+    "SELECT version_no, seed FROM sample_set_versions WHERE sample_set_id = :s "
+    "AND status = 'approved' ORDER BY version_no DESC LIMIT 1"
+)
+
+
+async def approved_sample_rows(ctx: AuthContext, sample_set_id: UUID) -> ApprovedSample:
+    """The newest **approved** version's items with stratum and amount, in sample order; 409
+    `sample_not_approved` when the set has none (K-03-T20; DEC-6020)."""
+    await set_for(ctx, sample_set_id, "sample_set.read")
+    async with tenant_session(ctx.tenant) as session:
+        newest = (await session.execute(_NEWEST_APPROVED, {"s": sample_set_id})).first()
+    if newest is None:
+        raise SampleNotApproved(facts={"status": "none_approved"})
+    version = await version_row(ctx, sample_set_id, int(newest.version_no))
+    version_id = cast(UUID, version["id"])
+    async with tenant_session(ctx.tenant) as session:
+        found = await repo.items(session, version_id)
+    rows = tuple(
+        SampleRow(
+            item_ref(version_id, int(cast(int, r["position"]))),
+            int(cast(int, r["position"])),
+            str(r["record_key"]),
+            None if r["stratum_position"] is None else int(cast(int, r["stratum_position"])),
+            None if r["amount"] is None else Decimal(str(r["amount"])),
+            cast(Mapping[str, object], r["display"] or {}),
+        )
+        for r in found
+    )
+    return ApprovedSample(int(newest.version_no), int(newest.seed), rows)
+
+
+async def version_seed(tenant: TenantContext, sample_set_id: UUID, version_no: int) -> int | None:
+    """A sample version's draw seed (SHT-01's "seed 0x7C31B4"), for a caller authorised on its
+    work item; None when absent."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text("SELECT seed FROM sample_set_versions WHERE sample_set_id = :s "
+                 "AND version_no = :n"),
+            {"s": sample_set_id, "n": version_no},
+        )  # fmt: skip
+    return None if found is None else int(found)
 
 
 _ITEM_NAMESPACE: Final = UUID("8f1b6a52-2a5e-4d34-b2a4-62c9d6f0a7e1")

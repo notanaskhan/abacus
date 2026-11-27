@@ -12,7 +12,7 @@ counts are `internal`.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header
@@ -91,6 +91,8 @@ class SheetStatusOut(BaseModel):
     rows: Count
     exceptions: Count
     view: Annotated[str, Field(max_length=80), Internal]
+    # K-03-T20 (DEC-6020), additive: code's status line ("40 rows · 0 tested · seed 0x7C31B4").
+    summary: Annotated[str, Field(max_length=120), Internal] = ""
     agent_running: Annotated[bool, Internal] = False
     agent_summary: Annotated[str | None, Field(max_length=120), Internal] = None
 
@@ -315,6 +317,64 @@ async def _human(ctx: AuthContext, action: str, *flags: Flag) -> None:
         raise Forbidden(action, "role")
 
 
+# --- K-03-T20 (DEC-6020): the sheets core service behind the routes ------------------------------
+
+
+def _vm_out(vm: object) -> SheetVmOut:
+    from abacus.modules.workpapers import sheets as sh
+
+    found = cast(sh.SheetVm, vm)
+    return SheetVmOut(
+        sheet_id=found.id, work_item_id=found.work_item_id, title=found.title,
+        columns=[
+            SheetColumnOut(column_id=c.id, key=c.key, type=cast(ColumnType, c.type), label=c.name,
+                           width=c.width, frozen=c.frozen)
+            for c in found.columns
+        ],
+        sections=[
+            SheetSectionOut(key=x.key, title=x.title, count=x.count,
+                            total=None if x.total is None else f"{x.total:,.2f}")
+            for x in found.sections
+        ],
+        status=SheetStatusOut(rows=found.rows, exceptions=found.exceptions, view=found.view,
+                              summary=sh.status_line(found)),
+    )  # fmt: skip
+
+
+def _row_out(row: object) -> SheetRowOut:
+    from abacus.modules.workpapers import sheets as sh
+
+    r = cast(sh.SheetRow, row)
+    return SheetRowOut(
+        row_id=r.id, key=r.key, section_key=r.section_key, locked=r.locked, version=r.version,
+        cells={k: SheetCellOut(value=c.value, state=cast(CellState, c.state), at=c.at,
+                               exception=c.exception) for k, c in r.cells.items()},
+    )  # fmt: skip
+
+
+async def _one_row(ctx: AuthContext, sheet_id: UUID, row_id: UUID) -> SheetRowOut:
+    from abacus.modules.workpapers import sheets as sh
+
+    found, _ = await sh.rows(ctx, sheet_id)
+    for r in found:
+        if r.id == row_id:
+            return _row_out(r)
+    raise NotFound("sheet_row")
+
+
+def _view_out(view: object) -> SheetViewOut:
+    from abacus.modules.workpapers import sheets as sh
+
+    v = cast(sh.SheetView, view)
+    return SheetViewOut(
+        view_id=v.id,
+        name=v.name,
+        filters=[dict(f) for f in v.filters],
+        sort=[dict(x) for x in v.sort],
+        columns_off=list(v.columns_off),
+    )
+
+
 @sheets_router.post(
     "/work-items/{work_item_id}/sheets",
     action="sheet.configure",
@@ -324,13 +384,18 @@ async def _human(ctx: AuthContext, action: str, *flags: Flag) -> None:
 )
 async def sheet_create_route(work_item_id: UUID, body: SheetCreateIn, ctx: Ctx) -> SheetVmOut:
     await _human(ctx, "sheet.configure")
-    raise NotImplementedYet
+    from abacus.modules.workpapers import sheets as sh
+
+    made = await sh.create_sheet(ctx, work_item_id, body.procedure_id, body.sheet_definition_ref)
+    return _vm_out(await sh.sheet_vm(ctx, made))
 
 
 @sheets_router.get(_S, action="sheet.read", response_model=SheetVmOut, errors=(501,))
-async def sheet_route(sheet_id: UUID, ctx: Ctx) -> SheetVmOut:
+async def sheet_route(sheet_id: UUID, ctx: Ctx, view: UUID | None = None) -> SheetVmOut:
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.workpapers import sheets as sh
+
+    return _vm_out(await sh.sheet_vm(ctx, sheet_id, view))
 
 
 @sheets_router.get(
@@ -340,7 +405,11 @@ async def sheet_rows_route(
     sheet_id: UUID, ctx: Ctx, view: UUID | None = None, cursor: str | None = None
 ) -> SheetRowListOut:
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.workpapers import sheets as sh
+
+    del cursor  # one page: a sheet holds at most a sample's rows (K-03-T20)
+    found, _ = await sh.rows(ctx, sheet_id, view)
+    return SheetRowListOut(items=[_row_out(r) for r in found])
 
 
 @sheets_router.post(
@@ -353,8 +422,14 @@ async def sheet_rows_route(
 async def sheet_rows_from_sample_route(
     sheet_id: UUID, body: SheetFromSampleIn, ctx: Ctx, key: IdempotencyKey
 ) -> SheetRowListOut:
+    """Idempotent by content: an item already on the sheet is not added again."""
     await _human(ctx, "sheet.edit")
-    raise NotImplementedYet
+    from abacus.modules.workpapers import sheets as sh
+
+    del key
+    added = set(await sh.add_rows_from_sample(ctx, sheet_id, body.sample_set_id))
+    found, _ = await sh.rows(ctx, sheet_id)
+    return SheetRowListOut(items=[_row_out(r) for r in found if r.id in added])
 
 
 @sheets_router.post(
@@ -366,18 +441,27 @@ async def sheet_rows_from_sample_route(
 )
 async def sheet_row_create_route(sheet_id: UUID, body: SheetRowIn, ctx: Ctx) -> SheetRowOut:
     await _human(ctx, "sheet.edit")
-    raise NotImplementedYet
+    from abacus.modules.workpapers import sheets as sh
+
+    made = await sh.add_row(ctx, sheet_id, body.section_key, body.cells)
+    return await _one_row(ctx, sheet_id, made)
 
 
 @sheets_router.patch(
-    f"{_S}/rows/{{row_id}}", action="sheet.edit", response_model=SheetRowOut, errors=(409, 501)
+    f"{_S}/rows/{{row_id}}",
+    action="sheet.edit",
+    response_model=SheetRowOut,
+    errors=(409, 412, 501),
 )
 async def sheet_row_patch_route(
     sheet_id: UUID, row_id: UUID, body: SheetRowPatchIn, ctx: Ctx
 ) -> SheetRowOut:
-    """Cell edits through `record_value`: 412 on a stale version; 423 `row_locked`."""
+    """Cell edits through `record_value`: 412 on a stale version; 409 `row_locked`."""
     await _human(ctx, "sheet.edit")
-    raise NotImplementedYet
+    from abacus.modules.workpapers import sheets as sh
+
+    await sh.edit_row(ctx, sheet_id, row_id, body.cells, body.version)
+    return await _one_row(ctx, sheet_id, row_id)
 
 
 @sheets_router.get(
@@ -385,7 +469,9 @@ async def sheet_row_patch_route(
 )
 async def sheet_views_route(sheet_id: UUID, ctx: Ctx) -> SheetViewListOut:
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.workpapers import sheets as sh
+
+    return SheetViewListOut(items=[_view_out(v) for v in await sh.views(ctx, sheet_id)])
 
 
 @sheets_router.post(
@@ -397,7 +483,7 @@ async def sheet_views_route(sheet_id: UUID, ctx: Ctx) -> SheetViewListOut:
 )
 async def sheet_view_create_route(sheet_id: UUID, body: SheetViewIn, ctx: Ctx) -> SheetViewOut:
     await _human(ctx, "sheet.edit")
-    raise NotImplementedYet
+    return await _saved_view(ctx, sheet_id, body, None)
 
 
 @sheets_router.patch(
@@ -407,7 +493,21 @@ async def sheet_view_patch_route(
     sheet_id: UUID, view_id: UUID, body: SheetViewIn, ctx: Ctx
 ) -> SheetViewOut:
     await _human(ctx, "sheet.edit")
-    raise NotImplementedYet
+    return await _saved_view(ctx, sheet_id, body, view_id)
+
+
+async def _saved_view(
+    ctx: AuthContext, sheet_id: UUID, body: SheetViewIn, view_id: UUID | None
+) -> SheetViewOut:
+    from abacus.modules.workpapers import sheets as sh
+
+    saved = await sh.save_view(
+        ctx, sheet_id, body.name, body.filters, body.sort, body.columns_off, view_id
+    )
+    for v in await sh.views(ctx, sheet_id):
+        if v.id == saved:
+            return _view_out(v)
+    raise NotFound("sheet_view")
 
 
 @sheets_router.post(

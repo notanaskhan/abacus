@@ -255,3 +255,8 @@ _register_run_steps()
 from abacus.modules.workpapers import (  # noqa: E402
     agent_tools as _workbench_tools,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
 )
+
+# K-03-T20 (DEC-6020): the Sheets engine core (its errors join the catalogue at import).
+from abacus.modules.workpapers import sheets as sheets  # noqa: E402
+
+__all__ += ["sheets"]

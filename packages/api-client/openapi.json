@@ -127112,6 +127112,13 @@
             "title": "Rows",
             "type": "integer"
           },
+          "summary": {
+            "cls": "internal",
+            "default": "",
+            "maxLength": 120,
+            "title": "Summary",
+            "type": "string"
+          },
           "view": {
             "cls": "internal",
             "maxLength": 80,
@@ -349336,6 +349343,23 @@
             }
           },
           {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "View"
+            }
+          },
+          {
             "in": "header",
             "name": "authorization",
             "required": false,
@@ -351253,6 +351277,7 @@
     },
     "/v1/sheets/{sheet_id}/rows/from-sample": {
       "post": {
+        "description": "Idempotent by content: an item already on the sheet is not added again.",
         "operationId": "sheet_rows_from_sample",
         "parameters": [
           {
@@ -351400,7 +351425,7 @@
     },
     "/v1/sheets/{sheet_id}/rows/{row_id}": {
       "patch": {
-        "description": "Cell edits through `record_value`: 412 on a stale version; 423 `row_locked`.",
+        "description": "Cell edits through `record_value`: 412 on a stale version; 409 `row_locked`.",
         "operationId": "sheet_row_patch",
         "parameters": [
           {
@@ -351516,6 +351541,16 @@
               }
             },
             "description": "Conflict with the resource's state"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Precondition failed: the version moved"
           },
           "422": {
             "content": {

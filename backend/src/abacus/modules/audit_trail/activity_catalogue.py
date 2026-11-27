@@ -62,6 +62,12 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "aar.elected": _a("decision", "ok"),  # T-08-T33, the signer's BBA election
     "aar.recommendation_read": _a("run", "pl"),  # T-08-T34, code's recommendation run
     "form_diagnostics.refreshed": _a("run", "pl"),  # T-06-T50, code's diagnostics
+    "sheet.opened": _a("access", "pl"),  # K-03-T20, a create that found the sheet
+    "sheet_rows.added_from_sample": _a("change", "pl"),  # K-03-T20
+    "sheet_row.added": _a("change", "pl"),  # K-03-T20, a manual row
+    "sheet_row.cell_edited": _a("change", "pl"),  # K-03-T20, cells through record_value
+    "sheet_view.saved": _a("change", "pl"),  # K-03-T20
+    "sheet_row.linked": _a("change", "pl"),  # K-03-T20, evidence, request or risk
     "sheet.created": _a("change", "pl"),
     "sheet.configured": _a("change", "pl"),
     "agent_column.saved": _a("change", "pl"),

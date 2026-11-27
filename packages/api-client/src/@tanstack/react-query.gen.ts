@@ -30201,6 +30201,8 @@ export const sheetRowCreateMutation = (options?: Partial<Options<SheetRowCreateD
 
 /**
  * Sheet Rows From Sample Route
+ *
+ * Idempotent by content: an item already on the sheet is not added again.
  */
 export const sheetRowsFromSampleMutation = (options?: Partial<Options<SheetRowsFromSampleData>>): UseMutationOptions<SheetRowsFromSampleResponse, SheetRowsFromSampleError, Options<SheetRowsFromSampleData>> => {
     const mutationOptions: UseMutationOptions<SheetRowsFromSampleResponse, SheetRowsFromSampleError, Options<SheetRowsFromSampleData>> = {
@@ -30219,7 +30221,7 @@ export const sheetRowsFromSampleMutation = (options?: Partial<Options<SheetRowsF
 /**
  * Sheet Row Patch Route
  *
- * Cell edits through `record_value`: 412 on a stale version; 423 `row_locked`.
+ * Cell edits through `record_value`: 412 on a stale version; 409 `row_locked`.
  */
 export const sheetRowPatchMutation = (options?: Partial<Options<SheetRowPatchData>>): UseMutationOptions<SheetRowPatchResponse, SheetRowPatchError, Options<SheetRowPatchData>> => {
     const mutationOptions: UseMutationOptions<SheetRowPatchResponse, SheetRowPatchError, Options<SheetRowPatchData>> = {

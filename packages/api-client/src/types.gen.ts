@@ -59716,6 +59716,10 @@ export type SheetStatusOut = {
      */
     rows: number;
     /**
+     * Summary
+     */
+    summary?: string;
+    /**
      * View
      */
     view: string;
@@ -161134,7 +161138,12 @@ export type SheetData = {
          */
         sheet_id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * View
+         */
+        view?: string | null;
+    };
     url: '/v1/sheets/{sheet_id}';
 };
 
@@ -162098,6 +162107,10 @@ export type SheetRowPatchErrors = {
      * Conflict with the resource's state
      */
     409: ErrorOut;
+    /**
+     * Precondition failed: the version moved
+     */
+    412: ErrorOut;
     /**
      * Invalid request
      */

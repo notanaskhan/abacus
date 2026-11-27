@@ -18336,6 +18336,8 @@ export const sheetRowCreate = <ThrowOnError extends boolean = false>(options: Op
 
 /**
  * Sheet Rows From Sample Route
+ *
+ * Idempotent by content: an item already on the sheet is not added again.
  */
 export const sheetRowsFromSample = <ThrowOnError extends boolean = false>(options: Options<SheetRowsFromSampleData, ThrowOnError>): RequestResult<SheetRowsFromSampleResponses, SheetRowsFromSampleErrors, ThrowOnError> => (options.client ?? client).post<SheetRowsFromSampleResponses, SheetRowsFromSampleErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -18350,7 +18352,7 @@ export const sheetRowsFromSample = <ThrowOnError extends boolean = false>(option
 /**
  * Sheet Row Patch Route
  *
- * Cell edits through `record_value`: 412 on a stale version; 423 `row_locked`.
+ * Cell edits through `record_value`: 412 on a stale version; 409 `row_locked`.
  */
 export const sheetRowPatch = <ThrowOnError extends boolean = false>(options: Options<SheetRowPatchData, ThrowOnError>): RequestResult<SheetRowPatchResponses, SheetRowPatchErrors, ThrowOnError> => (options.client ?? client).patch<SheetRowPatchResponses, SheetRowPatchErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
