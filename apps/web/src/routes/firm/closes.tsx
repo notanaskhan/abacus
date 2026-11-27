@@ -422,6 +422,65 @@ export const ledgerConsoleRoute = createRoute({
   },
 });
 
+// C-02-T47: CLS-13, a client entity's 1099 / W-9 tracker, behind `closes.engine`. `?year=` picks
+// the tax year (e: 2025), `?w9=1` opens the W-9 request drawer (b), `?vendor=` expands a TIN
+// mismatch row (c).
+const InformationReturns = lazyScreen(async () => (await import("../../screens/CLS-13")).CLS13);
+
+interface ReturnsSearch {
+  year?: number;
+  w9?: true;
+  vendor?: string;
+}
+
+function validateReturnsSearch(search: Record<string, unknown>): ReturnsSearch {
+  const out: ReturnsSearch = {};
+  const year = Number(search.year);
+  if (Number.isInteger(year) && year >= 2020 && year <= 2100) out.year = year;
+  if (search.w9 === true || search.w9 === "1" || search.w9 === 1) out.w9 = true;
+  if (typeof search.vendor === "string" && /^[0-9a-f-]{36}$/.test(search.vendor)) {
+    out.vendor = search.vendor;
+  }
+  return out;
+}
+
+export const informationReturnsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/clients/$clientId/entities/$entityId/information-returns",
+  validateSearch: validateReturnsSearch,
+  component: function InformationReturnsPage(): JSX.Element {
+    const enabled = useFlag("closes.engine") === true;
+    const { clientId, entityId } = informationReturnsRoute.useParams();
+    const search = informationReturnsRoute.useSearch();
+    const navigate = useNavigate();
+    if (!enabled) {
+      return (
+        <div data-screen="CLS-13" className="flex min-h-0 flex-1 flex-col">
+          <FlagOffState flag="closes.engine" label="1099 / W-9 tracker" />
+        </div>
+      );
+    }
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <InformationReturns
+          clientEntityId={entityId}
+          {...(search.year === undefined ? {} : { taxYear: search.year })}
+          requestOpen={search.w9 === true}
+          expandedVendorId={search.vendor ?? null}
+          onTaxYear={(year) => {
+            void navigate({
+              to: "/clients/$clientId/entities/$entityId/information-returns",
+              params: { clientId, entityId },
+              search: { year },
+              replace: true,
+            });
+          }}
+        />
+      </div>
+    );
+  },
+});
+
 export const closeRoutes = [
   closesIndexRoute,
   closeOverviewRoute,
@@ -435,4 +494,5 @@ export const closeRoutes = [
   closeUnknownTabRoute,
   closePlanRoute,
   ledgerConsoleRoute,
+  informationReturnsRoute,
 ] as const;

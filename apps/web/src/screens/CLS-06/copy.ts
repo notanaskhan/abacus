@@ -24,6 +24,7 @@ export const COPY = {
   why: "Why This Was Surfaced",
   question: "Client question",
   openThread: "Open thread",
+  tracker: "1099 / W-9 tracker",
   linked: "Linked Entities",
   resolve: "✓ Resolve",
   notApplicable: "Mark Not Applicable",

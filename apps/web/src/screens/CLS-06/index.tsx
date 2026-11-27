@@ -9,6 +9,7 @@ import {
   closeIssuesOptions,
   closeReconciliationOptions,
   closeRegisterOptions,
+  closeSummaryOptions,
 } from "@abacus/api-client/query";
 import {
   AgentText,
@@ -207,6 +208,12 @@ export function CLS06({
   const selectedId = picked ?? defaultSelected ?? null;
   const selected = (data?.items ?? []).find((i) => i.issue_id === selectedId);
   const detail = selected ? ISSUE_DETAIL[selected.issue_id] : undefined;
+  const summary = useQuery(closeSummaryOptions({ path: { close_id: closeId } }));
+  const trackerEntity = summary.data?.client_entity_id ?? null;
+  const trackerTarget =
+    summary.data !== undefined && trackerEntity !== null
+      ? { clientId: summary.data.client_id, entityId: trackerEntity }
+      : null;
   const register = useQuery({
     ...closeRegisterOptions({ path: { close_id: closeId, account_ref: "35" } }),
     enabled: registerView === "detail",
@@ -427,6 +434,18 @@ export function CLS06({
                       <button type="button" className="text-[13px] font-medium">
                         {C.openThread} ›
                       </button>
+                      {/* C-02-T47: the vendor's 1099 / W-9 tracker row (CLS-13). */}
+                      {trackerTarget !== null ? (
+                        <button
+                          type="button"
+                          className="ml-[12px] text-[13px] text-ink-2 hover:text-ink"
+                          onClick={() => {
+                            void navigate(to.CLS13(trackerTarget));
+                          }}
+                        >
+                          {C.tracker} ›
+                        </button>
+                      ) : null}
                     </div>
                   )}
                   {detail.linked.length > 0 && (

@@ -150,7 +150,9 @@ function files(dir: string): string[] {
 
 /** Kit sample data (plan 04 §… "Never port kit sample data"; F-05 DF-35). */
 const KIT_SAMPLES: readonly RegExp[] = [
-  /Elena Ruiz/,
+  // The kit person stays banned; "Elena Ruiz Design" is a CLS-13 vendor allowed by its exact
+  // string, as the backend's seed_contamination scan allows it (C-02-T09, DEC-5508).
+  /Elena Ruiz(?! Design)/,
   // The kit's Whitcombe household and its binder; Thomas Whitcombe is a seed partner.
   /Whitcombes\b|Whitcombe ›/,
   /Ridgeview Partners/,

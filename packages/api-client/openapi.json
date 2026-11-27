@@ -35773,6 +35773,38 @@
         "additionalProperties": false,
         "description": "CLS-13a: 12 Vendors paid \u00b7 6 Reportable \u00b7 2 Requested \u00b7 1 TIN mismatch \u00b7 0 Filed.",
         "properties": {
+          "accepted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Accepted At"
+          },
+          "approval_open": {
+            "cls": "internal",
+            "default": false,
+            "title": "Approval Open",
+            "type": "boolean"
+          },
+          "approval_target_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approval Target On"
+          },
           "batch_status": {
             "cls": "internal",
             "enum": [
@@ -35798,6 +35830,19 @@
             "title": "Filed",
             "type": "integer"
           },
+          "filed_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Filed On"
+          },
           "items": {
             "cls": "internal",
             "items": {
@@ -35805,6 +35850,12 @@
             },
             "title": "Items",
             "type": "array"
+          },
+          "payments_synced": {
+            "cls": "internal",
+            "default": true,
+            "title": "Payments Synced",
+            "type": "boolean"
           },
           "reportable": {
             "cls": "internal",
@@ -36909,6 +36960,55 @@
         "title": "DeliveryVendorPatchIn",
         "type": "object"
       },
+      "DeliveryVendorPaymentOut": {
+        "additionalProperties": false,
+        "description": "C-02-T47 (CLS-13 drawer): one payment method's total for the year; card and payment-app\npayments are not counted (reported on Form 1099-K by the processor).",
+        "properties": {
+          "amount": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Amount",
+            "type": "string"
+          },
+          "counted": {
+            "cls": "internal",
+            "title": "Counted",
+            "type": "boolean"
+          },
+          "method": {
+            "cls": "internal",
+            "enum": [
+              "check",
+              "ach",
+              "card",
+              "payment_app",
+              "other"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "txn_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Txn Count"
+          }
+        },
+        "required": [
+          "method",
+          "amount",
+          "counted"
+        ],
+        "title": "DeliveryVendorPaymentOut",
+        "type": "object"
+      },
       "DeliveryVendorRowOut": {
         "additionalProperties": false,
         "description": "Larimer Street Properties \u00b7 1099-MISC box 1 rents \u00b7 $78,400.00 \u00b7 TIN \u2022\u2022-\u2022\u2022\u20224471.",
@@ -36917,6 +37017,17 @@
             "cls": "confidential",
             "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
             "title": "Amount",
+            "type": "string"
+          },
+          "backup_withholding": {
+            "cls": "internal",
+            "default": "none",
+            "enum": [
+              "none",
+              "watch",
+              "started"
+            ],
+            "title": "Backup Withholding",
             "type": "string"
           },
           "box": {
@@ -36956,6 +37067,12 @@
             "title": "Entity Type",
             "type": "string"
           },
+          "filed": {
+            "cls": "internal",
+            "default": false,
+            "title": "Filed",
+            "type": "boolean"
+          },
           "form": {
             "anyOf": [
               {
@@ -36977,6 +37094,15 @@
             "title": "Is Attorney",
             "type": "boolean"
           },
+          "payments": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/DeliveryVendorPaymentOut"
+            },
+            "title": "Payments",
+            "type": "array"
+          },
           "reportability": {
             "cls": "internal",
             "enum": [
@@ -36987,6 +37113,22 @@
             ],
             "title": "Reportability",
             "type": "string"
+          },
+          "tin_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ssn",
+                  "ein"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Tin Kind"
           },
           "tin_last4": {
             "anyOf": [
@@ -37002,6 +37144,19 @@
             "title": "Tin Last4",
             "x-pii-kind": "tin"
           },
+          "tin_mismatch_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Tin Mismatch On"
+          },
           "vendor_id": {
             "cls": "internal",
             "format": "uuid",
@@ -37013,6 +37168,32 @@
             "minimum": 1.0,
             "title": "Version",
             "type": "integer"
+          },
+          "w9_evidence_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "W9 Evidence Version Id"
+          },
+          "w9_requested_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "W9 Requested At"
           },
           "w9_status": {
             "cls": "internal",
@@ -37113,15 +37294,21 @@
             "type": "array"
           },
           "wording_template_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "internal",
-            "format": "uuid",
-            "title": "Wording Template Version Id",
-            "type": "string"
+            "title": "Wording Template Version Id"
           }
         },
         "required": [
-          "vendor_ids",
-          "wording_template_version_id"
+          "vendor_ids"
         ],
         "title": "DeliveryW9RequestIn",
         "type": "object"

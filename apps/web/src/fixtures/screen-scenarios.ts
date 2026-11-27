@@ -33,6 +33,12 @@ import { scenarios as cls06 } from "./scenarios/CLS-06";
 import { scenarios as cls09 } from "./scenarios/CLS-09";
 import { scenarios as cls10 } from "./scenarios/CLS-10";
 import {
+  CLS13_CLIENT_ID,
+  CLS13_ENTITY_ID,
+  ELENA_ID as CLS13_ELENA_ID,
+  scenarios as cls13,
+} from "./scenarios/CLS-13";
+import {
   CLS11_AUGUST_BATCH_ID,
   CLS11_CLIENT_ID,
   CLS11_CLOSE_ID,
@@ -385,6 +391,13 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
       e: `?close=${CLS11_CLOSE_ID}`,
     },
     ids: idsOf(cls11, () => ({ clientId: CLS11_CLIENT_ID, entityId: CLS11_ENTITY_ID })),
+  },
+  // C-02-T47: CLS-13 on the tracker read; b opens the W-9 request drawer, c expands the TIN
+  // mismatch row's check, e reads tax year 2025.
+  "CLS-13": {
+    scenarios: cls13,
+    opens: { b: "?w9=1", c: `?vendor=${CLS13_ELENA_ID}`, e: "?year=2025" },
+    ids: idsOf(cls13, () => ({ clientId: CLS13_CLIENT_ID, entityId: CLS13_ENTITY_ID })),
   },
   "BND-02": { scenarios: bnd02, opens: {}, ids: BND02_OPENS },
   // P-07-T53: the gates and access walk opens the live routes on the screens' own states.

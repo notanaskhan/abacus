@@ -82,6 +82,11 @@ async def test_c02t45_acceptance_six_reportable_card_excluded_attorney_kept(
     )
     cascade = by_name["Cascade Coffee Importers, Inc."]
     assert (cascade["reportability"], cascade["amount"]) == ("paid_by_card", "0.00")
+    # C-02-T47 (CLS-13 drawer): payments by method; card never counted toward 1099-NEC.
+    card = [p for p in cast(list[dict[str, object]], cascade["payments"]) if p["method"] == "card"]
+    assert card and all(p["counted"] is False for p in card)
+    rents = cast(list[dict[str, object]], by_name["Larimer Street Properties, LLC"]["payments"])
+    assert sum(float(str(p["amount"])) for p in rents if p["counted"]) == 78400.0
     assert (by_name["Hartwell & Lowe LLP"]["form"], by_name["Hartwell & Lowe LLP"]["box"]) == (
         "nec",
         "1",

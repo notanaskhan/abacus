@@ -16741,6 +16741,18 @@ export type DeliveryHandoffPublishedOut = {
  */
 export type DeliveryInformationReturnsOut = {
     /**
+     * Accepted At
+     */
+    accepted_at?: string | null;
+    /**
+     * Approval Open
+     */
+    approval_open?: boolean;
+    /**
+     * Approval Target On
+     */
+    approval_target_on?: string | null;
+    /**
      * Batch Status
      */
     batch_status: 'not_started' | 'approved' | 'exported' | 'filed_iris' | 'accepted' | 'rejected';
@@ -16753,9 +16765,17 @@ export type DeliveryInformationReturnsOut = {
      */
     filed: number;
     /**
+     * Filed On
+     */
+    filed_on?: string | null;
+    /**
      * Items
      */
     items: Array<DeliveryVendorRowOut>;
+    /**
+     * Payments Synced
+     */
+    payments_synced?: boolean;
     /**
      * Reportable
      */
@@ -17252,6 +17272,31 @@ export type DeliveryVendorPatchIn = {
 };
 
 /**
+ * DeliveryVendorPaymentOut
+ *
+ * C-02-T47 (CLS-13 drawer): one payment method's total for the year; card and payment-app
+ * payments are not counted (reported on Form 1099-K by the processor).
+ */
+export type DeliveryVendorPaymentOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Counted
+     */
+    counted: boolean;
+    /**
+     * Method
+     */
+    method: 'check' | 'ach' | 'card' | 'payment_app' | 'other';
+    /**
+     * Txn Count
+     */
+    txn_count?: number | null;
+};
+
+/**
  * DeliveryVendorRowOut
  *
  * Larimer Street Properties · 1099-MISC box 1 rents · $78,400.00 · TIN ••-•••4471.
@@ -17261,6 +17306,10 @@ export type DeliveryVendorRowOut = {
      * Amount
      */
     amount: string;
+    /**
+     * Backup Withholding
+     */
+    backup_withholding?: 'none' | 'watch' | 'started';
     /**
      * Box
      */
@@ -17274,6 +17323,10 @@ export type DeliveryVendorRowOut = {
      */
     entity_type: 'individual' | 'single_member_llc' | 'partnership' | 'c_corporation' | 's_corporation' | 'trust_estate' | 'llc_c' | 'llc_s' | 'llc_p' | 'other' | 'unknown';
     /**
+     * Filed
+     */
+    filed?: boolean;
+    /**
      * Form
      */
     form?: 'nec' | 'misc' | null;
@@ -17282,13 +17335,25 @@ export type DeliveryVendorRowOut = {
      */
     is_attorney: boolean;
     /**
+     * Payments
+     */
+    payments?: Array<DeliveryVendorPaymentOut>;
+    /**
      * Reportability
      */
     reportability: 'reportable' | 'below_threshold' | 'exempt_corporation' | 'paid_by_card';
     /**
+     * Tin Kind
+     */
+    tin_kind?: 'ssn' | 'ein' | null;
+    /**
      * Tin Last4
      */
     tin_last4?: string | null;
+    /**
+     * Tin Mismatch On
+     */
+    tin_mismatch_on?: string | null;
     /**
      * Vendor Id
      */
@@ -17297,6 +17362,14 @@ export type DeliveryVendorRowOut = {
      * Version
      */
     version: number;
+    /**
+     * W9 Evidence Version Id
+     */
+    w9_evidence_version_id?: string | null;
+    /**
+     * W9 Requested At
+     */
+    w9_requested_at?: string | null;
     /**
      * W9 Status
      */
@@ -17343,7 +17416,7 @@ export type DeliveryW9RequestIn = {
     /**
      * Wording Template Version Id
      */
-    wording_template_version_id: string;
+    wording_template_version_id?: string | null;
 };
 
 /**

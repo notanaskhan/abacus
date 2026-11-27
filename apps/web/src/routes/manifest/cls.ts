@@ -64,6 +64,10 @@ export const clsScreens = {
     status: "planned",
     path: null,
   },
-  "CLS-13": { name: "1099 / W-9 tracker · Copperleaf 2026", status: "planned", path: null },
+  "CLS-13": {
+    name: "1099 / W-9 tracker · Copperleaf 2026",
+    status: "live", // C-02-T47: a-f and d2 on C-02-T45's read and C8's writes
+    path: "/clients/$clientId/entities/$entityId/information-returns",
+  },
   // seed-manifest: new screens are added above this line
 } as const satisfies Manifest;

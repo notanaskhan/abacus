@@ -22,9 +22,9 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Final, cast
+from typing import Any, Final, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -38,6 +38,7 @@ from abacus.modules.closes.delivery_contract import (
     BatchStatus,
     DeliveryInformationReturnsOut,
     DeliveryVendorPatchIn,
+    DeliveryVendorPaymentOut,
     DeliveryVendorRowOut,
     W9Status,
 )
@@ -161,16 +162,34 @@ _ENGAGEMENT: Final = text(
 )
 _YEAR_ROWS: Final = text(
     "SELECT v.id, v.display_name, v.entity_type, v.is_attorney, v.exempt_reason, v.paid_rents, "
-    "v.tin_last4, v.w9_status, v.version, r.method, r.amount, r.txn_count "
+    "v.tin_last4, v.w9_status, v.version, r.method, r.amount, r.txn_count, v.tin_kind, "
+    "v.backup_withholding, v.w9_evidence_version_id, "
+    "(SELECT max(q.sent_at) FROM w9_requests q WHERE v.id = ANY(q.vendor_ids)) AS requested_at, "
+    "(SELECT max(m.checked_on) FROM tin_match_results m WHERE m.vendor_id = v.id "
+    "AND m.result = 'mismatch') AS mismatch_on "
     "FROM vendors_1099 v JOIN vendor_payment_rollups r ON r.vendor_id = v.id "
     "WHERE v.client_entity_id = :e AND r.tax_year = :y ORDER BY v.display_name, v.id, r.method"
 )
 _BATCH: Final = text(  # one batch per entity and year (1013's UNIQUE)
-    "SELECT id, status FROM information_return_batches WHERE client_entity_id = :e "
-    "AND tax_year = :y"
+    "SELECT id, status, filed_on, ack_at FROM information_return_batches "
+    "WHERE client_entity_id = :e AND tax_year = :y"
+)
+# C-02-T47 (CLS-13 a, d): approval opens after the year's December close locks (the same rule
+# `approve_batch` enforces with 409 `close_not_locked`); its due date is the target shown.
+_DECEMBER: Final = text(
+    "SELECT status, due_on FROM closes WHERE client_entity_id = :e AND period = :p"
+)
+# C-02-T47 (CLS-13 e): a year whose payments never synced shows the returns it filed.
+_FILED_ROWS: Final = text(
+    "SELECT v.id, v.display_name, v.entity_type, v.is_attorney, v.tin_last4, v.tin_kind, "
+    "v.w9_status, v.version, r.form, r.box, r.amount FROM information_returns r "
+    "JOIN vendors_1099 v ON v.id = r.vendor_id WHERE r.batch_id = :b ORDER BY v.display_name, v.id"
 )
 _FILED: Final = text(
     "SELECT count(DISTINCT vendor_id) FROM information_returns WHERE batch_id = :b"
+)
+_FILED_VENDORS: Final = text(
+    "SELECT DISTINCT vendor_id FROM information_returns WHERE batch_id = :b"
 )
 
 
@@ -232,6 +251,11 @@ class _Row:
     w9_status: str
     version: int
     payments: list[irc.Payment]
+    tin_kind: str | None = None
+    backup_withholding: str = "none"
+    w9_evidence_version_id: UUID | None = None
+    requested_at: datetime | None = None
+    mismatch_on: date | None = None
 
 
 async def tracker(
@@ -243,6 +267,14 @@ async def tracker(
         lines = list(await session.execute(_YEAR_ROWS, {"e": client_entity_id, "y": tax_year}))
         batch = (await session.execute(_BATCH, {"e": client_entity_id, "y": tax_year})).first()
         filed = 0 if batch is None else int(await session.scalar(_FILED, {"b": batch.id}) or 0)
+        december = (
+            await session.execute(_DECEMBER, {"e": client_entity_id, "p": f"{tax_year}-12"})
+        ).first()
+        in_batch: set[UUID] = (
+            set()
+            if batch is None
+            else {cast(UUID, v) for v in await session.scalars(_FILED_VENDORS, {"b": batch.id})}
+        )
     rows: dict[UUID, _Row] = {}
     for r in lines:
         row = rows.get(r.id)
@@ -250,12 +282,15 @@ async def tracker(
             row = rows[r.id] = _Row(
                 r.id, str(r.display_name), str(r.entity_type), bool(r.is_attorney),
                 r.exempt_reason, bool(r.paid_rents), r.tin_last4, str(r.w9_status),
-                int(r.version), [],
+                int(r.version), [], r.tin_kind, str(r.backup_withholding),
+                r.w9_evidence_version_id, r.requested_at, r.mismatch_on,
             )  # fmt: skip
         if Decimal(r.amount) > 0:
             row.payments.append(irc.Payment(str(r.method), Decimal(r.amount), int(r.txn_count)))
     paid = [row for row in rows.values() if row.payments]
     threshold, threshold_rule, due_rule = await rule_texts(tax_year)
+    if not paid and batch is not None:
+        return await _filed_year(ctx, tax_year, batch, threshold_rule, due_rule, w9)
     items: list[DeliveryVendorRowOut] = []
     reportable = 0
     for row in paid:
@@ -278,6 +313,25 @@ async def tracker(
                 tin_last4=row.tin_last4,
                 w9_status=cast(irc.W9Status, row.w9_status),
                 version=row.version,
+                tin_kind=cast(Literal["ssn", "ein"] | None, row.tin_kind),
+                backup_withholding=cast(
+                    Literal["none", "watch", "started"], row.backup_withholding
+                ),
+                w9_requested_at=row.requested_at if row.w9_status == "requested" else None,
+                w9_evidence_version_id=row.w9_evidence_version_id,
+                tin_mismatch_on=row.mismatch_on if row.w9_status == "tin_mismatch" else None,
+                filed=row.vendor_id in in_batch,
+                payments=[
+                    DeliveryVendorPaymentOut(
+                        method=cast(
+                            Literal["check", "ach", "card", "payment_app", "other"], p.method
+                        ),
+                        amount=p.amount,
+                        txn_count=p.txn_count,
+                        counted=p.method not in ("card", "payment_app"),
+                    )
+                    for p in row.payments
+                ],
             )
         )
     shown = [i for i in items if w9 is None or i.w9_status == w9]
@@ -292,6 +346,50 @@ async def tracker(
         due_rule=due_rule,
         items=shown,
         batch_status=cast(BatchStatus, "not_started" if batch is None else batch.status),
+        filed_on=None if batch is None else batch.filed_on,
+        accepted_at=None if batch is None or batch.status != "accepted" else batch.ack_at,
+        approval_open=december is not None and december.status == "locked",
+        approval_target_on=None if december is None else december.due_on,
+    )
+
+
+async def _filed_year(
+    ctx: AuthContext,
+    tax_year: int,
+    batch: Any,  # noqa: ANN401 # Any: a SQL row (id, status, filed_on, ack_at)
+    threshold_rule: str,
+    due_rule: str,
+    w9: W9Status | None,
+) -> DeliveryInformationReturnsOut:
+    """CLS-13 e: a prior year filed before the ledger connected (its payments never synced):
+    the filed returns, each Reportable, with no Vendors paid figure (`payments_synced` false)."""
+    async with tenant_session(ctx.tenant) as session:
+        filed = list(await session.execute(_FILED_ROWS, {"b": batch.id}))
+    items = [
+        DeliveryVendorRowOut(
+            vendor_id=r.id, display_name=str(r.display_name),
+            entity_type=cast(irc.EntityType, r.entity_type), is_attorney=bool(r.is_attorney),
+            reportability="reportable", form=cast(Literal["nec", "misc"], r.form), box=r.box,
+            amount=r.amount, tin_last4=r.tin_last4,
+            tin_kind=cast(Literal["ssn", "ein"] | None, r.tin_kind),
+            w9_status=cast(irc.W9Status, r.w9_status), version=int(r.version), filed=True,
+        )
+        for r in filed
+    ]  # fmt: skip
+    return DeliveryInformationReturnsOut(
+        tax_year=tax_year,
+        vendors_paid=0,
+        reportable=len(items),
+        requested=0,
+        w9_mismatches=0,
+        filed=len(items) if batch.status in ("filed_iris", "accepted") else 0,
+        threshold_rule=threshold_rule,
+        due_rule=due_rule,
+        items=[i for i in items if w9 is None or i.w9_status == w9],
+        batch_status=cast(BatchStatus, batch.status),
+        payments_synced=False,
+        filed_on=batch.filed_on,
+        accepted_at=batch.ack_at if batch.status == "accepted" else None,
     )
 
 
