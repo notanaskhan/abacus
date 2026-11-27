@@ -801,3 +801,8 @@ from abacus.modules.engagements.template_links import (  # noqa: E402
 )
 
 __all__ += ["TemplateUpdateRequired", "pinned_version"]
+from abacus.modules.engagements.template_links import (  # noqa: E402
+    linked_template_version as linked_template_version,
+)
+
+__all__ += ["linked_template_version"]

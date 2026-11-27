@@ -516,6 +516,11 @@ codes:
     raised_by:
     - abacus.modules.tax.workbook_service.CellAddressInvalid
     summary: The address is not `<sheet>!<column><row>` on one of the form's sheets.
+  cell_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.workpapers.sheets.CellInvalid
+    summary: A cell value does not fit its column's type, or names no column of the sheet.
   cell_source_invalid:
     status: 422
     raised_by:
@@ -2555,6 +2560,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.service.NoSubsequentLedger
     summary: 'SPEC-038: the general ledger after year end hasn''t been imported and checked yet.'
+  no_template_link:
+    status: 409
+    raised_by:
+    - abacus.modules.workpapers.sheets.NoTemplateLink
+    summary: The engagement follows no template version yet, so it has no sheet definitions.
   no_transactions:
     status: 409
     raised_by:
@@ -3630,6 +3640,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.roll_forward.RollForwardUnavailable
+  row_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.workpapers.sheets.RowLocked
+    summary: 'A reviewer signed this row off: reopen it before editing.'
   rows_hidden:
     status: 409
     raised_by:
@@ -3698,6 +3713,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.fieldwork.flow.AlreadyApproved
+  sample_already_linked:
+    status: 409
+    raised_by:
+    - abacus.modules.workpapers.sheets.SampleAlreadyLinked
+    summary: The sheet's rows come from another sample set.
   sample_not_approved:
     status: 409
     raised_by:

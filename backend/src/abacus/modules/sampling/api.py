@@ -49,9 +49,13 @@ from abacus.modules.sampling.draw_workflow import SampleDrawWorkflow
 # are the module's own at start-up).
 from abacus.modules.sampling.item_requests import (
     ApprovedItem,
+    ApprovedSample,
     RecipientNotContact,
     SampleNotApproved,
+    SampleRow,
     approved_items,
+    approved_sample_rows,
+    version_seed,
 )
 
 # A-08-T12: JE testing's scoring run (batch queue: nobody waits on a 400,000-line population).
@@ -151,6 +155,7 @@ __all__ = [
     "WORKFLOWS",
     "ApproveIn",
     "ApprovedItem",
+    "ApprovedSample",
     "Band",
     "Bill",
     "Entry",
@@ -167,6 +172,7 @@ __all__ = [
     "SampleDrawInput",
     "SampleDrawWorkflow",
     "SampleNotApproved",
+    "SampleRow",
     "SampleSetIn",
     "Selected",
     "SelectedEntry",
@@ -178,6 +184,7 @@ __all__ = [
     "VersionIn",
     "approve",
     "approved_items",
+    "approved_sample_rows",
     "attribute_size",
     "bills_by_party",
     "build_payments",
@@ -203,4 +210,5 @@ __all__ = [
     "udl",
     "udl_percent",
     "version_row",
+    "version_seed",
 ]
