@@ -116,7 +116,7 @@ async def test_t06t50_acceptance_a_matching_txp10_issue_is_linked_never_duplicat
     before = cast(
         int, await seed.value("SELECT count(*) FROM issues WHERE work_item_id = $1", item)
     )
-    checkpoint = await fdr.refresh(ctx.tenant, item)  # type: ignore[attr-defined]
+    checkpoint = await fdr.refresh(ctx.tenant, item)  # type: ignore[attr-defined] -- ctx is an AuthContext
     assert checkpoint is not None
     rows = {
         r["rule_key"]: r
@@ -140,7 +140,7 @@ async def test_t06t50_acceptance_a_matching_txp10_issue_is_linked_never_duplicat
     # the engine's warning and the missing partnership representative.
     assert after == before + 2
     assert rows["partnership_representative"]["status"] == "open"
-    await fdr.refresh(ctx.tenant, item)  # type: ignore[attr-defined]
+    await fdr.refresh(ctx.tenant, item)  # type: ignore[attr-defined] -- ctx is an AuthContext
     assert await seed.value("SELECT count(*) FROM issues WHERE work_item_id = $1", item) == after
     assert {r for r in rows} >= {rule.key for rule in fdr.RULES}  # every code rule has its row
 

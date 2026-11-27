@@ -4,6 +4,7 @@ threshold for 2025 and 2026. The fixtures are registered in the backfill conftes
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import uuid
@@ -11,7 +12,6 @@ from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
 from typing import Final, cast
 
-import asyncpg
 import pytest
 
 from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
@@ -47,10 +47,9 @@ def bucket_1099(s3_settings: dict[str, str]) -> Iterator[object]:
         secret_key=s3_settings["secret_key"],
         region=s3_settings["region"],
     )
-    try:  # one bucket for both suites (each test module asks once)
+    # One bucket for both suites (each test module asks once).
+    with contextlib.suppress(client.exceptions.BucketAlreadyOwnedByYou):
         client.create_bucket(Bucket=EVIDENCE, ObjectLockEnabledForBucket=True)
-    except client.exceptions.BucketAlreadyOwnedByYou:
-        pass
     yield client
 
 
@@ -66,38 +65,32 @@ def wired_1099(bucket_1099: object) -> Iterator[None]:
 @pytest.fixture
 async def threshold_1099(migrated_db: Migrated) -> AsyncIterator[None]:
     """C21's 1099-NEC threshold for 2026 payments, published as K-02's two-person rule does."""
-    owner = await asyncpg.connect(
-        migrated_db.owner_url.replace("postgresql+asyncpg", "postgresql")
+    owner = Seeder(migrated_db.owner_url.replace("postgresql+asyncpg", "postgresql"))
+    # The owner role publishes reference content (K-02's two-person rule).
+    payload = {
+        "kind": "information_return_thresholds",
+        "rows": [
+            {
+                "form": "nec",
+                "payment_year": year,
+                "threshold_usd": 2000,
+                "min_transactions": None,
+            }
+            for year in (2025, 2026)
+        ],
+    }
+    digest = "sha256:" + hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    version = await owner.value(
+        "SELECT reference_set_draft($1, 'information_return_thresholds', '1099 thresholds', "
+        "'US', $2, NULL, 2026, '2020-01-01', $3::jsonb, $4, "
+        "'[{\"label\": \"IRS — verify\"}]'::jsonb, $2, 'c02t45')",
+        f"c02t45.thresholds.{uuid.uuid4().hex[:8]}",
+        AY,
+        json.dumps(payload),
+        digest,
     )
-    try:
-        payload = {
-            "kind": "information_return_thresholds",
-            "rows": [
-                {
-                    "form": "nec",
-                    "payment_year": year,
-                    "threshold_usd": 2000,
-                    "min_transactions": None,
-                }
-                for year in (2025, 2026)
-            ],
-        }
-        digest = (
-            "sha256:" + hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
-        )
-        version = await owner.fetchval(
-            "SELECT reference_set_draft($1, 'information_return_thresholds', '1099 thresholds', "
-            "'US', $2, NULL, 2026, '2020-01-01', $3::jsonb, $4, "
-            "'[{\"label\": \"IRS — verify\"}]'::jsonb, $2, 'c02t45')",
-            f"c02t45.thresholds.{uuid.uuid4().hex[:8]}",
-            AY,
-            json.dumps(payload),
-            digest,
-        )
-        await owner.execute("SELECT reference_set_publish($1, $2, 'c02t45')", version, AN)
-        yield
-    finally:
-        await owner.close()
+    await owner.run("SELECT reference_set_publish($1, $2, 'c02t45')", version, AN)
+    yield
 
 
 @dataclass

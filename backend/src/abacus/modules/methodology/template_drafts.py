@@ -45,6 +45,8 @@ class NotDraft(DomainConflict):
 
 
 class NotPublished(DomainConflict):
+    """Only a published version can be the base of a new draft."""
+
     code = "not_published"
 
 

@@ -47,6 +47,21 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "template_update.applied": _a("change", "ok"),
     "template_link.held": _a("decision", "pl"),
     "scoping_rule.edited": _a("change", "pl"),
+    # S54 (DEC-6018): the rows' own events; identifiers, codes and counts only.
+    "template_version.component_changed": _a("change", "pl"),  # K-03-T17
+    "engagement.template_linked": _a("change", "pl"),  # K-03-T19
+    "vendor_payments.rolled_up": _a("run", "pl"),  # C-02-T45, the system's rollup
+    "vendor_document.requested": _a("communication", "pl"),  # C-02-T46, the W-9 wave
+    "information_return_batch.approved": _a("decision", "ok"),  # C-02-T46, a person's
+    "information_return_batch.exported": _a("export", "pl"),  # C-02-T46, the IRIS CSV
+    "amendment.created": _a("change", "pl"),  # T-08-T30
+    "amendment.explained": _a("change", "pl"),  # T-08-T30, Part II by a person
+    "amendment.explanation_proposed": _a("change", "pl"),  # T-08-T34, a suggestion only
+    "amendment.routed": _a("change", "pl"),  # T-08-T30, to the signer
+    "tax_return.superseded": _a("change", "pl"),  # T-08-T30, on acknowledgement
+    "aar.elected": _a("decision", "ok"),  # T-08-T33, the signer's BBA election
+    "aar.recommendation_read": _a("run", "pl"),  # T-08-T34, code's recommendation run
+    "form_diagnostics.refreshed": _a("run", "pl"),  # T-06-T50, code's diagnostics
     "sheet.created": _a("change", "pl"),
     "sheet.configured": _a("change", "pl"),
     "agent_column.saved": _a("change", "pl"),

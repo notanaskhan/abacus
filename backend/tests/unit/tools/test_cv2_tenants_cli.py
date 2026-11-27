@@ -18,6 +18,8 @@ from pydantic import SecretStr
 
 from abacus_tools import tenants as t
 
+Call = tuple[str, tuple[Any, ...], dict[str, Any]]  # Any: a recorded call's arguments
+
 FIRM = uuid.UUID("5b2f6a3e-1d2c-4e5f-8a9b-0c1d2e3f4a5b")
 MODULE = t._MODULES[0]  # pyright: ignore[reportPrivateUsage] -- the CLI's module choices
 OPS, OWNER, APP = "postgresql://ops", "postgresql://owner", "postgresql+asyncpg://app"
@@ -33,8 +35,8 @@ def _settings(**overrides: str | None) -> SimpleNamespace:
 
 
 @pytest.fixture
-def calls(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, tuple[Any, ...], dict[str, Any]]]:
-    seen: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = []
+def calls(monkeypatch: pytest.MonkeyPatch) -> list[Call]:
+    seen: list[Call] = []
 
     def recorder(name: str, answer: object = None):  # noqa: ANN202
         async def record(*args: Any, **kwargs: Any) -> object:  # noqa: ANN401
@@ -83,7 +85,7 @@ def _allow(
 
 
 def test_entitlement_writes_through_the_owner_role_with_the_guards_refs(
-    calls: list[Any], monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    calls: list[Call], monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     _allow(monkeypatch)
     code = t.main(
@@ -119,7 +121,7 @@ def test_entitlement_writes_through_the_owner_role_with_the_guards_refs(
 
 
 def test_entitlement_refused_by_the_flip_guard_writes_nothing(
-    calls: list[Any], monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    calls: list[Call], monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     _allow(monkeypatch, allowed=False, why=("approved_by is required", "rollback is required"))
     code = t.main(
@@ -194,7 +196,7 @@ def test_entitlement_refused_by_the_flip_guard_writes_nothing(
     ],
 )
 def test_each_command_refuses_without_its_role(
-    calls: list[Any],
+    calls: list[Call],
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
     argv: list[str],
@@ -210,7 +212,7 @@ def test_each_command_refuses_without_its_role(
 
 
 def test_retention_defaults_reports_firms_and_policies(
-    calls: list[Any], capsys: pytest.CaptureFixture[str]
+    calls: list[Call], capsys: pytest.CaptureFixture[str]
 ) -> None:
     assert t.main(["retention-defaults", "--operator", "rowan"]) == 0
     assert calls[0] == ("retention", (OPS,), {"operator": "rowan"})
@@ -218,7 +220,7 @@ def test_retention_defaults_reports_firms_and_policies(
 
 
 def test_plan_module_passes_seats_and_minutes(
-    calls: list[Any], capsys: pytest.CaptureFixture[str]
+    calls: list[Call], capsys: pytest.CaptureFixture[str]
 ) -> None:
     module = MODULE
     argv = [
@@ -244,7 +246,7 @@ def test_plan_module_passes_seats_and_minutes(
 
 
 def test_provision_runs_on_the_app_engine_and_prints_the_outcome(
-    calls: list[Any], capsys: pytest.CaptureFixture[str]
+    calls: list[Call], capsys: pytest.CaptureFixture[str]
 ) -> None:
     argv = [
         "provision",
@@ -281,7 +283,7 @@ def test_provision_runs_on_the_app_engine_and_prints_the_outcome(
 
 
 def test_status_reads_on_the_app_engine(
-    calls: list[Any], capsys: pytest.CaptureFixture[str]
+    calls: list[Call], capsys: pytest.CaptureFixture[str]
 ) -> None:
     assert t.main(["status", "--tenant", str(FIRM)]) == 0
     assert [c[0] for c in calls] == ["engine", "status", "dispose"]
@@ -339,7 +341,8 @@ GOOD = t.ProvisionRequest(
     ],
 )
 def test_a_provision_request_is_checked_before_any_write(
-    change: dict[str, Any], message: str
+    change: dict[str, Any],  # Any: a JSON change
+    message: str,
 ) -> None:
     from dataclasses import replace
 
@@ -350,5 +353,5 @@ def test_a_provision_request_is_checked_before_any_write(
 
 
 def test_a_dsn_drops_the_async_driver() -> None:
-    assert t._dsn("postgresql+asyncpg://u@h/db") == "postgresql://u@h/db"  # pyright: ignore[reportPrivateUsage]
-    assert t._dsn("postgresql://u@h/db") == "postgresql://u@h/db"  # pyright: ignore[reportPrivateUsage]
+    assert t._dsn("postgresql+asyncpg://u@h/db") == "postgresql://u@h/db"  # pyright: ignore[reportPrivateUsage] -- the helper
+    assert t._dsn("postgresql://u@h/db") == "postgresql://u@h/db"  # pyright: ignore[reportPrivateUsage] -- the helper

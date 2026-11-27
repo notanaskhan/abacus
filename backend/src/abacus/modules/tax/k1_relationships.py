@@ -36,21 +36,19 @@ ISSUING: Final = ("1065", "1120s", "1041")
 RELEASED: Final = frozenset({"released", "viewed", "downloaded"})
 _FORM_LABEL: Final = {"1065": "1065", "1120s": "1120-S", "1041": "1041", "1040": "1040"}
 
+# The entities' names are organisations' (`client_entity_names`, `entity_display_name`).
 _ISSUERS: Final = text(
-    "SELECT t.work_item_id, t.engagement_id, t.client_entity_id, t.form, t.tax_year, t.status, "
-    "ce.name FROM tax_returns t JOIN client_entities ce ON ce.id = t.client_entity_id "
-    "WHERE ce.client_id = :c AND t.form = ANY(:forms) AND t.tax_year <= :y "
-    "ORDER BY ce.name, t.tax_year DESC"
+    "SELECT t.work_item_id, t.engagement_id, t.client_entity_id, t.form, t.tax_year, t.status "
+    "FROM tax_returns t WHERE t.client_entity_id = ANY(:entities) AND t.form = ANY(:forms) "
+    "AND t.tax_year <= :y ORDER BY t.tax_year DESC, t.work_item_id"
 )
 _FLOWS: Final = text(
     "SELECT h.id, h.status AS handoff, h.target_work_item_id, p.work_item_id, p.status, "
     "p.released_at, t.engagement_id AS target_engagement, t.form AS target_form, "
-    "t.status AS target_status, ce.name AS target_entity, ce.id AS target_entity_id "
+    "t.status AS target_status, t.client_entity_id AS target_entity_id "
     "FROM k1_handoffs h JOIN k1_packages p ON p.id = h.package_id "
     "JOIN tax_returns t ON t.work_item_id = h.target_work_item_id "
-    "JOIN client_entities ce ON ce.id = t.client_entity_id "
-    "WHERE p.work_item_id = ANY(:issuers) AND h.status <> 'withdrawn' "
-    "ORDER BY ce.name, h.id"
+    "WHERE p.work_item_id = ANY(:issuers) AND h.status <> 'withdrawn' ORDER BY h.id"
 )
 
 
@@ -96,25 +94,35 @@ def banner(
     return ("green", f"K-1s released{when} · {joined} 1040s updated"[:200])
 
 
-async def flows(viewer: object, client_id: UUID, as_of: date) -> rel.K1Flows:
-    ctx = cast(AuthContext, viewer)
+async def flows(ctx: AuthContext, client_id: UUID, as_of: date) -> rel.K1Flows:
+    from abacus.modules.organisations.api import client_entity_names, entity_display_name
+
     async with tenant_session(ctx.tenant) as session:
-        issuers = list(
+        names: dict[UUID, str] = dict(await client_entity_names(session, client_id))
+        issuers = sorted(
             await session.execute(
-                _ISSUERS, {"c": client_id, "forms": list(ISSUING), "y": as_of.year}
-            )
-        )
-        rows = (
+                _ISSUERS, {"entities": list(names), "forms": list(ISSUING), "y": as_of.year}
+            ),
+            key=lambda r: names[r.client_entity_id],
+        )  # by entity name, then newest year (the query's order, kept by a stable sort)
+        found = (
             list(await session.execute(_FLOWS, {"issuers": [r.work_item_id for r in issuers]}))
             if issuers
             else []
         )
+    for f in found:
+        if f.target_entity_id not in names:
+            names[f.target_entity_id] = (
+                await entity_display_name(ctx.tenant, f.target_entity_id) or ""
+            )
+    rows = sorted(found, key=lambda f: (names[f.target_entity_id], str(f.id)))
     visible = {
         r.work_item_id: r for r in issuers if await _readable(ctx, r.engagement_id, r.work_item_id)
     }
     nodes: dict[UUID, rel.ReturnNode] = {
         r.work_item_id: rel.ReturnNode(
-            r.work_item_id, r.client_entity_id, f"{_short(str(r.name))} {_FORM_LABEL[r.form]}",
+            r.work_item_id, r.client_entity_id,
+            f"{_short(names[r.client_entity_id])} {_FORM_LABEL[r.form]}",
             str(r.tax_year), str(r.status),
         )
         for r in visible.values()
@@ -132,18 +140,19 @@ async def flows(viewer: object, client_id: UUID, as_of: date) -> rel.K1Flows:
         )
         if state == "released" and f.released_at is not None:
             released.append(cast(datetime, f.released_at))
-        target_names[f.target_work_item_id] = str(f.target_entity)
+        target_names[f.target_work_item_id] = names[f.target_entity_id]
         nodes.setdefault(
             f.target_work_item_id,
             rel.ReturnNode(
                 f.target_work_item_id, f.target_entity_id,
-                f"{_short(str(f.target_entity))} {_FORM_LABEL.get(f.target_form, f.target_form)}",
+                f"{_short(names[f.target_entity_id])} "
+                f"{_FORM_LABEL.get(f.target_form, f.target_form)}",
                 None, str(f.target_status),
             ),
         )  # fmt: skip
         edges.append(rel.K1Edge(f.id, f.work_item_id, f.target_work_item_id, state, "K-1"))
     found = banner(
-        {k: str(v.name) for k, v in visible.items()},
+        {k: names[v.client_entity_id] for k, v in visible.items()},
         {k: _FORM_LABEL[v.form] for k, v in visible.items()},
         edges,
         target_names,

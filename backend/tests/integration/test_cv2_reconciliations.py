@@ -170,7 +170,7 @@ async def test_cv2_a_reconciliation_versions_carries_and_resolves(firm: _Firm) -
     assert view["open_count"] == 2 and view["period_end"] == date(2026, 8, 31)
     facts = await rec.reconciliation_facts(ctx.tenant, second)
     assert facts is not None
-    assert (facts.blocked_code, facts.blocked_count, facts.version_no) == (  # type: ignore[attr-defined]
+    assert (facts.blocked_code, facts.blocked_count, facts.version_no) == (  # type: ignore[attr-defined] -- the facts object
         "reconciling_items_open",
         2,
         2,
@@ -186,7 +186,7 @@ async def test_cv2_a_reconciliation_versions_carries_and_resolves(firm: _Firm) -
     )
     assert note == "Cleared 9/2"
     facts = await rec.reconciliation_facts(ctx.tenant, second)
-    assert facts is not None and facts.blocked_code is None  # type: ignore[attr-defined]
+    assert facts is not None and facts.blocked_code is None  # type: ignore[attr-defined] -- the facts object
 
     # A ledger sync with a changed book balance recomputes: version 3 carries only the item left
     # to carry, never the cleared one.
@@ -218,7 +218,7 @@ async def test_cv2_a_reconciliation_versions_carries_and_resolves(firm: _Firm) -
         ("outstanding_check", new_check)
     ]
     reviewables = await rec.reconciliation_reviewables(ctx.tenant, engagement)
-    assert [r.target_id for r in reviewables] == [third[-1]["id"]]  # type: ignore[attr-defined]
+    assert [r.target_id for r in reviewables] == [third[-1]["id"]]  # type: ignore[attr-defined] -- the facts object
 
 
 async def test_cv2_a_bank_error_item_proposes_its_aje(firm: _Firm) -> None:

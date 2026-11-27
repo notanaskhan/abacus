@@ -54,6 +54,8 @@ BLOCKER_WORDS.update(
 
 
 class ImputedUnderpaymentUnavailable(DomainConflict):
+    """The AAR's imputed underpayment cannot be computed yet."""
+
     code = "imputed_underpayment_unavailable"
 
 
@@ -178,6 +180,7 @@ async def raise_election(
     recommendation_suggestion_id: UUID | None = None,
 ) -> UUID:
     """The election's card on the AAR, reserved to the client's signer (BH-TAX-02)."""
+    from abacus.modules.engagements.api import engagement_resource_of
     from abacus.modules.review.api import raise_decision_card
     from abacus.modules.tax.approval import signer_for
 
@@ -185,16 +188,18 @@ async def raise_election(
         row = (
             await session.execute(
                 text(
-                    "SELECT a.engagement_id, a.work_item_id, e.client_id FROM amendments a "
-                    "JOIN engagements e ON e.id = a.engagement_id WHERE a.id = :a "
-                    "AND a.kind = 'bba_aar'"
+                    "SELECT engagement_id, work_item_id FROM amendments WHERE id = :a "
+                    "AND kind = 'bba_aar'"
                 ),
                 {"a": amendment_id},
             )
         ).first()
     if row is None:
         raise NotFound("amendment")
-    signer = await signer_for(ctx.tenant_id, cast(UUID, row.client_id))
+    client = (await engagement_resource_of(ctx.tenant, row.engagement_id)).client_id
+    if client is None:
+        raise NotFound("amendment")
+    signer = await signer_for(ctx.tenant_id, client)
     if signer is None:
         raise NotFound("signer")
     return await raise_decision_card(

@@ -33,6 +33,7 @@ from sqlalchemy import text
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Scope, Target, UnitOfWork, uow
+from abacus.modules.identity.api import AuthContext
 from abacus.modules.organisations.relationship_errors import (
     RelationshipPercentExceeds,
     RelationshipSelfEdge,
@@ -90,9 +91,7 @@ class K1Flows:
     banner: tuple[Literal["amber", "green"], str] | None = None
 
 
-FlowProvider = Callable[
-    [object, UUID, date], Awaitable[K1Flows]
-]  # (viewer AuthContext, client, as of)
+FlowProvider = Callable[[AuthContext, UUID, date], Awaitable[K1Flows]]  # viewer, client, as of
 _FLOWS: list[FlowProvider] = []
 
 
@@ -102,7 +101,7 @@ def register_k1_flow_provider(provider: FlowProvider) -> None:
     _FLOWS[:] = [provider]
 
 
-async def k1_flows(viewer: object, client_id: UUID, as_of: date) -> K1Flows:
+async def k1_flows(viewer: AuthContext, client_id: UUID, as_of: date) -> K1Flows:
     """Fail closed: with no provider there are no K-1 flows."""
     return K1Flows() if not _FLOWS else await _FLOWS[0](viewer, client_id, as_of)
 
