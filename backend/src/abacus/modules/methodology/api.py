@@ -501,3 +501,8 @@ from abacus.modules.methodology.template_drafts import (  # noqa: E402
 )
 
 __all__ += ["template_drafts", "template_version_label"]
+# K-03-T18 (DEC-6017): scoping rules evaluated by code, and the source-provider slot.
+from abacus.modules.methodology import scoping as scoping  # noqa: E402
+from abacus.modules.methodology import scoping_rules as scoping_rules  # noqa: E402
+
+__all__ += ["scoping", "scoping_rules"]

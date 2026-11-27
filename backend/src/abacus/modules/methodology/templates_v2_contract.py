@@ -11,6 +11,7 @@ Classification (ADR-031): template content and names are `internal` firm content
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import date, datetime
 from typing import Annotated, Literal
 from uuid import UUID
@@ -23,6 +24,8 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
+from abacus.modules.methodology import scoping as engine
+from abacus.modules.methodology.template_drafts import ComponentInvalid
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)]
@@ -197,9 +200,16 @@ class ScopingRuleOut(BaseModel):
 
     rule_id: Annotated[UUID, Internal]
     position: Annotated[int, Field(ge=1, le=99), Internal]
-    when: Annotated[list[dict[str, str]], Internal]  # source, operator, value (AND)
+    when: Annotated[list[dict[str, str]], Internal]  # source, operator, value
     then: Annotated[Literal["show", "hide", "add_requests"], Internal]
-    targets: Annotated[list[str], Internal]
+    targets: Annotated[list[str], Internal]  # one target per rule (checked by the service)
+    # K-03-T18 (DEC-6017), additive: the group's operator, the target's kind (a request group
+    # for `add_requests`) and the editor's label.
+    group_op: Annotated[Literal["and", "or"], Internal] = "and"
+    target_kind: Annotated[
+        Literal["step", "sheet", "section", "row", "request_group"] | None, Internal
+    ] = None
+    label: Annotated[str | None, Field(max_length=200), Confidential] = None
 
 
 class ScopingRulesOut(BaseModel):
@@ -218,7 +228,9 @@ class ScopingRulesIn(BaseModel):
 class ScopingPreviewIn(BaseModel):
     model_config = _cfg()
 
-    engagement_id: Annotated[UUID, Internal]
+    # K-03-T18: no engagement (or `blank`) previews a blank engagement: nothing answered.
+    engagement_id: Annotated[UUID | None, Internal] = None
+    blank: Annotated[bool, Internal] = False
 
 
 class ScopingPreviewRowOut(BaseModel):
@@ -238,6 +250,7 @@ class ScopingPreviewOut(BaseModel):
     shows_sheets: Count
     hides: Count
     adds_requests: Count
+    summary: Annotated[str, Field(max_length=200), Internal] = ""  # code's text (K-03-T18)
 
 
 class ScopingSourceOut(BaseModel):
@@ -246,6 +259,7 @@ class ScopingSourceOut(BaseModel):
     key: Annotated[str, Field(max_length=80), Internal]
     label: Annotated[str, Field(max_length=200), Internal]
     kind: Annotated[Literal["planning_form", "risk", "assertion", "engagement_fact"], Internal]
+    options: Annotated[list[str], Internal] = []  # the value menu's codes (K-03-T18)
 
 
 class ScopingSourceListOut(BaseModel):
@@ -411,20 +425,25 @@ async def _version_out(ctx: AuthContext, version_id: UUID) -> EngagementTemplate
     from abacus.modules.identity.api import Resource, authorise
 
     await authorise(ctx, "template.read", Resource.firm(ctx.tenant_id))
-    count = "(SELECT count(*) FROM {t} WHERE template_version_id = v.id)"
-    # The table names are code's constants and the id a bound parameter.
     sql = text(
-        "SELECT v.id, v.template_id, v.seq, v.label, v.status, v.retired_at, v.effective_from, "  # noqa: S608
+        "SELECT v.id, v.template_id, v.seq, v.label, v.status, v.retired_at, v.effective_from, "
         "v.methodology_version_id, v.based_on_version_id, v.draft_etag, v.published_at, "
-        f"{count.format(t='template_sheet_definitions')} AS sheets, "
-        f"{count.format(t='template_forms')} AS forms, "
-        f"{count.format(t='template_requests')} AS requests, "
+        "(SELECT count(*) FROM template_sheet_definitions c "
+        "WHERE c.template_version_id = v.id) AS sheets, "
+        "(SELECT count(*) FROM template_forms c "
+        "WHERE c.template_version_id = v.id) AS forms, "
+        "(SELECT count(*) FROM template_requests c "
+        "WHERE c.template_version_id = v.id) AS requests, "
         "(SELECT count(*) FROM template_requests r WHERE r.template_version_id = v.id "
         "AND r.shown_by_rule_id IS NOT NULL) AS requests_by_rule, "
-        f"{count.format(t='template_trigger_defaults')} AS triggers, "
-        f"{count.format(t='template_report_template_refs')} AS report_templates, "
-        f"{count.format(t='template_skill_pins')} AS skills, "
-        f"{count.format(t='scoping_rules')} AS scoping_rules "
+        "(SELECT count(*) FROM template_trigger_defaults c "
+        "WHERE c.template_version_id = v.id) AS triggers, "
+        "(SELECT count(*) FROM template_report_template_refs c "
+        "WHERE c.template_version_id = v.id) AS report_templates, "
+        "(SELECT count(*) FROM template_skill_pins c "
+        "WHERE c.template_version_id = v.id) AS skills, "
+        "(SELECT count(*) FROM scoping_rules c "
+        "WHERE c.template_version_id = v.id) AS scoping_rules "
         "FROM template_versions v WHERE v.id = :v"
     )
     async with tenant_session(ctx.tenant) as session:
@@ -490,33 +509,85 @@ async def preview_route(
     raise NotImplementedYet
 
 
+def _rule_in(item: ScopingRuleOut) -> tuple[engine.Rule, str | None]:
+    if len(item.targets) != 1 or not item.when:
+        raise ComponentInvalid(facts={"table": "scoping_rules", "rule": item.position})
+    conditions: list[engine.Condition] = []
+    for c in item.when:
+        operator = c.get("operator", "")
+        if operator not in engine.OPERATORS or not c.get("source"):
+            raise ComponentInvalid(facts={"table": "scoping_rules", "rule": item.position})
+        conditions.append(engine.Condition(c["source"], operator, c.get("value")))
+    kind = "request_group" if item.then == "add_requests" else (item.target_kind or "step")
+    rule = engine.Rule(
+        str(item.rule_id), item.position, item.group_op, tuple(conditions),
+        "hide" if item.then == "hide" else "show", kind, item.targets[0],
+    )  # fmt: skip
+    return rule, item.label
+
+
+def _rules_out(etag: int, found: Sequence[tuple[engine.Rule, str | None]]) -> ScopingRulesOut:
+    items = [
+        ScopingRuleOut(
+            rule_id=UUID(r.key), position=r.position,
+            when=[{"source": c.source, "operator": c.operator}
+                  | ({} if c.value is None else {"value": c.value}) for c in r.conditions],
+            then="add_requests" if r.target_kind == "request_group" and r.effect == "show"
+            else r.effect,
+            targets=[r.target_ref], group_op=r.group_op, target_kind=r.target_kind, label=label,
+        )
+        for r, label in found
+    ]  # fmt: skip
+    return ScopingRulesOut(items=items, etag=etag)
+
+
 @_route("get", f"{_V}/scoping-rules", "template.read", ScopingRulesOut)
 async def scoping_rules_route(version_id: UUID, ctx: Ctx) -> ScopingRulesOut:
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.methodology import scoping_rules as sr
+
+    return _rules_out(*await sr.rules(ctx, version_id))
 
 
 @_route("put", f"{_V}/scoping-rules", "scoping_rule.edit", ScopingRulesOut, write=True)
 async def scoping_rules_put_route(
     version_id: UUID, body: ScopingRulesIn, ctx: Ctx, if_match: IfMatch
 ) -> ScopingRulesOut:
-    """422 `rule_conflict`, `unknown_source`."""
+    """422 `rule_conflict`, `unknown_source`; 412 on a stale If-Match; 409 `not_draft`."""
     await _human(ctx, "scoping_rule.edit")
-    raise NotImplementedYet
+    from abacus.modules.methodology import scoping_rules as sr
+
+    items = [_rule_in(i) for i in body.items]
+    return _rules_out(*await sr.save_rules(ctx, version_id, items, if_match))
 
 
 @_route("post", f"{_V}/scoping-rules/preview", "template.read", ScopingPreviewOut)
 async def scoping_preview_route(
     version_id: UUID, body: ScopingPreviewIn, ctx: Ctx
 ) -> ScopingPreviewOut:
+    """Code evaluates every rule (ADR-050); the agent never does. Nothing is written."""
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.methodology import scoping_rules as sr
+
+    found = await sr.preview(ctx, version_id, None if body.blank else body.engagement_id)
+    return ScopingPreviewOut(
+        rows=[ScopingPreviewRowOut(rule_id=UUID(r.key), result=res) for r, res in found.results],
+        shows_steps=found.shows_steps, shows_sheets=found.shows_sheets, hides=found.hides,
+        adds_requests=found.adds_requests, summary=found.summary,
+    )  # fmt: skip
 
 
 @_route("get", f"{_V}/scoping-sources", "template.read", ScopingSourceListOut)
 async def scoping_sources_route(version_id: UUID, ctx: Ctx) -> ScopingSourceListOut:
     await _on(ctx)
-    raise NotImplementedYet
+    from abacus.modules.methodology import scoping_rules as sr
+
+    return ScopingSourceListOut(
+        items=[
+            ScopingSourceOut(key=s.key, label=s.label, kind=s.kind, options=list(s.options))
+            for s in await sr.sources(ctx, version_id)
+        ]
+    )
 
 
 @_route("post", f"{_V}/publish", "template.publish", EngagementTemplateVersionOut, write=True)

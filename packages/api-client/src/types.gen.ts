@@ -56452,9 +56452,13 @@ export type ScopingEvaluationOut = {
  */
 export type ScopingPreviewIn = {
     /**
+     * Blank
+     */
+    blank?: boolean;
+    /**
      * Engagement Id
      */
-    engagement_id: string;
+    engagement_id?: string | null;
 };
 
 /**
@@ -56483,6 +56487,10 @@ export type ScopingPreviewOut = {
      * Shows Steps
      */
     shows_steps: number;
+    /**
+     * Summary
+     */
+    summary?: string;
 };
 
 /**
@@ -56504,6 +56512,14 @@ export type ScopingPreviewRowOut = {
  */
 export type ScopingRuleOut = {
     /**
+     * Group Op
+     */
+    group_op?: 'and' | 'or';
+    /**
+     * Label
+     */
+    label?: string | null;
+    /**
      * Position
      */
     position: number;
@@ -56511,6 +56527,10 @@ export type ScopingRuleOut = {
      * Rule Id
      */
     rule_id: string;
+    /**
+     * Target Kind
+     */
+    target_kind?: 'step' | 'sheet' | 'section' | 'row' | 'request_group' | null;
     /**
      * Targets
      */
@@ -56577,6 +56597,10 @@ export type ScopingSourceOut = {
      * Label
      */
     label: string;
+    /**
+     * Options
+     */
+    options?: Array<string>;
 };
 
 /**

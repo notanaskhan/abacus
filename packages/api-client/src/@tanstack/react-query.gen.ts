@@ -14380,6 +14380,9 @@ export const engagementScopingQueryKey = (options: Options<EngagementScopingData
 
 /**
  * Engagement Scoping Route
+ *
+ * The engagement's rules under its linked template version, evaluated by code over its
+ * answers (K-03-T18, DEC-6017); read-only. No link yet answers no rules.
  */
 export const engagementScopingOptions = (options: Options<EngagementScopingData>) => queryOptions<EngagementScopingResponse, EngagementScopingError, EngagementScopingResponse, ReturnType<typeof engagementScopingQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -35012,7 +35015,7 @@ export const scopingRulesOptions = (options: Options<ScopingRulesData>) => query
 /**
  * Scoping Rules Put Route
  *
- * 422 `rule_conflict`, `unknown_source`.
+ * 422 `rule_conflict`, `unknown_source`; 412 on a stale If-Match; 409 `not_draft`.
  */
 export const scopingRulesPutMutation = (options?: Partial<Options<ScopingRulesPutData>>): UseMutationOptions<ScopingRulesPutResponse, ScopingRulesPutError, Options<ScopingRulesPutData>> => {
     const mutationOptions: UseMutationOptions<ScopingRulesPutResponse, ScopingRulesPutError, Options<ScopingRulesPutData>> = {
@@ -35030,6 +35033,8 @@ export const scopingRulesPutMutation = (options?: Partial<Options<ScopingRulesPu
 
 /**
  * Scoping Preview Route
+ *
+ * Code evaluates every rule (ADR-050); the agent never does. Nothing is written.
  */
 export const scopingPreviewMutation = (options?: Partial<Options<ScopingPreviewData>>): UseMutationOptions<ScopingPreviewResponse, ScopingPreviewError, Options<ScopingPreviewData>> => {
     const mutationOptions: UseMutationOptions<ScopingPreviewResponse, ScopingPreviewError, Options<ScopingPreviewData>> = {
