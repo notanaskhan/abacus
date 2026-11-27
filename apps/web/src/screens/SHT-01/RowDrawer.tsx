@@ -142,7 +142,8 @@ function AgentsTab({ runId }: { runId: string | null }): JSX.Element {
     ...agentRunOptions({ path: { run_id: runId ?? "" } }),
     enabled: runId !== null,
   });
-  if (runId === null) return <p className="p-[14px] text-[12.5px] text-ink-3">{C.drawer.noAgents}</p>;
+  if (runId === null)
+    return <p className="p-[14px] text-[12.5px] text-ink-3">{C.drawer.noAgents}</p>;
   if (run.data === undefined) return <Skeleton className="m-[10px] h-[60px]" />;
   const finished = run.data.run.finished_at;
   return (
@@ -173,7 +174,10 @@ function LinksTab({
     <DrawerCard data-sht01={kind}>
       <ul>
         {mine.map((l) => (
-          <li key={l.target_id} className="flex min-h-[33px] items-center justify-between px-[14px] hairline-b last:shadow-none">
+          <li
+            key={l.target_id}
+            className="flex min-h-[33px] items-center justify-between px-[14px] hairline-b last:shadow-none"
+          >
             <span className="text-[12.5px]">{l.label ?? C.drawer.linkKind[kind]}</span>
             <span className="text-[12px] text-ink-3">
               {C.drawer.linked(date(l.linked_at, { now }))}

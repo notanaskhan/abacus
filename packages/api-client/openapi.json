@@ -138763,6 +138763,19 @@
             "cls": "internal",
             "title": "Issue Id"
           },
+          "page_key": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Page Key"
+          },
           "rule_key": {
             "cls": "internal",
             "maxLength": 80,
@@ -138777,6 +138790,13 @@
               "clear"
             ],
             "title": "Severity",
+            "type": "string"
+          },
+          "title": {
+            "cls": "internal",
+            "default": "",
+            "maxLength": 200,
+            "title": "Title",
             "type": "string"
           }
         },

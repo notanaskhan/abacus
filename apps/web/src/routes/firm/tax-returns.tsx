@@ -17,6 +17,7 @@ const ReturnOverview = lazyScreen(async () => (await import("../../screens/TAX-0
 const ReturnIntake = lazyScreen(async () => (await import("../../screens/TAX-03")).TAX03);
 const K1Package = lazyScreen(async () => (await import("../../screens/TXP-12")).TXP12);
 const ReturnDelivery = lazyScreen(async () => (await import("../../screens/TAX-12")).TAX12);
+const FormPreview = lazyScreen(async () => (await import("../../screens/TAX-11")).TAX11);
 
 function gated(children: JSX.Element): JSX.Element {
   return (
@@ -210,6 +211,24 @@ export const taxReturnDeliveryRoute = createRoute({
   },
 });
 
+// TAX-11 (T-06-T53): the return's form preview with K-1s, `/tax-returns/$returnId/preview`,
+// behind the `tax_returns` entitlement and `tax.form_preview` (its reads answer 404 while off).
+export const taxReturnPreviewRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/$returnId/preview",
+  component: function TaxReturnPreviewPage(): JSX.Element {
+    const returnId = useParam("returnId");
+    return gated(
+      <FeatureGate
+        flag="tax.form_preview"
+        fallback={<FlagOffState flag="tax.form_preview" label="Form preview" />}
+      >
+        <FormPreview returnId={returnId} />
+      </FeatureGate>,
+    );
+  },
+});
+
 export const taxReturnRoutes = [
   taxExtensionsRoute,
   taxReturnsRoute,
@@ -218,4 +237,5 @@ export const taxReturnRoutes = [
   taxReturnIntakeRoute,
   taxReturnK1Route,
   taxReturnDeliveryRoute,
+  taxReturnPreviewRoute,
 ] as const;

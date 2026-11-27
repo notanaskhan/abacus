@@ -65097,6 +65097,10 @@ export type TaxDepthDiagnosticOut = {
      */
     issue_id?: string | null;
     /**
+     * Page Key
+     */
+    page_key?: string | null;
+    /**
      * Rule Key
      */
     rule_key: string;
@@ -65104,6 +65108,10 @@ export type TaxDepthDiagnosticOut = {
      * Severity
      */
     severity: 'blocking' | 'warning' | 'clear';
+    /**
+     * Title
+     */
+    title?: string;
 };
 
 /**

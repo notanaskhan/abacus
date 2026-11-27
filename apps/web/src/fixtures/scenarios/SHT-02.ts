@@ -67,7 +67,14 @@ function at(state: string, persona: string, clock: string, editing: boolean): Sc
           json(
             editing
               ? exported.usage_in_use
-              : { filled_rows: 0, views: 0, view_names: [], rules: 0, agent_columns: [], in_use: false },
+              : {
+                  filled_rows: 0,
+                  views: 0,
+                  view_names: [],
+                  rules: 0,
+                  agent_columns: [],
+                  in_use: false,
+                },
           ),
         "POST /v1/sheets/{sheet_id}/columns": () => json(SERVICE_PERIOD, 201),
         "PATCH /v1/sheets/{sheet_id}/columns/{column_id}": () => json(SERVICE_PERIOD),

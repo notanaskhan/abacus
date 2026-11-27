@@ -108,11 +108,16 @@ describe("SHT-01 e · row drawer", () => {
     await waitFor(() => {
       expect(first.hasAttribute("data-pinned")).toBe(true);
     });
-    const card = await waitFor(() => {
-      const found = document.querySelector<HTMLElement>('[data-cite="card"]');
-      if (found === null) throw new Error("no SHL-07 card");
-      return found;
-    });
+    // The card mounts through the anchored host's portal; under a loaded run it can take longer
+    // than the default second.
+    const card = await waitFor(
+      () => {
+        const found = document.querySelector<HTMLElement>('[data-cite="card"]');
+        if (found === null) throw new Error("no SHL-07 card");
+        return found;
+      },
+      { timeout: 4000 },
+    );
     expect(card.textContent).toContain("FRF-30418.pdf");
   });
 

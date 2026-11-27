@@ -49,6 +49,8 @@ class Rule:
     severity: Severity
     title: str
     check: Callable[[sc.Facts], TieOutResult]
+    # T-06-T53 (DEC-6035): the words TAX-11 shows when the rule passes.
+    passed: str = ""
 
 
 def _item_l(f: sc.Facts) -> TieOutResult:
@@ -62,19 +64,33 @@ def _item_l(f: sc.Facts) -> TieOutResult:
 
 
 RULES: Final[tuple[Rule, ...]] = (
-    Rule("item_i_count", "warning", "Item I does not match the partners", sc.c04_k1_count),
-    Rule("item_j_m3_required", "blocking", "Schedule M-3 required (Item J)", sc.c12_m3_required),
+    Rule("item_i_count", "warning", "Item I does not match the partners", sc.c04_k1_count,
+         "Item I matches the partners"),
+    Rule("item_j_m3_required", "blocking", "Schedule M-3 required (Item J)", sc.c12_m3_required,
+         "Item J: Schedule M-3 attached"),
     Rule("partnership_representative", "warning", "No partnership representative",
-         sc.c22_partnership_representative),
+         sc.c22_partnership_representative, "Partnership representative designated"),
     Rule("m2_line9_schedule_l21", "warning", "M-2 line 9 does not equal Schedule L line 21",
-         sc.c17_m2_line9_schedule_l21),
+         sc.c17_m2_line9_schedule_l21, "M-2 line 9 equals Schedule L line 21"),
     Rule("k1_item_l_schedule_l21", "blocking", "Σ K-1 Item L does not equal Schedule L line 21",
-         _item_l),
+         _item_l, "Σ K-1 Item L equals Schedule L line 21"),
     Rule("section_754_statement", "blocking", "§754 statement not decided",
-         sc.c31_section_754_documented),
+         sc.c31_section_754_documented, "§754 position decided"),
     Rule("k1_sums_schedule_k", "blocking", "K-1 boxes do not sum to Schedule K",
-         sc.c09_schedule_k_k1_sum),
+         sc.c09_schedule_k_k1_sum, "K-1 boxes sum to Schedule K"),
 )  # fmt: skip
+_BY_KEY: Final = {r.key: r for r in RULES}
+
+
+def rule_title(rule_key: str, failing: bool) -> str:
+    """TAX-11's words for one diagnostic (T-06-T53): code's rule, failing or passed; an engine
+    diagnostic is its code."""
+    rule = _BY_KEY.get(rule_key)
+    if rule is None:
+        return rule_key.removeprefix("engine.")
+    return rule.title if failing or not rule.passed else rule.passed
+
+
 _ENGINE_SEVERITY: Final[dict[str, Severity]] = {
     "error": "blocking", "warning": "warning", "informational": "info",
 }  # fmt: skip

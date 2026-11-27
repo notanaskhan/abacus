@@ -60,8 +60,9 @@ export const taxScreens = {
   },
   "TAX-11": {
     name: "Form preview · Ridgeline 2025 Form 1065 with K-1s",
-    status: "planned",
-    path: null,
+    // T-06-T53: a to e on fixtures (T17), behind `tax.form_preview`.
+    status: "fixture",
+    path: "/tax-returns/$returnId/preview",
     entry: true,
   },
   // T-01-T24/T39 built a–e; T-01-T51 swapped it onto the live delivery, envelope and sync reads

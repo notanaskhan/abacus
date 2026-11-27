@@ -675,6 +675,7 @@ def scenario_files() -> dict[str, str]:
         cls12_handoff,
         cls13_tracker,
     )
+    from abacus_tools.synthetic.scenarios.brightwater_hale.entity_depth_slice import tax11_preview
     from abacus_tools.synthetic.scenarios.brightwater_hale.quality_slice import aud30_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.sheets_slice import (
         sht01_row_drawer,
@@ -758,6 +759,18 @@ def scenario_files() -> dict[str, str]:
                 "slice": "sheets",
                 "snapshot": "2026-09-30T10:15",
                 **sht01_row_drawer(),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        # T-06-T53 (DEC-6035): TAX-11's pages, typed values, diagnostics and K-1 list.
+        "scenario.tax11-preview.json": json.dumps(
+            {
+                "scenario": SCENARIO_VERSION,
+                "slice": "entity_depth",
+                "snapshot": "E0",
+                **tax11_preview(),
             },
             indent=2,
             ensure_ascii=False,

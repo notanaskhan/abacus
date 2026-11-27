@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/TAX-11 Form preview - Ridgeline 2025 Form 1065 with K-1s/` |
 | Epic and tasks | T-06 · SPEC-702; gate and contract T-06-T01 (TASK-8510); stubs T-06-T05/T07/T08; screens and live swap per `docs/plan/epics/T-06.tasks.csv` |
-| Manifest status | planned |
+| Manifest status | fixture (T-06-T53, `/tax-returns/$returnId/preview`, behind `tax.form_preview`) |
 
 Parity tier target: C (T-06 §5.4). Copy keys live in `apps/web/src/screens/TAX-11/copy.ts` when the screen task builds it; words from the handoff and the status vocabulary only. Fixtures come from the Python scenario through `make fixtures` (F-04-T31), never hand-written.
 
@@ -25,6 +25,7 @@ Parity tier target: C (T-06 §5.4). Copy keys live in `apps/web/src/screens/TAX-
 - DV-8: watermark "Draft — not for filing" on every page; K-1 faces add "· pre-release".
 - DV-9: non-1065 forms show "Preview available after export from the engine".
 - Download only in the ⋯ menu, fresh MFA, audited; no transmit control (R-04).
+- T-06-T53 (DEC-6035): the route is `/tax-returns/$returnId/preview`, the repo's return prefix. Diagnostics read in code's words (the rule's statement while it fails, its passed wording once clear), not the handoff's sample sentences. The M-2 rule is code's line 9 against Schedule L line 21, so "Schedule M-2 line 4 blank" reads that way. "2 blocking diagnostics" holds: Σ K-1 Item L and the §754 position block, and M-2 warns. Typed values are listed under the page image, each opening SHL-09 (which opens SHL-08); a click on the face waits for region clicks on the E5 viewer. No K-1 face template is published per partner yet, so b selects the partner, says so and opens the K-1 package (TXP-12). "→ issue" opens TXP-10, which has no selected-issue route parameter yet. Captions are the face templates' titles.
 
 ## Links
 
