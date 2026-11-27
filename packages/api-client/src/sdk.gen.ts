@@ -31,6 +31,8 @@ export const aar = <ThrowOnError extends boolean = false>(options: Options<AarDa
  * Aar Recommendation Route
  *
  * The recommendation is advisory; only the signer's `decision.decide` records the route.
+ * T-08-T34: the AAR is its amendment (kind `bba_aar`); the run is the recommender's, or the
+ * card's raise alone when no model is available (the card then carries no tag).
  */
 export const aarRecommendation = <ThrowOnError extends boolean = false>(options: Options<AarRecommendationData, ThrowOnError>): RequestResult<AarRecommendationResponses, AarRecommendationErrors, ThrowOnError> => (options.client ?? client).post<AarRecommendationResponses, AarRecommendationErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -303,6 +305,8 @@ export const amendmentExplanation = <ThrowOnError extends boolean = false>(optio
 
 /**
  * Amendment Draft Route
+ *
+ * T-08-T34: "Draft with Agent…" (Part II and a proposed checkpoint; synthetic firms only).
  */
 export const amendmentDraft = <ThrowOnError extends boolean = false>(options: Options<AmendmentDraftData, ThrowOnError>): RequestResult<AmendmentDraftResponses, AmendmentDraftErrors, ThrowOnError> => (options.client ?? client).post<AmendmentDraftResponses, AmendmentDraftErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

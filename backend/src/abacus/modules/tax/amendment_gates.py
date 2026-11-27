@@ -170,7 +170,13 @@ async def apply_election(tx: UnitOfWork, ctx: AuthContext, decided: AppliedDecis
     )
 
 
-async def raise_election(ctx: AuthContext, amendment_id: UUID) -> UUID:
+async def raise_election(
+    ctx: AuthContext,
+    amendment_id: UUID,
+    *,
+    recommended_option_key: str | None = None,
+    recommendation_suggestion_id: UUID | None = None,
+) -> UUID:
     """The election's card on the AAR, reserved to the client's signer (BH-TAX-02)."""
     from abacus.modules.review.api import raise_decision_card
     from abacus.modules.tax.approval import signer_for
@@ -199,6 +205,8 @@ async def raise_election(ctx: AuthContext, amendment_id: UUID) -> UUID:
         work_item_id=row.work_item_id,
         reserved_user_id=signer,
         raised_under="aar.create",  # the AAR's own action (DEC-2392), partner or manager
+        recommended_option_key=recommended_option_key,  # T-08-T34's tag, never a decision
+        recommendation_suggestion_id=recommendation_suggestion_id,
     )
 
 

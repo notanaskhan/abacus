@@ -61,6 +61,8 @@ export const aarOptions = (options: Options<AarData>) => queryOptions<AarRespons
  * Aar Recommendation Route
  *
  * The recommendation is advisory; only the signer's `decision.decide` records the route.
+ * T-08-T34: the AAR is its amendment (kind `bba_aar`); the run is the recommender's, or the
+ * card's raise alone when no model is available (the card then carries no tag).
  */
 export const aarRecommendationMutation = (options?: Partial<Options<AarRecommendationData>>): UseMutationOptions<AarRecommendationResponse, AarRecommendationError, Options<AarRecommendationData>> => {
     const mutationOptions: UseMutationOptions<AarRecommendationResponse, AarRecommendationError, Options<AarRecommendationData>> = {
@@ -496,6 +498,8 @@ export const amendmentExplanationMutation = (options?: Partial<Options<Amendment
 
 /**
  * Amendment Draft Route
+ *
+ * T-08-T34: "Draft with Agent…" (Part II and a proposed checkpoint; synthetic firms only).
  */
 export const amendmentDraftMutation = (options?: Partial<Options<AmendmentDraftData>>): UseMutationOptions<AmendmentDraftResponse, AmendmentDraftError, Options<AmendmentDraftData>> => {
     const mutationOptions: UseMutationOptions<AmendmentDraftResponse, AmendmentDraftError, Options<AmendmentDraftData>> = {

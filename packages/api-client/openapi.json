@@ -164762,7 +164762,7 @@
     },
     "/v1/aars/{aar_id}/recommendation:draft": {
       "post": {
-        "description": "The recommendation is advisory; only the signer's `decision.decide` records the route.",
+        "description": "The recommendation is advisory; only the signer's `decision.decide` records the route.\nT-08-T34: the AAR is its amendment (kind `bba_aar`); the run is the recommender's, or the\ncard's raise alone when no model is available (the card then carries no tag).",
         "operationId": "aar_recommendation",
         "parameters": [
           {
@@ -167923,6 +167923,7 @@
     },
     "/v1/amendments/{amendment_id}/proposals:draft": {
       "post": {
+        "description": "T-08-T34: \"Draft with Agent\u2026\" (Part II and a proposed checkpoint; synthetic firms only).",
         "operationId": "amendment_draft",
         "parameters": [
           {
