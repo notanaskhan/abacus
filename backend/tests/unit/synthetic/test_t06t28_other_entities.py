@@ -24,3 +24,23 @@ def test_ac_the_shareholder_rows_are_the_engine_split() -> None:
 
 def test_ac_ashford_provision() -> None:
     assert s.ashford_provision() == Decimal("2257200")
+
+
+def test_t06t52_frames_foot_and_name_no_partnership_vocabulary() -> None:
+    """T-06-T52 (DEC-6036): the exported frames foot (the slice raises otherwise) and carry no
+    partnership words ("capital account", "partner", "K-1") on a corporation or a 990."""
+    import json
+
+    from abacus_tools.synthetic.scenarios.brightwater_hale.other_entities_slice import (
+        txp13_frames,
+    )
+
+    frames = txp13_frames()
+    a, b, c = frames["a"], frames["b"], frames["c"]
+    assert isinstance(a, dict) and isinstance(b, dict) and isinstance(c, dict)
+    assert a["aaa"] == "1488200"
+    assert b["taxable_income"] == "7490000" and b["total"] == "2257200"
+    assert c["total"] == "4014000" and c["fiscal_year_end"] == "2026-06-30"
+    text = json.dumps(frames).lower()
+    for word in ("capital account", "partner", "k-1"):
+        assert word not in text, word

@@ -23,3 +23,5 @@ Every figure is TRI (`restricted`, `tri=True`): agents read it only with §7216 
 | `GET …/states?view=` · `POST …/states/sourcing:propose` · `POST …/states/sourcing/undo` · `PATCH …/states/{state}/ptet` | `states.read` · `sourcing.propose` · `sourcing.approve` · `ptet.update` | TXP-09 |
 
 **Examples (foot):** 733,500 = 169,500 + 360,000 + 204,000; land 3,600,000; 46.0 + 31.5 + 22.5 = 100.0; PTET 28,044 + 17,070 + 18,982 = 64,096; outside basis 17,943,095 with Pell Street II off 28,595.
+
+**T-06-T52 (DEC-6036), additive:** `…/schedules/aaa` gains `lines` (M-2 by line across four columns) and `shareholders` (name, %, the four allocated amounts). `…/provision` gains `pretax_book_income`, `permanent_total`, `temporary_total`, `taxable_income`, `blended_rate`, `recon_items` (with `item_id` and `classification`) and `deferred_items`. `…/functional-expenses` gains `lines` (Part IX with basis, time-study percentages and the memo version). The return row gains `fiscal_year_end`.

@@ -1,0 +1,222 @@
+{
+  "scenario": "bh-2026.10.3",
+  "slice": "other_entities",
+  "snapshot": "E0",
+  "a": {
+    "client": "Bluestem Analytics, LLC",
+    "accepted_on": "2026-03-13",
+    "aaa": "1488200",
+    "lines": [
+      {
+        "line_no": 1,
+        "aaa": "1240000"
+      },
+      {
+        "line_no": 2,
+        "aaa": "860000"
+      },
+      {
+        "line_no": 3,
+        "aaa": "12400"
+      },
+      {
+        "line_no": 4,
+        "aaa": "0"
+      },
+      {
+        "line_no": 5,
+        "aaa": "4200"
+      },
+      {
+        "line_no": 6,
+        "aaa": "2108200"
+      },
+      {
+        "line_no": 7,
+        "aaa": "620000"
+      },
+      {
+        "line_no": 8,
+        "aaa": "1488200"
+      }
+    ],
+    "shareholders": [
+      {
+        "name": "Arjun Mehta",
+        "pct": "70",
+        "ordinary_income": "602000",
+        "interest": "8680",
+        "nondeductible": "2940",
+        "distributions": "434000"
+      },
+      {
+        "name": "Sunita Rao",
+        "pct": "30",
+        "ordinary_income": "258000",
+        "interest": "3720",
+        "nondeductible": "1260",
+        "distributions": "186000"
+      }
+    ]
+  },
+  "b": {
+    "client": "Ashford Manufacturing Co.",
+    "current": "2134650",
+    "deferred": "122550",
+    "total": "2257200",
+    "effective_rate": "28.9",
+    "pretax_book_income": "7800000",
+    "permanent_total": "120000",
+    "temporary_total": "-430000",
+    "taxable_income": "7490000",
+    "blended_rate": "28.5",
+    "recon_items": [
+      {
+        "key": "statutory",
+        "description": "Statutory federal",
+        "amount": "1638000",
+        "rate_effect": "21.0",
+        "classification": "rate"
+      },
+      {
+        "key": "state",
+        "description": "State, net of federal benefit",
+        "amount": "585000",
+        "rate_effect": "7.5",
+        "classification": "rate"
+      },
+      {
+        "key": "permanent",
+        "description": "Permanent differences",
+        "amount": "34200",
+        "rate_effect": "0.4",
+        "classification": "permanent"
+      }
+    ],
+    "deferred_items": [
+      {
+        "kind": "dtl",
+        "label": "Bonus depreciation in excess of book",
+        "temporary_difference": "640000",
+        "rate": "28.5",
+        "amount": "182400"
+      },
+      {
+        "kind": "dta",
+        "label": "Accrued bonuses not yet paid",
+        "temporary_difference": "210000",
+        "rate": "28.5",
+        "amount": "-59850"
+      }
+    ]
+  },
+  "b2_unclassified": "1200",
+  "c": {
+    "client": "Lakeshore Literacy Alliance",
+    "fiscal_year_end": "2026-06-30",
+    "program": "3210000",
+    "management": "486000",
+    "fundraising": "318000",
+    "total": "4014000",
+    "program_ratio": "80.0",
+    "public_support": "87.4",
+    "lines": [
+      {
+        "line": "5",
+        "label": "Compensation of current officers, directors, trustees and key employees",
+        "total": "162000",
+        "program": "81000",
+        "management": "65000",
+        "fundraising": "16000",
+        "basis": "time_study",
+        "time_study": {
+          "program": "50.0",
+          "management_general": "40.1",
+          "fundraising": "9.9"
+        }
+      },
+      {
+        "line": "7",
+        "label": "Other salaries and wages",
+        "total": "2248000",
+        "program": "1809000",
+        "management": "247000",
+        "fundraising": "192000",
+        "basis": "time_study",
+        "time_study": {
+          "program": "80.5",
+          "management_general": "11.0",
+          "fundraising": "8.5"
+        }
+      },
+      {
+        "line": "9",
+        "label": "Other employee benefits",
+        "total": "361000",
+        "program": "283000",
+        "management": "47000",
+        "fundraising": "31000",
+        "basis": "time_study",
+        "time_study": {
+          "program": "78.4",
+          "management_general": "13.0",
+          "fundraising": "8.6"
+        }
+      },
+      {
+        "line": "10",
+        "label": "Payroll taxes",
+        "total": "184000",
+        "program": "144000",
+        "management": "24000",
+        "fundraising": "16000",
+        "basis": "time_study",
+        "time_study": {
+          "program": "78.3",
+          "management_general": "13.0",
+          "fundraising": "8.7"
+        }
+      },
+      {
+        "line": "11c",
+        "label": "Fees for services — accounting",
+        "total": "48000",
+        "program": "0",
+        "management": "48000",
+        "fundraising": "0",
+        "basis": "direct",
+        "time_study": null
+      },
+      {
+        "line": "16",
+        "label": "Occupancy",
+        "total": "396000",
+        "program": "340000",
+        "management": "34000",
+        "fundraising": "22000",
+        "basis": "direct",
+        "time_study": null
+      },
+      {
+        "line": "24a",
+        "label": "Books and learning materials",
+        "total": "412000",
+        "program": "412000",
+        "management": "0",
+        "fundraising": "0",
+        "basis": "direct",
+        "time_study": null
+      },
+      {
+        "line": "24e",
+        "label": "All other expenses",
+        "total": "203000",
+        "program": "141000",
+        "management": "21000",
+        "fundraising": "41000",
+        "basis": "direct",
+        "time_study": null
+      }
+    ]
+  }
+}

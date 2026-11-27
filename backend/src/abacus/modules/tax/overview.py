@@ -40,6 +40,7 @@ from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
     Resource,
+    TargetFacts,
     allowed_actions,
     authorise,
     engagement_resource,
@@ -83,7 +84,8 @@ _ORDER: Final = [s.value for s in ReturnStatus]
 _ONE = text(
     "SELECT work_item_id, form, tax_year, status, review_level, extended, on_hold, sync_status, "
     "original_due_on, extended_due_on, row_version, engine, engine_return_id, "
-    "approval_policy_version_id, client_entity_id, jurisdictions FROM tax_returns "
+    "approval_policy_version_id, client_entity_id, jurisdictions, fiscal_year_end "
+    "FROM tax_returns "
     "WHERE work_item_id = :id"
 )
 _SUMMARY = text(
@@ -126,7 +128,7 @@ async def _load(ctx: AuthContext, return_id: UUID) -> Loaded:
         raise NotFound(KIND)
     return Loaded(
         facts,
-        board.ReturnRow(*found[:10]),
+        board.ReturnRow(*found[:10], fiscal_year_end=found.fiscal_year_end),
         int(found.row_version),
         found.engine,
         found.engine_return_id,
@@ -138,7 +140,13 @@ async def _load(ctx: AuthContext, return_id: UUID) -> Loaded:
 
 async def _resource(ctx: AuthContext, loaded: Loaded) -> Resource:
     base = await engagement_resource(ctx.tenant, loaded.facts.engagement_id)
-    return replace(base, work_item_id=loaded.facts.work_item_id)
+    # T-06-T52 (DEC-6036): the return's data subject is its client entity. A matrix action with
+    # a `consent:` condition (C19: fixed_asset.read, other_workpapers.read, …) reads its §7216
+    # consents from here; without it every such action failed closed, for everyone.
+    target = replace(
+        base.target or TargetFacts(), consent_subjects=frozenset({loaded.client_entity_id})
+    )
+    return replace(base, work_item_id=loaded.facts.work_item_id, target=target)
 
 
 # T-02-T18: the intake read model loads and scopes the return the same way.

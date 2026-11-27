@@ -676,6 +676,7 @@ def scenario_files() -> dict[str, str]:
         cls13_tracker,
     )
     from abacus_tools.synthetic.scenarios.brightwater_hale.entity_depth_slice import tax11_preview
+    from abacus_tools.synthetic.scenarios.brightwater_hale.other_entities_slice import txp13_frames
     from abacus_tools.synthetic.scenarios.brightwater_hale.quality_slice import aud30_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.sheets_slice import (
         sht01_row_drawer,
@@ -759,6 +760,18 @@ def scenario_files() -> dict[str, str]:
                 "slice": "sheets",
                 "snapshot": "2026-09-30T10:15",
                 **sht01_row_drawer(),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        # T-06-T52 (DEC-6036): TXP-13 a, b, b2, c and c2's lines.
+        "scenario.txp13-frames.json": json.dumps(
+            {
+                "scenario": SCENARIO_VERSION,
+                "slice": "other_entities",
+                "snapshot": "E0",
+                **txp13_frames(),
             },
             indent=2,
             ensure_ascii=False,

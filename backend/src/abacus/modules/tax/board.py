@@ -86,7 +86,7 @@ Sort = Literal["extended_due", "client"]
 
 _RETURNS = text(
     "SELECT work_item_id, form, tax_year, status, review_level, extended, on_hold, sync_status, "
-    "original_due_on, extended_due_on FROM tax_returns WHERE tax_year = :tax_year"
+    "original_due_on, extended_due_on, fiscal_year_end FROM tax_returns WHERE tax_year = :tax_year"
 )
 _LATEST_YEAR = text("SELECT max(tax_year) FROM tax_returns")
 _ONE = text("SELECT form, tax_year FROM tax_returns WHERE work_item_id = :work_item_id")
@@ -104,6 +104,8 @@ class _Return:
     sync_status: str | None
     original_due_on: date | None
     extended_due_on: date | None
+    # T-06-T52 (DEC-6036): a fiscal-year return's year end (TXP-13 c: "(FYE Jun 30, 2026)").
+    fiscal_year_end: date | None = None
 
 
 @dataclass(frozen=True)
@@ -256,6 +258,7 @@ def _row(r: _Return, facts: WorkItemFacts, names: Mapping[UUID, str]) -> TaxRetu
         office_id=facts.office_id,
         original_due_on=r.original_due_on,
         extended_due_on=r.extended_due_on,
+        fiscal_year_end=r.fiscal_year_end,
         due_rule_code=None,  # T-02-T10 pins the rule text with the dates
         tags=tags,
     )
