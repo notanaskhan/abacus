@@ -1,11 +1,13 @@
 // F-08-T28 (DEC-6026): what a transaction may never do to the paper, enforced in ProseMirror
 // (filterTransaction), so no key, paste, drop or IME composition gets around it:
-// - change or remove a read-only statement table (its figures are the consumer's, ADR-050);
+// - change or remove a read-only statement table or a linked value (their figures are the
+//   consumer's, ADR-050), so a linked number cannot be typed over, deleted or pasted into;
 // - touch a section another person is editing (one editor at a time, ADR P-59).
 import type { Node as PmNode } from "@tiptap/pm/model";
 import { Plugin, PluginKey, type Transaction } from "@tiptap/pm/state";
 
-export const PROTECTED_NODES = ["statementTable"] as const;
+// F-08-T29: a linked value is guarded the same way: its figure changes only through an intent.
+export const PROTECTED_NODES = ["statementTable", "linkedValue"] as const;
 
 function protectedIn(doc: PmNode): string[] {
   const found: string[] = [];
