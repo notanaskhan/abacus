@@ -78928,6 +78928,62 @@ export type AmendmentDraftResponses = {
 
 export type AmendmentDraftResponse = AmendmentDraftResponses[keyof AmendmentDraftResponses];
 
+export type AmendmentRouteForApprovalData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Amendment Id
+         */
+        amendment_id: string;
+    };
+    query?: never;
+    url: '/v1/amendments/{amendment_id}/routing';
+};
+
+export type AmendmentRouteForApprovalErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AmendmentRouteForApprovalError = AmendmentRouteForApprovalErrors[keyof AmendmentRouteForApprovalErrors];
+
+export type AmendmentRouteForApprovalResponses = {
+    /**
+     * Successful Response
+     */
+    200: TaxPracticeAmendmentOut;
+};
+
+export type AmendmentRouteForApprovalResponse = AmendmentRouteForApprovalResponses[keyof AmendmentRouteForApprovalResponses];
+
 export type AcceptFluxLineData = {
     body?: never;
     headers: {
@@ -92222,10 +92278,6 @@ export type W9RequestErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type W9RequestError = W9RequestErrors[keyof W9RequestErrors];
@@ -136629,9 +136681,9 @@ export type ReturnBatchErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Service unavailable
      */
-    501: ErrorOut;
+    503: ErrorOut;
 };
 
 export type ReturnBatchError = ReturnBatchErrors[keyof ReturnBatchErrors];
@@ -136688,10 +136740,6 @@ export type AckErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AckError = AckErrors[keyof AckErrors];
@@ -136748,10 +136796,6 @@ export type FiledErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FiledError = FiledErrors[keyof FiledErrors];
@@ -136808,10 +136852,6 @@ export type IrisCsvErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type IrisCsvError = IrisCsvErrors[keyof IrisCsvErrors];
@@ -165993,10 +166033,6 @@ export type AmendmentCreateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AmendmentCreateError = AmendmentCreateErrors[keyof AmendmentCreateErrors];

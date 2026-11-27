@@ -744,6 +744,9 @@ _register_email_template(
 _Handler = Callable[[OutboxEvent], Awaitable[None]]
 
 
+from abacus.modules.tax import amendments as _amendments  # noqa: E402
+
+
 def _chain(*handlers: _Handler) -> _Handler:
     async def run(event: OutboxEvent) -> None:
         for handler in handlers:
@@ -753,7 +756,9 @@ def _chain(*handlers: _Handler) -> _Handler:
 
 
 SUBSCRIPTIONS["filing.acknowledged"] = _chain(
-    SUBSCRIPTIONS["filing.acknowledged"], planning_service.on_filing_acknowledged
+    SUBSCRIPTIONS["filing.acknowledged"],
+    planning_service.on_filing_acknowledged,
+    _amendments.on_filing_acknowledged,  # T-08-T30: the amendment's ack supersedes the original
 )
 SUBSCRIPTIONS["envelope.completed"] = _chain(
     SUBSCRIPTIONS["envelope.completed"], planning_service.on_consent_completed
