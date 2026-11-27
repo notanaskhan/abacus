@@ -24,6 +24,7 @@ import {
 } from "@abacus/ui";
 import { type JSX, useState } from "react";
 import { PREPARED_WITHOUT_AGENTS } from "../../domain/tax";
+import { hrefOf, to } from "../../routes/to";
 import { COPY } from "./copy";
 
 const m = (id: string): MatchId => `txp01:${id}` as MatchId;
@@ -316,9 +317,10 @@ export function TXP01({
                         className="h-[16px] w-[16px] rounded-full border border-hair"
                       />
                       <span className="flex-1 text-[13px] font-medium text-ink">{o.title}</span>
-                      <Button variant="ghost" size="sm" disabled title={COPY.planned}>
+                      {/* T-08-T32: the opportunity opens TAX-15, pre-filled (planning). */}
+                      <a href={hrefOf(to.TAX15())} className="text-[13px] font-medium text-ink">
                         {COPY.raise}
-                      </Button>
+                      </a>
                     </li>
                   ))}
                 </ul>

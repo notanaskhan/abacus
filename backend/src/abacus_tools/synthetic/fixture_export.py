@@ -684,6 +684,9 @@ def scenario_files() -> dict[str, str]:
     )
     from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import hub_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.standards_run_slice import tax14_run
+    from abacus_tools.synthetic.scenarios.brightwater_hale.tax_planning_slice import (
+        tax15_portfolio,
+    )
     from abacus_tools.synthetic.scenarios.brightwater_hale.tb_handoff_slice import aud38_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.two_year_slice import tax10_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.usage_slice import adm14_rows
@@ -761,6 +764,18 @@ def scenario_files() -> dict[str, str]:
                 "slice": "sheets",
                 "snapshot": "2026-09-30T10:15",
                 **sht01_row_drawer(),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        # T-08-T32 (DEC-6038): TAX-15's TY2025 planning portfolio.
+        "scenario.tax15-portfolio.json": json.dumps(
+            {
+                "scenario": SCENARIO_VERSION,
+                "slice": "tax_planning",
+                "snapshot": "E0",
+                **tax15_portfolio(),
             },
             indent=2,
             ensure_ascii=False,

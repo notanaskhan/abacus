@@ -7,19 +7,19 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/TAX-15 Planning opportunities - TY2025 portfolio/` |
 | Epic and tasks | T-08 · SPEC-710; T-08-T01 (TASK-8600); stubs T-08-T04; screens and live swap per `docs/plan/epics/T-08.tasks.csv` |
-| Manifest status | planned |
+| Manifest status | fixture (T-08-T32, `/tax-returns/planning`, behind `tax.planning`) |
 
 Parity tier target: C (T-08 §5.5). Copy keys live in `apps/web/src/screens/TAX-15/copy.ts` when the screen task builds it; words from the handoff and the status vocabulary only. Fixtures come from the Python scenario through `make fixtures` (F-04-T31), never hand-written.
 
 ## States
 | Letter | Artboard | Scenario | Persona | Clock (CT) | Build | Owner |
 |---|---|---|---|---|---|---|
-| a | Default | `planning-e0` | Daniel Reyes | Mon Sep 14, 9:24 AM | planned | AY |
-| b | Raised | `planning-feld-raised` | Daniel Reyes | Mon 14 Sep 2026, 9:31 AM | planned | AY |
-| c | Accepted → project | `planning-ridgeline-accepted` | Daniel Reyes | Mon 14 Sep 2026, 8:52 AM | planned | AY |
-| d | Consent-blocked | `planning-e0` | Daniel Reyes | Mon 14 Sep 2026, 9:24 AM | planned | AY |
-| e | Dismissed | `planning-e0` | Daniel Reyes | Mon 14 Sep 2026, 9:24 AM | planned | AY |
-| f | Per-return view | `planning-e0` | Daniel Reyes | Mon 14 Sep 2026, 9:24 AM | planned | AY |
+| a | Default | `planning-e0` | Daniel Reyes | Mon Sep 14, 9:24 AM | fixture (T-08-T32) | AY |
+| b | Raised | `planning-feld-raised` | Daniel Reyes | Mon 14 Sep 2026, 9:31 AM | fixture (T-08-T32) | AY |
+| c | Accepted → project | `planning-ridgeline-accepted` | Daniel Reyes | Mon 14 Sep 2026, 8:52 AM | fixture (T-08-T32) | AY |
+| d | Consent-blocked | `planning-e0` | Daniel Reyes | Mon 14 Sep 2026, 9:24 AM | fixture (T-08-T32) | AY |
+| e | Dismissed | `planning-e0` | Daniel Reyes | Mon 14 Sep 2026, 9:24 AM | fixture (T-08-T32) | AY |
+| f | Per-return view | `planning-e0` | Daniel Reyes | Mon 14 Sep 2026, 9:24 AM | fixture (T-08-T32) | AY |
 
 ## Deviations
 - OQ-10: 'Raise with client…' opens an O3 send sheet over message.send until INB-04 (N-03).
@@ -50,3 +50,13 @@ The designed links of the handoff link graph (link-contract rule 5); each is wir
 | 8:52 AM, earlier the same morning: Create advisory project… on the accepted cost segregation item opens ENG-03 prefilled | ENG-03 | designed (handoff link graph) |
 | Opens TXP-01 · Ridgeline preparer memo · opportunities | TXP-01 | designed (handoff link graph) |
 | Opens CLI-05 · Elena Varga · tax profile | CLI-05 | designed (handoff link graph) |
+
+## T-08-T32 deviations (DEC-6038)
+- The route is `/tax-returns/planning`. The per-return view (f) is the same screen with a client chip; removing the chip shows the portfolio.
+- Queue sub-lines read "client · est. savings" from the server. The handoff's longer sub-lines ("waiting on Owen Calder", "project Scoping") are not in the read.
+- "Talking points (draft)" is the planning agent's draft (`talking_points_suggestion_id`). It renders once T-08-T28 or T-08-T29 serve it; until then the band is absent.
+- The evidence pane links the 2-Year Comparison (TAX-10) and the preparer memo (TXP-01) and lists the sources. The Schedule A statement and "Same pattern for 14 other clients" wait on reads that carry them.
+- Raise with client… is an O3 sheet until INB-04 exists. Its draft sends nothing; only Send does, a person's click.
+- The consent banner gives the server's state (half-signed). The envelope's signers and due date are on SIG-02.
+- Links wired (link-contract rule 1): TAX-15 → TXP-01 and → CLI-05, and TXP-01's opportunity → TAX-15.
+

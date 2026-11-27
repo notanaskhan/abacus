@@ -85,7 +85,12 @@ export const taxScreens = {
     status: "fixture",
     path: "/tax-returns/standards",
   },
-  "TAX-15": { name: "Planning opportunities · TY2025 portfolio", status: "planned", path: null },
+  // T-08-T32: a to f on fixtures (T9 close-review), behind `tax.planning`.
+  "TAX-15": {
+    name: "Planning opportunities · TY2025 portfolio",
+    status: "fixture",
+    path: "/tax-returns/planning",
+  },
   "TAX-16": {
     name: "Amendments & administrative adjustment requests",
     status: "planned",

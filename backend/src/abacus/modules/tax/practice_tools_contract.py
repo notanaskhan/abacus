@@ -306,6 +306,10 @@ class TaxPracticeOpportunityOut(BaseModel):
     project_engagement_id: Annotated[UUID | None, Internal] = None
     row_version: Annotated[int, Field(ge=1), Internal]
     allowed_actions: Annotated[list[str], Internal] = []
+    # T-08-T32 (DEC-6038), additive: TAX-15's detail rows.
+    consent_basis: Annotated[str | None, Field(max_length=60), Internal] = None
+    owner_user_id: Annotated[UUID | None, Internal] = None
+    tax_year: Annotated[int | None, Field(ge=2020, le=2100), Internal] = None
 
 
 class TaxPracticeOpportunityListOut(BaseModel):
@@ -809,6 +813,9 @@ def _opportunity_out(
         project_engagement_id=o.project_engagement_id,
         row_version=o.row_version,
         allowed_actions=actions,
+        consent_basis=o.consent_basis,
+        owner_user_id=o.owner_user_id,
+        tax_year=o.tax_year,
     )
 
 

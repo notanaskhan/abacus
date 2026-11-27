@@ -66530,6 +66530,10 @@ export type TaxPracticeOpportunityOut = {
      */
     client_name: string;
     /**
+     * Consent Basis
+     */
+    consent_basis?: string | null;
+    /**
      * Consent Envelope Id
      */
     consent_envelope_id?: string | null;
@@ -66541,6 +66545,10 @@ export type TaxPracticeOpportunityOut = {
      * Opportunity Id
      */
     opportunity_id: string;
+    /**
+     * Owner User Id
+     */
+    owner_user_id?: string | null;
     /**
      * Project Engagement Id
      */
@@ -66569,6 +66577,10 @@ export type TaxPracticeOpportunityOut = {
      * Status
      */
     status: 'open' | 'raised' | 'accepted' | 'declined' | 'not_screened' | 'dismissed';
+    /**
+     * Tax Year
+     */
+    tax_year?: number | null;
     /**
      * Title
      */

@@ -141811,6 +141811,19 @@
             "type": "string",
             "x-tri": true
           },
+          "consent_basis": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Consent Basis"
+          },
           "consent_envelope_id": {
             "anyOf": [
               {
@@ -141843,6 +141856,19 @@
             "format": "uuid",
             "title": "Opportunity Id",
             "type": "string"
+          },
+          "owner_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Owner User Id"
           },
           "project_engagement_id": {
             "anyOf": [
@@ -141924,6 +141950,20 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "tax_year": {
+            "anyOf": [
+              {
+                "maximum": 2100.0,
+                "minimum": 2020.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Tax Year"
           },
           "title": {
             "cls": "restricted",
