@@ -59719,6 +59719,51 @@ export type SheetPreviewOut = {
 };
 
 /**
+ * SheetRowDetailOut
+ *
+ * SHT-01 e: the row drawer's read (`?ov=row:<sheet>:<key>`).
+ */
+export type SheetRowDetailOut = {
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Facts
+     */
+    facts?: Array<SheetRowFactOut>;
+    /**
+     * Links
+     */
+    links?: Array<SheetRowLinkOut>;
+    row: SheetRowOut;
+    /**
+     * Why
+     */
+    why?: Array<SheetRowWhyOut>;
+};
+
+/**
+ * SheetRowFactOut
+ *
+ * K-03-T22 (DEC-6033): one KV row of the drawer's Details card, in column order.
+ */
+export type SheetRowFactOut = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Type
+     */
+    type: 'text' | 'number' | 'currency' | 'date' | 'single_select' | 'person' | 'linked_evidence' | 'linked_request' | 'linked_risk' | 'sign_off' | 'agent';
+    /**
+     * Value
+     */
+    value: string;
+};
+
+/**
  * SheetRowIn
  */
 export type SheetRowIn = {
@@ -59732,6 +59777,31 @@ export type SheetRowIn = {
      * Section Key
      */
     section_key: string;
+};
+
+/**
+ * SheetRowLinkOut
+ *
+ * One link on the drawer's Evidence, Requests or Risks tab; `label` is the evidence
+ * version's display name (requests and risks name theirs on their own screens).
+ */
+export type SheetRowLinkOut = {
+    /**
+     * Kind
+     */
+    kind: 'evidence' | 'request' | 'risk';
+    /**
+     * Label
+     */
+    label?: string | null;
+    /**
+     * Linked At
+     */
+    linked_at: string;
+    /**
+     * Target Id
+     */
+    target_id: string;
 };
 
 /**
@@ -59792,6 +59862,44 @@ export type SheetRowPatchIn = {
     cells: {
         [key: string]: string;
     };
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * SheetRowWhyOut
+ *
+ * The agent's reason for one suggested cell (the Why card). `rationale` is agent text,
+ * rendered only through AgentText; its citations are the cell's anchor's stack
+ * (`GET /v1/citations?anchor_type=sheet_row&anchor_id=<row>&anchor_ref=<column_key>`).
+ */
+export type SheetRowWhyOut = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id?: string | null;
+    /**
+     * Citation Count
+     */
+    citation_count?: number;
+    /**
+     * Column Key
+     */
+    column_key: string;
+    /**
+     * Rationale
+     */
+    rationale?: string | null;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Suggestion Id
+     */
+    suggestion_id: string;
     /**
      * Version
      */
@@ -162327,6 +162435,66 @@ export type SheetRowsFromSampleResponses = {
 };
 
 export type SheetRowsFromSampleResponse = SheetRowsFromSampleResponses[keyof SheetRowsFromSampleResponses];
+
+export type SheetRowDetailData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sheet Id
+         */
+        sheet_id: string;
+        /**
+         * Row Id
+         */
+        row_id: string;
+    };
+    query?: never;
+    url: '/v1/sheets/{sheet_id}/rows/{row_id}';
+};
+
+export type SheetRowDetailErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SheetRowDetailError = SheetRowDetailErrors[keyof SheetRowDetailErrors];
+
+export type SheetRowDetailResponses = {
+    /**
+     * Successful Response
+     */
+    200: SheetRowDetailOut;
+};
+
+export type SheetRowDetailResponse = SheetRowDetailResponses[keyof SheetRowDetailResponses];
 
 export type SheetRowPatchData = {
     body: SheetRowPatchIn;

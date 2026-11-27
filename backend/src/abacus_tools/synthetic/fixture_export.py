@@ -676,6 +676,7 @@ def scenario_files() -> dict[str, str]:
         cls13_tracker,
     )
     from abacus_tools.synthetic.scenarios.brightwater_hale.quality_slice import aud30_rows
+    from abacus_tools.synthetic.scenarios.brightwater_hale.sheets_slice import sht01_row_drawer
     from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import hub_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.tb_handoff_slice import aud38_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.two_year_slice import tax10_rows
@@ -742,6 +743,18 @@ def scenario_files() -> dict[str, str]:
                 "slice": "cas_delivery",
                 "snapshot": "E0",
                 **cls13_tracker(),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        # K-03-T22 (DEC-6033): SHT-01 e, the row drawer on SURL-05.
+        "scenario.sht01-drawer.json": json.dumps(
+            {
+                "scenario": SCENARIO_VERSION,
+                "slice": "sheets",
+                "snapshot": "2026-09-30T10:15",
+                **sht01_row_drawer(),
             },
             indent=2,
             ensure_ascii=False,

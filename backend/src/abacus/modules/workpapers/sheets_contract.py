@@ -145,6 +145,58 @@ class SheetRowListOut(BaseModel):
     next_cursor: Annotated[str | None, Internal] = None
 
 
+class SheetRowFactOut(BaseModel):
+    """K-03-T22 (DEC-6033): one KV row of the drawer's Details card, in column order."""
+
+    model_config = _cfg()
+
+    label: Annotated[str, Field(max_length=120), Internal]
+    type: Annotated[ColumnType, Internal]
+    value: Annotated[str, Field(max_length=4000), Confidential]
+
+
+class SheetRowWhyOut(BaseModel):
+    """The agent's reason for one suggested cell (the Why card). `rationale` is agent text,
+    rendered only through AgentText; its citations are the cell's anchor's stack
+    (`GET /v1/citations?anchor_type=sheet_row&anchor_id=<row>&anchor_ref=<column_key>`)."""
+
+    model_config = _cfg()
+
+    column_key: Annotated[str, Field(max_length=60), Internal]
+    suggestion_id: Annotated[UUID, Internal]
+    status: Annotated[str, Field(max_length=20), Internal]
+    version: Annotated[int, Field(ge=1), Internal]
+    rationale: Annotated[str | None, Field(max_length=4000), Confidential] = None
+    citation_count: Count = 0
+    # The run that made it: the drawer's Agents tab reads `GET /v1/agent-runs/{id}`.
+    agent_run_id: Annotated[UUID | None, Internal] = None
+
+
+class SheetRowLinkOut(BaseModel):
+    """One link on the drawer's Evidence, Requests or Risks tab; `label` is the evidence
+    version's display name (requests and risks name theirs on their own screens)."""
+
+    model_config = _cfg()
+
+    kind: Annotated[Literal["evidence", "request", "risk"], Internal]
+    target_id: Annotated[UUID, Internal]
+    linked_at: Annotated[datetime, Internal]
+    label: Annotated[str | None, Field(max_length=300), Confidential] = None
+
+
+class SheetRowDetailOut(BaseModel):
+    """SHT-01 e: the row drawer's read (`?ov=row:<sheet>:<key>`)."""
+
+    model_config = _cfg()
+
+    # The comments and to-dos tabs anchor on the row inside this engagement (C-29, C-30).
+    engagement_id: Annotated[UUID, Internal]
+    row: Annotated[SheetRowOut, Internal]
+    facts: Annotated[list[SheetRowFactOut], Internal] = []
+    why: Annotated[list[SheetRowWhyOut], Internal] = []
+    links: Annotated[list[SheetRowLinkOut], Internal] = []
+
+
 class SheetRowPatchIn(BaseModel):
     model_config = _cfg()
 
@@ -462,6 +514,31 @@ async def sheet_row_patch_route(
 
     await sh.edit_row(ctx, sheet_id, row_id, body.cells, body.version)
     return await _one_row(ctx, sheet_id, row_id)
+
+
+@sheets_router.get(
+    f"{_S}/rows/{{row_id}}", action="sheet.read", response_model=SheetRowDetailOut, errors=(501,)
+)
+async def sheet_row_detail_route(sheet_id: UUID, row_id: UUID, ctx: Ctx) -> SheetRowDetailOut:
+    """K-03-T22 (DEC-6033): SHT-01's row drawer: the row, its facts, the agent's reason for each
+    suggested cell and its links. 404 for a row on another sheet or out of the reader's walls."""
+    await _on(ctx)
+    from abacus.modules.workpapers import sheets as sh
+
+    found = await sh.row_detail(ctx, sheet_id, row_id)
+    return SheetRowDetailOut(
+        engagement_id=found.engagement_id,
+        row=_row_out(found.row),
+        facts=[SheetRowFactOut(label=f.label, type=cast(ColumnType, f.type), value=f.value)
+               for f in found.facts],
+        why=[SheetRowWhyOut(column_key=w.column_key, suggestion_id=w.suggestion_id,
+                            status=w.status, version=w.version, rationale=w.rationale,
+                            citation_count=w.citation_count, agent_run_id=w.agent_run_id)
+             for w in found.why],
+        links=[SheetRowLinkOut(kind=cast(Literal["evidence", "request", "risk"], k.kind),
+                               target_id=k.target_id, linked_at=k.linked_at, label=k.label)
+               for k in found.links],
+    )  # fmt: skip
 
 
 @sheets_router.get(

@@ -858,6 +858,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/sheets/{sheet_id}/columns/{column_id}/usage", "sheet.read"),
     ("GET", "/v1/sheets/{sheet_id}/export.xlsx", "sheet.export"),
     ("GET", "/v1/sheets/{sheet_id}/rows", "sheet.read"),
+    ("GET", "/v1/sheets/{sheet_id}/rows/{row_id}", "sheet.read"),
     ("GET", "/v1/sheets/{sheet_id}/views", "sheet.read"),
     ("GET", "/v1/sign-offs", "sign_off.read"),
     ("GET", "/v1/sign-offs/eligibility", "sign_off.read"),

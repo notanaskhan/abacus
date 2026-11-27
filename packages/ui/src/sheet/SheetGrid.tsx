@@ -597,7 +597,22 @@ export function SheetGrid({
                                 className="mt-[1px] size-[11px] shrink-0 text-ink-3"
                               />
                             )}
-                            {cell?.value ?? ""}
+                            {isKey && onOpenRow !== undefined ? (
+                              // K-03-T22: the row's key opens its drawer (SHT-01 e).
+                              <button
+                                type="button"
+                                data-open-row={row.key}
+                                aria-label={`Open ${row.key}`}
+                                className="text-left font-mono hover:underline"
+                                onClick={() => {
+                                  onOpenRow(row.key);
+                                }}
+                              >
+                                {cell?.value ?? row.key}
+                              </button>
+                            ) : (
+                              (cell?.value ?? "")
+                            )}
                           </span>
                         )}
                       </td>

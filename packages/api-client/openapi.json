@@ -127268,6 +127268,98 @@
         "title": "SheetPreviewOut",
         "type": "object"
       },
+      "SheetRowDetailOut": {
+        "additionalProperties": false,
+        "description": "SHT-01 e: the row drawer's read (`?ov=row:<sheet>:<key>`).",
+        "properties": {
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "facts": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SheetRowFactOut"
+            },
+            "title": "Facts",
+            "type": "array"
+          },
+          "links": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SheetRowLinkOut"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "row": {
+            "$ref": "#/components/schemas/SheetRowOut",
+            "cls": "internal"
+          },
+          "why": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SheetRowWhyOut"
+            },
+            "title": "Why",
+            "type": "array"
+          }
+        },
+        "required": [
+          "engagement_id",
+          "row"
+        ],
+        "title": "SheetRowDetailOut",
+        "type": "object"
+      },
+      "SheetRowFactOut": {
+        "additionalProperties": false,
+        "description": "K-03-T22 (DEC-6033): one KV row of the drawer's Details card, in column order.",
+        "properties": {
+          "label": {
+            "cls": "internal",
+            "maxLength": 120,
+            "title": "Label",
+            "type": "string"
+          },
+          "type": {
+            "cls": "internal",
+            "enum": [
+              "text",
+              "number",
+              "currency",
+              "date",
+              "single_select",
+              "person",
+              "linked_evidence",
+              "linked_request",
+              "linked_risk",
+              "sign_off",
+              "agent"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "value": {
+            "cls": "confidential",
+            "maxLength": 4000,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "type",
+          "value"
+        ],
+        "title": "SheetRowFactOut",
+        "type": "object"
+      },
       "SheetRowIn": {
         "additionalProperties": false,
         "properties": {
@@ -127291,6 +127383,54 @@
           "section_key"
         ],
         "title": "SheetRowIn",
+        "type": "object"
+      },
+      "SheetRowLinkOut": {
+        "additionalProperties": false,
+        "description": "One link on the drawer's Evidence, Requests or Risks tab; `label` is the evidence\nversion's display name (requests and risks name theirs on their own screens).",
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "evidence",
+              "request",
+              "risk"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Label"
+          },
+          "linked_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Linked At",
+            "type": "string"
+          },
+          "target_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "target_id",
+          "linked_at"
+        ],
+        "title": "SheetRowLinkOut",
         "type": "object"
       },
       "SheetRowListOut": {
@@ -127399,6 +127539,77 @@
           "version"
         ],
         "title": "SheetRowPatchIn",
+        "type": "object"
+      },
+      "SheetRowWhyOut": {
+        "additionalProperties": false,
+        "description": "The agent's reason for one suggested cell (the Why card). `rationale` is agent text,\nrendered only through AgentText; its citations are the cell's anchor's stack\n(`GET /v1/citations?anchor_type=sheet_row&anchor_id=<row>&anchor_ref=<column_key>`).",
+        "properties": {
+          "agent_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Agent Run Id"
+          },
+          "citation_count": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Citation Count",
+            "type": "integer"
+          },
+          "column_key": {
+            "cls": "internal",
+            "maxLength": 60,
+            "title": "Column Key",
+            "type": "string"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Rationale"
+          },
+          "status": {
+            "cls": "internal",
+            "maxLength": 20,
+            "title": "Status",
+            "type": "string"
+          },
+          "suggestion_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Suggestion Id",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "column_key",
+          "suggestion_id",
+          "status",
+          "version"
+        ],
+        "title": "SheetRowWhyOut",
         "type": "object"
       },
       "SheetSectionOut": {
@@ -352033,6 +352244,131 @@
       }
     },
     "/v1/sheets/{sheet_id}/rows/{row_id}": {
+      "get": {
+        "description": "K-03-T22 (DEC-6033): SHT-01's row drawer: the row, its facts, the agent's reason for each\nsuggested cell and its links. 404 for a row on another sheet or out of the reader's walls.",
+        "operationId": "sheet_row_detail",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sheet_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Sheet Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "row_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Row Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SheetRowDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Sheet Row Detail Route",
+        "tags": [
+          "sheets"
+        ],
+        "x-abacus-action": "sheet.read"
+      },
       "patch": {
         "description": "Cell edits through `record_value`: 412 on a stale version; 409 `row_locked`.",
         "operationId": "sheet_row_patch",

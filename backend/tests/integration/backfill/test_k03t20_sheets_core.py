@@ -279,3 +279,142 @@ async def test_k03t20_acceptance_sheet_from_sample_totals_412_and_record_value(
     outsider = await seed.person(tenant)
     walled = await net.call("GET", f"/v1/sheets/{sheet_id}", outsider)
     assert walled.status_code in (403, 404), walled.text
+
+
+async def test_k03t22_row_drawer_reads_facts_reason_and_links(net: Net, seed: Seeder) -> None:
+    """K-03-T22 (TASK-9028; DEC-6033): SHT-01 e's drawer read. The row's facts in column order,
+    the agent's reason for its suggested cell (the agents module's own read, walls and all), and
+    its links; a row on another sheet answers 404, and a person outside the walls sees nothing."""
+    tenant = await seed.firm()
+    for flag in ("sheets.enabled", "templates_v2.enabled"):
+        await seed.run(
+            "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
+            "VALUES ($1, $2, 'true', 'test-seed', 'K-03-T22')",
+            tenant,
+            flag,
+        )
+    manager = await seed.person(tenant)
+    granite = await seed.site(tenant, manager.user_id, "Granite Peak")
+    await seed.member(granite, manager, "manager")
+    await seed.attest(tenant, granite.engagement_id)
+    item = cast(
+        uuid.UUID,
+        await seed.value(
+            "SELECT id FROM work_items WHERE engagement_id = $1 AND kind = 'assurance'",
+            granite.engagement_id,
+        ),
+    )
+    version = await _template(seed, tenant, manager)
+    await seed.run(
+        "INSERT INTO engagement_template_links (tenant_id, engagement_id, template_id, "
+        "template_version_id) SELECT $1, $2, template_id, id FROM template_versions WHERE id = $3",
+        tenant,
+        granite.engagement_id,
+        version,
+    )
+    procedure = uuid.uuid4()
+    await seed.run_untriggered(
+        "INSERT INTO program_procedures (id, tenant_id, engagement_id, work_item_id, "
+        "methodology_version_id, program_step_key, level, mandatory, status, linked_work, "
+        "created_by) VALUES ($1, $2, $3, $4, $5, 'BH-FS-430', 'testing', false, 'in_progress', "
+        '\'{"kind": "sheet", "ref": "bh_fs_430"}\'::jsonb, $6)',
+        procedure,
+        tenant,
+        granite.engagement_id,
+        item,
+        uuid.uuid4(),
+        manager.user_id,
+    )
+    made = await net.call(
+        "POST",
+        f"/v1/work-items/{item}/sheets",
+        manager,
+        body={"procedure_id": str(procedure), "sheet_definition_ref": "bh_fs_430"},
+    )
+    sheet_id = made.json()["sheet_id"]
+    sample_set = await _sample(seed, granite, item, manager)
+    rows = await net.call(
+        "POST",
+        f"/v1/sheets/{sheet_id}/rows/from-sample",
+        manager,
+        body={"sample_set_id": str(sample_set)},
+        headers=net.keyed(),
+    )
+    fifth = rows.json()["items"][4]
+    row_id = fifth["row_id"]
+    edited = await net.call(
+        "PATCH",
+        f"/v1/sheets/{sheet_id}/rows/{row_id}",
+        manager,
+        body={"cells": {"result": "Exception"}, "version": fifth["version"]},
+    )
+    assert edited.status_code == 200, edited.text
+
+    # Before the agent: the facts in column order, no reason, no links.
+    plain = await net.call("GET", f"/v1/sheets/{sheet_id}/rows/{row_id}", manager)
+    assert plain.status_code == 200, plain.text
+    body = plain.json()
+    assert body["row"]["key"] == fifth["key"]
+    assert body["engagement_id"] == str(granite.engagement_id)
+    assert [(f["label"], f["type"], f["value"]) for f in body["facts"]] == [
+        ("Vendor", "text", "Vendor 5"),
+        ("Amount", "currency", "136000.00"),
+        ("Result", "single_select", "Exception"),
+    ]
+    assert body["why"] == [] and body["links"] == []
+
+    # The agent's suggestion behind the cell (from a live, non-shadow run: ED-171), and one
+    # evidence link.
+    run = uuid.uuid4()
+    await seed.run(
+        "INSERT INTO agent_runs (id, tenant_id, agent_id, spec_version, engagement_id, "
+        "initiator_user_id, task_scope, state, mode, trigger_kind, run_number) VALUES "
+        "($1, $2, 'engagements.run', 1, $3, $4, ARRAY['engagement.read'], 'queued', 'run', "
+        "'engagement_plan', 9022)",
+        run,
+        tenant,
+        granite.engagement_id,
+        manager.user_id,
+    )
+    suggestion = await seed.value(
+        "INSERT INTO suggestions (tenant_id, engagement_id, target_type, target_id, field_key, "
+        "proposed_value, agent_run_id) VALUES ($1, $2, 'sheet_row', $3, 'result', "
+        '\'{"t": "text", "v": "Exception"}\', $4) RETURNING id',
+        tenant,
+        granite.engagement_id,
+        uuid.UUID(row_id),
+        run,
+    )
+    await seed.run_untriggered(
+        "UPDATE sheet_cells SET value_state = 'suggested', suggestion_id = $1 WHERE row_id = $2 "
+        "AND column_id = (SELECT id FROM sheet_columns WHERE sheet_id = $3 AND column_key = "
+        "'result')",
+        suggestion,
+        uuid.UUID(row_id),
+        uuid.UUID(sheet_id),
+    )
+    target = uuid.uuid4()
+    await seed.run_untriggered(
+        "INSERT INTO sheet_row_links (tenant_id, engagement_id, work_item_id, sheet_id, row_id, "
+        "kind, target_id, linked_by) VALUES ($1, $2, $3, $4, $5, 'evidence', $6, $7)",
+        tenant,
+        granite.engagement_id,
+        item,
+        uuid.UUID(sheet_id),
+        uuid.UUID(row_id),
+        target,
+        manager.user_id,
+    )
+    full = (await net.call("GET", f"/v1/sheets/{sheet_id}/rows/{row_id}", manager)).json()
+    assert [
+        (w["column_key"], w["suggestion_id"], w["status"], w["agent_run_id"]) for w in full["why"]
+    ] == [("result", str(suggestion), "pending", str(run))]
+    assert full["row"]["cells"]["result"]["state"] == "suggested"
+    assert [(k["kind"], k["target_id"]) for k in full["links"]] == [("evidence", str(target))]
+
+    # Another sheet's row, and a person outside the walls.
+    stranger = await net.call("GET", f"/v1/sheets/{sheet_id}/rows/{uuid.uuid4()}", manager)
+    assert stranger.status_code == 404, stranger.text
+    outsider = await seed.person(tenant)
+    walled = await net.call("GET", f"/v1/sheets/{sheet_id}/rows/{row_id}", outsider)
+    assert walled.status_code in (403, 404), walled.text

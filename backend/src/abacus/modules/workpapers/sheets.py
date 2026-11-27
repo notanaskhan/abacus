@@ -98,6 +98,8 @@ class Cell:
     by: UUID | None
     at: datetime | None
     exception: bool
+    # K-03-T22 (DEC-6033): the agent's suggestion behind a suggested, adopted or edited cell.
+    suggestion_id: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -550,8 +552,8 @@ _ROWS: Final = text(
     "AND (CAST(:ids AS uuid[]) IS NULL OR id = ANY(CAST(:ids AS uuid[]))) ORDER BY position, id"
 )
 _CELLS: Final = text(
-    "SELECT row_id, column_id, value, value_state, last_edited_by, last_edited_at "
-    "FROM sheet_cells "
+    "SELECT row_id, column_id, value, value_state, last_edited_by, last_edited_at, "
+    "suggestion_id FROM sheet_cells "
     "WHERE sheet_id = :s AND (CAST(:ids AS uuid[]) IS NULL OR row_id = ANY(CAST(:ids AS uuid[])))"
 )
 
@@ -572,7 +574,7 @@ async def _row_views(
         shown = _shown(cast(Mapping[str, object] | None, c.value))
         grid[c.row_id][column.key] = Cell(
             shown, str(c.value_state), c.last_edited_by, c.last_edited_at,
-            _exception(column, shown),
+            _exception(column, shown), c.suggestion_id,
         )  # fmt: skip
     hashes = {
         r.id: content_hash({k: v.value for k, v in sorted(grid[r.id].items())}) for r in rows
@@ -804,9 +806,110 @@ async def link_row(ctx: AuthContext, sheet_id: UUID, row_id: UUID, kind: LinkKin
         )
 
 
+# --- K-03-T22: SHT-01's row drawer --------------------------------------------------------------
+
+# Columns the drawer's Details card draws as facts; links, sign-offs and the agent's own column
+# have their tabs and the Why card (DEC-6033).
+_FACT_TYPES: Final = frozenset({"text", "number", "currency", "date", "single_select", "person"})
+
+
+@dataclass(frozen=True)
+class RowFact:
+    label: str
+    type: str
+    value: str
+
+
+@dataclass(frozen=True)
+class RowWhy:
+    """The agent's reason for one suggested cell, as the agents module serves it (agent text)."""
+
+    column_key: str
+    suggestion_id: UUID
+    status: str
+    version: int
+    rationale: str | None
+    citation_count: int
+    agent_run_id: UUID | None
+
+
+@dataclass(frozen=True)
+class RowLink:
+    kind: str
+    target_id: UUID
+    linked_at: datetime
+    label: str | None
+
+
+@dataclass(frozen=True)
+class RowDetail:
+    engagement_id: UUID
+    row: SheetRow
+    facts: list[RowFact]
+    why: list[RowWhy]
+    links: list[RowLink]
+
+
+_LINKS: Final = text(
+    "SELECT kind, target_id, linked_at FROM sheet_row_links WHERE sheet_id = :s AND row_id = :r "
+    "ORDER BY kind, linked_at, target_id"
+)
+
+
+async def _why(ctx: AuthContext, column: Column, cell: Cell) -> RowWhy | None:
+    from abacus.modules.agents.api import suggestion_view
+
+    if cell.suggestion_id is None:
+        return None
+    try:
+        found = await suggestion_view(ctx, cell.suggestion_id)
+    except (NotFound, Forbidden):
+        return None  # a walled suggestion: no reason and no hidden count (INV-3)
+    return RowWhy(column.key, found.id, found.status, found.version, found.rationale,
+                  len(found.citation_ids), found.agent_run_id)  # fmt: skip
+
+
+async def row_detail(ctx: AuthContext, sheet_id: UUID, row_id: UUID) -> RowDetail:
+    """One row as SHT-01's drawer reads it (K-03-T22, DEC-6033): its facts in column order, the
+    agent's reason for each suggested cell, and the evidence, requests and risks it links to.
+    Values are stored text; the browser formats them by type, as the grid does."""
+    from abacus.modules.evidence.api import version_display_name
+
+    sheet = await _sheet(ctx, sheet_id, "sheet.read")
+    async with tenant_session(ctx.tenant) as session:
+        ordered = await _columns(session, sheet_id)
+        linked = list(await session.execute(_LINKS, {"s": sheet_id, "r": row_id}))
+    found = await _row_views(ctx, sheet, {c.key: c for c in ordered}, [row_id])
+    if not found:
+        raise NotFound("sheet_row")
+    row = found[0]
+    facts = [
+        RowFact(c.name, c.type, row.cells[c.key].value if c.key in row.cells else "")
+        for c in ordered
+        if c.type in _FACT_TYPES
+    ]
+    why = [
+        w
+        for c in ordered
+        if c.key in row.cells
+        for w in [await _why(ctx, c, row.cells[c.key])]
+        if w is not None
+    ]
+    links = [
+        RowLink(
+            str(link.kind), link.target_id, link.linked_at,
+            await version_display_name(ctx.tenant, link.target_id)
+            if link.kind == "evidence" else None,
+        )
+        for link in linked
+    ]  # fmt: skip
+    return RowDetail(sheet.engagement_id, row, facts, why, links)
+
+
 __all__ = [
     "CellInvalid",
     "NoTemplateLink",
+    "RowDetail",
     "RowLocked",
     "SampleAlreadyLinked",
     "SheetRow",
@@ -817,6 +920,7 @@ __all__ = [
     "create_sheet",
     "edit_row",
     "link_row",
+    "row_detail",
     "rows",
     "save_view",
     "sheet_vm",
