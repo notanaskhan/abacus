@@ -24,10 +24,11 @@ from .support import Net, Person, Seeder, Site
 pytestmark = pytest.mark.asyncio
 
 SEED = 0x7C31B4
+STRATUM_1, STRATUM_2 = "stratum_1", "stratum_2"  # the definition's section codes
 STRATA = [
-    {"key": "stratum_1", "title": "STRATUM 1 — PAYMENTS ≥ $50,000", "stratum": 1,
+    {"key": STRATUM_1, "title": "STRATUM 1 — PAYMENTS ≥ $50,000", "stratum": 1,
      "totals": {"sum": "amount"}},
-    {"key": "stratum_2", "title": "STRATUM 2 — RANDOM, $7,750–$49,999", "stratum": 2,  # noqa: RUF001 -- the design's en dash
+    {"key": STRATUM_2, "title": "STRATUM 2 — RANDOM, $7,750–$49,999", "stratum": 2,  # noqa: RUF001 -- the design's en dash
      "totals": {"sum": "amount"}},
 ]  # fmt: skip
 # 24 payments >= 50,000 summing 3,286,400.00 and 16 in the random band summing 412,300.00.

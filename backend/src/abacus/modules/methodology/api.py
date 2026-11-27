@@ -527,3 +527,7 @@ from abacus.modules.methodology.template_wrappers import (  # noqa: E402
 )
 
 __all__ += ["SheetColumnDef", "SheetDefinition", "sheet_definition_of"]
+# K-03-T21 (DEC-6021): minimal skills (imported content; its errors join the catalogue).
+from abacus.modules.methodology import skills as skills  # noqa: E402
+
+__all__ += ["skills"]

@@ -989,6 +989,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/template-versions/{version_id}/rollout", "template.rollout"),
     ("GET", "/v1/template-versions/{version_id}/scoping-rules", "template.read"),
     ("GET", "/v1/template-versions/{version_id}/scoping-sources", "template.read"),
+    ("GET", "/v1/template-versions/{version_id}/skill-pin-warnings", "template.read"),
     ("GET", "/v1/template-versions/{version_id}/used-by", "template.read"),
     ("GET", "/v1/tests/{test_id}/export.xlsx", "test.export"),
     ("GET", "/v1/todos", "todo.read"),

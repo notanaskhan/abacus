@@ -60757,6 +60757,21 @@ export type SixtyFiveDayElectionOut = {
 export type SixtyFiveDayElectionStatus = 'not_made' | 'elected';
 
 /**
+ * SkillImportIn
+ *
+ * K-03-T21 (DEC-6021), additive: the content pack, `{"skills": [{key, name, group,
+ * versions: [{version, status, body_md, linked_step_keys}]}]}`.
+ */
+export type SkillImportIn = {
+    /**
+     * Pack
+     */
+    pack: {
+        [key: string]: unknown;
+    };
+};
+
+/**
  * SkillListOut
  */
 export type SkillListOut = {
@@ -60790,6 +60805,40 @@ export type SkillOut = {
      * Version Id
      */
     version_id: string;
+};
+
+/**
+ * SkillPinWarningListOut
+ */
+export type SkillPinWarningListOut = {
+    /**
+     * Items
+     */
+    items: Array<SkillPinWarningOut>;
+};
+
+/**
+ * SkillPinWarningOut
+ *
+ * KNW-06c: "Skill BH-SK-430 v2 is a draft" (a warning; it never blocks publish).
+ */
+export type SkillPinWarningOut = {
+    /**
+     * Severity
+     */
+    severity: 'warning';
+    /**
+     * Skill Key
+     */
+    skill_key: string;
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -162761,7 +162810,7 @@ export type SkillsResponses = {
 export type SkillsResponse = SkillsResponses[keyof SkillsResponses];
 
 export type SkillsImportData = {
-    body?: never;
+    body: SkillImportIn;
     headers: {
         /**
          * Idempotency-Key
@@ -176436,6 +176485,62 @@ export type ScopingSourcesResponses = {
 };
 
 export type ScopingSourcesResponse = ScopingSourcesResponses[keyof ScopingSourcesResponses];
+
+export type SkillPinWarningsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/template-versions/{version_id}/skill-pin-warnings';
+};
+
+export type SkillPinWarningsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SkillPinWarningsError = SkillPinWarningsErrors[keyof SkillPinWarningsErrors];
+
+export type SkillPinWarningsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SkillPinWarningListOut;
+};
+
+export type SkillPinWarningsResponse = SkillPinWarningsResponses[keyof SkillPinWarningsResponses];
 
 export type UsedByData = {
     body?: never;

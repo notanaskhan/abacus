@@ -575,8 +575,7 @@ async def _row_views(
             _exception(column, shown),
         )  # fmt: skip
     hashes = {
-        r.id: content_hash({k: v.value for k, v in sorted(grid[r.id].items())})
-        for r in rows
+        r.id: content_hash({k: v.value for k, v in sorted(grid[r.id].items())}) for r in rows
     }
     states = (
         await sign_off_states(ctx.tenant, TARGET, [r.id for r in rows], hashes) if rows else {}
@@ -800,7 +799,7 @@ async def link_row(ctx: AuthContext, sheet_id: UUID, row_id: UUID, kind: LinkKin
         tx.record(
             "sheet_row.linked",
             target=Target("sheet_row", row_id),
-            after=Ref(kind=kind, target=target_id),
+            after=Ref(target=target_id),  # the link kind is the row link's own column
             scope=Scope(engagement_id=sheet.engagement_id, work_item_id=sheet.work_item_id),
         )
 

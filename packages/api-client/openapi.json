@@ -129220,6 +129220,23 @@
         "title": "SixtyFiveDayElectionStatus",
         "type": "string"
       },
+      "SkillImportIn": {
+        "additionalProperties": false,
+        "description": "K-03-T21 (DEC-6021), additive: the content pack, `{\"skills\": [{key, name, group,\nversions: [{version, status, body_md, linked_step_keys}]}]}`.",
+        "properties": {
+          "pack": {
+            "additionalProperties": true,
+            "cls": "internal",
+            "title": "Pack",
+            "type": "object"
+          }
+        },
+        "required": [
+          "pack"
+        ],
+        "title": "SkillImportIn",
+        "type": "object"
+      },
       "SkillListOut": {
         "additionalProperties": false,
         "properties": {
@@ -129283,6 +129300,62 @@
           "status"
         ],
         "title": "SkillOut",
+        "type": "object"
+      },
+      "SkillPinWarningListOut": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/SkillPinWarningOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "SkillPinWarningListOut",
+        "type": "object"
+      },
+      "SkillPinWarningOut": {
+        "additionalProperties": false,
+        "description": "KNW-06c: \"Skill BH-SK-430 v2 is a draft\" (a warning; it never blocks publish).",
+        "properties": {
+          "severity": {
+            "cls": "internal",
+            "const": "warning",
+            "title": "Severity",
+            "type": "string"
+          },
+          "skill_key": {
+            "cls": "internal",
+            "maxLength": 60,
+            "title": "Skill Key",
+            "type": "string"
+          },
+          "text": {
+            "cls": "internal",
+            "maxLength": 200,
+            "title": "Text",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "skill_key",
+          "version",
+          "severity",
+          "text"
+        ],
+        "title": "SkillPinWarningOut",
         "type": "object"
       },
       "SnapshotIn": {
@@ -352950,7 +353023,7 @@
     },
     "/v1/skills/import": {
       "post": {
-        "description": "Content import (fresh MFA); the body is the content pack.",
+        "description": "Content import (fresh MFA); 422 `skill_markdown_unsafe`; answers the new versions.",
         "operationId": "skills_import",
         "parameters": [
           {
@@ -352997,6 +353070,16 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkillImportIn"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "201": {
             "content": {
@@ -383094,6 +383177,123 @@
           }
         },
         "summary": "Scoping Sources Route",
+        "tags": [
+          "templates v2"
+        ],
+        "x-abacus-action": "template.read"
+      }
+    },
+    "/v1/template-versions/{version_id}/skill-pin-warnings": {
+      "get": {
+        "description": "K-03-T21 (KNW-06c): pins to draft skill versions, as warnings that never block publish.",
+        "operationId": "skill_pin_warnings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillPinWarningListOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Skill Pin Warnings Route",
         "tags": [
           "templates v2"
         ],
