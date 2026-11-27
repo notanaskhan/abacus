@@ -3536,7 +3536,9 @@ export const clientOverview = <ThrowOnError extends boolean = false>(options: Op
  * Relationship Graph Route
  *
  * CLI-03 a-f: nodes, edges, the banner and the viewer's saved positions; walled nodes
- * absent, no count.
+ * absent, no count. T-06-T51 (DEC-6015): the client's entities, external parties and live
+ * relationships, plus the K-1 flows the viewer may see (each edge only when both returns'
+ * engagements are readable, DEC-88; the banner counts visible edges only).
  */
 export const relationshipGraph = <ThrowOnError extends boolean = false>(options: Options<RelationshipGraphData, ThrowOnError>): RequestResult<RelationshipGraphResponses, RelationshipGraphErrors, ThrowOnError> => (options.client ?? client).get<RelationshipGraphResponses, RelationshipGraphErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -19272,7 +19274,8 @@ export const assemblePacket = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Diagnostics Route
  *
- * The current approved checkpoint's form diagnostics.
+ * The current approved checkpoint's form diagnostics (T-06-T50: computed on read, as the
+ * preview caches its pages; a failing rule links the open issue already raised for it).
  */
 export const diagnostics = <ThrowOnError extends boolean = false>(options: Options<DiagnosticsData, ThrowOnError>): RequestResult<DiagnosticsResponses, DiagnosticsErrors, ThrowOnError> => (options.client ?? client).get<DiagnosticsResponses, DiagnosticsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

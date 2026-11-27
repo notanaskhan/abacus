@@ -85,6 +85,7 @@ from abacus.modules.tax.k1_contract import k1_router, portal_k1_router
 from abacus.modules.tax.k1_packages import draft_k1_blockers, package_scope
 from abacus.modules.tax.k1_packages import share_internal as share_k1_internal
 from abacus.modules.tax.k1_portal import deliverable_k1_rows
+from abacus.modules.tax.k1_relationships import register as _register_k1_flows
 from abacus.modules.tax.k1_release_workflow import (
     K1DeliveryInput,
     K1ReleaseFailure,
@@ -145,6 +146,7 @@ register_search_projection(SEARCH_TYPE, return_search_document)
 register_approval()
 _register_amendment_gates()  # T-08-T33: amendment blockers, the gate and bba_election
 _register_amendment_agent()  # T-08-T34: the Part II and election suggestion targets
+_register_k1_flows()  # T-06-T51: the relationship graph's K-1 flows and the release nudge
 # T-02-T20 (DV-4): a K-1 shared to a return as a draft blocks its final approval until released.
 register_final_approval_blocker("draft_k1", draft_k1_blockers)
 # T-02-T21 (DEC-34): a `k1_recipient` grant's `k1_package` scope (own-only in the portal reads).
