@@ -32,6 +32,7 @@ from abacus.modules.adjustments import posting
 from abacus.modules.evidence import records
 from abacus.modules.integrations import capabilities, writes
 from abacus.modules.integrations.api import FakeQboTransport, W1Refused
+from abacus.modules.integrations.ledger_console import qbo_deep_link
 
 from .support import Net, Person, Seeder, Site
 
@@ -756,3 +757,66 @@ async def test_cv2_the_firms_posting_settings_are_versioned(world: World) -> Non
         headers=w.net.keyed(),
     )
     assert no_mfa.status_code in (401, 403, 409), no_mfa.text
+
+
+# --- C-02-T44 (TASK-9024; CLS-11 b2 and e; DEC-6029): the drawer's entries and the console's
+# open closing-date conflicts, in this W1 world.
+
+SANDBOX = "https://app.sandbox.qbo.intuit.com/app/journal?txnId="
+
+
+async def test_c02t44_b2_the_drawer_lists_entries_with_quickbooks_links(world: World) -> None:
+    w = world
+    await _switches_on(w)
+    batch_id = await _posted(w, [await _entry(w, 1), await _entry(w, 2, "125.50")])
+    drawer = await w.net.call("GET", f"/v1/posting-batches/{batch_id}", w.partner)
+    assert drawer.status_code == 200, drawer.text
+    got = [
+        (e["ref"], e["status"], e["external_txn_ref"], e["deep_link"], e["amount"])
+        for e in drawer.json()["entries"]
+    ]
+    assert got == [
+        ("AJE-1", "posted", "48213", f"{SANDBOX}48213", "250.00"),
+        ("AJE-2", "posted", "48214", f"{SANDBOX}48214", "125.50"),
+    ]
+    log = await w.net.call(
+        "GET", f"/v1/client-entities/{w.site.entity_id}/posting-batches", w.partner
+    )
+    assert all(r["entries"] == [] for r in log.json()["items"])  # only the drawer carries them
+
+
+def test_c02t44_only_a_numeric_quickbooks_id_builds_a_link() -> None:
+    assert qbo_deep_link("48213") == f"{SANDBOX}48213"
+    for hostile in (None, "", "48213&x=1", "javascript:alert(1)", "1" * 21):
+        assert qbo_deep_link(hostile) is None
+
+
+async def test_c02t44_e_a_closed_period_lists_its_conflict_until_re_dated(world: World) -> None:
+    w = world
+    await _switches_on(w)
+    entry = await _entry(w, 1)
+    w.qbo.closed_on = date(2026, 8, 31)
+    w.qbo.script.append("closing_date_locked")
+    await _posted(w, [entry])
+    console = await w.net.call(
+        "GET", f"/v1/client-entities/{w.site.entity_id}/ledger-console", w.partner
+    )
+    assert console.status_code == 200, console.text
+    [conflict] = console.json()["conflicts"]
+    assert (conflict["batch_code"], conflict["entry_ref"], conflict["status"]) == (
+        "2026-08-A",
+        "AJE-1",
+        "open",
+    )
+    assert (
+        conflict["ledger_closing_date"] == "2026-08-31" and conflict["entry_date"] <= "2026-08-31"
+    )
+    redated = await w.post(
+        f"/v1/closing-date-conflicts/{conflict['conflict_id']}/redate",
+        body={"new_date": "2026-09-01", "reason": "August is closed in QuickBooks"},
+    )
+    assert redated.status_code == 200, redated.text
+    after = await w.net.call(
+        "GET", f"/v1/client-entities/{w.site.entity_id}/ledger-console", w.partner
+    )
+    assert after.json()["conflicts"] == []

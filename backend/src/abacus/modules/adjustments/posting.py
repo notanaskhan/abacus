@@ -56,6 +56,8 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.integrations.api import (
     W1_CAPABILITY,
+    BatchEntry,
+    ClosingConflict,
     ClosingDate,
     FakeQboTransport,
     JournalEntry,
@@ -74,6 +76,7 @@ from abacus.modules.integrations.api import (
     execute_write,
     memo_prefix_of,
     register_batch_entity,
+    register_batch_entries,
     register_posting_log,
     w1_ledger,
     w1_refusal,
@@ -719,6 +722,14 @@ _FAILURES = text(
     "WHERE b.client_entity_id = :ce AND r.outcome = 'failed' "
     "ORDER BY r.created_at DESC, r.id DESC LIMIT 50"
 )
+# C-02-T44 (CLS-11 e): the open closing-date conflicts, each with its entry and batch.
+_CONFLICTS = text(
+    "SELECT c.id, b.batch_code, e.ref, c.entry_date, c.ledger_closing_date, c.status "
+    "FROM closing_date_conflicts c JOIN posting_batches b ON b.id = c.posting_batch_id "
+    "JOIN proposed_entries e ON e.id = c.proposed_entry_id "
+    "WHERE b.client_entity_id = :ce AND c.status IN ('open', 'client_asked') "
+    "ORDER BY c.created_at, c.id"
+)
 _CLOSING = text(
     "SELECT closing_date, set_by_user_id, at FROM closing_date_events "
     "WHERE client_entity_id = :ce ORDER BY at DESC, id DESC LIMIT 1"
@@ -732,6 +743,7 @@ async def posting_facts_for(tenant: TenantContext, client_entity_id: UUID) -> Po
         proposed = int(await session.scalar(_PROPOSED, {"ce": client_entity_id}) or 0)
         closing = (await session.execute(_CLOSING, {"ce": client_entity_id})).first()
         failed = list((await session.execute(_FAILURES, {"ce": client_entity_id})).all())
+        conflicts = list((await session.execute(_CONFLICTS, {"ce": client_entity_id})).all())
     return PostingFacts(
         tuple(
             LogRow(r.id, r.batch_code, r.period, r.status, r.entry_count, int(r.approved),
@@ -747,6 +759,11 @@ async def posting_facts_for(tenant: TenantContext, client_entity_id: UUID) -> Po
                            f.provider_message_redacted, f.resolved,
                            f.posted_by_user_id if f.resolved is not None else None)
             for f in failed
+        ),
+        tuple(
+            ClosingConflict(c.id, c.batch_code, c.ref, c.entry_date, c.ledger_closing_date,
+                            c.status)
+            for c in conflicts
         ),
     )  # fmt: skip
 
@@ -765,6 +782,26 @@ async def batch_entity(tenant: TenantContext, batch_id: UUID) -> UUID | None:
 register_batch_entity(batch_entity)
 
 
+async def batch_entries_for(tenant: TenantContext, batch_id: UUID) -> tuple[BatchEntry, ...]:
+    """C-02-T44 (CLS-11 b2): the batch's entries, in the drawer's order."""
+    async with tenant_session(tenant) as session:
+        rows = list((await session.execute(_BATCH_ENTRIES, {"b": batch_id})).mappings())
+    return tuple(
+        BatchEntry(
+            r["id"],
+            str(r["ref"]),
+            str(r["status"]),
+            r["external_txn_ref"],
+            r["description"],
+            r["amount"],
+        )
+        for r in rows
+    )
+
+
+register_batch_entries(batch_entries_for)
+
+
 # --- views --------------------------------------------------------------------------------------
 
 _BATCH_VIEW = text(
@@ -773,7 +810,8 @@ _BATCH_VIEW = text(
     "created_at FROM posting_batches WHERE id = :b"
 )
 _BATCH_ENTRIES = text(
-    "SELECT e.id, e.ref, e.status, e.external_txn_ref, (SELECT r.provider_code FROM "
+    "SELECT e.id, e.ref, e.status, e.external_txn_ref, e.description, e.amount, "
+    "(SELECT r.provider_code FROM "
     "posting_results r WHERE r.proposed_entry_id = e.id AND r.posting_batch_id = :b "
     "ORDER BY r.attempt_no DESC LIMIT 1) AS failure FROM proposed_entries e "
     "WHERE e.posting_batch_id = :b ORDER BY e.kind, e.number"

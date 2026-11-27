@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import csv
 import io
+import re
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -77,6 +78,31 @@ class ClosingDate:
 
 
 @dataclass(frozen=True)
+class ClosingConflict:
+    """C-02-T44 (CLS-11 e): an entry dated on or before the ledger's closing date, still open
+    (or with the client asked to lift the date)."""
+
+    conflict_id: UUID
+    batch_code: str
+    entry_ref: str
+    entry_date: date
+    ledger_closing_date: date
+    status: str
+
+
+@dataclass(frozen=True)
+class BatchEntry:
+    """C-02-T44 (CLS-11 b2): one entry of a batch as the drawer lists it."""
+
+    entry_id: UUID
+    ref: str
+    status: str
+    external_txn_ref: str | None
+    description: str | None = None
+    amount: Decimal | None = None
+
+
+@dataclass(frozen=True)
 class PostingFacts:
     """What adjustments answers about one entity's postings. `proposed_entries` is the number of
     proposed batches (the tile; the name is C-02-T20's)."""
@@ -85,6 +111,7 @@ class PostingFacts:
     proposed_entries: int
     closing_date: ClosingDate | None
     failures: tuple[PostingFailure, ...] = ()
+    conflicts: tuple[ClosingConflict, ...] = ()
 
 
 PostingLog = Callable[[TenantContext, UUID], Awaitable[PostingFacts]]
@@ -99,6 +126,40 @@ async def posting_facts(tenant: TenantContext, client_entity_id: UUID) -> Postin
     if not _providers:
         return PostingFacts((), 0, None)
     return await _providers[0](tenant, client_entity_id)
+
+
+BatchEntries = Callable[[TenantContext, UUID], Awaitable[tuple[BatchEntry, ...]]]
+_batch_entries: list[BatchEntries] = []
+
+
+def register_batch_entries(provider: BatchEntries) -> None:
+    """C-02-T44: a batch's entries, from adjustments (which owns them)."""
+    _batch_entries[:] = [provider]
+
+
+_QBO_APP: Final = {
+    "sandbox": "https://app.sandbox.qbo.intuit.com",
+    "production": "https://app.qbo.intuit.com",
+}
+_TXN_REF: Final = re.compile(r"^[0-9]{1,20}$")
+
+
+def qbo_deep_link(external_ref: str | None) -> str | None:
+    """The QuickBooks Online journal entry a posting wrote, in the environment this deployment
+    talks to (A-02-T33). A reference that is not QuickBooks' numeric id gets no link: it is
+    client-system text (ADR-052) and never builds a URL."""
+    if external_ref is None or not _TXN_REF.fullmatch(external_ref):
+        return None
+    from abacus.kernel.config import settings
+
+    return f"{_QBO_APP[settings().qbo_environment]}/app/journal?txnId={external_ref}"
+
+
+async def batch_entries(ctx: AuthContext, batch_id: UUID) -> tuple[BatchEntry, ...]:
+    """CLS-11 b2's entries; call after `posting_batch` authorised the batch."""
+    if not _batch_entries:
+        return ()
+    return await _batch_entries[0](ctx.tenant, batch_id)
 
 
 BatchEntity = Callable[[TenantContext, UUID], Awaitable[UUID | None]]
@@ -133,6 +194,7 @@ class Console:
     tiles: dict[str, object]
     connection: dict[str, object] | None
     failures: tuple[dict[str, object], ...] = ()
+    conflicts: tuple[ClosingConflict, ...] = ()
 
 
 async def _qbo(ctx: AuthContext, client_entity_id: UUID) -> Any:  # noqa: ANN401 # Any: connections' view
@@ -169,7 +231,7 @@ async def ledger_console(ctx: AuthContext, client_entity_id: UUID) -> Console:
     name = await entity_name(ctx.tenant, client_entity_id) or ""
     failures = await _failures(facts)
     if qbo is None:
-        return Console(client_entity_id, name, _tiles(facts), None, failures)
+        return Console(client_entity_id, name, _tiles(facts), None, failures, facts.conflicts)
     async with tenant_session(ctx.tenant) as session:
         grant = (
             await session.execute(
@@ -198,7 +260,7 @@ async def ledger_console(ctx: AuthContext, client_entity_id: UUID) -> Console:
         "reconnect_requested_at": qbo.reauth_requested_at,
         "company_name": qbo.display_label,
     }  # fmt: skip
-    return Console(client_entity_id, name, _tiles(facts), pane, failures)
+    return Console(client_entity_id, name, _tiles(facts), pane, failures, facts.conflicts)
 
 
 async def _failures(facts: PostingFacts) -> tuple[dict[str, object], ...]:
@@ -307,12 +369,15 @@ async def ledger_activity(
 
 __all__ = [
     "LEDGER_LABEL",
+    "BatchEntry",
+    "ClosingConflict",
     "ClosingDate",
     "Console",
     "LedgerEvent",
     "LogRow",
     "PostingFacts",
     "PostingFailure",
+    "batch_entries",
     "health_of",
     "ledger_activity",
     "ledger_console",
@@ -320,6 +385,8 @@ __all__ = [
     "posting_facts",
     "posting_log",
     "posting_log_csv",
+    "qbo_deep_link",
     "register_batch_entity",
+    "register_batch_entries",
     "register_posting_log",
 ]

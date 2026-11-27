@@ -351,6 +351,8 @@ interface LedgerSearch {
   close?: string;
   log?: "events";
   reconnect?: true;
+  /** C-02-T44 (CLS-11 b2): the batch whose drawer is open. */
+  batch?: string;
 }
 
 function validateLedgerSearch(search: Record<string, unknown>): LedgerSearch {
@@ -359,6 +361,9 @@ function validateLedgerSearch(search: Record<string, unknown>): LedgerSearch {
   if (search.log === "events") out.log = "events";
   if (search.reconnect === true || search.reconnect === "1" || search.reconnect === 1) {
     out.reconnect = true;
+  }
+  if (typeof search.batch === "string" && /^[0-9a-f-]{36}$/.test(search.batch)) {
+    out.batch = search.batch;
   }
   return out;
 }
@@ -387,6 +392,19 @@ export const ledgerConsoleRoute = createRoute({
           closeId={close}
           log={search.log === "events" ? "events" : "batches"}
           reconnectOpen={search.reconnect === true}
+          batchId={search.batch ?? null}
+          onBatch={(batch) => {
+            void navigate({
+              to: "/clients/$clientId/entities/$entityId/ledger",
+              params: { clientId, entityId },
+              search: {
+                ...(close === undefined ? {} : { close }),
+                ...(search.log === "events" ? { log: "events" as const } : {}),
+                ...(batch === null ? {} : { batch }),
+              },
+              replace: true,
+            });
+          }}
           onLog={(log) => {
             void navigate({
               to: "/clients/$clientId/entities/$entityId/ledger",

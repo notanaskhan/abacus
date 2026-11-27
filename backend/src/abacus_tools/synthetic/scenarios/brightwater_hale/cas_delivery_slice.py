@@ -174,9 +174,11 @@ BELOW_THE_FOLD_BATCHES: Final = (
           datetime(2026, 3, 20, 16, 12, tzinfo=CT), "44568", "44572"),
 )  # fmt: skip
 BELOW_THE_FOLD_POSTED: Final = tuple(b.code for b in reversed(BELOW_THE_FOLD_BATCHES))
+# C-02-T44 (DEC-6029): posted at 10:20 AM (CLS-11 b's row and b2's drawer read "Sep 14, 10:20
+# AM"); the closing date moved to Aug 31 at 10:22 AM, after it.
 AUGUST_POSTED_BATCH: Final = Batch(
     "2026-08-A", "2026-08", 6, D("35300.00"), "posted",
-    datetime(2026, 9, 14, 10, 22, tzinfo=CT), "48213", "48218",
+    datetime(2026, 9, 14, 10, 20, tzinfo=CT), "48213", "48218",
 )  # fmt: skip
 CLOSING_DATES: Final = (
     (date(2026, 7, 31), datetime(2026, 8, 11, 14, 42, tzinfo=CT)),  # set by Raj Malhotra
@@ -620,6 +622,12 @@ def cls11_console() -> dict[str, object]:
         },
         "batches": [_batch_row(b) for b in (*BATCHES, *BELOW_THE_FOLD_BATCHES)],
         "august_posted": _batch_row(AUGUST_POSTED_BATCH),
+        # C-02-T44 (CLS-11 b2): the posted batch's six entries, each with its QuickBooks id.
+        "august_entries": [
+            {"ref": e.ref, "description": e.title, "amount": f"{e.amount:.2f}",
+             "external_txn_ref": e.qbo_id}
+            for e in ENTRIES
+        ],
         "failures": [
             {
                 "at": failed_at.isoformat(),

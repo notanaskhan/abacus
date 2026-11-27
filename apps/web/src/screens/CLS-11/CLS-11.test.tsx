@@ -17,7 +17,13 @@ import exported from "../../fixtures/seed/scenario.cls11-console.json";
 import { renderRoutes } from "../../testing/support";
 import { COPY as C } from "./copy";
 import { CLS11, type Cls11Log } from "./index";
-import { CLS11_CLOSE_ID, CLS11_ENTITY_ID, type Cls11State, scenarios } from "./scenarios";
+import {
+  CLS11_AUGUST_BATCH_ID,
+  CLS11_CLOSE_ID,
+  CLS11_ENTITY_ID,
+  type Cls11State,
+  scenarios,
+} from "./scenarios";
 
 let restore: (() => void) | null = null;
 interface Call {
@@ -37,7 +43,7 @@ afterEach(() => {
 
 function show(
   state: Cls11State,
-  opts: { log?: Cls11Log; reconnectOpen?: boolean } = {},
+  opts: { log?: Cls11Log; reconnectOpen?: boolean; batchId?: string } = {},
   over: Record<string, FixtureHandler> = {},
 ): Call[] {
   const calls: Call[] = [];
@@ -61,6 +67,7 @@ function show(
           closeId={CLS11_CLOSE_ID}
           {...(opts.log === undefined ? {} : { log: opts.log })}
           {...(opts.reconnectOpen === undefined ? {} : { reconnectOpen: opts.reconnectOpen })}
+          {...(opts.batchId === undefined ? {} : { batchId: opts.batchId })}
         />
       ),
     },
@@ -284,5 +291,128 @@ describe("CLS-11 Ledger sync console", () => {
     for (const word of ["Approve", "Sign off", "Release", "Post"]) {
       expect(screen.queryByRole("button", { name: new RegExp(`^${word}`) })).toBeNull();
     }
+  });
+  // --- C-02-T44 (TASK-9024; DEC-6029): b, b2 and e ------------------------------------------
+
+  it("CLS-11b posted: August posted Sep 14, 10:20 AM as QBO 48213–48218; closing date Aug 31", async () => {
+    show("b");
+    await waitFor(() => {
+      expect(document.querySelectorAll("[data-batch]")).toHaveLength(8);
+    });
+    const august = batch("2026-08-A");
+    expect(within(august).getByText("$35,300.00")).toBeTruthy();
+    expect(within(august).getByText("Sep 14, 10:20 AM")).toBeTruthy();
+    expect(within(august).getByText("QBO 48213–48218")).toBeTruthy();
+    expect(within(august).getByText("Raj Malhotra")).toBeTruthy();
+    const tiles = document.querySelector<HTMLElement>('[data-cls11="tiles"]');
+    expect(tiles?.textContent).toContain("8");
+    expect(within(tiles as HTMLElement).getByText("Aug 31")).toBeTruthy();
+    expect(kv(C.connection.closingDate).textContent).toContain(
+      "Aug 31, 2026 · set by Raj Malhotra, 10:22 AM",
+    );
+  });
+
+  it("CLS-11b2 acceptance: each QBO id opens the transaction in a new tab with rel noopener", async () => {
+    const calls = show("b2", { batchId: CLS11_AUGUST_BATCH_ID });
+    const drawer = await screen.findByRole("dialog", { name: "2026-08-A · August 2026" });
+    await waitFor(() => {
+      expect(drawer.querySelectorAll("[data-entry]")).toHaveLength(6);
+    });
+    expect(within(drawer).getByText("Payroll accrual")).toBeTruthy();
+    expect(within(drawer).getByText("Vendor refund — Rocky Ridge Dairy Co.")).toBeTruthy();
+    expect(within(drawer).getByText("$380.00")).toBeTruthy();
+    expect(within(drawer).getByText("Sep 14, 10:20 AM · Raj Malhotra")).toBeTruthy();
+    const links = [...drawer.querySelectorAll<HTMLAnchorElement>("a[data-qbo]")];
+    expect(links.map((a) => a.textContent)).toEqual([
+      "QBO 48213",
+      "QBO 48214",
+      "QBO 48215",
+      "QBO 48216",
+      "QBO 48217",
+      "QBO 48218",
+    ]);
+    for (const a of links) {
+      expect(a.getAttribute("target")).toBe("_blank");
+      expect(a.getAttribute("rel")?.split(" ")).toContain("noopener");
+      expect(a.getAttribute("href")).toMatch(
+        /^https:\/\/app\.(sandbox\.)?qbo\.intuit\.com\/app\/journal\?txnId=482(1[3-8])$/,
+      );
+    }
+    expect(within(drawer).getByText(C.drawer.opensInTab)).toBeTruthy();
+    expect(
+      within(drawer).getByRole("link", { name: C.drawer.openAdjustments }).getAttribute("href"),
+    ).toContain(`/closes/${CLS11_CLOSE_ID}/adjustments`);
+    expect(calls.some((c) => c.path === `/v1/posting-batches/${CLS11_AUGUST_BATCH_ID}`)).toBe(
+      true,
+    );
+  });
+
+  it("a batch row opens its drawer", async () => {
+    show("b");
+    await waitFor(() => {
+      expect(document.querySelectorAll("[data-batch]")).toHaveLength(8);
+    });
+    fireEvent.click(within(batch("2026-08-A")).getByRole("button", { name: "2026-08-A" }));
+    expect(await screen.findByRole("dialog", { name: "2026-08-A · August 2026" })).toBeTruthy();
+  });
+
+  it("CLS-11e closing date conflict: the row, can't post, and the client's date in the pane", async () => {
+    show("e");
+    const band = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[data-cls11="conflicts"]');
+      if (found === null) throw new Error("no conflicts band");
+      return found;
+    });
+    expect(band.textContent).toContain(C.log.conflictsOpen(1));
+    expect(band.textContent).toContain(
+      "AJE dated Aug 31 cannot post — the QuickBooks closing date is Aug 31, 2026",
+    );
+    expect(band.textContent).toContain(
+      "2026-08-A · 6 approved entries dated Aug 31 · nothing posted",
+    );
+    expect(within(band).getByRole("button", { name: C.log.askClient })).toBeTruthy();
+    expect(within(band).getByRole("button", { name: C.log.redate("Sep 1") })).toBeTruthy();
+    await waitFor(() => {
+      expect(within(batch("2026-08-A")).getByText(/can't post/)).toBeTruthy();
+    });
+    expect(kv(C.connection.closingDate).textContent).toContain(
+      "Aug 31, 2026 · changed in QuickBooks Online · found by the 10:02 AM sync",
+    );
+  });
+
+  it("CLS-11e: asking the client sends one request per held entry, a person's click", async () => {
+    const calls = show("e");
+    const band = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[data-cls11="conflicts"]');
+      if (found === null) throw new Error("no conflicts band");
+      return found;
+    });
+    fireEvent.click(within(band).getByRole("button", { name: C.log.askClient }));
+    const dialog = await screen.findByRole("dialog", { name: C.askDialog.title });
+    expect(calls.filter((c) => c.path.endsWith("/ask-client"))).toHaveLength(0);
+    fireEvent.click(within(dialog).getByRole("button", { name: C.askDialog.send }));
+    await waitFor(() => {
+      expect(calls.filter((c) => c.path.endsWith("/ask-client"))).toHaveLength(6);
+    });
+  });
+
+  it("CLS-11e: re-dating needs a reason before it runs", async () => {
+    const calls = show("e");
+    const band = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[data-cls11="conflicts"]');
+      if (found === null) throw new Error("no conflicts band");
+      return found;
+    });
+    fireEvent.click(within(band).getByRole("button", { name: C.log.redate("Sep 1") }));
+    const dialog = await screen.findByRole("dialog", { name: C.redateDialog.title("Sep 1") });
+    const confirm = within(dialog).getByRole("button", { name: C.redateDialog.confirm });
+    expect(confirm.hasAttribute("disabled")).toBe(true);
+    fireEvent.change(within(dialog).getByLabelText(C.redateDialog.reason), {
+      target: { value: "August is closed in QuickBooks" },
+    });
+    fireEvent.click(confirm);
+    await waitFor(() => {
+      expect(calls.filter((c) => c.path.endsWith("/redate"))).toHaveLength(6);
+    });
   });
 });

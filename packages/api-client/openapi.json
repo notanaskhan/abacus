@@ -155024,6 +155024,89 @@
         "title": "W1ActivityOut",
         "type": "object"
       },
+      "W1BatchEntryOut": {
+        "additionalProperties": false,
+        "description": "CLS-11 b2 (C-02-T44): one entry in the batch drawer; `deep_link` opens the QuickBooks\ntransaction (in a new tab, rel noopener), built server-side from QuickBooks' numeric id.",
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Amount"
+          },
+          "deep_link": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Deep Link"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Description"
+          },
+          "entry_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "external_txn_ref": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "External Txn Ref"
+          },
+          "ref": {
+            "cls": "internal",
+            "maxLength": 12,
+            "title": "Ref",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "maxLength": 30,
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entry_id",
+          "ref",
+          "status"
+        ],
+        "title": "W1BatchEntryOut",
+        "type": "object"
+      },
       "W1CapabilitySwitchIn": {
         "additionalProperties": false,
         "properties": {
@@ -155097,6 +155180,61 @@
           "released"
         ],
         "title": "W1CapabilitySwitchOut",
+        "type": "object"
+      },
+      "W1ClosingConflictOut": {
+        "additionalProperties": false,
+        "description": "CLS-11 e (C-02-T44): \"AJE-06 dated Aug 31 cannot post \u2014 the QuickBooks closing date is\nAug 31, 2026\"; its actions are C8's ask-client and redate routes on `conflict_id`.",
+        "properties": {
+          "batch_code": {
+            "cls": "internal",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[A-Z]$",
+            "title": "Batch Code",
+            "type": "string"
+          },
+          "conflict_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Conflict Id",
+            "type": "string"
+          },
+          "entry_date": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Entry Date",
+            "type": "string"
+          },
+          "entry_ref": {
+            "cls": "internal",
+            "maxLength": 12,
+            "title": "Entry Ref",
+            "type": "string"
+          },
+          "ledger_closing_date": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Ledger Closing Date",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "open",
+              "client_asked"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "conflict_id",
+          "batch_code",
+          "entry_ref",
+          "entry_date",
+          "ledger_closing_date",
+          "status"
+        ],
+        "title": "W1ClosingConflictOut",
         "type": "object"
       },
       "W1ConnectionPaneOut": {
@@ -155569,6 +155707,15 @@
             "title": "Client Entity Name",
             "type": "string"
           },
+          "conflicts": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/W1ClosingConflictOut"
+            },
+            "title": "Conflicts",
+            "type": "array"
+          },
           "connection": {
             "anyOf": [
               {
@@ -155777,6 +155924,15 @@
             "format": "uuid",
             "title": "Batch Id",
             "type": "string"
+          },
+          "entries": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/W1BatchEntryOut"
+            },
+            "title": "Entries",
+            "type": "array"
           },
           "entry_count": {
             "cls": "internal",

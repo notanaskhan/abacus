@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/CLS-11 GL sync console - Copperleaf - QuickBooks Online/` |
 | Epic and tasks | C-02 · SPEC-700, SPEC-701; screen contracts and scenarios C-02-T15 (TASK-8624); screen and live swap per `docs/plan/epics/C-02.tasks.csv` |
-| Manifest status | live (C-02-T35: a, a2, c, d, d2; b, b2, e with C-02's later rows) |
+| Manifest status | live (C-02-T35: a, a2, c, d, d2; C-02-T44: b, b2, e) |
 
 Parity tier target: C (C-02 §5.5). Copy keys live in `apps/web/src/screens/CLS-11/copy.ts` when the screen task builds it; words from the handoff and the status vocabulary only. Fixtures come from the Python scenario through `make fixtures` (F-04-T31), never hand-written: `cas_delivery_slice.cls11_console()` writes `apps/web/src/fixtures/seed/scenario.cls11-console.json`.
 
@@ -16,12 +16,12 @@ Parity tier target: C (C-02 §5.5). Copy keys live in `apps/web/src/screens/CLS-
 |---|---|---|---|---|---|---|
 | a | Connected | ``fixtures/scenarios/CLS-11.ts` state` | Raj Malhotra | Mon Sep 14, 9:24 AM | live | AY |
 | a2 | Sync events | ``fixtures/scenarios/CLS-11.ts` state` | Raj Malhotra | Mon 14 Sep 2026, 9:24 AM | live | AY |
-| b | Posted | ``fixtures/scenarios/CLS-11.ts` state` | Raj Malhotra | Mon 14 Sep 2026, 10:22 AM | planned | AY |
-| b2 | Batch drawer | ``fixtures/scenarios/CLS-11.ts` state` | Raj Malhotra | Mon 14 Sep 2026, 9:24 AM | planned | AY |
+| b | Posted | ``fixtures/scenarios/CLS-11.ts` state` | Raj Malhotra | Mon 14 Sep 2026, 10:22 AM | live | AY |
+| b2 | Batch drawer | ``fixtures/scenarios/CLS-11.ts` state` | Raj Malhotra | Mon 14 Sep 2026, 9:24 AM | live | AY |
 | c | Needs attention | ``fixtures/scenarios/CLS-11.ts` state` | Raj Malhotra | Mon 14 Sep 2026, 10:03 AM | live | AY |
 | d | Needs reauth | ``fixtures/scenarios/CLS-11.ts` state` | Raj Malhotra | Mon 14 Sep 2026, 9:14 AM | live | AY |
 | d2 | Request reconnect | ``fixtures/scenarios/CLS-11.ts` state` | Raj Malhotra | Mon 14 Sep 2026, 9:24 AM | live | AY |
-| e | Closing date conflict | ``fixtures/scenarios/CLS-11.ts` state` | Raj Malhotra | Mon 14 Sep 2026, 10:21 AM | planned | AY |
+| e | Closing date conflict | ``fixtures/scenarios/CLS-11.ts` state` | Raj Malhotra | Mon 14 Sep 2026, 10:21 AM | live | AY |
 
 ## Deviations
 - Personas and clocks per state are in the scenario file (CLS-07 c, c2, d are Priya Raman's; the README's viewer column names Raj).
@@ -72,3 +72,16 @@ Writes: Sync now (`ledger.pull`, C-01-T17), Request reconnect (`connection.recon
 - Day headings use the kit's `weekdayDate` ("Today · Monday, September 14") rather than "TODAY · MON SEP 14".
 - The failure's resolution reads "resolved: retried by Raj Malhotra, 2:41 PM"; the handoff's "account reactivated by" is a narrative the data does not hold.
 - Parity diffs per artboard are recorded when the e2e walk runs in the end pass (`e2e/screens/CLS-11.spec.ts`).
+
+
+## b, b2 and e (C-02-T44, DEC-6029)
+
+| State | Data condition | Reads |
+|---|---|---|
+| b | 2026-08-A `posted` at 10:20 AM (QBO 48213–48218, $35,300.00); tiles 8 posted · 0 proposed; closing date Aug 31 set by Raj Malhotra at 10:22 AM (same day: the time only) | as a |
+| b2 | b's data with `?batch=<2026-08-A>`: the O2 drawer with Status, Amount, Posted, QuickBooks ids and the six entries, each QBO id an `<a target="_blank" rel="noopener noreferrer">` to the server's `deep_link`; footer "Open in Adjustments (CLS-07)" | `GET /v1/posting-batches/{id}` (additive `entries[]`: ref, description, amount, `external_txn_ref`, `deep_link`) |
+| e | 2026-08-A approved (6 of 6) and held: the console's additive `conflicts[]` lists its six entries dated Aug 31 against the Aug 31 closing date, which the pane shows as "changed in QuickBooks Online · found by the 10:02 AM sync" (`closing_date_set_by` null) | `GET …/ledger-console` |
+
+Writes (e): "Ask the client to lift the date…" posts C8's `ask-client` for each held entry; "Re-date to Sep 1…" posts `redate` with a reason for each. Both are a person's clicks in a confirm dialog.
+
+**Deviations (C-02-T44).** (1) The handoff draws one conflict row per batch; the database keeps one conflict per entry (0950), so the band groups entries by batch and date ("6 approved entries dated Aug 31") and its actions act on each. (2) The ask and re-date dialogs' body copy is ours: the handoff names only the two actions. (3) `deep_link` is built server-side from QuickBooks' numeric id and the deployment's QBO environment; a non-numeric reference gets no link (client-system text, ADR-052). (4) The seed's August posting time is 10:20 AM, as the handoff's row and drawer read; the closing date moved at 10:22 AM.
