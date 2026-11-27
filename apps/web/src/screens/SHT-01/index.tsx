@@ -112,6 +112,9 @@ export function SHT01({ auditId, sheetId }: SHT01Props): JSX.Element {
       viewer: { kind: "human", name },
       height: 600,
       selected,
+      onOpenRow: (key) => {
+        openOverlay(ov.SHT01Row(key));
+      },
       onSelect: (key, on) => {
         setSelected((s) => {
           const next = new Set(s);

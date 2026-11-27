@@ -39,3 +39,5 @@ registerOverlay("provenance", { layer: "drawer", render });
 registerOverlay("sampling", { layer: "modal", render });
 // S47 (TASK-8338): WB-11 `?ov=integration:<key>`, the integration detail drawer.
 registerOverlay("integration", { layer: "drawer", render });
+// K-03-T22: SHT-01 e `?ov=row:<rowKey>`, a sheet row's drawer over its sheet.
+registerOverlay("row", { layer: "drawer", render });

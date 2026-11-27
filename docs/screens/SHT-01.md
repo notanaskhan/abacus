@@ -18,7 +18,7 @@ Parity tier target: C (K-03 §5.5). Copy keys live in `apps/web/src/screens/SHT-
 | b | Empty from template | Cole Hart | Thu Sep 24, 10:12 AM | Thu Sep 24, 10:12 AM · created from FS v5 at the 10:05 Board move | planned | AY |
 | c | Filled from the sample | Cole Hart | Thu Sep 24, 11:10 AM | Thu Sep 24, 11:10 AM · 40 rows, nothing tested yet | planned | AY |
 | d | Agent column running | Cole Hart | Fri Sep 25, 3:20 PM | Fri Sep 25, 3:20 PM · 11 tested · 3 running · 26 waiting | planned | AY |
-| e | Row drawer · SURL-05 | Cole Hart | Wednesday 30 September 2026, 10:15 AM CT | The one exception, with its citations | planned | AY |
+| e | Row drawer · SURL-05 | Cole Hart | Wednesday 30 September 2026, 10:15 AM CT | The one exception, with its citations | fixture (K-03-T22, `?ov=row:SURL-05`) | AY |
 | f | Locked | Cole Hart | Thu Oct 1 | Thu Oct 1 · after Hannah Leclerc’s reviewer sign-off | planned | AY |
 
 ## AVOID
@@ -28,6 +28,7 @@ gradients in product UI, emoji, saturated blue, heavy shadows, invented colours,
 - T18 reads as T6's sibling: no column letters, row numbers or zebra rows.
 - "Open in Excel" downloads a deterministic xlsx; the add-in is W-04. "Link request…" and "Review in package…" render only when K-04's capabilities are on.
 - Status bar totals foot: 31 + 8 + 1 + 0 = 40; 3,286,400.00 + 412,300.00 = 3,698,700.00.
+- K-03-T22 (DEC-6033): the row drawer is `?ov=row:<rowKey>`, opened from the row's key cell. A live row's Details are its columns; the source-only facts (payment method, invoice number, AP aging) arrive with the sample binding. The Agents tab omits "Auto-started by trigger: …" until K-03-T47's triggers; the Requests tab names requests once K-04 links them; the sources' quotes are withheld (the handoff gives none).
 
 ## Walls and agent
 - Walled users: 404, absent from lists, no hidden counts (INV-3, DEC-43).

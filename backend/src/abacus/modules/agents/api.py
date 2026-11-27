@@ -143,6 +143,7 @@ from abacus.modules.agents.proposals import (
     ProposalInvalid,
     ProposedRow,
     SuggestionChanged,
+    SuggestionView,
     code_suggestion_output,
     create_code_suggestion,
     create_proposal,
@@ -151,6 +152,7 @@ from abacus.modules.agents.proposals import (
     pending_suggestions,
     register_checkpoint_hooks,
     register_proposal_state,
+    suggestion_view,
 )
 from abacus.modules.agents.recommender_modes import (  # T-05-T49
     ModeClause as RecommendModeClause,
@@ -725,6 +727,7 @@ __all__ = [
     "StepOutcome",
     "SuggestionApplier",
     "SuggestionChanged",
+    "SuggestionView",
     "ThresholdEvaluation",
     "ThresholdPolicy",
     "TodayContext",
@@ -861,6 +864,7 @@ __all__ = [
     "start_section_drafts",  # A-08-T24 rest: a fan-out, 8 in flight
     "starts_in_shadow",
     "subject_engagement",
+    "suggestion_view",
     "template_drafts_router",
     "text_part",
     "today_context",

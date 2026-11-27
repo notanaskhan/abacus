@@ -17,6 +17,7 @@
 | `GET /v1/sheets/{sid}` · `GET …/rows?view=&cursor=` | `sheet.read` | SheetVM: columns, sections with totals, rows, cell states, sign-off state, status bar |
 | `POST …/rows/from-sample {sample_set_id}` · `POST …/rows` | `sheet.edit` | rows from an approved sample; a manual row |
 | `PATCH …/rows/{rid} {cells, version}` | `sheet.edit` | through `record_value`: 412 stale; 423 `row_locked` |
+| `GET …/rows/{rid}` | `sheet.read` | K-03-T22 (DEC-6033), SHT-01 e's drawer: `{engagement_id, row, facts[{label, type, value}], why[{column_key, suggestion_id, status, version, rationale, citation_count, agent_run_id}], links[{kind, target_id, linked_at, label}]}`; sources are `GET /v1/citations?anchor_type=sheet_row&anchor_id=<rid>&anchor_ref=<column>` |
 | `GET` · `POST` · `PATCH …/views[/{vid}]` | `sheet.read` · `sheet.edit` | saved views |
 | `POST …/columns` · `PATCH …/columns/{cid}` · `GET …/columns/{cid}/usage` · `DELETE …/columns/{cid}` | `sheet.configure` · `sheet.read` | 409 `column_in_use`; 422 classification reason |
 | `GET` · `PUT …/columns/{cid}/agent` | `sheet.read` · `sheet.configure` | 422 `missing_reference`; 409 `preview_required` on save |

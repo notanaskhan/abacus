@@ -2,10 +2,20 @@
 // contract (C23) and built from the F-08-T02 SURL seed (granite-peak-fy2026-surl-sheet). The strata
 // foot 24 + 16 = 40 rows and 3,286,400.00 + 412,300.00 = 3,698,700.00; the status-bar conclusions
 // 31 + 8 + 1 + 0 = 40 (SHT-01 spec). sheets-sh1.foot.test.ts re-adds them (ADR-050).
-import type { AgentColumnOut, SheetRowOut, SheetVmOut } from "@abacus/api-client";
+import type {
+  AgentColumnOut,
+  AgentRunOut,
+  CitationV2Out,
+  RunViewOut,
+  SheetRowDetailOut,
+  SheetRowFactOut,
+  SheetRowOut,
+  SheetVmOut,
+} from "@abacus/api-client";
 import { amount } from "@abacus/ui";
 import { SURL_SHEET } from "./granite-peak-fy2026-surl-sheet";
 import { stableId } from "./prng";
+import drawer from "./scenario.sht01-drawer.json";
 
 export const SHEET_ID = stableId("sheet:granite-peak:bh-fs-430");
 const WORK_ITEM = stableId("work-item:granite-peak:bh-fs-430");
@@ -115,5 +125,96 @@ export function agentColumn(status: AgentColumnOut["status"]): AgentColumnOut {
     status,
     saved_by: status === "saved" ? "Hannah Leclerc" : null,
     saved_at: status === "saved" ? "2026-09-25T14:31:00-05:00" : null,
+  };
+}
+
+// ---- K-03-T22 (DEC-6033): SHT-01 e, the row drawer on SURL-05 ----------------------------------
+// The drawer's facts, the agent's reason, its two sources, its run and its evidence link are the
+// Python scenario's (`seed/scenario.sht01-drawer.json`, `make fixtures`, never hand written).
+
+export const DRAWER_ROW_KEY = drawer.row_key;
+export const DRAWER_RUN_ID = stableId("agent-run:granite-peak:surl-tester:2026-09-28");
+const DRAWER_EVIDENCE = stableId("evidence-version:granite-peak:frf-30418");
+const ENGAGEMENT = stableId("engagement:granite-peak:fy2026");
+
+function drawerRow(): SheetRowOut {
+  const found = rows("default").find((r) => r.key === drawer.row_key);
+  if (found === undefined) throw new Error(`no ${drawer.row_key} in the SH-1 slice`);
+  return found;
+}
+
+export function rowDrawer(): SheetRowDetailOut {
+  return {
+    engagement_id: ENGAGEMENT,
+    row: drawerRow(),
+    facts: drawer.facts.map((f) => ({ ...f, type: f.type as SheetRowFactOut["type"] })),
+    why: [
+      {
+        column_key: "conclusion",
+        suggestion_id: stableId(`suggestion:${drawer.row_key}:conclusion`),
+        status: "pending",
+        version: 1,
+        rationale: drawer.rationale,
+        citation_count: drawer.citations.length,
+        agent_run_id: DRAWER_RUN_ID,
+      },
+    ],
+    links: [
+      {
+        kind: "evidence",
+        target_id: DRAWER_EVIDENCE,
+        linked_at: drawer.evidence.linked_at,
+        label: drawer.evidence.label,
+      },
+    ],
+  };
+}
+
+export function rowDrawerCitations(): CitationV2Out[] {
+  return drawer.citations.map((c, i) => ({
+    id: stableId(`citation:${drawer.row_key}:conclusion:${String(i + 1)}`),
+    n: i + 1,
+    kind: c.kind as CitationV2Out["kind"],
+    title: c.title,
+    loc: c.loc,
+    // The handoff names both sources without their text: withheld, never invented.
+    quote: null,
+    quote_state: "withheld",
+    value_text: null,
+    match_id: null,
+    state: "valid",
+    verified: true,
+    verification_reason: null,
+    created_by: { kind: "agent", label: "Accrued Agent" },
+    retrieved_at: drawer.agent.finished_at,
+    used_in: 1,
+    moved: null,
+    allowed_actions: [],
+    source: {
+      type: c.kind === "document_text" ? "evidence_version" : "record",
+      id: c.kind === "document_text" ? DRAWER_EVIDENCE : stableId(`record:${c.title}`),
+      version: "1",
+      evidence_version_id: c.kind === "document_text" ? DRAWER_EVIDENCE : null,
+      page: c.kind === "document_text" ? 1 : null,
+    },
+  }));
+}
+
+export function rowDrawerRun(): RunViewOut {
+  return { projection: "metadata", allowed_actions: [], run: drawerRun(), run_record_sha256: `sha256:${"0".repeat(64)}` };
+}
+
+function drawerRun(): AgentRunOut {
+  return {
+    id: DRAWER_RUN_ID,
+    agent: "workpapers.column_filler",
+    agent_label: drawer.agent.label,
+    initiator_name: "Cole Hart",
+    subject: drawer.row_key,
+    state: "succeeded",
+    stage: "live",
+    started_at: drawer.agent.started_at,
+    finished_at: drawer.agent.finished_at,
+    duration_ms: 300_000,
   };
 }

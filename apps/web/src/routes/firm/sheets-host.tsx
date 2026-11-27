@@ -41,6 +41,9 @@ const ProvenanceLayer = lazy(async () => ({
 const IntegrationLayer = lazy(async () => ({
   default: (await import("../../screens/WB-11/live")).IntegrationLayer,
 }));
+const RowDrawerLayer = lazy(async () => ({
+  default: (await import("../../screens/SHT-01/RowDrawer")).RowDrawerLayer,
+}));
 const SamplingLayer = lazy(async () => ({
   default: (await import("../../screens/AUD-11/SamplingLayer")).SamplingLayer,
 }));
@@ -72,6 +75,14 @@ export default function SheetsHost(props: OverlayRenderProps): JSX.Element | nul
     return (
       <Suspense fallback={null}>
         <SamplingLayer {...props} />
+      </Suspense>
+    );
+  }
+  if (ref.key === "row") {
+    // K-03-T22: the API answers 404 with `sheets.enabled` off.
+    return (
+      <Suspense fallback={null}>
+        <RowDrawerLayer {...props} />
       </Suspense>
     );
   }

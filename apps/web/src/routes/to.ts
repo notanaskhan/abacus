@@ -119,6 +119,8 @@ export const ov = {
   }),
   /** AUD-38, the tax hand-off sheet over AUD-06 (`?ov=tax-handoff:<auditWorkItemId>`; T-06-T45). */
   AUD38: (workItemId: string): OverlayRef => ({ key: "tax-handoff", args: [workItemId] }),
+  /** SHT-01 e, a sheet row's drawer over its sheet (`?ov=row:<rowKey>`; K-03-T22). */
+  SHT01Row: (rowKey: string): OverlayRef => ({ key: "row", args: [rowKey] }),
   /** SHL-09, one field's provenance tray as a drawer (`?ov=provenance:<type>:<id>:<fieldKey>`;
    * AUD-33's ⓘ on a consolidated line). */
   SHL09: (type: string, id: string, fieldKey: string): OverlayRef => ({

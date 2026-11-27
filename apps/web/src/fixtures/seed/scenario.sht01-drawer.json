@@ -1,0 +1,60 @@
+{
+  "scenario": "bh-2026.10.3",
+  "slice": "sheets",
+  "snapshot": "2026-09-30T10:15",
+  "row_key": "SURL-05",
+  "vendor": "Front Range Freight Co.",
+  "facts": [
+    {
+      "label": "Payment",
+      "type": "text",
+      "value": "ACH · Jul 22, 2026 · $68,400.00"
+    },
+    {
+      "label": "Invoice",
+      "type": "text",
+      "value": "FRF-30418 · Jun 29, 2026"
+    },
+    {
+      "label": "Service",
+      "type": "text",
+      "value": "June inbound freight"
+    },
+    {
+      "label": "Recorded in",
+      "type": "text",
+      "value": "Jul 2026 (FY2027 period 1)"
+    },
+    {
+      "label": "In 6/30 AP aging",
+      "type": "text",
+      "value": "No"
+    }
+  ],
+  "conclusion": "improperly_excluded",
+  "rationale": "Invoice FRF-30418 is dated June 29, 2026 and bills June inbound freight. It was paid on July 22 and posted in July, so it was not in accounts payable at June 30. I suggest Improperly excluded. $68,400 is above clearly trivial ($7,750) and below performance materiality ($116,250).",
+  "citations": [
+    {
+      "title": "FRF-30418.pdf",
+      "loc": "p.1",
+      "kind": "document_text",
+      "quote": null
+    },
+    {
+      "title": "NetSuite bill FRF-30418",
+      "loc": "posting period Jul 2026",
+      "kind": "record_field",
+      "quote": null
+    }
+  ],
+  "agent": {
+    "label": "Unrecorded liabilities tester",
+    "started_at": "2026-09-28T16:47:00-05:00",
+    "finished_at": "2026-09-28T16:52:00-05:00"
+  },
+  "evidence": {
+    "label": "FRF-30418.pdf",
+    "uploaded_by": "Luis Ferrante",
+    "linked_at": "2026-09-26T11:00:00-05:00"
+  }
+}
