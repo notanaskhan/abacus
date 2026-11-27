@@ -282,6 +282,16 @@ class CloseWorkpaperOut(BaseModel):
     arrangements: Annotated[list[ArrangementOut], Internal]
     lines: Annotated[list[ScheduleLineOut], Internal]
     review_issue_id: Annotated[UUID | None, Internal] = None
+    # C-02-T56 (additive; CLS-04 b, b2, c): the pending entry's id and status, whether a person
+    # may post it as a batch of one here (approved, not an attest client: C-01 DV-1 keeps attest
+    # read-only), and the posted entry's QuickBooks id and time once it posted.
+    pending_entry_id: Annotated[UUID | None, Internal] = None
+    pending_entry_status: Annotated[str | None, Field(max_length=30), Internal] = None
+    pending_entry_version: Annotated[int | None, Field(ge=1), Internal] = None
+    posting_open: Annotated[bool, Internal] = False
+    posted_entry_number: Annotated[str | None, Field(max_length=12), Internal] = None
+    posted_external_ref: Annotated[str | None, Field(max_length=64), Internal] = None
+    posted_at: Annotated[datetime | None, Internal] = None
 
 
 class ArrangementIn(BaseModel):

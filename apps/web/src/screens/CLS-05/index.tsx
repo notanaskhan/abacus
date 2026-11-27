@@ -10,7 +10,13 @@ import type {
   CloseStatementLineOut,
   ReconcilingItemOut,
 } from "@abacus/api-client";
-import { closeReconciliationOptions, closeRegisterOptions } from "@abacus/api-client/query";
+import {
+  closeReconciliationOptions,
+  closeRegisterOptions,
+  closeSummaryOptions,
+} from "@abacus/api-client/query";
+import { useFlag } from "../../app-core/flags";
+import { hrefOf, to } from "../../routes/to";
 import {
   AgentText,
   Amount,
@@ -51,6 +57,8 @@ export interface CLS05Props {
 }
 
 const ROW = "h-[30px] px-[10px] text-[12.5px]";
+/** The entry CLS-05 d names; its record is CLS-07 at /closes/$closeId/adjustments/AJE-06. */
+const AJE_06_REF = "AJE-06";
 
 function money(v: string | null | undefined): JSX.Element {
   if (v === null || v === undefined) return <span className="text-ink-3">{DASH}</span>;
@@ -107,6 +115,8 @@ function Tally({ label, children }: { label: string; children: ReactNode }): JSX
 
 function RecSheet({
   rec,
+  closeId,
+  posting,
   lit,
   onLight,
   onPropose,
@@ -114,6 +124,9 @@ function RecSheet({
   onReview,
 }: {
   rec: CloseReconciliationOut;
+  closeId: string;
+  /** C-02-T56: a non-attest W1 client posts (d reads "AJE-06 posted (QBO 48218)"). */
+  posting: boolean;
   lit: string | null;
   onLight: (id: string | null) => void;
   onPropose: (itemId: string) => void;
@@ -219,11 +232,18 @@ function RecSheet({
           </tbody>
         </table>
       </div>
-      {signed && (
-        <p className="text-[12.5px] text-ink-2" data-cls05="recorded">
-          {C.recordedNote}
-        </p>
-      )}
+      {signed &&
+        (posting ? (
+          <p className="text-[12.5px] text-ink-2" data-cls05="posted">
+            <a className="underline" href={`${hrefOf(to.CLS07({ closeId }))}/${AJE_06_REF}`}>
+              {C.postedNote}
+            </a>
+          </p>
+        ) : (
+          <p className="text-[12.5px] text-ink-2" data-cls05="recorded">
+            {C.recordedNote}
+          </p>
+        ))}
       <table className="w-full rounded-[12px] bg-card shadow-e1" data-cls05="aging">
         <caption className="h-[32px] text-left text-[13px] font-medium">{C.aging}</caption>
         <thead>
@@ -391,6 +411,8 @@ export function CLS05({
   const [blocked, setBlocked] = useState(initial.signOff === true);
   const path = { close_id: closeId, account_ref: account };
   const rec = useQuery(closeReconciliationOptions({ path }));
+  const postingOn = useFlag("adjustments.posting") === true;
+  const summary = useQuery(closeSummaryOptions({ path: { close_id: closeId } }));
   const register = useQuery({ ...closeRegisterOptions({ path }), enabled: view === "detail" });
   const data = rec.data;
   const signed = data?.signed_off_by != null;
@@ -476,6 +498,8 @@ export function CLS05({
             }}
             onIssue={onIssue}
             onReview={onReview}
+            closeId={closeId}
+            posting={postingOn && summary.data?.attest !== true}
           />
         )}
       </section>

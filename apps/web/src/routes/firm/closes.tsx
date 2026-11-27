@@ -32,10 +32,13 @@ function AdjustmentsBody({
   closeId,
   onIssues,
   onFlux,
+  entryRef,
 }: {
   closeId: string;
   onIssues: () => void;
   onFlux: () => void;
+  /** C-02-T56: an entry's record (`/closes/$closeId/adjustments/AJE-06`) selects it. */
+  entryRef?: string | undefined;
 }): JSX.Element {
   const summary = useQuery(closeSummaryOptions({ path: { close_id: closeId } }));
   const navigate = useNavigate();
@@ -43,6 +46,7 @@ function AdjustmentsBody({
   return (
     <Adjustments
       workItemId={closeId}
+      {...(entryRef === undefined ? {} : { initial: { selected: entryRef } })}
       periodLabel={data ? monthYear(data.period) : ""}
       onIssues={onIssues}
       onFlux={onFlux}
@@ -172,7 +176,15 @@ export const closesIndexRoute = createRoute({
 
 type Tab = "overview" | "intake" | "accounts" | "review" | "deliverables";
 
-function CloseTabPage({ tab, screen }: { tab: Tab; screen: string }): JSX.Element {
+function CloseTabPage({
+  tab,
+  screen,
+  entryRef,
+}: {
+  tab: Tab;
+  screen: string;
+  entryRef?: string;
+}): JSX.Element {
   const closeId = useParam("closeId");
   const navigate = useNavigate();
   const router = useRouter();
@@ -214,13 +226,16 @@ function CloseTabPage({ tab, screen }: { tab: Tab; screen: string }): JSX.Elemen
               if (target === "CLS-10") {
                 void navigate({ to: "/closes/$closeId/flux", params: { closeId } });
               }
+              // C-02-T56: the Issues picker's Adjustments entry opens CLS-07.
+              if (target === "CLS-07") void navigate(to.CLS07({ closeId }));
             }}
           />
         ) : screen === "CLS-05" ? (
           <ReconciliationBody
             closeId={closeId}
             onReview={() => {
-              go(closeId, "review");
+              // C-02-T56: "Review required" opens CLS-07 (was SHL-10 until CLS-07 landed).
+              void navigate(to.CLS07({ closeId }));
             }}
           />
         ) : screen === "CLS-04" ? (
@@ -228,6 +243,7 @@ function CloseTabPage({ tab, screen }: { tab: Tab; screen: string }): JSX.Elemen
         ) : screen === "CLS-07" ? (
           <AdjustmentsBody
             closeId={closeId}
+            entryRef={entryRef}
             onIssues={() => {
               go(closeId, "review");
             }}
@@ -287,6 +303,16 @@ export const closeReviewRoute = createRoute({
 
 // C-02-T48: CLS-12, the tax hand-off sheet (O3) over CLS-02; ✕ and Escape return to the overview.
 const TaxHandoffSheet = lazyScreen(async () => (await import("../../screens/CLS-12")).CLS12);
+
+// C-02-T56: an entry's record in CLS-07 (`AJE-06` resolves to /closes/$closeId/adjustments/AJE-06).
+export const closeAdjustmentEntryRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/closes/$closeId/adjustments/$entryRef",
+  component: function CloseAdjustmentEntryPage(): JSX.Element {
+    const entryRef = useParam("entryRef");
+    return <CloseTabPage tab="review" screen="CLS-07" entryRef={entryRef} />;
+  },
+});
 
 export const closeTaxHandoffRoute = createRoute({
   getParentRoute: () => appRoute,
@@ -520,6 +546,7 @@ export const closeRoutes = [
   closeReconciliationRoute,
   closeReviewRoute,
   closeAdjustmentsRoute,
+  closeAdjustmentEntryRoute,
   closeTaxHandoffRoute,
   closeFluxRoute,
   closeDeliverablesRoute,

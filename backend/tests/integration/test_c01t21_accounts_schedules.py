@@ -128,6 +128,12 @@ async def test_ac_ties_once_posted_then_recorded_in_quickbooks(firm: _Firm) -> N
     assert paper.tally == "ties_once_posted"
     assert paper.pending_entry_number == entry.ref
     assert paper.off_by == D("700.00")
+    # C-02-T56 (CLS-04 a): the pending entry's id; not posted, and not postable until approved.
+    assert (paper.pending_entry_id, paper.posting_open, paper.posted_external_ref) == (
+        entry.id,
+        False,
+        None,
+    )
     tree = await accounts.account_tree(firm.ctx(), august)
     leaves = [leaf for c in tree.nodes for t in c.children for leaf in t.children]
     assert next(n for n in leaves if n.account_external_id == "41").tally == "ties_once_posted"
@@ -135,6 +141,16 @@ async def test_ac_ties_once_posted_then_recorded_in_quickbooks(firm: _Firm) -> N
 
     # The entry is approved and recorded in QuickBooks; the next sync carries JE 48214.
     await firm.seed.run("UPDATE proposed_entries SET status = 'approved' WHERE id = $1", entry.id)
+    approved = await accounts.workpaper(firm.ctx(), august, "41")
+    assert (approved.pending_entry_status, approved.posting_open) == ("approved", True)  # CLS-04 b
+    await firm.seed.run(
+        "UPDATE proposed_entries SET is_attest_client = true WHERE id = $1", entry.id
+    )
+    attest = await accounts.workpaper(firm.ctx(), august, "41")
+    assert attest.posting_open is False  # C-01 DV-1: an attest client stays read-only
+    await firm.seed.run(
+        "UPDATE proposed_entries SET is_attest_client = false WHERE id = $1", entry.id
+    )
     await _month(firm, entity, _tb("2800.00", "5600.00"), _je())
     assert await accounts.match_recordings(firm.ctx(), august) == [entry.id]
     assert await accounts.match_recordings(firm.ctx(), august) == []  # found once

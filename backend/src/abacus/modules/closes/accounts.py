@@ -532,11 +532,25 @@ async def workpaper(ctx: AuthContext, close_id: UUID, account_ref: str) -> Close
     if account is None:
         raise NotFound("account")
     gl = next((b.balance for b in month.balances if b.external_id == account_ref), ZERO)
-    entries = await _entries(ctx, close_id)
+    full = await entries_of(ctx, close_id, "aje")
+    entries = [
+        (e.id, e.ref, e.status, [(ln.account_code, ln.debit, ln.credit) for ln in e.lines])
+        for e in full
+    ]
     recorded = await _recordings(ctx.tenant, close_id)
     result, entry_id, number = _tie_account(
         account_ref, versions, close.period, gl, entries, recorded
     )
+    # C-02-T56: the pending entry, and the latest posted one that moves this account.
+    pending = next((e for e in full if e.id == entry_id), None)
+    debit_natural = versions[0].kind in ("prepaid", "fixed_asset")
+    posted = [
+        e for e in full
+        if e.status == "posted" and _effect(
+            [(ln.account_code, ln.debit, ln.credit) for ln in e.lines], account_ref, debit_natural
+        ) != 0
+    ]  # fmt: skip
+    last_posted = max(posted, key=lambda e: (e.posted_at is not None, e.posted_at), default=None)
     lines: list[ScheduleLineOut] = []
     for v in versions:
         lines.extend(
@@ -578,6 +592,15 @@ async def workpaper(ctx: AuthContext, close_id: UUID, account_ref: str) -> Close
         off_by=result.off_by,
         pending_entry_number=number,
         recording=recording,
+        pending_entry_id=None if pending is None else pending.id,
+        pending_entry_status=None if pending is None else pending.status,
+        pending_entry_version=None if pending is None else pending.version,
+        posting_open=pending is not None
+        and pending.status in ("approved", "client_approved")
+        and not pending.is_attest_client,
+        posted_entry_number=None if last_posted is None else last_posted.ref,
+        posted_external_ref=None if last_posted is None else last_posted.external_txn_ref,
+        posted_at=None if last_posted is None else last_posted.posted_at,
         arrangements=[_out(v) for v in versions],
         lines=lines,
     )
