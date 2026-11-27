@@ -88,6 +88,9 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    # S54 (T-08-T30): routing an amendment for approval records the ask on the existing
+    # amendment (an audit event to its signer), 200.
+    "/v1/amendments/{amendment_id}/routing",
     # S52 (K-03 TV-1/SH-1 stubs, T-06 depth): holds, previews, estimates, a stop, publish and
     # deprecate, rollout start and the reviewer's decisions act on existing records, 200.
     "/v1/engagements/{engagement_id}/template-hold",

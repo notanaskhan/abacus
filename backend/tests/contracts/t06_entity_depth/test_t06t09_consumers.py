@@ -131,6 +131,8 @@ LIVE_PREFIXES = (
     "/v1/tax-returns/{return_id}/form-pages",
     "/v1/tax-returns/{return_id}/fields/",
     "/v1/tax-returns/{return_id}/diagnostics",
+    # S54 T-06-T51 (DEC-6015): the client's relationship graph reads live.
+    "/v1/clients/{client_id}/relationship-graph",
 )
 
 

@@ -24359,15 +24359,13 @@
           "pending_entry_status": {
             "anyOf": [
               {
-                "maxLength": 30,
-                "type": "string"
+                "$ref": "#/components/schemas/ProposedEntryStatus"
               },
               {
                 "type": "null"
               }
             ],
-            "cls": "internal",
-            "title": "Pending Entry Status"
+            "cls": "internal"
           },
           "pending_entry_version": {
             "anyOf": [
@@ -127761,10 +127759,8 @@
             "title": "Rationale"
           },
           "status": {
-            "cls": "internal",
-            "maxLength": 20,
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/SuggestionStatus",
+            "cls": "internal"
           },
           "suggestion_id": {
             "cls": "internal",
@@ -142313,15 +142309,13 @@
           "return_status": {
             "anyOf": [
               {
-                "maxLength": 40,
-                "type": "string"
+                "$ref": "#/components/schemas/ReturnStatus"
               },
               {
                 "type": "null"
               }
             ],
-            "cls": "internal",
-            "title": "Return Status"
+            "cls": "internal"
           },
           "review_level": {
             "anyOf": [
@@ -156496,10 +156490,8 @@
             "type": "string"
           },
           "status": {
-            "cls": "internal",
-            "maxLength": 30,
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/ProposedEntryStatus",
+            "cls": "internal"
           }
         },
         "required": [

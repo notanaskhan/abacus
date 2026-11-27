@@ -31,6 +31,23 @@ EXCLUDE: tuple[str, ...] = ()
 # (path glob, rule id, reason): findings that are known local fixtures, never real secrets.
 ALLOW: tuple[tuple[str, str, str], ...] = (
     (
+        "apps/web/src/fixtures/seed/scenario.tax11-preview.json",
+        "SECRET-003",
+        "a diagnostic's `rule_key` names code's rule (item_j_m3_required), never a credential"
+        " (T-06-T53)",
+    ),
+    (
+        "apps/web/src/fixtures/seed/scenario.tax15-portfolio.json",
+        "SECRET-003",
+        "an opportunity's `rule_key` names the planning rule (charitable.daf_bunching), never a"
+        " credential (T-08-T32)",
+    ),
+    (
+        "backend/tests/integration/backfill/test_k03t21_skills.py",
+        "SECRET-003",
+        "a skill's `key` is its catalogue code (BH-SK-430), never a credential (K-03-T21)",
+    ),
+    (
         "apps/web/src/fixtures/contracts/sheets.ts",
         "SECRET-003",
         "a SheetGrid row's `sectionKey` names its stratum (stratum_1), never a credential"

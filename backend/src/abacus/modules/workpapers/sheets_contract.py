@@ -19,6 +19,7 @@ from fastapi import Depends, Header
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import AGENT_COLUMNS_ENABLED, SHEETS_ENABLED
+from abacus.kernel._statuses import SuggestionStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
@@ -182,7 +183,7 @@ class SheetRowWhyOut(BaseModel):
 
     column_key: Annotated[str, Field(max_length=60), Internal]
     suggestion_id: Annotated[UUID, Internal]
-    status: Annotated[str, Field(max_length=20), Internal]
+    status: Annotated[SuggestionStatus, Internal]
     version: Annotated[int, Field(ge=1), Internal]
     rationale: Annotated[str | None, Field(max_length=4000), Confidential] = None
     citation_count: Count = 0

@@ -71,7 +71,10 @@ def test_every_engine_key_is_in_the_profile() -> None:
 def test_events_are_ordered_unique_and_handled() -> None:
     events = ordered(slice_.tax_workspace_events())
     assert {e.kind for e in events} <= set(loader.HANDLERS)
-    assert len(events) == 2 + 1 + 6 + 3 + 3  # flags, worksheets, issues, resolved, checkpoints
+    # T-06-T69 (DEC-6024): the two workspace flags retired into the `tax_returns` entitlement,
+    # so no flag events: worksheets, issues, resolved, checkpoints.
+    assert slice_.FLAGS == ()
+    assert len(events) == 1 + 6 + 3 + 3
     assert loader.SLICE_NEEDS[slice_.SLICE] == slice_.NEEDS
 
 

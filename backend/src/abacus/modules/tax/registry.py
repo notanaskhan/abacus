@@ -42,6 +42,7 @@ _INSERT_ONLY_0720: frozenset[str] = frozenset(
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "tax_returns": frozenset(
         {"tenant_id", "work_item_id", "engagement_id", "client_entity_id", "form", "tax_year"}
+        | {"amends_return_id"}  # T-08-T30 (1033): an amendment return names its original
     ),
 }
 INSERT_COLUMNS["tax_return_status_events"] = frozenset(

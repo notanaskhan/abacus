@@ -26,6 +26,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
 from abacus.kernel._flags import CLOSES_GL_CONSOLE
+from abacus.kernel._statuses import ProposedEntryStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
@@ -141,7 +142,7 @@ class W1BatchEntryOut(BaseModel):
 
     entry_id: Annotated[UUID, Internal]
     ref: Annotated[str, Field(max_length=12), Internal]
-    status: Annotated[str, Field(max_length=30), Internal]
+    status: Annotated[ProposedEntryStatus, Internal]
     external_txn_ref: Annotated[str | None, Field(max_length=64), Internal] = None
     deep_link: Annotated[str | None, Field(max_length=500), Internal] = None
     description: Annotated[str | None, Field(max_length=500), Confidential] = None

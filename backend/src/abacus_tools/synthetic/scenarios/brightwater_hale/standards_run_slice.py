@@ -35,7 +35,7 @@ ROWS: Final = (
      "passed", 42, 0, 0, 0, (9, 20)),
     ("Bramble & Finch Design, LLC", "Chicago", "GT", "YK", "prepared", None,
      "passed", 42, 0, 0, 0, (9, 21)),
-    ("Harborview Dental Properties, LP", "New York", "OB", "SI", "ready", None,
+    ("Harborview Dental Properties, LP", "New York", "OB", "SI", "approved", None,
      "passed", 42, 0, 0, 0, (9, 21)),
 )  # fmt: skip
 # Ridgeline's expanded checks (TAX-14 a): code, words, outcome, the linked issue's words.

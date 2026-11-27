@@ -240,6 +240,7 @@ UPDATE_COLUMNS["posting_batches"] = frozenset(
         "failure_count",
         "resolved_failure_count",
         "version",
+        "approval_grant_id",  # CV-2 (1030): set once, by the trigger
     }
 )
 UPDATE_COLUMNS["closing_date_conflicts"] = frozenset(
@@ -255,5 +256,6 @@ UPDATE_COLUMNS["proposed_entries"] = UPDATE_COLUMNS["proposed_entries"] | frozen
         "recorded_externally_at",
         "recorded_externally_evidence_id",
         "recorded_externally_match_ref",
+        "posting_target",  # CV-2 (1030): stamped when a batch takes the entry, cleared on undo
     }
 )

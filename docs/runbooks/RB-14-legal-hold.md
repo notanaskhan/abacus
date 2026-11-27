@@ -56,3 +56,9 @@ Blameless review linking this runbook. If a scope was too large for one activity
 ## Rehearsal log
 | Date | Kind (drill, staging walk-through, tabletop) | Result | Changes made |
 |---|---|---|---|
+
+## Scope fields (Q-05-T29; DEC-6044)
+A hold now names its scope: the client, the engagement, a record type, or a date range of
+evidence. When a destruction batch refuses an item for a hold (RB-101 "Partial batch"), the
+refusal names the hold and its scope. Narrowing a scope is lifting the hold for what it leaves
+out: only the hold's owner may do it, and the change is audited with the before and after scope.

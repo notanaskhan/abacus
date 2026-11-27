@@ -46,6 +46,8 @@ def test_the_realtime_invalidations_subscribe_apart_from_the_catalogue() -> None
     realtime |= {"workbook.fix_applied", "tax_memo.went_stale", "daily_briefing.built"}
     # T-08-T14 (DEC-5840): each finished return moves TAX-14's run tiles on every open tab.
     realtime |= {"standards_run.progressed"}
+    # T-06-T51 (TASK-9009): a released K-1 package nudges the issuing return's open graph.
+    realtime |= {"k1_package.released"}
     assert set(INVALIDATIONS) == realtime
 
 
