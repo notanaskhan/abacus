@@ -427,12 +427,20 @@ async def pin_methodology(
 ) -> MethodologyVersionView:
     """Inside the caller's unit of work, after `lock_ref` and its `authorise`: pin the version
     (`MethodologyAlreadyApplied` if one is pinned) and return its rows."""
+    from abacus.modules.engagements import template_links  # K-03-T19 (DEC-6019)
+
     detail = await version_in(tx.session, version_id)
     engagement = await lock_engagement(tx.session, engagement_id)
     if engagement is not None and engagement.type not in detail.summary.engagement_types:
         raise TemplateTypeMismatch(engagement.type)
+    if engagement is not None:  # flag on: a second pin is a template update (409)
+        await template_links.before_pin(
+            tx, engagement.tenant_id, engagement_id, engagement.methodology_version_id
+        )
     if not await set_methodology_version(tx.session, engagement_id, version_id):
         raise MethodologyAlreadyApplied(str(engagement_id))
+    if engagement is not None:  # flag on: the link, beside the legacy column kept as current
+        await template_links.link_pin(tx, engagement.tenant_id, engagement_id, version_id)
     return detail
 
 

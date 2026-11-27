@@ -792,3 +792,12 @@ from abacus.modules.engagements.scoping_facts import (  # noqa: E402
 
 _scoping_facts.register()
 __all__ += ["authorise_scoping_reader"]
+# K-03-T19 (DEC-6019): the methodology version an engagement follows (its template link's).
+from abacus.modules.engagements.template_links import (  # noqa: E402
+    TemplateUpdateRequired as TemplateUpdateRequired,
+)
+from abacus.modules.engagements.template_links import (  # noqa: E402
+    pinned_version as pinned_version,
+)
+
+__all__ += ["TemplateUpdateRequired", "pinned_version"]

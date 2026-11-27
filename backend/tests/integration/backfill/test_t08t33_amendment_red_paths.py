@@ -32,6 +32,7 @@ from .okafor_amendment import Okafor
 from .support import Person
 
 pytestmark = pytest.mark.asyncio
+POLICY_CODE = "bh-tax-02"  # BH-TAX-02, the return approval policy's code
 
 
 async def _ctx(tenant: uuid.UUID, who: Person, *, kind: str = "human") -> AuthContext:
@@ -55,7 +56,7 @@ async def _neil(w: Okafor) -> Person:
     standard = await create_standard(
         daniel,
         kind="return_approval_policy",
-        key="bh-tax-02",
+        key=POLICY_CODE,
         name="Return final approval",
         owner_id=neil.user_id,
     )

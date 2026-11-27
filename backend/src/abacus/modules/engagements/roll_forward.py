@@ -256,7 +256,11 @@ async def propose(
         for m in await engagement_team(ctx, chosen.id)
         if m.user_id != ctx.user_id
     ]
-    versions = await _latest_of(ctx, chosen.methodology_version_id)
+    from abacus.modules.engagements.template_links import pinned_version  # K-03-T19
+
+    versions = await _latest_of(
+        ctx, await pinned_version(ctx.tenant, chosen.id, chosen.methodology_version_id)
+    )
     template = None
     seeds: list[TemplateSeed] = []
     if versions is not None:

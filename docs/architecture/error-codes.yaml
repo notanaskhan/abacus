@@ -4279,6 +4279,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.service.TemplateTypeMismatch
     summary: The template doesn't serve this engagement's type (SPEC-024 AC-6).
+  template_update_required:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.template_links.TemplateUpdateRequired
+    summary: 'The engagement already follows a template version: move it with Update to vN.'
   tenant_code_taken:
     status: 409
     raised_by:

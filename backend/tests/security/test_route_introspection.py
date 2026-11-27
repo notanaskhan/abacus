@@ -1149,6 +1149,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/agent-runs/{run_id}/stop", "agent_run.control"),
     ("POST", "/v1/agent-runs/{run_id}/trace-exports", "run_trace.export"),
     ("POST", "/v1/amendments/{amendment_id}/proposals:draft", "amendment.edit"),
+    ("POST", "/v1/amendments/{amendment_id}/routing", "amendment.edit"),
     ("POST", "/v1/analytic-lines/{line_id}/accept", "flux.accept"),
     ("POST", "/v1/analytic-lines/{line_id}/explain", "flux.explain"),
     ("POST", "/v1/analytics-sets/{analytics_set_id}/client-questions", "client_question.send"),
