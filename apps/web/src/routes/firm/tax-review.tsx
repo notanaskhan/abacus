@@ -326,12 +326,8 @@ export const taxWorkpapers1120Route = createRoute({
           entitlement="tax_returns"
           fallback={<FlagOffState flag="tax_returns" label="Tax Returns" />}
         >
-          <FeatureGate
-            flag="tax.tb_handoff"
-            fallback={<FlagOffState flag="tax.tb_handoff" label="Hand-off workpapers" />}
-          >
-            <Txp13 returnId={returnId} />
-          </FeatureGate>
+          {/* T-06-T52: each frame stands behind its own flag (TXP-13 gates them). */}
+          <Txp13 returnId={returnId} />
         </FeatureGate>
       </div>
     );

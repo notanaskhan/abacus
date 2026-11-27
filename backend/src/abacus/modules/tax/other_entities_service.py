@@ -96,6 +96,25 @@ def _human(ctx: AuthContext, action: str) -> None:
 
 
 @dataclass(frozen=True)
+class AaaLine:
+    line_no: int
+    aaa: Decimal
+    pti: Decimal
+    e_and_p: Decimal
+    oaa: Decimal
+
+
+@dataclass(frozen=True)
+class Shareholder:
+    name: str
+    pct: Decimal
+    ordinary_income: Decimal
+    interest: Decimal
+    nondeductible: Decimal
+    distributions: Decimal
+
+
+@dataclass(frozen=True)
 class Aaa:
     aaa: Decimal
     pti: Decimal
@@ -103,6 +122,9 @@ class Aaa:
     oaa: Decimal
     shareholder_pcts: tuple[Decimal, ...]
     locked: bool
+    # T-06-T52 (DEC-6036): the lines and the allocation as stored (TXP-13 a).
+    lines: tuple[AaaLine, ...] = ()
+    shareholders: tuple[Shareholder, ...] = ()
 
 
 def column_ending(lines: Mapping[int, Decimal]) -> Decimal:
@@ -129,17 +151,22 @@ _AAA: Final = text(
     "WHERE work_item_id = :r ORDER BY line_no"
 )
 _HOLDERS: Final = text(
-    "SELECT pct FROM shareholder_allocations WHERE work_item_id = :r ORDER BY pct DESC, partner_id"
+    "SELECT partner_id, pct, ordinary_income, interest, nondeductible, distributions "
+    "FROM shareholder_allocations WHERE work_item_id = :r ORDER BY pct DESC, partner_id"
 )
 
 
 async def aaa(ctx: AuthContext, return_id: UUID) -> Aaa:
     found = await _loaded(ctx, return_id, READ)
+    from abacus.modules.tax.entity_schedules import recipients
+
     async with tenant_session(ctx.tenant) as session:
         rows = (await session.execute(_AAA, {"r": return_id})).all()
-        pcts = tuple(Decimal(p) for p in await session.scalars(_HOLDERS, {"r": return_id}))
+        holders = (await session.execute(_HOLDERS, {"r": return_id})).all()
     if not rows:
         raise NotFound("aaa_lines")
+    pcts = tuple(Decimal(h.pct) for h in holders)
+    names = dict(await recipients(ctx.tenant, return_id)) if holders else {}
     cols = {c: {int(r.line_no): Decimal(getattr(r, c)) for r in rows}
             for c in ("col_aaa", "col_pti", "col_e_and_p", "col_oaa")}  # fmt: skip
     return Aaa(
@@ -149,12 +176,40 @@ async def aaa(ctx: AuthContext, return_id: UUID) -> Aaa:
         column_ending(cols["col_oaa"]),
         pcts,
         found.status in LOCKED,
-    )
+        tuple(
+            AaaLine(int(r.line_no), Decimal(r.col_aaa), Decimal(r.col_pti),
+                    Decimal(r.col_e_and_p), Decimal(r.col_oaa))
+            for r in rows
+        ),
+        tuple(
+            Shareholder(names.get(h.partner_id, ""), Decimal(h.pct), Decimal(h.ordinary_income),
+                        Decimal(h.interest), Decimal(h.nondeductible), Decimal(h.distributions))
+            for h in holders
+        ),
+    )  # fmt: skip
 
 
 # --- provision (E11) -----------------------------------------------------------------------------
 
 ProvisionView = Literal["provision", "rate_reconciliation", "deferred"]
+
+
+@dataclass(frozen=True)
+class ReconItem:
+    item_id: UUID
+    description: str
+    amount: Decimal
+    rate_effect: Decimal | None
+    classification: str
+
+
+@dataclass(frozen=True)
+class DeferredItem:
+    kind: str
+    label: str
+    temporary_difference: Decimal
+    rate: Decimal
+    amount: Decimal
 
 
 @dataclass(frozen=True)
@@ -166,11 +221,28 @@ class Provision:
     effective_rate: Decimal
     tally: Literal["tie", "off"]
     unclassified: Decimal | None
+    # T-06-T52 (DEC-6036): the computation, reconciliation and deferred inventory as stored.
+    pretax_book_income: Decimal | None = None
+    permanent_total: Decimal | None = None
+    temporary_total: Decimal | None = None
+    taxable_income: Decimal | None = None
+    blended_rate: Decimal | None = None
+    recon_items: tuple[ReconItem, ...] = ()
+    deferred_items: tuple[DeferredItem, ...] = ()
 
 
 _PROVISION: Final = text(
-    "SELECT id, current_tax, deferred_tax, total_provision, etr, recon_status, off_amount "
+    "SELECT id, current_tax, deferred_tax, total_provision, etr, recon_status, off_amount, "
+    "pretax_book_income, permanent_total, temporary_total, taxable_income, blended_rate "
     "FROM tax_provisions WHERE work_item_id = :r"
+)
+_RECON: Final = text(
+    "SELECT id, description, amount, rate_effect, classification FROM rate_recon_items "
+    "WHERE provision_id = :p ORDER BY classification = 'unclassified', item_key"
+)
+_DEFERRED: Final = text(
+    "SELECT kind, label, temporary_difference, rate, amount FROM deferred_tax_items "
+    "WHERE provision_id = :p ORDER BY kind DESC, label"
 )
 _UNCLASSIFIED: Final = text(
     "SELECT coalesce(sum(amount), 0) FROM rate_recon_items WHERE provision_id = :p "
@@ -183,6 +255,11 @@ async def provision(ctx: AuthContext, return_id: UUID, view: ProvisionView) -> P
     async with tenant_session(ctx.tenant) as session:
         row = (await session.execute(_PROVISION, {"r": return_id})).first()
         unclassified = None if row is None else await session.scalar(_UNCLASSIFIED, {"p": row.id})
+        recon: Sequence[Row[Any]] = ()  # Any: SQL rows of mixed column types
+        dtx: Sequence[Row[Any]] = ()  # Any: as above
+        if row is not None:
+            recon = (await session.execute(_RECON, {"p": row.id})).all()
+            dtx = (await session.execute(_DEFERRED, {"p": row.id})).all()
     if row is None:
         raise NotFound("tax_provision")
     current, deferred = Decimal(row.current_tax), Decimal(row.deferred_tax)
@@ -196,6 +273,13 @@ async def provision(ctx: AuthContext, return_id: UUID, view: ProvisionView) -> P
         Decimal(row.etr) if row.etr is not None else ZERO,
         "off" if off or open_amount else "tie",
         open_amount,
+        Decimal(row.pretax_book_income), Decimal(row.permanent_total),
+        Decimal(row.temporary_total), Decimal(row.taxable_income), Decimal(row.blended_rate),
+        tuple(ReconItem(r.id, str(r.description), Decimal(r.amount),
+                        None if r.rate_effect is None else Decimal(r.rate_effect),
+                        str(r.classification)) for r in recon),
+        tuple(DeferredItem(str(d.kind), str(d.label), Decimal(d.temporary_difference),
+                           Decimal(d.rate), Decimal(d.amount)) for d in dtx),
     )  # fmt: skip
 
 
@@ -234,16 +318,31 @@ ExpenseView = Literal["part_ix", "allocation_basis"]
 
 
 @dataclass(frozen=True)
+class ExpenseRow:
+    line: str
+    label: str
+    total: Decimal
+    program: Decimal
+    management: Decimal
+    fundraising: Decimal
+    basis: str
+    time_study: Mapping[str, Decimal] | None
+    memo_evidence_version_id: UUID | None
+
+
+@dataclass(frozen=True)
 class FunctionalExpenses:
     view: ExpenseView
     part_ix: e12.PartIX
     public_support: Decimal
+    # T-06-T52 (DEC-6036): Part IX's lines as stored (each crossfoots by CHECK).
+    lines: tuple[ExpenseRow, ...] = ()
 
 
 _LINES: Final = text(
     "SELECT id, part_ix_line, label, total, program, management_general, fundraising, "
-    "allocation_basis, time_study FROM functional_expense_lines WHERE work_item_id = :r "
-    "ORDER BY part_ix_line"
+    "allocation_basis, time_study, source_memo_evidence_version_id FROM functional_expense_lines "
+    "WHERE work_item_id = :r ORDER BY part_ix_line"
 )
 _SUPPORT: Final = text(
     "SELECT public_support, total_support FROM public_support_tests WHERE work_item_id = :r "
@@ -278,7 +377,24 @@ async def functional_expenses(
             Decimal(support.public_support), Decimal(support.total_support)
         ).pct
     )
-    return FunctionalExpenses(view, computed, pct)
+
+    def study(raw: object) -> Mapping[str, Decimal] | None:
+        if not isinstance(raw, dict):
+            return None
+        stored = cast("dict[str, object]", raw)
+        pairs: object = stored.get("pct", stored)
+        if not isinstance(pairs, dict):
+            return None
+        return {str(k): Decimal(str(v)) for k, v in cast("dict[str, object]", pairs).items()}
+
+    lines = tuple(
+        ExpenseRow(str(r.part_ix_line), str(r.label), Decimal(r.total), Decimal(r.program),
+                   Decimal(r.management_general), Decimal(r.fundraising),
+                   str(r.allocation_basis), study(r.time_study),
+                   r.source_memo_evidence_version_id)
+        for r in rows
+    )  # fmt: skip
+    return FunctionalExpenses(view, computed, pct, lines)
 
 
 # --- the time-study allocation (TXP-13 c3) -------------------------------------------------------

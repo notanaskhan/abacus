@@ -84,6 +84,8 @@ class TaxReturnRowOut(BaseModel):
     office_id: Annotated[UUID | None, classified("internal")]
     original_due_on: Annotated[date | None, classified("internal")]
     extended_due_on: Annotated[date | None, classified("internal")]
+    # T-06-T52 (DEC-6036), additive: a fiscal-year return's year end; None for a calendar year.
+    fiscal_year_end: Annotated[date | None, classified("internal")] = None
     # The C21 rule that produced the due date, as a code ("1065 · 15th day of 3rd month").
     due_rule_code: Annotated[str | None, classified("internal")]
     tags: Annotated[list[str], classified("internal")]

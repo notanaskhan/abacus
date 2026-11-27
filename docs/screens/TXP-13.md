@@ -14,12 +14,12 @@ Parity tier target: C (T-06 §5.4). Copy keys live in `apps/web/src/screens/TXP-
 ## States
 | Letter | Artboard | Scenario | Persona | Clock (CT) | Build | Owner |
 |---|---|---|---|---|---|---|
-| a | 1120-S · AAA (Bluestem, Accepted, read-only) | `bluestem-1120s` | Samuel Ito | 9:24 AM | built | AY |
-| b | 1120 · ASC 740 provision (Ashford 2,257,200) | `ashford-1120` | Samuel Ito | 9:24 AM | built | AY |
-| b2 | Exception · unclassified difference (off 1,200) | `ashford-unclassified` | Samuel Ito | 9:24 AM | built | AY |
-| c | 990 · Part IX (Lakeshore 4,014,000) | `lakeshore-990` | Olivia Brandt | 9:24 AM | built | AY |
-| c2 | 990 · Allocation basis | `lakeshore-990` | Olivia Brandt | 9:24 AM | built | AY |
-| c3 | 990 · Building (skeleton) | `lakeshore-990-building` | Olivia Brandt | 9:24 AM | built | AY |
+| a | 1120-S · AAA (Bluestem, Accepted, read-only) | `bluestem-1120s` | Samuel Ito | 9:24 AM | fixture (T-06-T52) | AY |
+| b | 1120 · ASC 740 provision (Ashford 2,257,200) | `ashford-1120` | Samuel Ito | 9:24 AM | fixture (T-06-T52) | AY |
+| b2 | Exception · unclassified difference (off 1,200) | `ashford-unclassified` | Samuel Ito | 9:24 AM | fixture (T-06-T52) | AY |
+| c | 990 · Part IX (Lakeshore 4,014,000) | `lakeshore-990` | Olivia Brandt | 9:24 AM | fixture (T-06-T52) | AY |
+| c2 | 990 · Allocation basis | `lakeshore-990` | Olivia Brandt | 9:24 AM | fixture (T-06-T52) | AY |
+| c3 | 990 · Building (skeleton) | `lakeshore-990-building` | Olivia Brandt | 9:24 AM | fixture (T-06-T52) | AY |
 | d | 1120 · from the audit (Granite Peak) | `granite-peak-1120` | Leo Wong | Nov 9, 2026 11:00 AM | built | AY |
 
 ## Deviations
@@ -39,3 +39,12 @@ The designed links of the handoff link graph (link-contract rule 5); each is wir
 | Opens AUD-06 · Final layer | AUD-06 | designed (handoff link graph) |
 | Opens AUD-38 · hand-off details | AUD-38 | designed (handoff link graph) |
 | Opens SHL-08 · payroll allocation memo | SHL-08 | designed (handoff link graph) |
+
+## T-06-T52 deviations (DEC-6036)
+- One screen at `/tax-returns/$returnId/review/workpapers`. The frame follows the return's form: 1120-S is a, an 1120 without a hand-off is b or b2, a 990 is c to c3, and a hand-off landing is d. Frames a to c stand behind `tax.other_entity_workpapers` and d behind `tax.tb_handoff`.
+- The 1120-S Group B set has eight tabs. Over seven (C-05), the planned sections stay out of the track (Fixed Assets, M-1/M-3, States), as TXP-00's 1065 set does.
+- Schedule M-2's descriptions are the form's line names. The handoff's suffixes ("— interest income", "— nondeductible meals (50%)") are not stored, so they are not drawn. Reductions (lines 4, 5 and 7) print in parentheses.
+- c3 is the read still pending while the allocation runs. The read carries no run state, so "building" is its loading state with the handoff's line.
+- c2's time-study percentages are the stored allocation's, one place.
+- The derivation popover is the tally's ⓘ text. Per-amount SHL-09 waits on the field registry for these sheets.
+

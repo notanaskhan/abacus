@@ -138089,6 +138089,56 @@
         "title": "TaxConfirmationOut",
         "type": "object"
       },
+      "TaxDepthAaaLineOut": {
+        "additionalProperties": false,
+        "description": "T-06-T52 (DEC-6036): one Schedule M-2 line across its four columns.",
+        "properties": {
+          "aaa": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Aaa",
+            "type": "string",
+            "x-tri": true
+          },
+          "e_and_p": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "E And P",
+            "type": "string",
+            "x-tri": true
+          },
+          "line_no": {
+            "cls": "internal",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Line No",
+            "type": "integer"
+          },
+          "oaa": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Oaa",
+            "type": "string",
+            "x-tri": true
+          },
+          "pti": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Pti",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "line_no",
+          "aaa",
+          "pti",
+          "e_and_p",
+          "oaa"
+        ],
+        "title": "TaxDepthAaaLineOut",
+        "type": "object"
+      },
       "TaxDepthAaaOut": {
         "additionalProperties": false,
         "description": "TXP-13 a: AAA 1,488,200; allocation 70/30 per share per day; read-only once Accepted.",
@@ -138106,6 +138156,15 @@
             "title": "E And P",
             "type": "string",
             "x-tri": true
+          },
+          "lines": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TaxDepthAaaLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
           },
           "locked": {
             "cls": "internal",
@@ -138135,6 +138194,15 @@
               "x-tri": true
             },
             "title": "Shareholder Pcts",
+            "type": "array"
+          },
+          "shareholders": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TaxDepthShareholderOut"
+            },
+            "title": "Shareholders",
             "type": "array"
           }
         },
@@ -138747,6 +138815,57 @@
         "title": "TaxDepthDecisionOut",
         "type": "object"
       },
+      "TaxDepthDeferredItemOut": {
+        "additionalProperties": false,
+        "description": "T-06-T52 (DEC-6036): one deferred tax asset or liability.",
+        "properties": {
+          "amount": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Amount",
+            "type": "string",
+            "x-tri": true
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "dta",
+              "dtl"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "maxLength": 200,
+            "title": "Label",
+            "type": "string"
+          },
+          "rate": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,8}0*$)\\d{0,3}\\.\\d{0,4}0*$)",
+            "title": "Rate",
+            "type": "string",
+            "x-tri": true
+          },
+          "temporary_difference": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Temporary Difference",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "kind",
+          "label",
+          "temporary_difference",
+          "rate",
+          "amount"
+        ],
+        "title": "TaxDepthDeferredItemOut",
+        "type": "object"
+      },
       "TaxDepthDiagnosticOut": {
         "additionalProperties": false,
         "properties": {
@@ -138830,6 +138949,104 @@
           "blocking"
         ],
         "title": "TaxDepthDiagnosticsOut",
+        "type": "object"
+      },
+      "TaxDepthExpenseLineOut": {
+        "additionalProperties": false,
+        "description": "T-06-T52 (DEC-6036): one Part IX line and how it was allocated.",
+        "properties": {
+          "basis": {
+            "cls": "internal",
+            "enum": [
+              "direct",
+              "time_study",
+              "square_footage",
+              "other"
+            ],
+            "title": "Basis",
+            "type": "string"
+          },
+          "fundraising": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Fundraising",
+            "type": "string",
+            "x-tri": true
+          },
+          "label": {
+            "cls": "internal",
+            "maxLength": 200,
+            "title": "Label",
+            "type": "string"
+          },
+          "line": {
+            "cls": "internal",
+            "maxLength": 4,
+            "title": "Line",
+            "type": "string"
+          },
+          "management": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Management",
+            "type": "string",
+            "x-tri": true
+          },
+          "memo_evidence_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Memo Evidence Version Id"
+          },
+          "program": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Program",
+            "type": "string",
+            "x-tri": true
+          },
+          "time_study": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Time Study",
+            "x-tri": true
+          },
+          "total": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Total",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "line",
+          "label",
+          "total",
+          "program",
+          "management",
+          "fundraising",
+          "basis"
+        ],
+        "title": "TaxDepthExpenseLineOut",
         "type": "object"
       },
       "TaxDepthFieldOut": {
@@ -139109,6 +139326,15 @@
             "title": "Fundraising",
             "type": "string",
             "x-tri": true
+          },
+          "lines": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TaxDepthExpenseLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
           },
           "management": {
             "cls": "restricted",
@@ -139586,6 +139812,20 @@
         "additionalProperties": false,
         "description": "TXP-13 b: current 2,134,650 + deferred 122,550 = 2,257,200 at an ETR of 28.9%.",
         "properties": {
+          "blended_rate": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,8}0*$)\\d{0,3}\\.\\d{0,4}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Blended Rate",
+            "x-tri": true
+          },
           "current": {
             "cls": "restricted",
             "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
@@ -139600,11 +139840,48 @@
             "type": "string",
             "x-tri": true
           },
+          "deferred_items": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TaxDepthDeferredItemOut"
+            },
+            "title": "Deferred Items",
+            "type": "array"
+          },
           "effective_rate": {
             "cls": "restricted",
             "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,8}0*$)\\d{0,3}\\.\\d{0,4}0*$)",
             "title": "Effective Rate",
             "type": "string",
+            "x-tri": true
+          },
+          "permanent_total": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Permanent Total",
+            "x-tri": true
+          },
+          "pretax_book_income": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Pretax Book Income",
             "x-tri": true
           },
           "rate_reconciliation_tally": {
@@ -139616,6 +139893,43 @@
             ],
             "title": "Rate Reconciliation Tally",
             "type": "string"
+          },
+          "recon_items": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TaxDepthReconItemOut"
+            },
+            "title": "Recon Items",
+            "type": "array"
+          },
+          "taxable_income": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Taxable Income",
+            "x-tri": true
+          },
+          "temporary_total": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Temporary Total",
+            "x-tri": true
           },
           "total": {
             "cls": "restricted",
@@ -139716,6 +140030,64 @@
           "expected_version"
         ],
         "title": "TaxDepthPtetIn",
+        "type": "object"
+      },
+      "TaxDepthReconItemOut": {
+        "additionalProperties": false,
+        "description": "T-06-T52 (DEC-6036): one rate-reconciliation row; `unclassified` rows offer Explain\u2026.",
+        "properties": {
+          "amount": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Amount",
+            "type": "string",
+            "x-tri": true
+          },
+          "classification": {
+            "cls": "internal",
+            "enum": [
+              "permanent",
+              "temporary",
+              "rate",
+              "unclassified"
+            ],
+            "title": "Classification",
+            "type": "string"
+          },
+          "description": {
+            "cls": "internal",
+            "maxLength": 200,
+            "title": "Description",
+            "type": "string"
+          },
+          "item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Item Id",
+            "type": "string"
+          },
+          "rate_effect": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,8}0*$)\\d{0,3}\\.\\d{0,4}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Rate Effect",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "item_id",
+          "description",
+          "amount",
+          "classification"
+        ],
+        "title": "TaxDepthReconItemOut",
         "type": "object"
       },
       "TaxDepthRunOut": {
@@ -139842,6 +140214,64 @@
           "template_version_id"
         ],
         "title": "TaxDepthSendToClientIn",
+        "type": "object"
+      },
+      "TaxDepthShareholderOut": {
+        "additionalProperties": false,
+        "description": "T-06-T52 (DEC-6036): one shareholder's allocation (per share, per day).",
+        "properties": {
+          "distributions": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Distributions",
+            "type": "string",
+            "x-tri": true
+          },
+          "interest": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Interest",
+            "type": "string",
+            "x-tri": true
+          },
+          "name": {
+            "cls": "restricted",
+            "maxLength": 200,
+            "title": "Name",
+            "type": "string",
+            "x-tri": true
+          },
+          "nondeductible": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Nondeductible",
+            "type": "string",
+            "x-tri": true
+          },
+          "ordinary_income": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Ordinary Income",
+            "type": "string",
+            "x-tri": true
+          },
+          "pct": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,8}0*$)\\d{0,3}\\.\\d{0,4}0*$)",
+            "title": "Pct",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "name",
+          "pct",
+          "ordinary_income",
+          "interest",
+          "nondeductible",
+          "distributions"
+        ],
+        "title": "TaxDepthShareholderOut",
         "type": "object"
       },
       "TaxDepthStateOut": {
@@ -143239,6 +143669,19 @@
             ],
             "cls": "internal",
             "title": "Extended Due On"
+          },
+          "fiscal_year_end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Fiscal Year End"
           },
           "form": {
             "cls": "internal",

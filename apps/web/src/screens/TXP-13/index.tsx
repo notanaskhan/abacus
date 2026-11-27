@@ -6,13 +6,25 @@
 // booked. Frames a–c (1120-S AAA, 1120 provision, 990) are T-06's other rows; a return with no
 // hand-off says so. Nothing here changes the audited statements or the client's ledger.
 import { returnHandoffOptions, returnRecordOptions } from "@abacus/api-client/query";
-import { Button, EmptyState, Segmented, Skeleton, TallyStrip, Tag, amount } from "@abacus/ui";
+import type { TaxReturnRowOut } from "@abacus/api-client";
+import {
+  Button,
+  EmptyState,
+  FlagOffState,
+  Segmented,
+  Skeleton,
+  TallyStrip,
+  Tag,
+  amount,
+} from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import type { JSX } from "react";
+import { FeatureGate } from "../../app-core/flags";
 import { useOpenHref, useOpenOverlay } from "../../app-core/open";
 import { HandoffProvenanceBanner } from "../../domain/tax";
 import { hrefOf, ov, to } from "../../routes/to";
 import { COPY as C } from "./copy";
+import { AaaFrame, PartIxFrame, ProvisionFrame } from "./frames";
 
 export interface TXP13Props {
   returnId: string;
@@ -20,7 +32,82 @@ export interface TXP13Props {
 
 const money = (v: string): string => amount(v, "whole").text;
 
+/** T-06-T52 (DEC-6036): the frame is the return's form; a hand-off landing is frame d. */
 export function TXP13({ returnId }: TXP13Props): JSX.Element {
+  const record = useQuery(returnRecordOptions({ path: { return_id: returnId } }));
+  const row = record.data?.row;
+  if (row === undefined) {
+    return (
+      <div data-screen="TXP-13" aria-busy="true" className="p-[12px]">
+        <Skeleton className="h-[600px] w-full" />
+      </div>
+    );
+  }
+  if (row.form === "1120s" || row.form === "990") {
+    return (
+      <FeatureGate
+        flag="tax.other_entity_workpapers"
+        fallback={
+          <FlagOffState flag="tax.other_entity_workpapers" label="Other entity workpapers" />
+        }
+      >
+        {row.form === "1120s" ? (
+          <AaaFrame returnId={returnId} row={row} />
+        ) : (
+          <PartIxFrame returnId={returnId} row={row} />
+        )}
+      </FeatureGate>
+    );
+  }
+  return <Corporation returnId={returnId} row={row} />;
+}
+
+/** An 1120: frame d when an audit handed the TB off, else frame b (the provision). */
+function Corporation({ returnId, row }: { returnId: string; row: TaxReturnRowOut }): JSX.Element {
+  const landing = useQuery({
+    ...returnHandoffOptions({ path: { return_id: returnId } }),
+    retry: false,
+  });
+  if (landing.isPending) {
+    return (
+      <div data-screen="TXP-13" aria-busy="true" className="p-[12px]">
+        <Skeleton className="h-[600px] w-full" />
+      </div>
+    );
+  }
+  if (landing.data?.handoff_id == null) {
+    return (
+      <FeatureGate
+        flag="tax.other_entity_workpapers"
+        fallback={
+          <FlagOffState flag="tax.other_entity_workpapers" label="Other entity workpapers" />
+        }
+      >
+        <ProvisionFrame
+          returnId={returnId}
+          row={row}
+          fallback={
+            <div data-screen="TXP-13" className="flex min-h-0 flex-1 flex-col">
+              <EmptyState icon="link-2" title={C.none}>
+                {C.noneBody}
+              </EmptyState>
+            </div>
+          }
+        />
+      </FeatureGate>
+    );
+  }
+  return (
+    <FeatureGate
+      flag="tax.tb_handoff"
+      fallback={<FlagOffState flag="tax.tb_handoff" label="Hand-off workpapers" />}
+    >
+      <HandoffFrame returnId={returnId} />
+    </FeatureGate>
+  );
+}
+
+function HandoffFrame({ returnId }: TXP13Props): JSX.Element {
   const openHref = useOpenHref();
   const openOverlay = useOpenOverlay();
   const record = useQuery(returnRecordOptions({ path: { return_id: returnId } }));

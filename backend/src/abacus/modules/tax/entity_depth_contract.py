@@ -321,6 +321,31 @@ class TaxDepthUndoIn(BaseModel):
 # --- TXP-13 other entity workpapers ------------------------------------------------------------
 
 
+class TaxDepthAaaLineOut(BaseModel):
+    """T-06-T52 (DEC-6036): one Schedule M-2 line across its four columns."""
+
+    model_config = _cfg()
+
+    line_no: Annotated[int, Field(ge=1, le=20), Internal]
+    aaa: Money
+    pti: Money
+    e_and_p: Money
+    oaa: Money
+
+
+class TaxDepthShareholderOut(BaseModel):
+    """T-06-T52 (DEC-6036): one shareholder's allocation (per share, per day)."""
+
+    model_config = _cfg()
+
+    name: Annotated[str, Field(max_length=200), Tri]
+    pct: Percent
+    ordinary_income: Money
+    interest: Money
+    nondeductible: Money
+    distributions: Money
+
+
 class TaxDepthAaaOut(BaseModel):
     """TXP-13 a: AAA 1,488,200; allocation 70/30 per share per day; read-only once Accepted."""
 
@@ -332,6 +357,33 @@ class TaxDepthAaaOut(BaseModel):
     oaa: Money
     shareholder_pcts: Annotated[list[Percent], Internal]
     locked: Annotated[bool, Internal]
+    # T-06-T52 (DEC-6036), additive: the M-2 lines and the allocation TXP-13 a draws.
+    lines: Annotated[list[TaxDepthAaaLineOut], Internal] = []
+    shareholders: Annotated[list[TaxDepthShareholderOut], Internal] = []
+
+
+class TaxDepthReconItemOut(BaseModel):
+    """T-06-T52 (DEC-6036): one rate-reconciliation row; `unclassified` rows offer Explain…."""
+
+    model_config = _cfg()
+
+    item_id: Annotated[UUID, Internal]
+    description: Annotated[str, Field(max_length=200), Internal]
+    amount: Money
+    rate_effect: Annotated[Decimal | None, Field(max_digits=7, decimal_places=4), Tri] = None
+    classification: Annotated[Literal["permanent", "temporary", "rate", "unclassified"], Internal]
+
+
+class TaxDepthDeferredItemOut(BaseModel):
+    """T-06-T52 (DEC-6036): one deferred tax asset or liability."""
+
+    model_config = _cfg()
+
+    kind: Annotated[Literal["dta", "dtl"], Internal]
+    label: Annotated[str, Field(max_length=200), Internal]
+    temporary_difference: Money
+    rate: Percent
+    amount: Money
 
 
 class TaxDepthProvisionOut(BaseModel):
@@ -346,6 +398,34 @@ class TaxDepthProvisionOut(BaseModel):
     effective_rate: Percent
     rate_reconciliation_tally: Annotated[Tally, Internal]
     unclassified: MaybeMoney = None
+    # T-06-T52 (DEC-6036), additive: the current computation, the reconciliation and the
+    # deferred inventory TXP-13 b's three views draw.
+    pretax_book_income: MaybeMoney = None
+    permanent_total: MaybeMoney = None
+    temporary_total: MaybeMoney = None
+    taxable_income: MaybeMoney = None
+    blended_rate: Annotated[
+        Decimal | None, Field(ge=0, le=100, max_digits=7, decimal_places=4), Tri
+    ] = None
+    recon_items: Annotated[list[TaxDepthReconItemOut], Internal] = []
+    deferred_items: Annotated[list[TaxDepthDeferredItemOut], Internal] = []
+
+
+class TaxDepthExpenseLineOut(BaseModel):
+    """T-06-T52 (DEC-6036): one Part IX line and how it was allocated."""
+
+    model_config = _cfg()
+
+    line: Annotated[str, Field(max_length=4), Internal]
+    label: Annotated[str, Field(max_length=200), Internal]
+    total: Money
+    program: Money
+    management: Money
+    fundraising: Money
+    basis: Annotated[Literal["direct", "time_study", "square_footage", "other"], Internal]
+    # Time-study percentages by function (program, management, fundraising), when imported.
+    time_study: Annotated[dict[str, Decimal] | None, Tri] = None
+    memo_evidence_version_id: Annotated[UUID | None, Internal] = None
 
 
 class TaxDepthFunctionalExpensesOut(BaseModel):
@@ -361,6 +441,8 @@ class TaxDepthFunctionalExpensesOut(BaseModel):
     total: Money
     program_ratio: Percent
     public_support: Percent
+    # T-06-T52 (DEC-6036), additive: the lines TXP-13 c and c2 draw.
+    lines: Annotated[list[TaxDepthExpenseLineOut], Internal] = []
 
 
 class TaxDepthRunOut(BaseModel):
@@ -909,6 +991,12 @@ async def aaa_route(return_id: UUID, ctx: Ctx) -> TaxDepthAaaOut:
     return TaxDepthAaaOut(
         aaa=found.aaa, pti=found.pti, e_and_p=found.e_and_p, oaa=found.oaa,
         shareholder_pcts=list(found.shareholder_pcts), locked=found.locked,
+        lines=[TaxDepthAaaLineOut(line_no=x.line_no, aaa=x.aaa, pti=x.pti, e_and_p=x.e_and_p,
+                                  oaa=x.oaa) for x in found.lines],
+        shareholders=[TaxDepthShareholderOut(
+            name=h.name, pct=h.pct, ordinary_income=h.ordinary_income, interest=h.interest,
+            nondeductible=h.nondeductible, distributions=h.distributions,
+        ) for h in found.shareholders],
     )  # fmt: skip
 
 
@@ -930,6 +1018,18 @@ async def provision_route(
         view=found.view, current=found.current, deferred=found.deferred, total=found.total,
         effective_rate=found.effective_rate, rate_reconciliation_tally=found.tally,
         unclassified=found.unclassified,
+        pretax_book_income=found.pretax_book_income, permanent_total=found.permanent_total,
+        temporary_total=found.temporary_total, taxable_income=found.taxable_income,
+        blended_rate=found.blended_rate,
+        recon_items=[TaxDepthReconItemOut(
+            item_id=r.item_id, description=r.description, amount=r.amount,
+            rate_effect=r.rate_effect,
+            classification=cast(Any, r.classification),  # Any: the table's CHECK
+        ) for r in found.recon_items],
+        deferred_items=[TaxDepthDeferredItemOut(
+            kind=cast(Any, d.kind), label=d.label,  # Any: the table's CHECK
+            temporary_difference=d.temporary_difference, rate=d.rate, amount=d.amount,
+        ) for d in found.deferred_items],
     )  # fmt: skip
 
 
@@ -969,6 +1069,13 @@ async def functional_expenses_route(
         view=found.view, program=p.program, management=p.management_general,
         fundraising=p.fundraising, total=p.total, program_ratio=p.program_ratio,
         public_support=found.public_support,
+        lines=[TaxDepthExpenseLineOut(
+            line=x.line, label=x.label, total=x.total, program=x.program,
+            management=x.management, fundraising=x.fundraising,
+            basis=cast(Any, x.basis),  # Any: the table's CHECK
+            time_study=None if x.time_study is None else dict(x.time_study),
+            memo_evidence_version_id=x.memo_evidence_version_id,
+        ) for x in found.lines],
     )  # fmt: skip
 
 

@@ -64797,6 +64797,34 @@ export type TaxConfirmationOut = {
 };
 
 /**
+ * TaxDepthAaaLineOut
+ *
+ * T-06-T52 (DEC-6036): one Schedule M-2 line across its four columns.
+ */
+export type TaxDepthAaaLineOut = {
+    /**
+     * Aaa
+     */
+    aaa: string;
+    /**
+     * E And P
+     */
+    e_and_p: string;
+    /**
+     * Line No
+     */
+    line_no: number;
+    /**
+     * Oaa
+     */
+    oaa: string;
+    /**
+     * Pti
+     */
+    pti: string;
+};
+
+/**
  * TaxDepthAaaOut
  *
  * TXP-13 a: AAA 1,488,200; allocation 70/30 per share per day; read-only once Accepted.
@@ -64810,6 +64838,10 @@ export type TaxDepthAaaOut = {
      * E And P
      */
     e_and_p: string;
+    /**
+     * Lines
+     */
+    lines?: Array<TaxDepthAaaLineOut>;
     /**
      * Locked
      */
@@ -64826,6 +64858,10 @@ export type TaxDepthAaaOut = {
      * Shareholder Pcts
      */
     shareholder_pcts: Array<string>;
+    /**
+     * Shareholders
+     */
+    shareholders?: Array<TaxDepthShareholderOut>;
 };
 
 /**
@@ -65089,6 +65125,34 @@ export type TaxDepthDecisionOut = {
 };
 
 /**
+ * TaxDepthDeferredItemOut
+ *
+ * T-06-T52 (DEC-6036): one deferred tax asset or liability.
+ */
+export type TaxDepthDeferredItemOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Kind
+     */
+    kind: 'dta' | 'dtl';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Rate
+     */
+    rate: string;
+    /**
+     * Temporary Difference
+     */
+    temporary_difference: string;
+};
+
+/**
  * TaxDepthDiagnosticOut
  */
 export type TaxDepthDiagnosticOut = {
@@ -65126,6 +65190,52 @@ export type TaxDepthDiagnosticsOut = {
      * Items
      */
     items: Array<TaxDepthDiagnosticOut>;
+};
+
+/**
+ * TaxDepthExpenseLineOut
+ *
+ * T-06-T52 (DEC-6036): one Part IX line and how it was allocated.
+ */
+export type TaxDepthExpenseLineOut = {
+    /**
+     * Basis
+     */
+    basis: 'direct' | 'time_study' | 'square_footage' | 'other';
+    /**
+     * Fundraising
+     */
+    fundraising: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Line
+     */
+    line: string;
+    /**
+     * Management
+     */
+    management: string;
+    /**
+     * Memo Evidence Version Id
+     */
+    memo_evidence_version_id?: string | null;
+    /**
+     * Program
+     */
+    program: string;
+    /**
+     * Time Study
+     */
+    time_study?: {
+        [key: string]: string;
+    } | null;
+    /**
+     * Total
+     */
+    total: string;
 };
 
 /**
@@ -65282,6 +65392,10 @@ export type TaxDepthFunctionalExpensesOut = {
      * Fundraising
      */
     fundraising: string;
+    /**
+     * Lines
+     */
+    lines?: Array<TaxDepthExpenseLineOut>;
     /**
      * Management
      */
@@ -65525,6 +65639,10 @@ export type TaxDepthProposalOut = {
  */
 export type TaxDepthProvisionOut = {
     /**
+     * Blended Rate
+     */
+    blended_rate?: string | null;
+    /**
      * Current
      */
     current: string;
@@ -65533,13 +65651,37 @@ export type TaxDepthProvisionOut = {
      */
     deferred: string;
     /**
+     * Deferred Items
+     */
+    deferred_items?: Array<TaxDepthDeferredItemOut>;
+    /**
      * Effective Rate
      */
     effective_rate: string;
     /**
+     * Permanent Total
+     */
+    permanent_total?: string | null;
+    /**
+     * Pretax Book Income
+     */
+    pretax_book_income?: string | null;
+    /**
      * Rate Reconciliation Tally
      */
     rate_reconciliation_tally: 'tie' | 'off' | 'check';
+    /**
+     * Recon Items
+     */
+    recon_items?: Array<TaxDepthReconItemOut>;
+    /**
+     * Taxable Income
+     */
+    taxable_income?: string | null;
+    /**
+     * Temporary Total
+     */
+    temporary_total?: string | null;
     /**
      * Total
      */
@@ -65574,6 +65716,34 @@ export type TaxDepthPtetIn = {
      * Payment On
      */
     payment_on?: string | null;
+};
+
+/**
+ * TaxDepthReconItemOut
+ *
+ * T-06-T52 (DEC-6036): one rate-reconciliation row; `unclassified` rows offer Explain….
+ */
+export type TaxDepthReconItemOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Classification
+     */
+    classification: 'permanent' | 'temporary' | 'rate' | 'unclassified';
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Item Id
+     */
+    item_id: string;
+    /**
+     * Rate Effect
+     */
+    rate_effect?: string | null;
 };
 
 /**
@@ -65639,6 +65809,38 @@ export type TaxDepthSendToClientIn = {
      * Template Version Id
      */
     template_version_id: string;
+};
+
+/**
+ * TaxDepthShareholderOut
+ *
+ * T-06-T52 (DEC-6036): one shareholder's allocation (per share, per day).
+ */
+export type TaxDepthShareholderOut = {
+    /**
+     * Distributions
+     */
+    distributions: string;
+    /**
+     * Interest
+     */
+    interest: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Nondeductible
+     */
+    nondeductible: string;
+    /**
+     * Ordinary Income
+     */
+    ordinary_income: string;
+    /**
+     * Pct
+     */
+    pct: string;
 };
 
 /**
@@ -67170,6 +67372,10 @@ export type TaxReturnRowOut = {
      * Extended Due On
      */
     extended_due_on: string | null;
+    /**
+     * Fiscal Year End
+     */
+    fiscal_year_end?: string | null;
     /**
      * Form
      */
