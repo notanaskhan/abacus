@@ -18,14 +18,15 @@ DEC-6016; amber).
 
 from __future__ import annotations
 
-import json
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Final, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import Row, text
+from sqlalchemy import Row, column, delete, insert, select, table, text
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.sql.expression import ColumnClause, TableClause
 
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, DomainPreconditionFailed, NotFound
@@ -58,6 +59,22 @@ class Table:
     parent: str | None = None  # the column naming the parent row
     children: tuple[tuple[str, Table], ...] = ()  # (body key, child table)
     json_columns: frozenset[str] = frozenset()
+
+    def core(self) -> TableClause:
+        """The table as a Core construct (names are code's; every value is a bound parameter)."""
+        found = _CORE.get(self.name)
+        if found is None:
+            names = ("id", "tenant_id", "template_version_id",
+                     *(() if self.parent is None else (self.parent,)), *self.columns)  # fmt: skip
+            cols: list[ColumnClause[Any]] = [  # Any: a JSONB or an untyped column
+                column(n, JSONB) if n in self.json_columns else column(n) for n in names
+            ]
+            found = table(self.name, *cols)
+            _CORE[self.name] = found
+        return found
+
+
+_CORE: dict[str, TableClause] = {}
 
 
 _AGENT = Table(
@@ -151,7 +168,9 @@ _VERSION: Final = text(
 )
 
 
-async def _version(ctx: AuthContext, version_id: UUID, action: str) -> Row[Any]:
+async def _version(
+    ctx: AuthContext, version_id: UUID, action: str
+) -> Row[Any]:  # Any: a result row's columns
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
     async with tenant_session(ctx.tenant) as session:
         row = (await session.execute(_VERSION, {"v": version_id})).first()
@@ -170,6 +189,11 @@ def _bound(table: Table, column: str, value: object) -> object:
     return value
 
 
+# The guards, for the module's other services (scoping rules, K-03-T18).
+require_human = _human
+version_row = _version
+
+
 # --- reading a component -------------------------------------------------------------------------
 
 
@@ -185,14 +209,10 @@ async def _rows(
     from sqlalchemy.ext.asyncio import AsyncSession
 
     s = cast(AsyncSession, session)
-    cols = ", ".join(("id", *table.columns))
-    order = "position, id" if "position" in table.columns else "id"
-    found = (
-        await s.execute(
-            text(f"SELECT {cols} FROM {table.name} WHERE {where} = :x ORDER BY {order}"),  # noqa: S608 -- fixed table and column names
-            {"x": value},
-        )
-    ).mappings()
+    t = table.core()
+    order = [t.c.position, t.c.id] if "position" in table.columns else [t.c.id]
+    query = select(t.c.id, *(t.c[c] for c in table.columns)).where(t.c[where] == value)
+    found = (await s.execute(query.order_by(*order))).mappings()
     out: list[dict[str, object]] = []
     for r in found:
         row = {c: _cell(table, c, r[c]) for c in table.columns}
@@ -254,27 +274,15 @@ async def _insert(
     written = 0
     for row in rows:
         new_id = uuid4()
-        values: dict[str, object] = {"id": new_id, "t": ctx.tenant_id, "v": version_id}
-        cols = ["id", "tenant_id", "template_version_id"]
-        params = [":id", ":t", ":v"]
+        values: dict[str, object] = {
+            "id": new_id, "tenant_id": ctx.tenant_id, "template_version_id": version_id,
+        }  # fmt: skip
         if table.parent is not None:
-            cols.append(table.parent)
-            params.append(":parent")
-            values["parent"] = parent_id
+            values[table.parent] = parent_id
         for c in table.columns:
-            if c not in row:
-                continue
-            cols.append(c)
-            if c in table.json_columns:
-                params.append(f"CAST(:{c} AS jsonb)")
-                values[c] = json.dumps(row[c])
-            else:
-                params.append(f":{c}")
-                values[c] = _bound(table, c, row[c])
-        await tx.session.execute(
-            text(f"INSERT INTO {table.name} ({', '.join(cols)}) VALUES ({', '.join(params)})"),  # noqa: S608 -- fixed names; values are bound
-            values,
-        )
+            if c in row:
+                values[c] = row[c] if c in table.json_columns else _bound(table, c, row[c])
+        await tx.session.execute(insert(table.core()).values(values))
         written += 1
         for key, child in table.children:
             kids = row.get(key)
@@ -289,10 +297,8 @@ async def _insert(
 async def _clear(tx: UnitOfWork, table: Table, version_id: UUID) -> None:
     for _key, child in table.children:  # children first (their foreign keys)
         await _clear(tx, child, version_id)
-    await tx.session.execute(
-        text(f"DELETE FROM {table.name} WHERE template_version_id = :v"),  # noqa: S608 -- a fixed name
-        {"v": version_id},
-    )
+    t = table.core()
+    await tx.session.execute(delete(t).where(t.c.template_version_id == version_id))
 
 
 _BUMP: Final = text(
@@ -323,6 +329,8 @@ async def save_component(
     seen = etag_of(if_match)
     if seen != int(row.draft_etag):
         raise DomainPreconditionFailed(facts={"etag": int(row.draft_etag)})
+    if kind == "scoping_rules":  # checked for sources and conflicts by their own route
+        raise ComponentInvalid(facts={"table": "scoping_rules", "route": "scoping-rules"})
     async with uow(ctx.tenant) as tx:
         if kind == "program":
             pin = body.get("methodology_version_id")
@@ -400,6 +408,7 @@ async def create_draft(ctx: AuthContext, template_id: UUID, from_version_id: UUI
             await _insert(tx, ctx, table, draft_id, _strip_rule_refs(copies[kind]))
         await _insert(tx, ctx, KINDS["request_list"], draft_id,
                       _strip_rule_refs(copies["request_list"]))  # fmt: skip
+        await tx.session.execute(RELINK_REQUESTS, {"v": draft_id})  # K-03-T18 (DEC-6017)
         tx.record(
             "template_version.drafted",
             target=Target(TARGET, draft_id),
@@ -408,9 +417,20 @@ async def create_draft(ctx: AuthContext, template_id: UUID, from_version_id: UUI
     return draft_id
 
 
+# K-03-T18 (DEC-6017): each request in a shown request group links the first rule showing it
+# (by position); a request in no shown group links none.
+RELINK_REQUESTS: Final = text(
+    "UPDATE template_requests r SET shown_by_rule_id = (SELECT s.id FROM scoping_rules s "
+    "WHERE s.template_version_id = r.template_version_id AND s.target_kind = 'request_group' "
+    "AND s.effect = 'show' AND s.target_ref = r.group_key ORDER BY s.position, s.id LIMIT 1) "
+    "WHERE r.template_version_id = :v"
+)
+
+
 def _strip_rule_refs(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """A copied request's `shown_by_rule_id` named the base's rule; the draft's scoping rules
-    are new rows (their ids differ), so the link is re-made by the rules editor (K-03-T18)."""
+    are new rows (their ids differ), so the link is re-made over the draft's own rules
+    (`RELINK_REQUESTS`, K-03-T18)."""
     return [{k: v for k, v in r.items() if k != "shown_by_rule_id"} for r in rows]
 
 
@@ -426,6 +446,7 @@ async def version_label(ctx: AuthContext, version_id: UUID) -> str | None:
 
 __all__ = [
     "KINDS",
+    "RELINK_REQUESTS",
     "ComponentInvalid",
     "DraftExists",
     "NotDraft",
@@ -434,6 +455,8 @@ __all__ = [
     "create_draft",
     "etag_of",
     "next_label",
+    "require_human",
     "save_component",
     "version_label",
+    "version_row",
 ]

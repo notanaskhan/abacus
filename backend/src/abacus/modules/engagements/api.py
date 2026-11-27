@@ -783,4 +783,12 @@ from abacus.modules.engagements.attention import (  # noqa: E402
 _attention.register()
 
 # T-08-T03 (DEC-5602): season-setup error codes declared before their services.
+# K-03-T18 (DEC-6017): the engagement profile's scoping sources (group audit, first year).
+from abacus.modules.engagements import scoping_facts as _scoping_facts  # noqa: E402
 from abacus.modules.engagements import season_errors as season_errors  # noqa: E402
+from abacus.modules.engagements.scoping_facts import (  # noqa: E402
+    authorise_reader as authorise_scoping_reader,
+)
+
+_scoping_facts.register()
+__all__ += ["authorise_scoping_reader"]

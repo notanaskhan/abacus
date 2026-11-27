@@ -8869,6 +8869,9 @@ export const startEngagementRun = <ThrowOnError extends boolean = false>(options
 
 /**
  * Engagement Scoping Route
+ *
+ * The engagement's rules under its linked template version, evaluated by code over its
+ * answers (K-03-T18, DEC-6017); read-only. No link yet answers no rules.
  */
 export const engagementScoping = <ThrowOnError extends boolean = false>(options: Options<EngagementScopingData, ThrowOnError>): RequestResult<EngagementScopingResponses, EngagementScopingErrors, ThrowOnError> => (options.client ?? client).get<EngagementScopingResponses, EngagementScopingErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -21334,7 +21337,7 @@ export const scopingRules = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Scoping Rules Put Route
  *
- * 422 `rule_conflict`, `unknown_source`.
+ * 422 `rule_conflict`, `unknown_source`; 412 on a stale If-Match; 409 `not_draft`.
  */
 export const scopingRulesPut = <ThrowOnError extends boolean = false>(options: Options<ScopingRulesPutData, ThrowOnError>): RequestResult<ScopingRulesPutResponses, ScopingRulesPutErrors, ThrowOnError> => (options.client ?? client).put<ScopingRulesPutResponses, ScopingRulesPutErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -21348,6 +21351,8 @@ export const scopingRulesPut = <ThrowOnError extends boolean = false>(options: O
 
 /**
  * Scoping Preview Route
+ *
+ * Code evaluates every rule (ADR-050); the agent never does. Nothing is written.
  */
 export const scopingPreview = <ThrowOnError extends boolean = false>(options: Options<ScopingPreviewData, ThrowOnError>): RequestResult<ScopingPreviewResponses, ScopingPreviewErrors, ThrowOnError> => (options.client ?? client).post<ScopingPreviewResponses, ScopingPreviewErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

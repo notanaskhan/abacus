@@ -120366,16 +120366,26 @@
       "ScopingPreviewIn": {
         "additionalProperties": false,
         "properties": {
-          "engagement_id": {
+          "blank": {
             "cls": "internal",
-            "format": "uuid",
-            "title": "Engagement Id",
-            "type": "string"
+            "default": false,
+            "title": "Blank",
+            "type": "boolean"
+          },
+          "engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Id"
           }
         },
-        "required": [
-          "engagement_id"
-        ],
         "title": "ScopingPreviewIn",
         "type": "object"
       },
@@ -120414,6 +120424,13 @@
             "minimum": 0.0,
             "title": "Shows Steps",
             "type": "integer"
+          },
+          "summary": {
+            "cls": "internal",
+            "default": "",
+            "maxLength": 200,
+            "title": "Summary",
+            "type": "string"
           }
         },
         "required": [
@@ -120457,6 +120474,29 @@
       "ScopingRuleOut": {
         "additionalProperties": false,
         "properties": {
+          "group_op": {
+            "cls": "internal",
+            "default": "and",
+            "enum": [
+              "and",
+              "or"
+            ],
+            "title": "Group Op",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Label"
+          },
           "position": {
             "cls": "internal",
             "maximum": 99.0,
@@ -120469,6 +120509,25 @@
             "format": "uuid",
             "title": "Rule Id",
             "type": "string"
+          },
+          "target_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "step",
+                  "sheet",
+                  "section",
+                  "row",
+                  "request_group"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Target Kind"
           },
           "targets": {
             "cls": "internal",
@@ -120597,6 +120656,15 @@
             "maxLength": 200,
             "title": "Label",
             "type": "string"
+          },
+          "options": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
           }
         },
         "required": [
@@ -256312,6 +256380,7 @@
     },
     "/v1/engagements/{engagement_id}/scoping": {
       "get": {
+        "description": "The engagement's rules under its linked template version, evaluated by code over its\nanswers (K-03-T18, DEC-6017); read-only. No link yet answers no rules.",
         "operationId": "engagement_scoping",
         "parameters": [
           {
@@ -382597,7 +382666,7 @@
         "x-abacus-action": "template.read"
       },
       "put": {
-        "description": "422 `rule_conflict`, `unknown_source`.",
+        "description": "422 `rule_conflict`, `unknown_source`; 412 on a stale If-Match; 409 `not_draft`.",
         "operationId": "scoping_rules_put",
         "parameters": [
           {
@@ -382755,6 +382824,7 @@
     },
     "/v1/template-versions/{version_id}/scoping-rules/preview": {
       "post": {
+        "description": "Code evaluates every rule (ADR-050); the agent never does. Nothing is written.",
         "operationId": "scoping_preview",
         "parameters": [
           {

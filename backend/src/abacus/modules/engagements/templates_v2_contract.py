@@ -199,8 +199,37 @@ async def template_hold_release_route(
     f"{_E}/scoping", action="scoping.read", response_model=ScopingEvaluationListOut, errors=(501,)
 )
 async def engagement_scoping_route(engagement_id: UUID, ctx: Ctx) -> ScopingEvaluationListOut:
+    """The engagement's rules under its linked template version, evaluated by code over its
+    answers (K-03-T18, DEC-6017); read-only. No link yet answers no rules."""
     await _on(ctx)
-    raise NotImplementedYet
+    from sqlalchemy import text
+
+    from abacus.kernel.clock import now
+    from abacus.kernel.db import tenant_session
+    from abacus.modules.engagements.scoping_facts import authorise_reader
+    from abacus.modules.methodology.api import scoping_rules
+
+    await authorise_reader(ctx, engagement_id)
+    async with tenant_session(ctx.tenant) as session:
+        version = await session.scalar(
+            text(
+                "SELECT template_version_id FROM engagement_template_links "
+                "WHERE engagement_id = :e"
+            ),
+            {"e": engagement_id},
+        )
+    if version is None:
+        return ScopingEvaluationListOut(items=[])
+    found = await scoping_rules.evaluate(ctx, version, engagement_id)
+    at = await now(ctx.tenant)
+    return ScopingEvaluationListOut(
+        items=[
+            ScopingEvaluationOut(
+                rule_id=UUID(rule.key), position=rule.position, result=result, evaluated_at=at
+            )
+            for rule, result in found.results
+        ]
+    )
 
 
 __all__ = ["template_link_router"]

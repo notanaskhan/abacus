@@ -1009,3 +1009,7 @@ from abacus.modules.assurance import deadline_sources as _filing_deadline_source
 from abacus.modules.assurance import post_issuance_analysis as post_issuance_analysis  # noqa: E402
 
 _filing_deadline_sources.register()
+# K-03-T18 (DEC-6017): components' performers and the risk register as scoping sources.
+from abacus.modules.assurance import scoping_facts as _scoping_facts  # noqa: E402
+
+_scoping_facts.register()
