@@ -251,6 +251,18 @@ class DeliveryHandoffPublishedOut(BaseModel):
 # --- CLS-13 information returns ----------------------------------------------------------------
 
 
+class DeliveryVendorPaymentOut(BaseModel):
+    """C-02-T47 (CLS-13 drawer): one payment method's total for the year; card and payment-app
+    payments are not counted (reported on Form 1099-K by the processor)."""
+
+    model_config = _cfg()
+
+    method: Annotated[Literal["check", "ach", "card", "payment_app", "other"], Internal]
+    amount: Money
+    txn_count: Annotated[int | None, Field(ge=0), Internal] = None
+    counted: Annotated[bool, Internal]
+
+
 class DeliveryVendorRowOut(BaseModel):
     """Larimer Street Properties · 1099-MISC box 1 rents · $78,400.00 · TIN ••-•••4471."""
 
@@ -269,6 +281,16 @@ class DeliveryVendorRowOut(BaseModel):
     ] = None
     w9_status: Annotated[W9Status, Internal]
     version: Annotated[int, Field(ge=1), Internal]
+    # C-02-T47 (additive, CLS-13): the mask's shape (an SSN or an EIN), backup withholding, when
+    # the open W-9 request went out, the signed W-9 (SHL-08), the last mismatched TIN check,
+    # whether the vendor is in the year's filed batch, and the year's payments by method.
+    tin_kind: Annotated[Literal["ssn", "ein"] | None, Internal] = None
+    backup_withholding: Annotated[Literal["none", "watch", "started"], Internal] = "none"
+    w9_requested_at: Annotated[datetime | None, Internal] = None
+    w9_evidence_version_id: Annotated[UUID | None, Internal] = None
+    tin_mismatch_on: Annotated[date | None, Internal] = None
+    filed: Annotated[bool, Internal] = False
+    payments: Annotated[list[DeliveryVendorPaymentOut], Internal] = []
 
 
 class DeliveryInformationReturnsOut(BaseModel):
@@ -286,6 +308,15 @@ class DeliveryInformationReturnsOut(BaseModel):
     due_rule: Annotated[str, Field(max_length=500), Internal]
     items: Annotated[list[DeliveryVendorRowOut], Internal]
     batch_status: Annotated[BatchStatus, Internal]
+    # C-02-T47 (additive): false for a year filed before its payments synced (CLS-13 e shows no
+    # Vendors paid figure), and the batch's filed date and IRS acceptance (E-file column).
+    payments_synced: Annotated[bool, Internal] = True
+    filed_on: Annotated[date | None, Internal] = None
+    accepted_at: Annotated[datetime | None, Internal] = None
+    # Approve 1099 batch… opens once the year's December close is locked (else 409
+    # `close_not_locked`); the close's due date is the target the tooltip names.
+    approval_open: Annotated[bool, Internal] = False
+    approval_target_on: Annotated[date | None, Internal] = None
 
 
 class DeliveryVendorPatchIn(BaseModel):
@@ -336,7 +367,9 @@ class DeliveryW9RequestIn(BaseModel):
 
     vendor_ids: Annotated[list[UUID], Field(min_length=1, max_length=100), Internal]
     channel: Annotated[Literal["portal"], Internal] = "portal"
-    wording_template_version_id: Annotated[UUID, Internal]
+    # C-02-T47 (DEC-6030): optional; None is the firm's default W-9 wording (no request-wording
+    # template exists yet to name; the column was always nullable).
+    wording_template_version_id: Annotated[UUID | None, Internal] = None
 
 
 class DeliveryW9RequestOut(BaseModel):

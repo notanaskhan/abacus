@@ -1,0 +1,355 @@
+{
+  "scenario": "bh-2026.10.3",
+  "slice": "cas_delivery",
+  "snapshot": "E0",
+  "client": "Copperleaf Coffee Roasters, Inc.",
+  "w9_requested_on": "2026-09-11",
+  "due_on": "2027-02-01",
+  "batch_approved_at": "2027-01-26T10:00:00-06:00",
+  "december_close_due": "2027-01-11",
+  "tiles": {
+    "vendors_paid": 12,
+    "reportable": 6,
+    "requested": 2,
+    "w9_mismatches": 1
+  },
+  "rows": [
+    {
+      "display_name": "Larimer Street Properties, LLC",
+      "entity_label": "LLC (partnership)",
+      "entity_type": "llc_p",
+      "is_attorney": false,
+      "reportability": "reportable",
+      "form": "misc",
+      "box": "1",
+      "amount": "78400.00",
+      "tin_last4": "4471",
+      "tin_kind": "ein",
+      "w9_status": "on_file",
+      "w9_requested_on": null,
+      "tin_mismatch_on": null,
+      "backup_withholding": "none",
+      "payments": [
+        {
+          "method": "ach",
+          "amount": "78400.00",
+          "counted": true
+        }
+      ]
+    },
+    {
+      "display_name": "Brightwater Hale LLP",
+      "entity_label": "LLP (partnership)",
+      "entity_type": "partnership",
+      "is_attorney": false,
+      "reportability": "reportable",
+      "form": "nec",
+      "box": "1",
+      "amount": "25600.00",
+      "tin_last4": "2050",
+      "tin_kind": "ein",
+      "w9_status": "on_file",
+      "w9_requested_on": null,
+      "tin_mismatch_on": null,
+      "backup_withholding": "none",
+      "payments": [
+        {
+          "method": "ach",
+          "amount": "25600.00",
+          "counted": true
+        }
+      ]
+    },
+    {
+      "display_name": "Sound Electric Contractors, LLC",
+      "entity_label": "Single-member LLC (individual)",
+      "entity_type": "single_member_llc",
+      "is_attorney": false,
+      "reportability": "reportable",
+      "form": "nec",
+      "box": "1",
+      "amount": "5840.00",
+      "tin_last4": "6612",
+      "tin_kind": "ssn",
+      "w9_status": "on_file",
+      "w9_requested_on": null,
+      "tin_mismatch_on": null,
+      "backup_withholding": "none",
+      "payments": [
+        {
+          "method": "ach",
+          "amount": "5840.00",
+          "counted": true
+        }
+      ]
+    },
+    {
+      "display_name": "Elena Ruiz Design",
+      "entity_label": "Sole proprietor",
+      "entity_type": "individual",
+      "is_attorney": false,
+      "reportability": "reportable",
+      "form": "nec",
+      "box": "1",
+      "amount": "4200.00",
+      "tin_last4": "3308",
+      "tin_kind": "ssn",
+      "w9_status": "tin_mismatch",
+      "w9_requested_on": null,
+      "tin_mismatch_on": "2026-08-28",
+      "backup_withholding": "watch",
+      "payments": [
+        {
+          "method": "ach",
+          "amount": "4200.00",
+          "counted": true
+        }
+      ]
+    },
+    {
+      "display_name": "Hartwell & Lowe LLP",
+      "entity_label": "Law firm (partnership)",
+      "entity_type": "partnership",
+      "is_attorney": true,
+      "reportability": "reportable",
+      "form": "nec",
+      "box": "1",
+      "amount": "3600.00",
+      "tin_last4": "7719",
+      "tin_kind": "ein",
+      "w9_status": "on_file",
+      "w9_requested_on": null,
+      "tin_mismatch_on": null,
+      "backup_withholding": "none",
+      "payments": [
+        {
+          "method": "ach",
+          "amount": "3600.00",
+          "counted": true
+        }
+      ]
+    },
+    {
+      "display_name": "Mile High Window Cleaning",
+      "entity_label": "Sole proprietor",
+      "entity_type": "individual",
+      "is_attorney": false,
+      "reportability": "reportable",
+      "form": "nec",
+      "box": "1",
+      "amount": "2640.00",
+      "tin_last4": null,
+      "tin_kind": null,
+      "w9_status": "requested",
+      "w9_requested_on": "2026-09-11",
+      "tin_mismatch_on": null,
+      "backup_withholding": "none",
+      "payments": [
+        {
+          "method": "ach",
+          "amount": "2640.00",
+          "counted": true
+        }
+      ]
+    },
+    {
+      "display_name": "Front Range Plumbing Co.",
+      "entity_label": "Sole proprietor",
+      "entity_type": "individual",
+      "is_attorney": false,
+      "reportability": "below_threshold",
+      "form": "nec",
+      "box": "1",
+      "amount": "1450.00",
+      "tin_last4": null,
+      "tin_kind": null,
+      "w9_status": "requested",
+      "w9_requested_on": "2026-09-11",
+      "tin_mismatch_on": null,
+      "backup_withholding": "none",
+      "payments": [
+        {
+          "method": "ach",
+          "amount": "1450.00",
+          "counted": true
+        }
+      ]
+    },
+    {
+      "display_name": "Rocky Ridge Dairy Co.",
+      "entity_label": "C corporation",
+      "entity_type": "c_corporation",
+      "is_attorney": false,
+      "reportability": "exempt_corporation",
+      "form": null,
+      "box": null,
+      "amount": "16980.00",
+      "tin_last4": "0935",
+      "tin_kind": "ein",
+      "w9_status": "on_file",
+      "w9_requested_on": null,
+      "tin_mismatch_on": null,
+      "backup_withholding": "none",
+      "payments": [
+        {
+          "method": "ach",
+          "amount": "16980.00",
+          "counted": true
+        }
+      ]
+    },
+    {
+      "display_name": "Kestrel Marketing Co.",
+      "entity_label": "S corporation",
+      "entity_type": "s_corporation",
+      "is_attorney": false,
+      "reportability": "exempt_corporation",
+      "form": null,
+      "box": null,
+      "amount": "9600.00",
+      "tin_last4": "5126",
+      "tin_kind": "ein",
+      "w9_status": "on_file",
+      "w9_requested_on": null,
+      "tin_mismatch_on": null,
+      "backup_withholding": "none",
+      "payments": [
+        {
+          "method": "ach",
+          "amount": "9600.00",
+          "counted": true
+        }
+      ]
+    },
+    {
+      "display_name": "Cedar Mutual Insurance Co.",
+      "entity_label": "C corporation",
+      "entity_type": "c_corporation",
+      "is_attorney": false,
+      "reportability": "exempt_corporation",
+      "form": null,
+      "box": null,
+      "amount": "8400.00",
+      "tin_last4": "8840",
+      "tin_kind": "ein",
+      "w9_status": "on_file",
+      "w9_requested_on": null,
+      "tin_mismatch_on": null,
+      "backup_withholding": "none",
+      "payments": [
+        {
+          "method": "ach",
+          "amount": "8400.00",
+          "counted": true
+        }
+      ]
+    },
+    {
+      "display_name": "Front Range Bank",
+      "entity_label": "Bank (corporation)",
+      "entity_type": "c_corporation",
+      "is_attorney": false,
+      "reportability": "exempt_corporation",
+      "form": null,
+      "box": null,
+      "amount": "6120.00",
+      "tin_last4": "3102",
+      "tin_kind": "ein",
+      "w9_status": "on_file",
+      "w9_requested_on": null,
+      "tin_mismatch_on": null,
+      "backup_withholding": "none",
+      "payments": [
+        {
+          "method": "ach",
+          "amount": "6120.00",
+          "counted": true
+        }
+      ]
+    },
+    {
+      "display_name": "Cascade Coffee Importers, Inc.",
+      "entity_label": "—",
+      "entity_type": "unknown",
+      "is_attorney": false,
+      "reportability": "paid_by_card",
+      "form": null,
+      "box": null,
+      "amount": "0.00",
+      "tin_last4": null,
+      "tin_kind": null,
+      "w9_status": "missing",
+      "w9_requested_on": null,
+      "tin_mismatch_on": null,
+      "backup_withholding": "none",
+      "payments": [
+        {
+          "method": "card",
+          "amount": "41260.00",
+          "counted": false
+        }
+      ]
+    }
+  ],
+  "prior": {
+    "tax_year": 2025,
+    "accepted_on": "2026-01-29",
+    "rows": [
+      {
+        "display_name": "Larimer Street Properties, LLC",
+        "entity_label": "LLC (partnership)",
+        "entity_type": "llc_p",
+        "is_attorney": false,
+        "form": "misc",
+        "box": "1",
+        "amount": "114000.00",
+        "tin_last4": "4471",
+        "tin_kind": "ein"
+      },
+      {
+        "display_name": "Brightwater Hale LLP",
+        "entity_label": "LLP (partnership)",
+        "entity_type": "partnership",
+        "is_attorney": false,
+        "form": "nec",
+        "box": "1",
+        "amount": "6800.00",
+        "tin_last4": "2050",
+        "tin_kind": "ein"
+      },
+      {
+        "display_name": "Sound Electric Contractors, LLC",
+        "entity_label": "Single-member LLC (individual)",
+        "entity_type": "single_member_llc",
+        "is_attorney": false,
+        "form": "nec",
+        "box": "1",
+        "amount": "3120.00",
+        "tin_last4": "6612",
+        "tin_kind": "ssn"
+      },
+      {
+        "display_name": "Elena Ruiz Design",
+        "entity_label": "Sole proprietor",
+        "entity_type": "individual",
+        "is_attorney": false,
+        "form": "nec",
+        "box": "1",
+        "amount": "5400.00",
+        "tin_last4": "3308",
+        "tin_kind": "ssn"
+      },
+      {
+        "display_name": "Hartwell & Lowe LLP",
+        "entity_label": "Law firm (partnership)",
+        "entity_type": "partnership",
+        "is_attorney": true,
+        "form": "nec",
+        "box": "1",
+        "amount": "4250.00",
+        "tin_last4": "7719",
+        "tin_kind": "ein"
+      }
+    ]
+  }
+}

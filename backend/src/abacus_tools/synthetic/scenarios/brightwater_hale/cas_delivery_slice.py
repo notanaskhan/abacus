@@ -329,8 +329,88 @@ MONTHLY_RENT: Final = D("9800.00")
 MONTHLY_FIRM_FEE: Final = D("3200.00")
 MONTHS_PAID: Final = 8
 PRIOR_YEAR_ACCEPTED: Final = (2025, 5, date(2026, 1, 29))  # CLS-13e: five rows Accepted
+# C-02-T47 (DEC-6030): CLS-13e's five 2025 returns as the artboard reads them (filed before the
+# ledger connected Mar 9, 2026, so no 2025 payment ever synced).
+PRIOR_YEAR_RETURNS: Final = (
+    ("Larimer Street Properties, LLC", "misc", "1", D("114000.00")),
+    ("Brightwater Hale LLP", "nec", "1", D("6800.00")),
+    ("Sound Electric Contractors, LLC", "nec", "1", D("3120.00")),
+    ("Elena Ruiz Design", "nec", "1", D("5400.00")),
+    ("Hartwell & Lowe LLP", "nec", "1", D("4250.00")),
+)
+TIN_MISMATCH_ON: Final = date(2026, 8, 28)  # CLS-13c: "IRS TIN Matching, Aug 28"
+DECEMBER_CLOSE_DUE: Final = date(2027, 1, 11)  # CLS-13a tooltip: "(target Jan 11, 2027)"
+# C-02-T47: the C-02-T45 enum each seed label is classified as; the label is what CLS-13 shows.
+ENTITY_TYPE_OF: Final = {
+    "LLC (partnership)": "llc_p", "LLP (partnership)": "partnership",
+    "Single-member LLC (individual)": "single_member_llc", "Sole proprietor": "individual",
+    "Law firm (partnership)": "partnership", "C corporation": "c_corporation",
+    "S corporation": "s_corporation", "Bank (corporation)": "c_corporation", "—": "unknown",
+}  # fmt: skip
 DUE_ON_2026: Final = date(2027, 2, 1)  # Jan 31, 2027 is a Sunday
 BATCH_APPROVED_AT: Final = datetime(2027, 1, 26, 10, 0, tzinfo=CT)
+
+
+def _form_of(vendor: Vendor) -> tuple[str | None, str | None]:
+    if vendor.form is None:
+        return None, None
+    return ("misc", "1") if vendor.form.startswith("1099-MISC") else ("nec", "1")
+
+
+def cls13_tracker() -> dict[str, object]:
+    """CLS-13 for 2026 (a, b, c and d's rows) and 2025 (e), in C-02-T45's read shape with
+    C-02-T47's additive fields. `make fixtures` writes it to
+    `apps/web/src/fixtures/seed/scenario.cls13-tracker.json`. Copperleaf pays its vendors by ACH
+    bill payment in the scenario (DEC-6030: the handoff gives totals only, so no transaction count
+    is invented); Cascade Coffee Importers is paid by card, never counted toward 1099-NEC."""
+    individual = {"Sole proprietor", "Single-member LLC (individual)"}
+    rows: list[dict[str, object]] = []
+    for v in VENDORS:
+        form, box = _form_of(v)
+        card = v.treatment == "paid_by_card"
+        rows.append({
+            "display_name": v.name, "entity_label": v.entity,
+            "entity_type": ENTITY_TYPE_OF[v.entity], "is_attorney": v.is_attorney,
+            "reportability": v.treatment, "form": form, "box": box,
+            "amount": "0.00" if card else f"{v.amount:.2f}",
+            "tin_last4": v.tin_last4,
+            "tin_kind": None if v.tin_last4 is None
+            else ("ssn" if v.entity in individual else "ein"),
+            "w9_status": v.w9 or "missing",
+            "w9_requested_on": W9_REQUESTED_ON.isoformat() if v.w9 == "requested" else None,
+            "tin_mismatch_on": TIN_MISMATCH_ON.isoformat() if v.w9 == "tin_mismatch" else None,
+            "backup_withholding": "watch" if v.w9 == "tin_mismatch" else "none",
+            "payments": [{"method": "card" if card else "ach", "amount": f"{v.amount:.2f}",
+                          "counted": not card}],
+        })  # fmt: skip
+    year, count, accepted_on = PRIOR_YEAR_ACCEPTED
+    if len(PRIOR_YEAR_RETURNS) != count:
+        raise ValueError("CLS-13e names five 2025 returns")
+    by_name = {v.name: v for v in VENDORS}
+    prior = [
+        {"display_name": name, "entity_label": by_name[name].entity,
+         "entity_type": ENTITY_TYPE_OF[by_name[name].entity],
+         "is_attorney": by_name[name].is_attorney, "form": form, "box": box,
+         "amount": f"{amount:.2f}", "tin_last4": by_name[name].tin_last4,
+         "tin_kind": "ssn" if by_name[name].entity in individual else "ein"}
+        for name, form, box, amount in PRIOR_YEAR_RETURNS
+    ]  # fmt: skip
+    reportable_n = sum(1 for v in VENDORS if v.treatment == "reportable")
+    return {
+        "client": COPPERLEAF,
+        "w9_requested_on": W9_REQUESTED_ON.isoformat(),
+        "due_on": DUE_ON_2026.isoformat(),
+        "batch_approved_at": BATCH_APPROVED_AT.isoformat(),
+        "december_close_due": DECEMBER_CLOSE_DUE.isoformat(),
+        "tiles": {
+            "vendors_paid": len(VENDORS),
+            "reportable": reportable_n,
+            "requested": sum(1 for v in VENDORS if v.w9 == "requested"),
+            "w9_mismatches": sum(1 for v in VENDORS if v.w9 == "tin_mismatch"),
+        },
+        "rows": rows,
+        "prior": {"tax_year": year, "accepted_on": accepted_on.isoformat(), "rows": prior},
+    }
 
 
 def reportable(vendor: Vendor) -> bool:
@@ -624,8 +704,12 @@ def cls11_console() -> dict[str, object]:
         "august_posted": _batch_row(AUGUST_POSTED_BATCH),
         # C-02-T44 (CLS-11 b2): the posted batch's six entries, each with its QuickBooks id.
         "august_entries": [
-            {"ref": e.ref, "description": e.title, "amount": f"{e.amount:.2f}",
-             "external_txn_ref": e.qbo_id}
+            {
+                "ref": e.ref,
+                "description": e.title,
+                "amount": f"{e.amount:.2f}",
+                "external_txn_ref": e.qbo_id,
+            }
             for e in ENTRIES
         ],
         "failures": [

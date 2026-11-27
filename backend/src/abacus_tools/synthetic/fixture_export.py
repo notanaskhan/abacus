@@ -672,6 +672,7 @@ def scenario_files() -> dict[str, str]:
         cls07_rows,
         cls08_package,
         cls11_console,
+        cls13_tracker,
     )
     from abacus_tools.synthetic.scenarios.brightwater_hale.quality_slice import aud30_rows
     from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import hub_rows
@@ -716,6 +717,18 @@ def scenario_files() -> dict[str, str]:
                 "slice": "cas_delivery",
                 "snapshot": "E0",
                 **cls11_console(),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        # C-02-T47 (DEC-6030): CLS-13's 2026 tracker rows and the 2025 filed returns.
+        "scenario.cls13-tracker.json": json.dumps(
+            {
+                "scenario": SCENARIO_VERSION,
+                "slice": "cas_delivery",
+                "snapshot": "E0",
+                **cls13_tracker(),
             },
             indent=2,
             ensure_ascii=False,

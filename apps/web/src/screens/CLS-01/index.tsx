@@ -21,7 +21,7 @@ import {
   date,
   time,
 } from "@abacus/ui";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { type JSX, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { useFlag } from "../../app-core/flags";
@@ -184,6 +184,7 @@ export function CLS01({
   };
 
   const page = list.data;
+  const trackerRow = page?.items.find((r) => r.client_entity_id !== null);
   let state: ViewState;
   if (list.isError) state = { kind: "error", retry: () => void list.refetch() };
   else if (page === undefined) state = { kind: "loading" };
@@ -453,14 +454,27 @@ export function CLS01({
         searchPlaceholder={COPY.search}
         {...(onNewClose === undefined ? {} : { newLabel: COPY.newClose, onNew: onNewClose })}
         barEnd={
-          <button
-            type="button"
-            onClick={onTracker}
-            disabled={onTracker === undefined}
-            className="text-dense text-ink-2 hover:text-ink disabled:cursor-default"
-          >
-            {COPY.tracker} ›
-          </button>
+          // C-02-T47: CLS-13 for the first listed client with an entity (the seeded Copperleaf).
+          trackerRow?.client_entity_id ? (
+            <Link
+              {...to.CLS13({
+                clientId: trackerRow.client_id,
+                entityId: trackerRow.client_entity_id,
+              })}
+              className="text-dense text-ink-2 hover:text-ink"
+            >
+              {COPY.tracker} ›
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={onTracker}
+              disabled={onTracker === undefined}
+              className="text-dense text-ink-2 hover:text-ink disabled:cursor-default"
+            >
+              {COPY.tracker} ›
+            </button>
+          )
         }
         {...(board
           ? {
