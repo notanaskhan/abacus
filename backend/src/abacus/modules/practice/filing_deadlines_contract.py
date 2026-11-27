@@ -270,7 +270,7 @@ async def filing_deadlines_route(
 
 @filing_deadlines_router.get(
     "/filing-deadlines/export",
-    action="export.create",
+    action="filing_deadline.export",
     response_model=bytes,
     errors=(501,),
 )
@@ -281,7 +281,7 @@ async def filing_deadlines_export_route(
     window_to: Annotated[date, Query(alias="to")],
 ) -> bytes:
     """A one-off xlsx or RFC 5545 ics with fresh MFA; no TIN, no amount, no feed (AC-16)."""
-    await _human(ctx, "export.create")
+    await _human(ctx, "filing_deadline.export")
     from abacus.modules.practice.deadlines_service import export_deadlines
 
     return await export_deadlines(ctx, fmt, window_from, window_to)

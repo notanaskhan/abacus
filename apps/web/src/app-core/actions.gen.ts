@@ -335,6 +335,7 @@ export const ACTIONS = [
   "file.save",
   "filing.update",
   "filing_deadline.apply_postponement",
+  "filing_deadline.export",
   "filing_deadline.read",
   "filing_extension.approve_payment",
   "filing_extension.confirmation_send",

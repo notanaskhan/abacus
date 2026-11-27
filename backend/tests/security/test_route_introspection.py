@@ -547,7 +547,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/files/folders/{folder_ref}/items", "evidence.read_metadata"),
     ("GET", "/v1/files/tree", "evidence.read_metadata"),
     ("GET", "/v1/filing-deadlines", "filing_deadline.read"),
-    ("GET", "/v1/filing-deadlines/export", "export.create"),
+    ("GET", "/v1/filing-deadlines/export", "filing_deadline.export"),
     ("GET", "/v1/filing-deadlines/{filing_deadline_id}", "filing_deadline.read"),
     ("GET", "/v1/findings/{finding_id}", "finding.read"),
     ("GET", "/v1/firm/agents", "firm.read_settings"),
