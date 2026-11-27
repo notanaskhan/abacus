@@ -179,6 +179,21 @@ def main(argv: list[str]) -> int:
             )
         )  # fmt: skip
         return 1 if failures else 0
+    if args.agent in ("season_planner", "tax_practice"):  # T-08-T28 / T-08-T29, frozen
+        import json as _json
+
+        from abacus_tools.evals import tax_practice as practice
+
+        failures = practice.gate(args.agent)
+        _results, rates = practice.run(args.agent)
+        print(
+            _json.dumps(
+                {"agent": args.agent, "status": "failed" if failures else "passed",
+                 "rates": rates, "failures": failures},
+                indent=2,
+            )
+        )  # fmt: skip
+        return 1 if failures else 0
     if args.agent in ("tax_memo_drafter", "tax_recommender_modes"):  # T-05-T30, frozen
         from abacus_tools.evals.tax_entity_part2 import main as part2_main
 
