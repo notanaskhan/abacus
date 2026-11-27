@@ -68,6 +68,7 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "sheet_row.cell_edited": _a("change", "pl"),  # K-03-T20, cells through record_value
     "sheet_view.saved": _a("change", "pl"),  # K-03-T20
     "sheet_row.linked": _a("change", "pl"),  # K-03-T20, evidence, request or risk
+    "skill_version.imported": _a("change", "pl"),  # K-03-T21, content import (fresh MFA)
     "sheet.created": _a("change", "pl"),
     "sheet.configured": _a("change", "pl"),
     "agent_column.saved": _a("change", "pl"),

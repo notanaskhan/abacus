@@ -3939,6 +3939,21 @@ codes:
     raised_by:
     - abacus.modules.sampling.sample_sets.SizeTableMissing
     summary: No attribute sample size table is in effect for the firm (K-02's import loads it).
+  skill_markdown_unsafe:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.skills.SkillMarkdownUnsafe
+    summary: A skill body uses markdown outside the sanitised schema (refused, never stripped).
+  skill_pack_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.skills.SkillPackInvalid
+    summary: The content pack is not a list of skills with numbered versions.
+  skill_version_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.skills.SkillVersionExists
+    summary: 'That skill version is already imported with another body: versions never change.'
   snapshot_changed:
     status: 409
     raised_by:

@@ -25,6 +25,7 @@ from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
 from abacus.modules.methodology import scoping as engine
+from abacus.modules.methodology import skills as sk
 from abacus.modules.methodology.template_drafts import ComponentInvalid
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -332,6 +333,32 @@ class SkillOut(BaseModel):
     status: Annotated[Literal["draft", "published"], Internal]
 
 
+class SkillImportIn(BaseModel):
+    """K-03-T21 (DEC-6021), additive: the content pack, `{"skills": [{key, name, group,
+    versions: [{version, status, body_md, linked_step_keys}]}]}`."""
+
+    model_config = _cfg()
+
+    pack: Annotated[dict[str, object], Internal]
+
+
+class SkillPinWarningOut(BaseModel):
+    """KNW-06c: "Skill BH-SK-430 v2 is a draft" (a warning; it never blocks publish)."""
+
+    model_config = _cfg()
+
+    skill_key: Annotated[str, Field(max_length=60), Internal]
+    version: Annotated[int, Field(ge=1), Internal]
+    severity: Annotated[Literal["warning"], Internal]
+    text: Annotated[str, Field(max_length=200), Internal]
+
+
+class SkillPinWarningListOut(BaseModel):
+    model_config = _cfg()
+
+    items: Annotated[list[SkillPinWarningOut], Internal]
+
+
 class SkillListOut(BaseModel):
     model_config = _cfg()
 
@@ -637,23 +664,48 @@ async def rollout_start_route(version_id: UUID, ctx: Ctx, key: IdempotencyKey) -
     raise NotImplementedYet
 
 
+def _skill_out(found: sk.SkillVersionView) -> SkillOut:
+    return SkillOut(
+        skill_id=found.skill_id, key=found.key[:40], version_id=found.version_id,
+        version=found.version, status=found.status,
+    )  # fmt: skip
+
+
 @_route("post", "/skills/import", "skill.import", SkillListOut, code=201, write=True)
-async def skills_import_route(ctx: Ctx, key: IdempotencyKey) -> SkillListOut:
-    """Content import (fresh MFA); the body is the content pack."""
+async def skills_import_route(ctx: Ctx, key: IdempotencyKey, body: SkillImportIn) -> SkillListOut:
+    """Content import (fresh MFA); 422 `skill_markdown_unsafe`; answers the new versions."""
     await _human(ctx, "skill.import")
-    raise NotImplementedYet
+    del key  # idempotent by content: an identical re-import adds nothing
+    added = set(await sk.import_skills(ctx, body.pack))
+    return SkillListOut(
+        items=[_skill_out(v) for v in await sk.skills(ctx) if v.version_id in added]
+    )
 
 
 @_route("get", "/skills", "knowledge.read", SkillListOut)
 async def skills_route(ctx: Ctx) -> SkillListOut:
     await _on(ctx)
-    raise NotImplementedYet
+    return SkillListOut(items=[_skill_out(v) for v in await sk.skills(ctx)])
 
 
 @_route("get", "/skill-versions/{skill_version_id}", "knowledge.read", SkillOut)
 async def skill_version_route(skill_version_id: UUID, ctx: Ctx) -> SkillOut:
     await _on(ctx)
-    raise NotImplementedYet
+    return _skill_out(await sk.skill_version(ctx, skill_version_id))
+
+
+@_route("get", f"{_V}/skill-pin-warnings", "template.read", SkillPinWarningListOut)
+async def skill_pin_warnings_route(version_id: UUID, ctx: Ctx) -> SkillPinWarningListOut:
+    """K-03-T21 (KNW-06c): pins to draft skill versions, as warnings that never block publish."""
+    await _on(ctx)
+    from abacus.modules.identity.api import Resource, authorise
+
+    await authorise(ctx, "template.read", Resource.firm(ctx.tenant_id))
+    found = await sk.pin_warnings(ctx.tenant, version_id)
+    return SkillPinWarningListOut(
+        items=[SkillPinWarningOut(skill_key=w.skill_key, version=w.version, severity=w.severity,
+                                  text=w.text) for w in found]
+    )  # fmt: skip
 
 
 __all__ = ["templates_v2_router"]
