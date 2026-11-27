@@ -74,9 +74,9 @@ describe("SHT-02 Column and field configurator", () => {
     expect(within(d).getByText(C.after("Invoice date"))).toBeTruthy();
     expect(within(d).getByRole("button", { name: `${C.keys.type}: Date` })).toBeTruthy();
     expect(within(d).getByText(C.display.month)).toBeTruthy();
-    expect(within(d).getByRole("switch", { name: C.keys.range }).getAttribute("aria-checked")).toBe(
-      "true",
-    );
+    expect(
+      within(d).getByRole("switch", { name: C.keys.range }).getAttribute("aria-checked"),
+    ).toBe("true");
     expect(
       within(d).getByRole("switch", { name: C.keys.required }).getAttribute("aria-checked"),
     ).toBe("true");
@@ -192,13 +192,13 @@ describe("SHT-02 Column and field configurator", () => {
     const d = await drawer(C.addTitle);
     expect(within(d).getByText(C.readOnly)).toBeTruthy();
     expect(within(d).queryByRole("button", { name: C.add })).toBeNull();
-    expect(within(d).getByRole<HTMLTextAreaElement>("textbox", { name: C.keys.name }).readOnly).toBe(
-      true,
-    );
+    expect(
+      within(d).getByRole<HTMLTextAreaElement>("textbox", { name: C.keys.name }).readOnly,
+    ).toBe(true);
     fireEvent.click(within(d).getByRole("button", { name: C.suggest("Hannah Leclerc") }));
     await waitFor(() => {
-      const composer = Array.from(d.querySelectorAll<HTMLTextAreaElement>("textarea")).find(
-        (t) => t.value.startsWith("@Hannah Leclerc"),
+      const composer = Array.from(d.querySelectorAll<HTMLTextAreaElement>("textarea")).find((t) =>
+        t.value.startsWith("@Hannah Leclerc"),
       );
       expect(composer?.value).toBe("@Hannah Leclerc ");
     });

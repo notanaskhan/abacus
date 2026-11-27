@@ -168,3 +168,14 @@ def test_t06t50_an_empty_1065_fails_only_the_partnership_representative() -> Non
     found = fdr.evaluate(Facts(form="1065"))
     assert {r.rule_key for r in found} == {rule.key for rule in fdr.RULES}
     assert [r.rule_key for r in found if r.failing] == ["partnership_representative"]
+
+
+def test_t06t53_every_rule_has_tax11_words_for_failing_and_passed() -> None:
+    """T-06-T53 (DEC-6035): TAX-11 shows each diagnostic in code's words: the rule's statement
+    while it fails, its passed wording once clear; an engine diagnostic reads as its code."""
+    for rule in fdr.RULES:
+        assert rule.passed and rule.passed != rule.title, rule.key
+        assert fdr.rule_title(rule.key, failing=True) == rule.title
+        assert fdr.rule_title(rule.key, failing=False) == rule.passed
+    assert fdr.rule_title("item_j_m3_required", failing=False) == "Item J: Schedule M-3 attached"
+    assert fdr.rule_title("engine.e1065-114", failing=True) == "e1065-114"

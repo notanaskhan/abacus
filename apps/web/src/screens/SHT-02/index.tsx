@@ -96,7 +96,11 @@ function draftOf(column: SheetColumnOut | undefined): Draft {
 
 /** A new column's key from its name: "Service period" is `service_period`. */
 function keyOf(label: string): string {
-  const key = label.trim().toLowerCase().replace(/[^a-z0-9]+/gu, "_").replace(/^_+|_+$/gu, "");
+  const key = label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, "_")
+    .replace(/^_+|_+$/gu, "");
   return /^[a-z]/u.test(key) ? key.slice(0, 60) : `column_${key}`.slice(0, 60);
 }
 
@@ -129,7 +133,11 @@ function Row({
 }
 
 function Help({ children }: { children: ReactNode }): JSX.Element {
-  return <p className="px-[12px] pt-[8px] pb-[10px] text-[11.5px] leading-[1.45] text-ink-3">{children}</p>;
+  return (
+    <p className="px-[12px] pt-[8px] pb-[10px] text-[11.5px] leading-[1.45] text-ink-3">
+      {children}
+    </p>
+  );
 }
 
 function Value({
@@ -504,7 +512,9 @@ export function ColumnDrawer({
                   {C.usedIn(used, column?.label ?? label)}
                 </span>
                 {u.filled_rows > 0 ? (
-                  <span className="text-[12px] font-normal text-ink-3">{C.filled(u.filled_rows)}</span>
+                  <span className="text-[12px] font-normal text-ink-3">
+                    {C.filled(u.filled_rows)}
+                  </span>
                 ) : null}
               </span>
             </Row>
@@ -532,7 +542,9 @@ export function ColumnDrawer({
           </Button>
         }
       >
-        <p className="text-[12.5px] leading-[1.55]">{C.blockedBody(used, column?.label ?? label)}</p>
+        <p className="text-[12.5px] leading-[1.55]">
+          {C.blockedBody(used, column?.label ?? label)}
+        </p>
         {used.agentColumns.map((name) => {
           const agent = sheet.data?.columns.find((c) => c.type === "agent" && c.label === name);
           return (
@@ -562,6 +574,11 @@ export function ColumnLayer({ ref, close }: OverlayRenderProps): JSX.Element | n
   const [columnId, afterKey] = ref.args;
   if (columnId === undefined || params.sheetId === undefined) return null;
   return (
-    <ColumnDrawer sheetId={params.sheetId} columnId={columnId} afterKey={afterKey} onClose={close} />
+    <ColumnDrawer
+      sheetId={params.sheetId}
+      columnId={columnId}
+      afterKey={afterKey}
+      onClose={close}
+    />
   );
 }

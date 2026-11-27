@@ -201,7 +201,12 @@ export function rowDrawerCitations(): CitationV2Out[] {
 }
 
 export function rowDrawerRun(): RunViewOut {
-  return { projection: "metadata", allowed_actions: [], run: drawerRun(), run_record_sha256: `sha256:${"0".repeat(64)}` };
+  return {
+    projection: "metadata",
+    allowed_actions: [],
+    run: drawerRun(),
+    run_record_sha256: `sha256:${"0".repeat(64)}`,
+  };
 }
 
 function drawerRun(): AgentRunOut {

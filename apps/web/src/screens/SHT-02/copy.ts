@@ -96,7 +96,8 @@ export const COPY = {
   },
   filled: (n: number) => `${plural(n, "row has", "rows have")} values`,
   note: "This adds the column to this engagement's sheet only. To change the firm template, edit BH-FS-430 in Knowledge › Engagement templates.",
-  templateNote: "This changes the firm template. Engagements take it when they update to the new version.",
+  templateNote:
+    "This changes the firm template. Engagements take it when they update to the new version.",
   typeWarning: (from: string, to: string, filled: number, u: Usage, column: string): string => {
     const clauses = [
       ...(u.views > 0

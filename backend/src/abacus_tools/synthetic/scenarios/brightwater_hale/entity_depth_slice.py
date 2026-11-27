@@ -101,3 +101,108 @@ def partner_basis() -> list[TaxDepthPartnerBasisOut]:
                                 tally="tie" if i == o else "off")
         for n, i, o in rows
     ]  # fmt: skip
+
+
+# --- TAX-11 form preview (T-06-T53, DEC-6035) ---------------------------------------------------
+
+# The 2025 Form 1065 face's pages, then the attached forms in T-06-T49's order, each titled as
+# its TY2025 face template titles it (the read's captions). Sch. C (M-3 filers) and Form 8916-A
+# have no published face yet: placeholders.
+TAX11_PAGES: Final = (
+    ("p1", "Form 1065 page 1", False),
+    ("p2", "Schedule B, page 2", False),
+    ("p3", "Schedule B, page 3", False),
+    ("p4", "Schedule K, page 4", False),
+    ("p5", "Analysis of Net Income, Schedules L, M-1 and M-2, page 5", False),
+    (
+        "f8825_p1",
+        "Form 8825 Rental Real Estate Income and Expenses of a Partnership or an S Corporation",
+        False,
+    ),
+    ("f4562_p1", "Form 4562 Depreciation and Amortization (summary page)", False),
+    (
+        "f1065_m3_p1",
+        "Schedule M-3 (Form 1065) page 1: Part I Financial Information and Net "
+        "Income (Loss) Reconciliation",
+        False,
+    ),
+    (
+        "f1065_m3_p2",
+        "Schedule M-3 (Form 1065) page 2: Part II Reconciliation of Net Income "
+        "(Loss) per Income Statement With Income (Loss) per Return",
+        False,
+    ),
+    (
+        "f1065_m3_p3",
+        "Schedule M-3 (Form 1065) page 3: Part III Reconciliation of Net Income "
+        "(Loss) per Income Statement With Income (Loss) per Return—Expense/Deduction Items",
+        False,
+    ),
+    ("f1065_m3_c_p1", "Sch. C (M-3 filers)", True),
+    ("f8916_a_p1", "Form 8916-A", True),
+    (
+        "f1065_199a_stmt",
+        "Section 199A information statement (Statement A: QBI pass-through entity reporting)",
+        False,
+    ),
+    (
+        "f1065_754_stmt",
+        "Election under section 754 to adjust the basis of partnership property",
+        False,
+    ),
+)
+# Page 1's typed values (TAX-11 a; the EIN masked as the server sends it).
+TAX11_PAGE1: Final = (
+    ("a", "A Principal business activity", "Real estate rental"),
+    ("b", "B Principal product or service", "Residential and commercial rentals"),
+    ("c", "C Business code number", "531110"),
+    ("name", "Name of partnership", RIDGELINE),
+    ("d", "D Employer identification number", "••-•••0287"),
+    ("e", "E Date business started", "01/15/2018"),
+    ("f", "F Total assets", "17,914,500"),
+    ("i", "I Number of Schedules K-1 attached", "5"),
+)
+# TAX-11 a: M-2 (a warning), Σ K-1 Item L and the §754 position (both blocking) fail.
+TAX11_FAILING_E0: Final = frozenset(
+    {"m2_line9_schedule_l21", "k1_item_l_schedule_l21", "section_754_statement"}
+)
+
+
+def tax11_preview() -> dict[str, object]:
+    """TAX-11's reads at E0 (a, b, c) and after the fix and the §754 decision (d)."""
+    from abacus.modules.tax.api import FORM_DIAGNOSTIC_RULES as RULES
+    from abacus.modules.tax.api import form_diagnostic_title as rule_title
+    from abacus_tools.synthetic.scenarios.brightwater_hale.entity_slice import SCHEDULE_K
+
+    def diagnostics(failing: frozenset[str]) -> list[dict[str, object]]:
+        out: list[dict[str, object]] = []
+        for rule in RULES:
+            fails = rule.key in failing
+            out.append(
+                {
+                    "rule_key": rule.key,
+                    "severity": ("blocking" if rule.severity == "blocking" else "warning")
+                    if fails
+                    else "clear",
+                    "title": rule_title(rule.key, fails),
+                    "page_key": "p5" if rule.key.startswith("m2") else None,
+                }
+            )
+        return out
+
+    schedule_k = [
+        {"field_key": f"k_{line}", "label": f"{line} {label}", "value": f"{D(total):,.0f}"}
+        for line, label, total, _shares in SCHEDULE_K
+    ]
+    return {
+        "pages": [{"page_key": k, "caption": c, "placeholder": p} for k, c, p in TAX11_PAGES],
+        "fields": {
+            "p1": [{"field_key": k, "label": lb, "value": v} for k, lb, v in TAX11_PAGE1],
+            "p4": schedule_k,
+        },
+        "diagnostics": {
+            "e0": diagnostics(TAX11_FAILING_E0),
+            "after_fix": diagnostics(frozenset()),
+        },
+        "k1": k1_previews().model_dump(mode="json"),
+    }

@@ -27,6 +27,7 @@ from abacus.modules.tax import drafter_workflow as _drafter
 from abacus.modules.tax import explain as _explain
 from abacus.modules.tax import extensions as _extensions
 from abacus.modules.tax import fix_runner as _fix_runner
+from abacus.modules.tax import form_diagnostics_run as _form_diagnostics
 from abacus.modules.tax import return_events as _return_events
 from abacus.modules.tax import return_issues as _return_issues
 from abacus.modules.tax import return_tabs as _return_tabs
@@ -349,11 +350,16 @@ async def installments_due(
         return [dict(row) for row in found.mappings()]
 
 
+# T-06-T53 (DEC-6035): TAX-11's diagnostic rules and their words, for the synthetic scenario.
+FORM_DIAGNOSTIC_RULES = _form_diagnostics.RULES
+form_diagnostic_title = _form_diagnostics.rule_title
+
 __all__ = [
     "ACTIVITIES",
     "ALLOCATION_TARGET",
     "ENTITY_RUN_DEPTH",
     "ENTITY_RUN_STEPS",
+    "FORM_DIAGNOSTIC_RULES",
     "FORM_FOR_RULES",
     "ROUTERS",
     "SCHEDULES",
@@ -414,6 +420,7 @@ __all__ = [
     "final_approval_eligibility",
     "fix_workflow_id",
     "flag_new_likely",
+    "form_diagnostic_title",
     "import_engine_file",
     "individual_review_signed",
     "installments_due",

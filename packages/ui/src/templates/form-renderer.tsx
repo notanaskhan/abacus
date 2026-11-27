@@ -29,6 +29,8 @@ export interface FormThumb {
   /** The server-rendered page image (the viewer's own rule: same-origin, blob or PNG data). */
   src: string | null;
   diagnostics?: number;
+  /** T-06-T53: the page's name under the thumbnail ("Form 1065 page 1"). */
+  caption?: string;
 }
 
 export interface K1ListRow {
@@ -41,11 +43,14 @@ export interface K1ListRow {
 
 export interface FormDiagnostic {
   id: string;
-  severity: "error" | "warning";
+  /** T-06-T53: `clear` is a rule that passes (a green disc, no count). */
+  severity: "error" | "warning" | "clear";
   text: string;
   page: number;
   /** The manifest field's `match_id`: Go to lights it. A diagnostic without one goes to the page. */
   match: MatchId | null;
+  /** T-06-T53: an issue holds this diagnostic: "→ issue" opens it (`onIssue`). */
+  issue?: boolean;
 }
 
 export interface FormRendererLayoutProps {
@@ -66,6 +71,17 @@ export interface FormRendererLayoutProps {
   diagnostics: readonly FormDiagnostic[];
   loading?: boolean;
   className?: string;
+  /** T-06-T53: a K-1 row opens that partner's face (the selected row carries the ring). */
+  onK1?: (id: string) => void;
+  selectedK1?: string | null;
+  /** T-06-T53: "→ issue" on a diagnostic an issue holds. */
+  onIssue?: (d: FormDiagnostic) => void;
+  /** T-06-T53: pinned under the right pane (the return's primary actions). */
+  footer?: ReactNode;
+  /** T-06-T53: drawn in place of the page (a face the server does not render yet). */
+  face?: ReactNode;
+  /** T-06-T53: under the pages, in the viewer's well (the page's typed values). */
+  afterPages?: ReactNode;
 }
 
 function whole(value: string | null): string {
@@ -90,34 +106,43 @@ function Thumbs({
       className="flex flex-none flex-col items-center gap-[10px] overflow-y-auto py-[12px]"
     >
       {thumbs.map((t) => (
-        <button
-          key={t.n}
-          type="button"
-          aria-label={`Page ${String(t.n)}`}
-          aria-current={t.n === page ? "page" : undefined}
-          onClick={() => onPage?.(t.n)}
-          style={{ width: w, height: h }}
-          className={cn(
-            "relative flex-none overflow-hidden rounded-[4px] bg-card shadow-e1",
-            t.n === page && "ring-[1.5px] ring-ink",
-          )}
-        >
-          {t.src === null ? (
-            <span className="flex h-full items-center justify-center text-[11px] text-ink-3">
-              Missing
-            </span>
-          ) : (
-            <img src={t.src} alt="" className="h-full w-full object-cover" />
-          )}
-          {t.diagnostics ? (
+        <span key={t.n} className="flex flex-none flex-col items-center gap-[4px]">
+          <button
+            type="button"
+            aria-label={t.caption ?? `Page ${String(t.n)}`}
+            aria-current={t.n === page ? "page" : undefined}
+            onClick={() => onPage?.(t.n)}
+            style={{ width: w, height: h }}
+            className={cn(
+              "relative flex-none overflow-hidden rounded-[4px] bg-card shadow-e1",
+              t.n === page && "ring-[1.5px] ring-ink",
+            )}
+          >
+            {t.src === null ? (
+              <span className="flex h-full items-center justify-center text-[11px] text-ink-3">
+                Missing
+              </span>
+            ) : (
+              <img src={t.src} alt="" className="h-full w-full object-cover" />
+            )}
+            {t.diagnostics ? (
+              <span
+                data-diagnostics={t.diagnostics}
+                className="absolute right-[4px] top-[4px] rounded-pill bg-red-tint px-[5px] text-[10px] text-red-ink"
+              >
+                {t.diagnostics}
+              </span>
+            ) : null}
+          </button>
+          {t.caption === undefined ? null : (
             <span
-              data-diagnostics={t.diagnostics}
-              className="absolute right-[4px] top-[4px] rounded-pill bg-red-tint px-[5px] text-[10px] text-red-ink"
+              className="w-[96px] truncate text-center text-[11px] text-ink-3"
+              title={t.caption}
             >
-              {t.diagnostics}
+              {t.caption}
             </span>
-          ) : null}
-        </button>
+          )}
+        </span>
       ))}
     </nav>
   );
@@ -128,12 +153,21 @@ function RightPane({
   total,
   diagnostics,
   onGoTo,
+  onK1,
+  selectedK1,
+  onIssue,
+  footer,
 }: {
   k1s: readonly K1ListRow[];
   total: FormRendererLayoutProps["total"];
   diagnostics: readonly FormDiagnostic[];
   onGoTo: (d: FormDiagnostic) => void;
+  onK1?: ((id: string) => void) | undefined;
+  selectedK1?: string | null | undefined;
+  onIssue?: ((d: FormDiagnostic) => void) | undefined;
+  footer?: ReactNode;
 }): JSX.Element {
+  const open = diagnostics.filter((d) => d.severity !== "clear").length;
   return (
     <aside
       style={{ width: FORM_GEOMETRY.pane }}
@@ -147,9 +181,26 @@ function RightPane({
           {k1s.map((k) => (
             <li
               key={k.id}
-              className="flex min-h-[33px] items-center gap-[8px] px-[12px] text-body hairline-b"
+              data-k1={k.id}
+              aria-current={selectedK1 === k.id ? "true" : undefined}
+              className={cn(
+                "flex min-h-[33px] items-center gap-[8px] px-[12px] text-body hairline-b",
+                selectedK1 === k.id && "bg-sel-bg",
+              )}
             >
-              <span className="min-w-0 flex-1 truncate">{k.name}</span>
+              {onK1 === undefined ? (
+                <span className="min-w-0 flex-1 truncate">{k.name}</span>
+              ) : (
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 truncate text-left"
+                  onClick={() => {
+                    onK1(k.id);
+                  }}
+                >
+                  {k.name}
+                </button>
+              )}
               <span className="tabular-nums">{whole(k.amount)}</span>
               <span className="text-[11px] text-ink-3">{k.status}</span>
             </li>
@@ -176,9 +227,9 @@ function RightPane({
       <section aria-label="Diagnostics" className="mt-[10px]">
         <header className="flex h-[36px] items-center px-[12px] text-[12px] font-medium text-ink-3">
           Diagnostics
-          {diagnostics.length > 0 ? (
+          {open > 0 ? (
             <span className="ml-[6px] rounded-pill bg-red-tint px-[5px] text-[10px] text-red-ink">
-              {diagnostics.length}
+              {open}
             </span>
           ) : null}
         </header>
@@ -191,24 +242,48 @@ function RightPane({
               <span
                 className={cn(
                   "size-[6px] flex-none rounded-pill",
-                  d.severity === "error" ? "bg-red" : "bg-amber",
+                  d.severity === "error"
+                    ? "bg-red"
+                    : d.severity === "clear"
+                      ? "bg-green"
+                      : "bg-amber",
                 )}
                 aria-hidden
               />
-              <span className="min-w-0 flex-1">{d.text}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  onGoTo(d);
-                }}
-              >
-                Go to
-              </Button>
+              <span className="min-w-0 flex-1" data-severity={d.severity}>
+                {d.text}
+              </span>
+              {d.issue === true && onIssue !== undefined ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    onIssue(d);
+                  }}
+                >
+                  → issue
+                </Button>
+              ) : null}
+              {d.severity === "clear" ? null : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    onGoTo(d);
+                  }}
+                >
+                  Go to
+                </Button>
+              )}
             </li>
           ))}
         </ul>
       </section>
+      {footer === undefined ? null : (
+        <div className="sticky bottom-0 mt-auto flex flex-col gap-[6px] bg-card p-[12px] hairline-t">
+          {footer}
+        </div>
+      )}
     </aside>
   );
 }
@@ -228,6 +303,12 @@ export function FormRendererLayout({
   diagnostics,
   loading = false,
   className,
+  onK1,
+  selectedK1,
+  onIssue,
+  footer,
+  face,
+  afterPages,
 }: FormRendererLayoutProps): JSX.Element {
   const store = useMatchStore();
   const [traces, setTraces] = useState(false);
@@ -267,13 +348,32 @@ export function FormRendererLayout({
       <div className="flex min-h-0 flex-1 gap-[10px] p-[12px]">
         <Thumbs thumbs={thumbs} page={page} onPage={onPage} />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col" data-form-face="">
-          {loading || file === null ? (
+          {loading ? (
+            <SkeletonRows type="card" immediate label="Rendering the form" />
+          ) : face !== undefined ? (
+            face
+          ) : file === null ? (
             <SkeletonRows type="card" immediate label="Rendering the form" />
           ) : (
-            <SourceViewer file={file} menu={menu} outlineCited={traces} scrollToLit />
+            <SourceViewer
+              file={file}
+              menu={menu}
+              outlineCited={traces}
+              scrollToLit
+              {...(afterPages === undefined ? {} : { afterPages })}
+            />
           )}
         </div>
-        <RightPane k1s={k1s} total={total} diagnostics={diagnostics} onGoTo={goTo} />
+        <RightPane
+          k1s={k1s}
+          total={total}
+          diagnostics={diagnostics}
+          onGoTo={goTo}
+          onK1={onK1}
+          selectedK1={selectedK1}
+          onIssue={onIssue}
+          footer={footer}
+        />
       </div>
     </div>
   );

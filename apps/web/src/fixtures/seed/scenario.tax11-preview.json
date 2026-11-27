@@ -1,0 +1,270 @@
+{
+  "scenario": "bh-2026.10.3",
+  "slice": "entity_depth",
+  "snapshot": "E0",
+  "pages": [
+    {
+      "page_key": "p1",
+      "caption": "Form 1065 page 1",
+      "placeholder": false
+    },
+    {
+      "page_key": "p2",
+      "caption": "Schedule B, page 2",
+      "placeholder": false
+    },
+    {
+      "page_key": "p3",
+      "caption": "Schedule B, page 3",
+      "placeholder": false
+    },
+    {
+      "page_key": "p4",
+      "caption": "Schedule K, page 4",
+      "placeholder": false
+    },
+    {
+      "page_key": "p5",
+      "caption": "Analysis of Net Income, Schedules L, M-1 and M-2, page 5",
+      "placeholder": false
+    },
+    {
+      "page_key": "f8825_p1",
+      "caption": "Form 8825 Rental Real Estate Income and Expenses of a Partnership or an S Corporation",
+      "placeholder": false
+    },
+    {
+      "page_key": "f4562_p1",
+      "caption": "Form 4562 Depreciation and Amortization (summary page)",
+      "placeholder": false
+    },
+    {
+      "page_key": "f1065_m3_p1",
+      "caption": "Schedule M-3 (Form 1065) page 1: Part I Financial Information and Net Income (Loss) Reconciliation",
+      "placeholder": false
+    },
+    {
+      "page_key": "f1065_m3_p2",
+      "caption": "Schedule M-3 (Form 1065) page 2: Part II Reconciliation of Net Income (Loss) per Income Statement With Income (Loss) per Return",
+      "placeholder": false
+    },
+    {
+      "page_key": "f1065_m3_p3",
+      "caption": "Schedule M-3 (Form 1065) page 3: Part III Reconciliation of Net Income (Loss) per Income Statement With Income (Loss) per Return—Expense/Deduction Items",
+      "placeholder": false
+    },
+    {
+      "page_key": "f1065_m3_c_p1",
+      "caption": "Sch. C (M-3 filers)",
+      "placeholder": true
+    },
+    {
+      "page_key": "f8916_a_p1",
+      "caption": "Form 8916-A",
+      "placeholder": true
+    },
+    {
+      "page_key": "f1065_199a_stmt",
+      "caption": "Section 199A information statement (Statement A: QBI pass-through entity reporting)",
+      "placeholder": false
+    },
+    {
+      "page_key": "f1065_754_stmt",
+      "caption": "Election under section 754 to adjust the basis of partnership property",
+      "placeholder": false
+    }
+  ],
+  "fields": {
+    "p1": [
+      {
+        "field_key": "a",
+        "label": "A Principal business activity",
+        "value": "Real estate rental"
+      },
+      {
+        "field_key": "b",
+        "label": "B Principal product or service",
+        "value": "Residential and commercial rentals"
+      },
+      {
+        "field_key": "c",
+        "label": "C Business code number",
+        "value": "531110"
+      },
+      {
+        "field_key": "name",
+        "label": "Name of partnership",
+        "value": "Ridgeline Property Partners, LP"
+      },
+      {
+        "field_key": "d",
+        "label": "D Employer identification number",
+        "value": "••-•••0287"
+      },
+      {
+        "field_key": "e",
+        "label": "E Date business started",
+        "value": "01/15/2018"
+      },
+      {
+        "field_key": "f",
+        "label": "F Total assets",
+        "value": "17,914,500"
+      },
+      {
+        "field_key": "i",
+        "label": "I Number of Schedules K-1 attached",
+        "value": "5"
+      }
+    ],
+    "p4": [
+      {
+        "field_key": "k_2",
+        "label": "2 Net rental real estate income (loss) — Form 8825",
+        "value": "1,231,600"
+      },
+      {
+        "field_key": "k_5",
+        "label": "5 Interest income",
+        "value": "18,400"
+      },
+      {
+        "field_key": "k_18a",
+        "label": "18a Tax-exempt interest income",
+        "value": "6,200"
+      },
+      {
+        "field_key": "k_19a",
+        "label": "19a Distributions of cash and marketable securities",
+        "value": "600,000"
+      },
+      {
+        "field_key": "k_20a",
+        "label": "20a Investment income",
+        "value": "18,400"
+      }
+    ]
+  },
+  "diagnostics": {
+    "e0": [
+      {
+        "rule_key": "item_i_count",
+        "severity": "clear",
+        "title": "Item I matches the partners",
+        "page_key": null
+      },
+      {
+        "rule_key": "item_j_m3_required",
+        "severity": "clear",
+        "title": "Item J: Schedule M-3 attached",
+        "page_key": null
+      },
+      {
+        "rule_key": "partnership_representative",
+        "severity": "clear",
+        "title": "Partnership representative designated",
+        "page_key": null
+      },
+      {
+        "rule_key": "m2_line9_schedule_l21",
+        "severity": "warning",
+        "title": "M-2 line 9 does not equal Schedule L line 21",
+        "page_key": "p5"
+      },
+      {
+        "rule_key": "k1_item_l_schedule_l21",
+        "severity": "blocking",
+        "title": "Σ K-1 Item L does not equal Schedule L line 21",
+        "page_key": null
+      },
+      {
+        "rule_key": "section_754_statement",
+        "severity": "blocking",
+        "title": "§754 statement not decided",
+        "page_key": null
+      },
+      {
+        "rule_key": "k1_sums_schedule_k",
+        "severity": "clear",
+        "title": "K-1 boxes sum to Schedule K",
+        "page_key": null
+      }
+    ],
+    "after_fix": [
+      {
+        "rule_key": "item_i_count",
+        "severity": "clear",
+        "title": "Item I matches the partners",
+        "page_key": null
+      },
+      {
+        "rule_key": "item_j_m3_required",
+        "severity": "clear",
+        "title": "Item J: Schedule M-3 attached",
+        "page_key": null
+      },
+      {
+        "rule_key": "partnership_representative",
+        "severity": "clear",
+        "title": "Partnership representative designated",
+        "page_key": null
+      },
+      {
+        "rule_key": "m2_line9_schedule_l21",
+        "severity": "clear",
+        "title": "M-2 line 9 equals Schedule L line 21",
+        "page_key": "p5"
+      },
+      {
+        "rule_key": "k1_item_l_schedule_l21",
+        "severity": "clear",
+        "title": "Σ K-1 Item L equals Schedule L line 21",
+        "page_key": null
+      },
+      {
+        "rule_key": "section_754_statement",
+        "severity": "clear",
+        "title": "§754 position decided",
+        "page_key": null
+      },
+      {
+        "rule_key": "k1_sums_schedule_k",
+        "severity": "clear",
+        "title": "K-1 boxes sum to Schedule K",
+        "page_key": null
+      }
+    ]
+  },
+  "k1": {
+    "items": [
+      {
+        "partner_id": "57d74aab-c3b4-5878-bf4d-970faef5e982",
+        "name": "Ridgeline GP LLC",
+        "box_2": "24632"
+      },
+      {
+        "partner_id": "192f463f-bfdc-5bea-9ddd-03f397819506",
+        "name": "Meera Shah",
+        "box_2": "468008"
+      },
+      {
+        "partner_id": "e54aba6b-01ba-5256-9175-b404087e3405",
+        "name": "Pell Street Ventures LLC",
+        "box_2": "400270"
+      },
+      {
+        "partner_id": "ba206362-c73e-583a-844f-d321839dbe6b",
+        "name": "Pell Street II LLC",
+        "box_2": "30790"
+      },
+      {
+        "partner_id": "f1dabad0-32e0-55aa-ad0d-be9a17bd03a4",
+        "name": "Jonah Feld",
+        "box_2": "307900"
+      }
+    ],
+    "box_2_total": "1231600",
+    "schedule_k_line_2": "1231600",
+    "tally": "tie"
+  }
+}

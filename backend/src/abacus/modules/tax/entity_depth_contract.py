@@ -430,6 +430,10 @@ class TaxDepthDiagnosticOut(BaseModel):
     rule_key: Annotated[str, Field(max_length=80), Internal]
     severity: Annotated[Severity, Internal]
     issue_id: Annotated[UUID | None, Internal] = None
+    # T-06-T53 (DEC-6035), additive: code's words for the rule (failing or passed) and the page
+    # it names, so TAX-11 shows the diagnostic and its count on that page's thumbnail.
+    title: Annotated[str, Field(max_length=200), Internal] = ""
+    page_key: Annotated[str | None, Field(max_length=40), Internal] = None
 
 
 class TaxDepthDiagnosticsOut(BaseModel):
@@ -1099,7 +1103,11 @@ async def diagnostics_route(return_id: UUID, ctx: Ctx) -> TaxDepthDiagnosticsOut
     return TaxDepthDiagnosticsOut(
         items=[
             TaxDepthDiagnosticOut(
-                rule_key=d.rule_key, severity=cast(Severity, d.severity), issue_id=d.issue_id
+                rule_key=d.rule_key,
+                severity=cast(Severity, d.severity),
+                issue_id=d.issue_id,
+                title=form_diagnostics_run.rule_title(d.rule_key, d.severity != "clear"),
+                page_key=d.page_key,
             )
             for d in items
         ],
